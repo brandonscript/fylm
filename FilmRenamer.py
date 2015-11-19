@@ -141,10 +141,10 @@ def moveFile(src, dst, srcFolder):
 		if os.path.exists(dst):
 			if srcSize == os.path.getsize(dst):
 				if os.path.dirname(src) == sourcePath:
-					return "\t==> Not removing folder as it matches sourcePath variable!"
+					return "\t==> Not removing parent folder because it is the sourcePath root directory"
 				else:
 					shutil.rmtree(parentfolderpath)
-					return "\tFile moved successfully\n\tRemoved " + sourcePath + "/" + srcFolder
+					return "\tRemoved " + sourcePath + "/" + srcFolder
 			else:
 				return "\t==> Destination file size does not match the original file size\n==> An error may have occurred in the file move operation"
 		else:
