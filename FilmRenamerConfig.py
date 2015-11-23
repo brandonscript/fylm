@@ -7,8 +7,7 @@ safeCopy = False # uses shutil.copy regardless of whether src and dst are on the
 # For Windows paths, make sure you escape the path, for example: "D:\\Downloads"
 # For *nix, enter standard path, for example: "/path/to/folder"
 
-# sourcePath = r"/Users/brandon/Usenet/complete"
-sourcePath = r"/Volumes/5 TB - 01/_Films/_Rename"
+sourcePaths = [r"/Users/brandon/Usenet/complete", r"/Volumes/5 TB - 01/_Films/_Rename"]
 
 # destPath = r"/Volumes/X/Films/_New"
 destPath = r"/Volumes/5 TB - 01/_Films"

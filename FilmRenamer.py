@@ -25,7 +25,7 @@ divider = "---------------------------------------------------"
 hash = "******************************************************"
 line = " "
 
-sourcePath = re.sub("(\\\\|/)$", "", sourcePath)
+sourcePaths = [re.sub("(\\\\|/)$", "", path) for path in sourcePaths]
 destPath = re.sub("(\\\\|/)$", "", destPath)
 timestamp = time.ctime()
 movieList = ''
@@ -140,7 +140,7 @@ def moveFile(src, dst, srcFolder):
 		with open(dst): pass
 		if os.path.exists(dst):
 			if srcSize == os.path.getsize(dst):
-				if os.path.dirname(src) == sourcePath:
+				if os.path.dirname(src) in sourcePath:
 					return "\t==> Not removing parent folder because it is the sourcePath root directory"
 				else:
 					shutil.rmtree(parentfolderpath)
@@ -183,97 +183,99 @@ output(hash)
 output(inspect.getfile(inspect.currentframe()) + " initialized on " + timestamp)
 output(hash)
 
-print(sourcePath)
+for sourcePath in sourcePaths:
 
-if not os.path.exists(sourcePath):
-	output("\nError: 'sourcePath' does not exist; check folder path in FilmRenamerConfig.py\n")
-elif not os.path.exists(destPath):
-	output("\nError: 'destPath' does not exist; check folder path in FilmRenamerConfig.py\n")	
-else:
-	output("Scanning subfolders and files in " + sourcePath)
-	output("Selected destination folder " + destPath)
-	print("Please wait...")
-	output('')
+	print(sourcePath)
 
-	directories = [sourcePath]
+	if not os.path.exists(sourcePath):
+		output("\nError: 'sourcePath' does not exist; check folder path in FilmRenamerConfig.py\n")
+	elif not os.path.exists(destPath):
+		output("\nError: 'destPath' does not exist; check folder path in FilmRenamerConfig.py\n")	
+	else:
+		output("Scanning subfolders and files in " + sourcePath)
+		output("Selected destination folder " + destPath)
+		print("Please wait...")
+		output('')
 
-	while len(directories)>0:
-		directory = directories.pop()
+		directories = [sourcePath]
 
-		try:
-			for name in os.listdir(directory):
-				fullpath = os.path.join(directory,name)
-				fileonly = os.path.basename(fullpath)
+		while len(directories)>0:
+			directory = directories.pop()
 
-				if os.path.isfile(fullpath):   # That's a file. Do something with it.
-					if (getExt(fullpath) == ".mkv"):
-						output("Checking " + fullpath)
-					parentfolderpath = os.path.abspath(os.path.join(fullpath, os.path.pardir))
-					parentfolder = re.sub(".*(\/|\\\\)", "", parentfolderpath)
-					
-					# Check if the file ends in .mkv. If it doesn't, we don't care.
-					if (getExt(fullpath) == ".mkv"):
-						if (re.search("_UNPACK_", fullpath)):
-							output(divider)
-							output("\tIgnoring " + fileonly + ": file is currently unpacking")
-							output(line)
-						elif (re.search("_FAILED_", fullpath)):
-							output(divider)
-							output("\tIgnoring " + fileonly + ": archive extraction appears to have failed")
-							output(line)
-						elif (re.search("sample", fullpath, re.I)):
-							output(divider)
-							output("\tIgnoring " + fileonly + ": file appears to be sample")
-							output(line)
-						elif (re.search(r"s\d{1,2}e\d{1,2}", fullpath, re.I)):
-							output(divider)
-							output("\tIgnoring " + fileonly + ": file appears to be a TV show")
-							output(line)
-						# Check and validate the file according to our detection parameters
-						elif (sizeInGiB(fullpath) < minSizeInGiB):
-							output(divider)
-							output("\tIgnoring " + fileonly + ": file size (" + sizeInStr(fullpath) + ") is less than minimum size specified (" + str(minSizeInGiB) + ".0 GiB)")
-							output(line)
-						elif validate(fileonly, parentfolder) is not None:
-							newfilename = rename(validate(fileonly, parentfolder), fileonly)
-							size = sizeInStr(fullpath)
-							newpath = destPath + slash + newfilename
-							output(divider)
-							output("\tRenaming " + fileonly + " (" + size + ") => " + newfilename)
-							output("\tAttempting to move file...")
-							try:
-								if os.path.isfile(newpath):
-									output("\t==> A file with the same name exists; aborting")
-								else:
-									if (testMode):
-										output("\tTest mode - not actually renaming or moving file")
+			try:
+				for name in os.listdir(directory):
+					fullpath = os.path.join(directory,name)
+					fileonly = os.path.basename(fullpath)
+
+					if os.path.isfile(fullpath):   # That's a file. Do something with it.
+						if (getExt(fullpath) == ".mkv"):
+							output("Checking " + fullpath)
+						parentfolderpath = os.path.abspath(os.path.join(fullpath, os.path.pardir))
+						parentfolder = re.sub(".*(\/|\\\\)", "", parentfolderpath)
+						
+						# Check if the file ends in .mkv. If it doesn't, we don't care.
+						if (getExt(fullpath) == ".mkv"):
+							if (re.search("_UNPACK_", fullpath)):
+								output(divider)
+								output("\tIgnoring " + fileonly + ": file is currently unpacking")
+								output(line)
+							elif (re.search("_FAILED_", fullpath)):
+								output(divider)
+								output("\tIgnoring " + fileonly + ": archive extraction appears to have failed")
+								output(line)
+							elif (re.search("sample", fullpath, re.I)):
+								output(divider)
+								output("\tIgnoring " + fileonly + ": file appears to be sample")
+								output(line)
+							elif (re.search(r"s\d{1,2}e\d{1,2}", fullpath, re.I)):
+								output(divider)
+								output("\tIgnoring " + fileonly + ": file appears to be a TV show")
+								output(line)
+							# Check and validate the file according to our detection parameters
+							elif (sizeInGiB(fullpath) < minSizeInGiB):
+								output(divider)
+								output("\tIgnoring " + fileonly + ": file size (" + sizeInStr(fullpath) + ") is less than minimum size specified (" + str(minSizeInGiB) + ".0 GiB)")
+								output(line)
+							elif validate(fileonly, parentfolder) is not None:
+								newfilename = rename(validate(fileonly, parentfolder), fileonly)
+								size = sizeInStr(fullpath)
+								newpath = destPath + slash + newfilename
+								output(divider)
+								output("\tRenaming " + fileonly + " (" + size + ") => " + newfilename)
+								output("\tAttempting to move file...")
+								try:
+									if os.path.isfile(newpath):
+										output("\t==> A file with the same name exists; aborting")
 									else:
-										output(moveFile(fullpath, newpath, parentfolder))
-										#move was successful, notify
-										if os.path.exists(newpath):
+										if (testMode):
+											output("\tTest mode - not actually renaming or moving file")
+										else:
+											output(moveFile(fullpath, newpath, parentfolder))
+											#move was successful, notify
+											if os.path.exists(newpath):
 
-											output("\tFile moved successfully")
-											#refreshPlex() #ignoring plex for now since it's not installed
-											if enablePushover:
-											# notifyProwl(newfilename + " (" + size + ")", prowlKey)
-												notifyPushover(newfilename + " (" + size + ")", pushoverKey)
-											if enablePlex:
-												refreshPlex()
+												output("\tFile moved successfully")
+												#refreshPlex() #ignoring plex for now since it's not installed
+												if enablePushover:
+												# notifyProwl(newfilename + " (" + size + ")", prowlKey)
+													notifyPushover(newfilename + " (" + size + ")", pushoverKey)
+												if enablePlex:
+													refreshPlex()
 
-							except Exception, e:
-								output("\t*** An error occurred when attempting to move " + newfilename)
-								print(e)
-								output("\t*** Details: " + str(e))
-							output(line)						
-						else:
-							output(divider)
-							output("\tIgnoring " + fileonly + ": could not interpret file/folder name (file or folder must have valid date and quality)")
-							output(line)
+								except Exception, e:
+									output("\t*** An error occurred when attempting to move " + newfilename)
+									print(e)
+									output("\t*** Details: " + str(e))
+								output(line)						
+							else:
+								output(divider)
+								output("\tIgnoring " + fileonly + ": could not interpret file/folder name (file or folder must have valid date and quality)")
+								output(line)
 
-				elif os.path.isdir(fullpath):
-					directories.append(fullpath)
-		except Exception:
-			pass
+					elif os.path.isdir(fullpath):
+						directories.append(fullpath)
+			except Exception:
+				pass
 
 	print("FilmRenamer script completed successfully.") #not using output here as this doesn't need to be in log
 	sleep(10) #sleeps for 10 seconds to review console output
