@@ -21,7 +21,7 @@ if (os.name == "nt"):
 else:
 	slash = "/"
 
-divider = "---------------------------------------------------"
+divider = "\t------------------------------------------------------------------------------------------------------"
 hash = "******************************************************"
 line = " "
 
@@ -29,6 +29,7 @@ sourcePaths = [re.sub("(\\\\|/)$", "", path) for path in sourcePaths]
 destPath = re.sub("(\\\\|/)$", "", destPath)
 timestamp = time.ctime()
 movieList = ''
+count = 0
 
 #folder = "FernGully The Last Rainforest 1992 1080p BluRay x264 HD4U"
 #file = "ferngully.the.last.rainforest.1992.1080-hd4u.mkv"
@@ -183,17 +184,16 @@ output(hash)
 output(inspect.getfile(inspect.currentframe()) + " initialized on " + timestamp)
 output(hash)
 
+if not os.path.exists(destPath):
+	output("\nError: 'destPath' does not exist; check folder path in FilmRenamerConfig.py\n")	
+else:
+	output("Selected destination folder " + destPath + "\n")
+
 for sourcePath in sourcePaths:
-
-	print(sourcePath)
-
 	if not os.path.exists(sourcePath):
 		output("\nError: 'sourcePath' does not exist; check folder path in FilmRenamerConfig.py\n")
-	elif not os.path.exists(destPath):
-		output("\nError: 'destPath' does not exist; check folder path in FilmRenamerConfig.py\n")	
 	else:
 		output("Scanning subfolders and files in " + sourcePath)
-		output("Selected destination folder " + destPath)
 		print("Please wait...")
 		output('')
 
@@ -209,7 +209,7 @@ for sourcePath in sourcePaths:
 
 					if os.path.isfile(fullpath):   # That's a file. Do something with it.
 						if (getExt(fullpath) == ".mkv"):
-							output("Checking " + fullpath)
+							output("\tChecking " + fullpath)
 						parentfolderpath = os.path.abspath(os.path.join(fullpath, os.path.pardir))
 						parentfolder = re.sub(".*(\/|\\\\)", "", parentfolderpath)
 						
@@ -255,6 +255,7 @@ for sourcePath in sourcePaths:
 											if os.path.exists(newpath):
 
 												output("\tFile moved successfully")
+												count += 1
 												#refreshPlex() #ignoring plex for now since it's not installed
 												if enablePushover:
 												# notifyProwl(newfilename + " (" + size + ")", prowlKey)
@@ -277,5 +278,5 @@ for sourcePath in sourcePaths:
 			except Exception:
 				pass
 
-	print("FilmRenamer script completed successfully.") #not using output here as this doesn't need to be in log
-	sleep(10) #sleeps for 10 seconds to review console output
+print("Successfully moved and renamed " + str(count) + " files.") #not using output here as this doesn't need to be in log
+sleep(10) #sleeps for 10 seconds to review console output
