@@ -1,12 +1,6 @@
 
 *.log
-
 *.pyc
-
-*.log
-
-*.pyc
-
-FilmRenamerConfig.pyc
-
-FilmRenamer.log
+tests/*.mkv
+tests/*.avi
+tests/*.srt
