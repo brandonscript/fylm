@@ -114,7 +114,12 @@ class Film:
     @property
     # Is this an allowed file extension? Will always return False if isDir==True
     def isAllowedExtension(self):
-        return any([self.ext for ext in config.videoFileExts + config.extraExts]) if self.isFile else False
+        return any([self.ext in config.videoFileExts + config.extraExts]) if self.isFile else False
+
+    @property
+    # Is this a film file? Will always return False if isDir==True
+    def isFilm(self):
+        return any([self.ext in config.videoFileExts]) if self.isFile else False
 
     @property
     # Check if this is a TV show; used primarily for skipping

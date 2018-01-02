@@ -17,13 +17,11 @@ limit = 0
 # sourceDirs: An array of folders to search for films to rename.
 # For Windows paths, make sure you escape the path with a \, for example: r"D:\\Downloads"
 # For *nix, use standard path, for example: r"/path/to/folder"
-# sourceDirs = [r"/volume1/Films/_Rename"]
 sourceDirs = [r"/Volumes/Films/_Rename"]
 
 #
-# destFolder: Destination folder, e.g. r"/Volumes/Films/_New"
-# destDir = r"/volume1/Films/_Rename"
-destDir = r"/Volumes/Films/_TEST"
+# destDir: Destination folder, e.g. r"/Volumes/Films/_New"
+destDir = r"/Volumes/Films/HD"
 
 #
 # renamePattern: Permitted rename pattern objects: {title}, {title-the}, {year}, {quality}, {edition}, {media}
@@ -74,7 +72,7 @@ specialEditionStrings = [
 
 #
 # stripStrings: Strip all instances of these strings from files (case insensitive)
-stripStrings = ['flame-', 'blow-', 'geckos-', 'rep-', 'pfa-']
+stripStrings = ['flame-', 'blow-', 'geckos-', 'rep-', 'pfa-', 'snow-']
 
 #
 # restrictedChars: Strip all instances of these strings from files (case insensitive)

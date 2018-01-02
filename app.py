@@ -6,7 +6,6 @@ import config, utils
 from film import Film
 from pyfancy import *
 
-from filesize import filesize
 import re, sys, os, shutil, urllib, time, datetime, subprocess, glob, errno
 from itertools import islice
 
@@ -51,7 +50,7 @@ for searchDir in config.sourceDirs:
     sortedFileList = [Film(os.path.join(searchDir, file)) for file in sorted(os.listdir(searchDir), key=lambda s: s.lower())]
 
     # Clean known filesystem extras
-    sortedFileList = [f for f in sortedFileList if f.originalFilename != '.DS_Store' and f.originalFilename != 'Thumbs.db']
+    sortedFileList = [f for f in sortedFileList if f.originalFilename != '.DS_Store' and f.originalFilename != 'Thumbs']
     
     for film in islice(sortedFileList, config.limit if config.limit > 0 else None):
 
@@ -77,12 +76,12 @@ for searchDir in config.sourceDirs:
             utils.printSkip(film, '(skip - probably not a film)')
             continue
 
-        if film.size < config.minSizeInMiB * 1024 * 1024:
+        if film.size < config.minSizeInMiB * 1024 * 1024 and film.isFilm:
             utils.printSkip(film, '(skip - {} is too small)'.format(utils.prettySize(film.size)))
             continue
 
         # Search TMDb for film (if enabled)
-        utils.lookup(film)
+        film.searchTMDb()
 
         if film.year is None or (config.TMDb['enabled'] and film.id is None):
             # Lookup failed, or is disabled and has no year

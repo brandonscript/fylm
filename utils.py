@@ -9,8 +9,6 @@ from pyfancy import *
 if config.TMDb['enabled']:
     tmdb.API_KEY = config.TMDb['key']
 
-history = {}
-
 def safeMove(src, dst):
     # Only perform destructive changes if not running in test mode
     if not config.testMode:
@@ -24,10 +22,6 @@ def rename(src, newFilename):
     # Only perform destructive changes if not running in test mode
     if not config.testMode:
         shutil.move(src, os.path.join(os.path.dirname(src), newFilename))
-
-def lookup(film):
-    film.searchTMDb()
-    history[film.originalFilename] = film
 
 def hasIgnoredStrings(name):
     return any(word.lower() in name.lower() for word in config.ignoreStrings)
@@ -48,7 +42,6 @@ def cleanTitle(film):
 
     # Set 'always lowercase' chars to lower, 'always uppercase' to upper, and a fix for ', The'
     cleanedTitle = titleCase(cleanedTitle, config.alwaysLowercase, config.alwaysUppercase).strip()
-
     return cleanedTitle
 
 def cleanOriginalPath(film):
@@ -64,8 +57,9 @@ def searchTMDb(title, year=None):
     logging.disable(sys.maxint)
     if title is None: return
     search = tmdb.Search()
-    response = search.movie(query=title, primary_release_year=year, include_adult=True)
+    search.movie(query=title, primary_release_year=year, include_adult=True)
     logging.disable(logging.NOTSET)
+
     if len(search.results) > 0:
         bestMatch = search.results[0]
         return {
@@ -145,10 +139,11 @@ def printSkip(film, str):
     pyfancy().red(' ... {}'.format(film.originalFilename)).dark_gray(' {}'.format(str)).output()
     logDetails(str)
 
-def printFilmDetails(film):
+def printFilmDetails(film): 
     pyfancy().white(" ... {}{} ({})".format(film.originalFilename, film.ext or '', prettySize(film.size))).output()
     if config.TMDb['enabled']:
         if film.id is not None:
+            film.title = film.title.encode('utf-8').strip()
             pyfancy().white('\t→ ').green('✓ {} ({})'.format(film.title, film.year)).dark_gray().add(" [{}]".format(film.id)).output()
             logDetails('✓ {} ({}) [{}]'.format(film.title, film.year, film.id))
         else:
