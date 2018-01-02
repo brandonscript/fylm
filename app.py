@@ -81,6 +81,7 @@ for searchDir in config.sourceDirs:
             continue
 
         # Search TMDb for film (if enabled)
+        utils.debug(' ')
         film.searchTMDb()
 
         if film.year is None or (config.TMDb['enabled'] and film.id is None):
@@ -94,6 +95,8 @@ for searchDir in config.sourceDirs:
         # Determine the full directory the file will be moved to
 
         destDir = os.path.join(destDirRoot, film.newFilename if config.useFolders else None)
+
+        # TODO: Add console prompts to accept and cancel, and an ability to retry searching
 
         # Create destination folder(s) if they don't exist
         if not config.testMode:

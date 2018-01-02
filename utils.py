@@ -33,15 +33,21 @@ def cleanTitle(film):
     if re.search(r', the', cleanedTitle, re.I):
         cleanedTitle = '{}{}'.format('The ', re.sub(r', the', '', cleanedTitle, flags=re.I))
 
-    # Strip proper title by splitting on year (most common practice)
-    cleanedTitle = re.sub(patterns.cleanTitle, ' ', cleanedTitle.split(str(film.year))[0])
+    # Use regex to strip unwanted chars
+    cleanedTitle = re.sub(patterns.cleanTitle, ' ', cleanedTitle)
 
+    # Strip proper title by splitting on year (most common practice)
+    cleanedTitle = cleanedTitle.split(str(film.year))[0]
+    
     # Strip unwanted strings from title
     for word in config.stripStrings + ['480p', '720p', '1080p', '2160p']: 
         cleanedTitle = replaceInsensitive(word, '', cleanedTitle)
 
     # Set 'always lowercase' chars to lower, 'always uppercase' to upper, and a fix for ', The'
     cleanedTitle = titleCase(cleanedTitle, config.alwaysLowercase, config.alwaysUppercase).strip()
+
+    # Remove extra whitespace
+    cleanedTitle = stripExtraWhitespace(cleanedTitle)
     return cleanedTitle
 
 def cleanOriginalPath(film):
@@ -53,12 +59,16 @@ def cleanOriginalPath(film):
             if e.args[0] == 16:
                 error('- Tried to remove {} but file is in use'.format(film.originalPath))
 
+def stripExtraWhitespace(str):
+    return ' '.join(str.split()).strip()
+
 def searchTMDb(title, year=None):
 
     # Disable logging
     logging.disable(sys.maxint)
 
     if title is None: return
+    debug("Searching {} {}".format(title, year))
 
     # Search
     search = tmdb.Search()
@@ -69,43 +79,58 @@ def searchTMDb(title, year=None):
 
     # If no results, we have a few things to try
     # ... stripping 'the' or 'a' from the beginning (or ', the' from the end) of the title
-    theFix = re.compile(r'(^(the|a)\b|, the)', re.I)
-    if len(search.results) == 0 and theFix.match(title):
-        return searchTMDb(re.sub(theFix, '', title), year)
+    stripArticles = re.compile(r'(^(the|a)\s|, the$)', re.I)
+    if len(search.results) == 0 and stripArticles.match(title):
+        debug('Strip the, a, ,the')
+        return searchTMDb(re.sub(stripArticles, '', title), year)
 
     # ... omitting 'year'
     elif len(search.results) == 0 and year is not None:
+        debug('Omitting year and trying again')
         return searchTMDb(title, None)
 
     # ... recursively removing the last word of the title
     elif len(search.results) == 0 and len(title.split()) > 1:
+        debug('Stripping the last word and trying again')
         return searchTMDb(title.rsplit(' ', 1)[0], year)
 
     # Yeah! There are some results. Let's check them to see if they're a match
     elif len(search.results) > 0:
-        bestMatch = search.results[0]
-        
-        # Verify that the result is likely to be a match
-        if checkTitleMatch(title, bestMatch['title'], bestMatch['popularity']):
-            return {
-                "title": replaceCharsInsensitive(config.restrictedChars, '', bestMatch['title']),
-                "year": int(bestMatch['release_date'][:4]),
-                "id": bestMatch['id']
-            }
-    
+        debug('Results found')
 
-def checkTitleMatch(origTitle, proposedTitle, popularity):
+        # Loop through results until we find one that is a match
+        for result in search.results:
+            proposedTitle = replaceCharsInsensitive(config.restrictedChars, '', result['title'])
+            proposedYear = int(result['release_date'][:4]) if result['release_date'] else None
+            popularity = result['popularity']
+            id = result['id']
+            
+            # Verify that the result is likely to be a match
+            if checkTMDbMatch(title, year, proposedTitle, proposedYear, popularity):
+                return {
+                    "title": proposedTitle,
+                    "year": proposedYear,
+                    "id": id
+                }
+            else:
+                debug('{} failed validation, next result'.format(proposedTitle))
+
+def checkTMDbMatch(title, year, proposedTitle, proposedYear, popularity):
     # Checks the title found from searching TMDb to see if it's a close enough match and a popular title
     
-    # Replace commonly misrepresented ampersand
-    origTitle = origTitle.replace('&', 'and')
-    proposedTitle = proposedTitle.replace('&', 'and')
+    # Strip non-letters, numbers, the, a, and, and & so we can compare the meat of the titles
+    stripComparisonChars = re.compile(r'[\W\d]|\b(the|a|and|&)\b', re.I)
 
-    origTitle = re.sub(r'[\W]', '', origTitle).lower()
-    proposedTitle = re.sub(r'[\W]', '', proposedTitle).lower()
+    origTitle = re.sub(stripComparisonChars, '', title).lower()
+    proposedTitle = re.sub(stripComparisonChars, '', proposedTitle).lower()
 
-    return origTitle == proposedTitle and popularity > 2
+    debug("Comparing match: {}=={} (popularity: {})".format(origTitle, proposedTitle, popularity))
 
+    titlesMatch = origTitle == proposedTitle # Do the titles match when comparing just word chars?
+    yearsMatch = year == proposedYear   # Do the dates match?
+
+    # If we get the titles and dates matching, or if we find a popular title, it's a match
+    return titlesMatch and yearsMatch or titlesMatch and popularity > 2
 
 def replaceInsensitive(find, repl, str):
     return re.compile(re.escape(find), re.I).sub(repl, str)
@@ -201,3 +226,6 @@ def error(text):
     text = '{} - Error: {}'.format(now(), text)
     logging.error(text)
     raise Exception(text)
+
+def debug(text):
+    if config.debugMode: print(text)

@@ -5,6 +5,10 @@
 testMode = False
 
 #
+# debugMode: Writes search and result details (and retry attempts) out to the console
+debugMode = True
+
+#
 # safeCopy: Copies files to the destination, verifies, and deletes originals
 # This is the default behavior when source and destination are on different partitions (or network)
 safeCopy = False 

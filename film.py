@@ -173,8 +173,8 @@ class Film:
         templateString = templateString.replace('\{', '{')
         templateString = templateString.replace('\}', '}')
 
-        # Strip superfluous whitespace
-        return ' '.join(templateString.split()).strip()
+        # Strip extra whitespace
+        return utils.stripExtraWhitespace(templateString)
 
     @property
     def newFilenameWithExt(self):
