@@ -26,11 +26,13 @@ parser.add_argument('--silent', action="store_true", default=False) # Do not sen
 parser.add_argument('--test', action="store_true", default=False) # Run in non-destructive test mode only; do not rename or move files
 parser.add_argument('--debug', action="store_true", default=False) # Run in debug mode with extra console output
 parser.add_argument('--no-strict', action="store_true", default=False) # Disable strict mode
+parser.add_argument('--source', action="store", default=None, dest="source", type=str) # Temporarily overwrite the configured source dir
 parser.add_argument('--limit', action="store", default=0, dest="limit", type=int) # Limit the number of files to rename and move
 args = parser.parse_args()
 if args.test: config.testMode=args.test
 if args.debug: config.debugMode=args.debug
 if args.no_strict: config.strictMode=False
+if args.source: config.sourceDirs = [args.source]
 if args.limit: config.limit=args.limit
 
 utils.log('\n{}{}{}'.format(('-'*50), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ('-'*50)))
