@@ -67,32 +67,43 @@ def searchTMDb(title, year=None):
     # Re-enable logging
     logging.disable(logging.NOTSET)
 
-    if len(search.results) > 0:
-        bestMatch = search.results[0]
+    # If no results, we have a few things to try
+    # ... stripping 'the' or 'a' from the beginning (or ', the' from the end) of the title
+    theFix = re.compile(r'(^(the|a)\b|, the)', re.I)
+    if len(search.results) == 0 and theFix.match(title):
+        return searchTMDb(re.sub(theFix, '', title), year)
 
-        # Verify that the result is likely to be a match
+    # ... omitting 'year'
+    elif len(search.results) == 0 and year is not None:
+        return searchTMDb(title, None)
+
+    # ... recursively removing the last word of the title
+    elif len(search.results) == 0 and len(title.split()) > 1:
+        return searchTMDb(title.rsplit(' ', 1)[0], year)
+
+    # Yeah! There are some results. Let's check them to see if they're a match
+    elif len(search.results) > 0:
+        bestMatch = search.results[0]
         
+        # Verify that the result is likely to be a match
         if checkTitleMatch(title, bestMatch['title'], bestMatch['popularity']):
             return {
                 "title": replaceCharsInsensitive(config.restrictedChars, '', bestMatch['title']),
                 "year": int(bestMatch['release_date'][:4]),
                 "id": bestMatch['id']
             }
-        else:
-            # Try again if we had previously tried using a year
-            return None if year is None else searchTMDb(title, None)  
-        
-    elif len(title.split()) > 1: # Retry, because there is more than one word left
-        retry = searchTMDb(title.rsplit(' ', 1)[0], year) # Strip the last word and try again
-        if retry is not None:
-            return retry
-    else: 
-        return None
+    
 
 def checkTitleMatch(origTitle, proposedTitle, popularity):
     # Checks the title found from searching TMDb to see if it's a close enough match and a popular title
+    
+    # Replace commonly misrepresented ampersand
+    origTitle = origTitle.replace('&', 'and')
+    proposedTitle = proposedTitle.replace('&', 'and')
+
     origTitle = re.sub(r'[\W]', '', origTitle).lower()
     proposedTitle = re.sub(r'[\W]', '', proposedTitle).lower()
+
     return origTitle == proposedTitle and popularity > 2
 
 
