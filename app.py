@@ -23,10 +23,14 @@ timestamp = time.ctime()
 # Arg parser construction
 parser = argparse.ArgumentParser(description = 'A film renaming script')
 parser.add_argument('--silent', action="store_true", default=False) # Do not send notifications or update services
-parser.add_argument('--testMode', action="store_true", default=False) # Run in non-destructive test mode only; do not rename or move files
+parser.add_argument('--test', action="store_true", default=False) # Run in non-destructive test mode only; do not rename or move files
+parser.add_argument('--debug', action="store_true", default=False) # Run in debug mode with extra console output
+parser.add_argument('--no-strict', action="store_true", default=False) # Disable strict mode
 parser.add_argument('--limit', action="store", default=0, dest="limit", type=int) # Limit the number of files to rename and move
 args = parser.parse_args()
-if args.testMode: config.testMode=args.testMode
+if args.test: config.testMode=args.test
+if args.debug: config.debugMode=args.debug
+if args.no_strict: config.strictMode=False
 if args.limit: config.limit=args.limit
 
 utils.log('\n{}{}{}'.format(('-'*50), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ('-'*50)))
@@ -57,27 +61,27 @@ for searchDir in config.sourceDirs:
         utils.logFilm(film)
 
         if film.hasIgnoredStrings:
-            utils.printSkip(film, '(skip - ignored string)')
+            utils.printSkip(film, '(ignored string)')
             continue      
 
         if film.isFile and not film.isAllowedExtension:
-            utils.printSkip(film, '(skip - not a film)')
+            utils.printSkip(film, '(not a film)')
             continue      
 
         if film.isTVShow:
-            utils.printSkip(film, '(skip - TV show)')
+            utils.printSkip(film, '(TV show)')
             continue     
 
         if film.title is None:
-            utils.printSkip(film, '(skip - unknown title)')
+            utils.printSkip(film, '(unknown title)')
             continue      
 
         if film.isDir and film.year is None:
-            utils.printSkip(film, '(skip - probably not a film)')
+            utils.printSkip(film, '(probably not a film)')
             continue
 
         if film.size < config.minSizeInMiB * 1024 * 1024 and film.isFilm:
-            utils.printSkip(film, '(skip - {} is too small)'.format(utils.prettySize(film.size)))
+            utils.printSkip(film, '({} is too small)'.format(utils.prettySize(film.size)))
             continue
 
         # Search TMDb for film (if enabled)
@@ -86,7 +90,7 @@ for searchDir in config.sourceDirs:
 
         if film.year is None or (config.TMDb['enabled'] and film.id is None):
             # Lookup failed, or is disabled and has no year
-            utils.printSkip(film, '(skip - unable to identify)')
+            utils.printSkip(film, '(unable to identify)')
             continue
         else:
             # Lookup succeeded

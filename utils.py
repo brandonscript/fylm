@@ -96,11 +96,11 @@ def searchTMDb(title, year=None):
 
     # Yeah! There are some results. Let's check them to see if they're a match
     elif len(search.results) > 0:
-        debug('Results found')
+        debug('{} results found'.format(len(search.results)))
 
         # Loop through results until we find one that is a match
         for result in search.results:
-            proposedTitle = replaceCharsInsensitive(config.restrictedChars, '', result['title'])
+            proposedTitle = replaceCharsInsensitive(config.restrictedChars, '', result['title'].encode('utf-8').strip())
             proposedYear = int(result['release_date'][:4]) if result['release_date'] else None
             popularity = result['popularity']
             id = result['id']
@@ -117,20 +117,28 @@ def searchTMDb(title, year=None):
 
 def checkTMDbMatch(title, year, proposedTitle, proposedYear, popularity):
     # Checks the title found from searching TMDb to see if it's a close enough match and a popular title
-    
-    # Strip non-letters, numbers, the, a, and, and & so we can compare the meat of the titles
-    stripComparisonChars = re.compile(r'[\W\d]|\b(the|a|and|&)\b', re.I)
 
-    origTitle = re.sub(stripComparisonChars, '', title).lower()
-    proposedTitle = re.sub(stripComparisonChars, '', proposedTitle).lower()
+    # If strictMode is disabled, we skip most of this
 
-    debug("Comparing match: {}=={} (popularity: {})".format(origTitle, proposedTitle, popularity))
+    if config.strictMode:
+        # Strip non-letters, numbers, the, a, and, and & so we can compare the meat of the titles
+        stripComparisonChars = re.compile(r'[\W\d]|\b(the|a|and|&)\b', re.I)
 
-    titlesMatch = origTitle == proposedTitle # Do the titles match when comparing just word chars?
-    yearsMatch = year == proposedYear   # Do the dates match?
+        origTitle = re.sub(stripComparisonChars, '', title).lower()
+        proposedTitle = re.sub(stripComparisonChars, '', proposedTitle).lower()
 
-    # If we get the titles and dates matching, or if we find a popular title, it's a match
-    return titlesMatch and yearsMatch or titlesMatch and popularity > 2
+        debug("Comparing match: {}=={}, {}=={}, (popularity: {})".format(origTitle, proposedTitle, year, proposedYear, popularity))
+
+        titlesMatch = origTitle == proposedTitle # Do the titles match when comparing just word chars?
+        yearsMatch = year == proposedYear # Do the dates match?
+
+        # If we get the titles and dates matching, or if we find a popular title, it's a match
+        return titlesMatch and yearsMatch or titlesMatch and popularity > 2
+    else:
+        
+        debug("Comparing match: {}, {}=={}, (popularity: {})".format(proposedTitle, year, proposedYear, popularity))
+
+        return year == proposedYear and popularity > 2
 
 def replaceInsensitive(find, repl, str):
     return re.compile(re.escape(find), re.I).sub(repl, str)
@@ -201,7 +209,6 @@ def printFilmDetails(film):
     pyfancy().white(" ... {}{} ({})".format(film.originalFilename, film.ext or '', prettySize(film.size))).output()
     if config.TMDb['enabled']:
         if film.id is not None:
-            film.title = film.title.encode('utf-8').strip()
             pyfancy().white('\t→ ').green('✓ {} ({})'.format(film.title, film.year)).dark_gray().add(" [{}]".format(film.id)).output()
             logDetails('✓ {} ({}) [{}]'.format(film.title, film.year, film.id))
         else:
