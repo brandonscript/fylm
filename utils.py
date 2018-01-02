@@ -54,25 +54,47 @@ def cleanOriginalPath(film):
                 error('- Tried to remove {} but file is in use'.format(film.originalPath))
 
 def searchTMDb(title, year=None):
+
+    # Disable logging
     logging.disable(sys.maxint)
+
     if title is None: return
+
+    # Search
     search = tmdb.Search()
     search.movie(query=title, primary_release_year=year, include_adult=True)
+
+    # Re-enable logging
     logging.disable(logging.NOTSET)
 
     if len(search.results) > 0:
         bestMatch = search.results[0]
-        return {
-            "title": replaceCharsInsensitive(config.restrictedChars, '', bestMatch['title']),
-            "year": int(bestMatch['release_date'][:4]),
-            "id": bestMatch['id']
-        }
-    elif len(title.split()) > 1: # Retry, because there are more than one word
+
+        # Verify that the result is likely to be a match
+        
+        if checkTitleMatch(title, bestMatch['title'], bestMatch['popularity']):
+            return {
+                "title": replaceCharsInsensitive(config.restrictedChars, '', bestMatch['title']),
+                "year": int(bestMatch['release_date'][:4]),
+                "id": bestMatch['id']
+            }
+        else:
+            # Try again if we had previously tried using a year
+            return None if year is None else searchTMDb(title, None)  
+        
+    elif len(title.split()) > 1: # Retry, because there is more than one word left
         retry = searchTMDb(title.rsplit(' ', 1)[0], year) # Strip the last word and try again
         if retry is not None:
             return retry
     else: 
         return None
+
+def checkTitleMatch(origTitle, proposedTitle, popularity):
+    # Checks the title found from searching TMDb to see if it's a close enough match and a popular title
+    origTitle = re.sub(r'[\W]', '', origTitle).lower()
+    proposedTitle = re.sub(r'[\W]', '', proposedTitle).lower()
+    return origTitle == proposedTitle and popularity > 2
+
 
 def replaceInsensitive(find, repl, str):
     return re.compile(re.escape(find), re.I).sub(repl, str)

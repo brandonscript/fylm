@@ -62,3 +62,8 @@ touch "Terminator.2.Judgement.Day.Directors.Cut.Remastered.1991.BluRay.1080p.x26
 touch "Terminator.2.Judgement.Day.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.mkv"
 touch "Terminator.2.Judgement.Day.Extended.Edition.1991.BluRay.1080p.x264-KILLERS.mkv"
 touch "Terminator.2.Judgement.Day.Unrated.1991.BluRay.1080p.x264-KILLERS.mkv"
+touch "Locke 1080p (2013).mkv"
+touch "Mud 1080p (2012).mkv"
+touch "Once 720p (2006).mkv"
+touch "Crash 1080p (2004).mkv"
+touch "Gran Torino (2009) 720p.mkv"
