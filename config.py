@@ -9,6 +9,12 @@ testMode = False
 debugMode = True
 
 #
+# strictMode: Uses intelligent string comparison to ensure titles are a good match
+# Good if your titles are accurate, may miss some matches if they are not
+# If you disable this, you may find some innaccurate matches
+strictMode = True 
+
+#
 # safeCopy: Copies files to the destination, verifies, and deletes originals
 # This is the default behavior when source and destination are on different partitions (or network)
 safeCopy = False 
