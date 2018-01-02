@@ -62,7 +62,7 @@ def searchTMDb(title, year=None):
 
     # Search
     search = tmdb.Search()
-    search.movie(query=title, primary_release_year=year, include_adult=True)
+    response = search.movie(query=title, primary_release_year=year, include_adult='true')
 
     # Re-enable logging
     logging.disable(logging.NOTSET)
