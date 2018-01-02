@@ -62,8 +62,14 @@ touch "Terminator.2.Judgement.Day.Directors.Cut.Remastered.1991.BluRay.1080p.x26
 touch "Terminator.2.Judgement.Day.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.mkv"
 touch "Terminator.2.Judgement.Day.Extended.Edition.1991.BluRay.1080p.x264-KILLERS.mkv"
 touch "Terminator.2.Judgement.Day.Unrated.1991.BluRay.1080p.x264-KILLERS.mkv"
+
+# These are files that are difficult to match
 touch "Locke 1080p (2013).mkv"
 touch "Mud 1080p (2012).mkv"
 touch "Once 720p (2006).mkv"
 touch "Crash 1080p (2004).mkv"
 touch "Gran Torino (2009) 720p.mkv"
+touch "Turks and Caicos 1080p (2014).mkv"
+touch "Manglehorn 1080p (2014).mkv"
+touch "Music Within, The (2007).avi"
+touch "Slumdog Millionaire 720p (2009).mkv"
