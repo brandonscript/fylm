@@ -17,7 +17,7 @@ strictMode = True
 #
 # minTitleSimilarity: Min % similarity (0.0 - 1.0) that a matched title should be to the original
 # The lower this value, the more likely you are to find incorredt matches
-minTitleSimilarity = 0.4
+minTitleSimilarity = 0.5
 
 #
 # maxYearDifference: Number of years apart to still consider a valid match
