@@ -94,7 +94,7 @@ def checkMatch(i, title, year, proposedTitle, proposedYear, popularity):
             # If we get the titles and dates matching (within 1 year), or if we find a popular title, it's a match
             o.debug("Found a suitable match in strict mode")
             return True
-        else:
+        elif not config.strictMode:
             o.debug("Found a suitable match")
             return True
     else: 
