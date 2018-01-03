@@ -24,6 +24,11 @@ minTitleSimilarity = 0.5
 maxYearDifference = 1 
 
 #
+# minPopularity: Min popularity ranking on TMDb to consider a valid match
+# Popular titles generally rank above 10
+minPopularity = 2
+
+#
 # safeCopy: Copies files to the destination, verifies, and deletes originals
 # This is the default behavior when source and destination are on different partitions (or network)
 safeCopy = False 
@@ -96,8 +101,8 @@ specialEditionStrings = [
 stripStrings = ['flame-', 'blow-', 'geckos-', 'rep-', 'pfa-', 'snow-']
 
 #
-# restrictedChars: Strip all instances of these strings from files (case insensitive)
-restrictedChars = [':']
+# restrictedChars: Strip all instances of these strings from files before writing to filesystem (case insensitive)
+restrictedChars = [':/\\']
 
 #
 # ignoreStrings: Ignore files with any of these strings (case insensitive)

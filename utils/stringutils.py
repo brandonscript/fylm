@@ -35,6 +35,9 @@ def sizeDiffString(src, dst):
     else:
         return 'identical size'
 
+def percent(num):
+    return "{0:.0f}%".format(num * 100)
+
 # String cleaning
 
 def cleanTitle(film):

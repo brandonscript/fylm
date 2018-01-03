@@ -23,7 +23,9 @@ class Film:
         # Internal ext property for storing back up of ext
         self._ext = None
 
+        # Match id and % similarity to original title
         self.id = None 
+        self.similarity = 0
 
     @property
     # Original file name of film without extension, attempt to derive from folder first, then file
@@ -144,7 +146,8 @@ class Film:
             if result is not None: 
                 self.setTitle(result['title'])
                 self.id = result['id']
-                self.year = result['year']            
+                self.year = result['year']     
+                self.similarity = result['similarity']       
 
     @property
     def newFilename(self):

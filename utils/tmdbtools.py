@@ -19,7 +19,7 @@ def search(title, year=None, recur=True, ignoreYear=False):
 
     # Search
     s = tmdb.Search()
-    response = s.movie(query=title, primary_release_year=(year if not ignoreYear else None), include_adult='true')
+    response = s.movie(query=title, primary_release_year=(year if ignoreYear is False else None), include_adult='true')
     results = s.results
 
     # Re-enable logging
@@ -27,10 +27,9 @@ def search(title, year=None, recur=True, ignoreYear=False):
 
     # If no results, we have a few things to try
     # ... stripping 'the' or 'a' from the beginning (or ', the' from the end) of the title
-    stripArticles = re.compile(r'(^(the|a)\s|, the$)', re.I)
-    if len(results) == 0 and stripArticles.match(title):
+    if len(results) == 0 and patterns.stripArticles.match(title):
         o.debug('0 results - strip the, a, ,the')
-        return search(re.sub(stripArticles, '', title), year, recur, ignoreYear)
+        return search(re.sub(patterns.stripArticles, '', title), year, recur, ignoreYear)
 
     # ... recursively remove the last word of the title
     elif len(results) == 0 and len(title.split()) > 1 and recur is True:
@@ -66,18 +65,19 @@ def search(title, year=None, recur=True, ignoreYear=False):
                 return {
                     "title": proposedTitle,
                     "year": proposedYear,
-                    "id": id
+                    "id": id,
+                    "similarity": stringutils.similar(title, proposedTitle)
                 }
             else:
-                o.debug('{} failed validation, next result'.format(proposedTitle))
                 # Try the entire search loop again wtihout year
-                if ignoreYear is not False: return search(title, year, recur, True)
+                if ignoreYear is False: return search(title, year, recur, True)
 
 def checkMatch(i, title, year, proposedTitle, proposedYear, popularity):
     # Checks the title found from searching TMDb to see if it's a close enough match and a popular title
 
     # Strip non-letters, numbers, the, a, and, and & so we can compare the meat of the titles
-    stripComparisonChars = re.compile(r'[\W\d]|\b(the|a|and|&)\b', re.I)
+
+    stripComparisonChars = re.compile(r'([\W\d]|^(the|a)\b|, the)', re.I)
 
     origTitle = re.sub(stripComparisonChars, '', title).lower()
     proposedTitle = re.sub(stripComparisonChars, '', proposedTitle).lower()
@@ -87,15 +87,18 @@ def checkMatch(i, title, year, proposedTitle, proposedYear, popularity):
 
     o.debug("Comparing match {}: {}=={}, {}=={} (year diff: {}, popularity: {}, title similarity: {})".format(i, origTitle, proposedTitle, year, proposedYear, yearSimilarity, popularity, titleSimilarity))
 
-    # If strictMode is disabled, we skip most of this
-    if config.strictMode and titleSimilarity > config.minTitleSimilarity and (yearSimilarity <= config.maxYearDifference or popularity > 2):
-        # If we get the titles and dates matching (within 1 year), or if we find a popular title, it's a match
-        o.debug("Found a suitable match in strict mode")
-        return True
-    elif not config.strictMode and yearSimilarity <= config.maxYearDifference and popularity > 2:
-        o.debug("Found a suitable match")
-        return True
+    # Possibly a valid match based on year diff and popularity
+    if yearSimilarity <= config.maxYearDifference and popularity > config.minPopularity:
+        # If strictMode is enabled we also need to check the title similarity
+        if config.strictMode and titleSimilarity > config.minTitleSimilarity:
+            # If we get the titles and dates matching (within 1 year), or if we find a popular title, it's a match
+            o.debug("Found a suitable match in strict mode")
+            return True
+        else:
+            o.debug("Found a suitable match")
+            return True
     else: 
+        o.debug('{} failed validation, next result'.format(proposedTitle))
         return False
 
 def yearsDeviation(year, proposedYear):

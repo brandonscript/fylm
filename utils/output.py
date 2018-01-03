@@ -25,6 +25,7 @@ def now():
 def logFilm(film):
     log("{} ({})".format(film.sourcePath, stringutils.prettySize(film.size)))
     if film.title is not None:
+        debug("----------------------------")
         debug("Init film object")
         debug("title\t{}".format(film.title))
         debug("year\t{}".format(film.year))
@@ -81,8 +82,9 @@ def filmDetails(film):
     pyfancy().bold("{}{}{} ({})".format(mainPrefix, film.originalFilename, film.ext or '', stringutils.prettySize(film.size))).output()
     if config.TMDb['enabled']:
         if film.id is not None:
-            pyfancy().white(indentPrefix).green('✓ {} ({})'.format(film.title, film.year)).dark_gray().add(" [{}]".format(film.id)).output()
-            logDetails('✓ {} ({}) [{}]'.format(film.title, film.year, film.id))
+            p = pyfancy().white(indentPrefix).green('✓ {} ({})'.format(film.title, film.year)).dark_gray()
+            p.add(" [{}] {} match".format(film.id, stringutils.percent(film.similarity))).output()
+            logDetails('✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.id, stringutils.percent(film.similarity)))
         else:
             pyfancy().white(indentPrefix).red('𝗑 {} ({})'.format(film.title, film.year)).output()
             logDetails('𝗑 Not found')
