@@ -2,9 +2,8 @@
 # -*- coding: utf-8 -*- 
 
 import os, re
-import config
-import patterns
-import utils
+import config, patterns
+from utils import *
 
 class Film:
 
@@ -44,7 +43,7 @@ class Film:
     # Size of file
     def size(self):
         if os.path.exists(self.sourcePath):
-            self._size = utils.size(self.sourcePath)
+            self._size = filesystem.size(self.sourcePath)
         return self._size
 
     @property
@@ -55,7 +54,7 @@ class Film:
         if self._title: 
             return self._title
         else:
-            self._title = utils.cleanTitle(self)
+            self._title = stringutils.cleanTitle(self)
             return self._title
 
     # Title setter
@@ -64,7 +63,7 @@ class Film:
 
     # Re-cleans the title from the original filename, overwriting any other previous replacements
     def recleanTitle(self):
-        self._title = utils.cleanTitle(self)
+        self._title = stringutils.cleanTitle(self)
 
     @property
     # For titles that begin with 'The', move it to the end: ', The'
@@ -128,8 +127,8 @@ class Film:
 
     @property
     # Check if any of the ignored strings are in this file; used primarly for skipping
-    def hasIgnoredStrings(self):
-        return utils.hasIgnoredStrings(self.originalFilename)
+    def hasIgnoredSubstrings(self):
+        return fs.hasIgnoredSubstrings(self.originalFilename)
 
     @property
     def isFile(self):
@@ -141,7 +140,7 @@ class Film:
 
     def searchTMDb(self):
         if config.TMDb['enabled']:
-            result = utils.searchTMDb(self.title, self.year)
+            result = tmdbtools.search(self.title, self.year)
             if result is not None: 
                 self.setTitle(result['title'])
                 self.id = result['id']
@@ -174,7 +173,7 @@ class Film:
         templateString = templateString.replace('\}', '}')
 
         # Strip extra whitespace
-        return utils.stripExtraWhitespace(templateString)
+        return stringutils.stripExtraWhitespace(templateString)
 
     @property
     def newFilenameWithExt(self):

@@ -15,6 +15,15 @@ debugMode = True
 strictMode = True 
 
 #
+# minTitleSimilarity: Min % similarity (0.0 - 1.0) that a matched title should be to the original
+# The lower this value, the more likely you are to find incorredt matches
+minTitleSimilarity = 0.4
+
+#
+# maxYearDifference: Number of years apart to still consider a valid match
+maxYearDifference = 1 
+
+#
 # safeCopy: Copies files to the destination, verifies, and deletes originals
 # This is the default behavior when source and destination are on different partitions (or network)
 safeCopy = False 
@@ -63,6 +72,7 @@ specialEditionStrings = [
     ["extended.edition", "Extended Edition"],
     ["directors.cut.remastered", "Director's Cut Remastered"],
     ["25th.anniversary.ed", "25th Anniversary Edition"],
+    ["25th.anniversary", "25th Anniversary"],
     ["dc.remastered", "Director's Cut Remastered"],
     ["se.remastered", "Special Edition Remastered"],
     ["unrated.directors.cut", "Unrated Director's Cut"],
@@ -75,6 +85,7 @@ specialEditionStrings = [
     ["special.edition", "Special Edition"],
     ["remastered", "Remastered"],
     ["extended", "Extended"],
+    ["uncut", "Uncut"],
     ["unrated", "Unrated"],
     ["limited", "Limited"],
     ["theatrical", "Theatrical"]
