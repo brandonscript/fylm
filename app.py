@@ -68,7 +68,7 @@ for searchDir in config.sourceDirs:
             continue
 
         if film.size < config.minSizeInMiB * 1024 * 1024 and film.isFilm:
-            o.skip(film, '({} is too small)'.format(o.prettySize(film.size)))
+            o.skip(film, '({} is too small)'.format(stringutils.prettySize(film.size)))
             continue
 
         # Search TMDb for film (if enabled)

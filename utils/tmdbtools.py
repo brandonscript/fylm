@@ -53,7 +53,7 @@ def search(title, year=None, recur=True, ignoreYear=False):
 
         # Loop through results until we find one that is a match, provided it has a release date
         for i, result in enumerate(results):
-            proposedTitle = stringutils.ireplaceChars(config.restrictedChars, '', result['title'].encode('utf-8').strip())
+            proposedTitle =result['title'].encode('utf-8')
             # Skip completely if result does not have a release date
             if result['release_date'] == '' or result['release_date'] is None:
                 continue
@@ -100,5 +100,5 @@ def checkMatch(i, title, year, proposedTitle, proposedYear, popularity):
 
 def yearsDeviation(year, proposedYear):
     # Calculate the difference in release years; if year is not specified, we can only go by proposed year
-    if proposedYear is None: return 0
+    if proposedYear is None or year is None: return 0
     return abs(year - proposedYear) 

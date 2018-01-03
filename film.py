@@ -172,6 +172,9 @@ class Film:
         templateString = templateString.replace('\{', '{')
         templateString = templateString.replace('\}', '}')
 
+        # Strip restricted chars
+        templateString = stringutils.ireplaceChars(config.restrictedChars, '', templateString.strip())
+
         # Strip extra whitespace
         return stringutils.stripExtraWhitespace(templateString)
 
