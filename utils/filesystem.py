@@ -15,8 +15,12 @@ def safeMove(src, dst):
     # Only perform destructive changes if not running in test mode
     if not config.testMode:
         # If safeCopy is enabled, files will always be copied even if they're on a different partition
-        if config.safeCopy: shutil.copy(src, dst)
-        else: shutil.move(src, dst)
+        try:
+            if config.safeCopy: shutil.copy(src, dst)
+            else: shutil.move(src, dst)
+            return True
+        except:
+            return False
 
     # TODO check that src and destination file size match approximately, and catch IOError
 

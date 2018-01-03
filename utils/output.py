@@ -7,6 +7,7 @@ from pyfancy import *
 
 def start():
     log('\n{}{}{}'.format(('-'*50), now, ('-'*50)))
+    log('Scanning {}'.format(', '.join(config.sourceDirs)))
     print("Scanning subfolders and files in " + ', '.join(config.sourceDirs))
     print("Please wait...\n")
 
@@ -14,6 +15,11 @@ def testMode():
     if config.testMode:
         log(' *** TEST MODE *** ')
         pyfancy().magenta('  *** TEST MODE ***\nNo changes will be made\n').output()
+
+def end(count):
+    s = "Successfully moved {} films".format(count)
+    print(s)
+    log(s)
 
 # Logging
 logging.basicConfig(format='%(message)s', filename=config.logPath + 'history.log',level=logging.DEBUG)
@@ -68,6 +74,10 @@ def interesting(str, highlight):
 
 def warn(str):
     pyfancy().red('{}{}'.format(indentPrefix, str)).output()
+    logDetails(str)
+
+def red(str):
+    pyfancy().red('{}'.format(str)).output()
     logDetails(str)
 
 def notice(str):

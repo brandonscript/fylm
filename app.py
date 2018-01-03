@@ -10,6 +10,8 @@ from itertools import islice
 
 import argparse, requests, plexapi
 
+count = 0
+
 # Arg parser construction
 parser = argparse.ArgumentParser(description = 'A film renaming script')
 parser.add_argument('--silent', action="store_true", default=False) # Do not send notifications or update services
@@ -35,7 +37,7 @@ for searchDir in config.sourceDirs:
     destDirRoot = config.destDir.rstrip(fs.SLASH) + fs.SLASH
 
     for d in (d for d in [searchDir, destDirRoot] if not os.path.exists(d)): 
-        o.logError("'{}' does not exist; check folder path in config.py".format(d))
+        o.error("'{}' does not exist; check folder path in config.py".format(d))
 
     # Enumerate files in search dir(s), alphabetically, case insensitive
     sortedFileList = [Film(os.path.join(searchDir, file)) for file in sorted(os.listdir(searchDir), key=lambda s: s.lower())]
@@ -112,7 +114,8 @@ for searchDir in config.sourceDirs:
                 o.info('Moving to {}'.format(dst))
 
                 # Move the file
-                fs.safeMove(src, dst)
+                if fs.safeMove(src, dst):
+                    count = count + 1
                 film.sourcePath = dst
                     
         # Or if it's a directory, clean it up
@@ -151,7 +154,8 @@ for searchDir in config.sourceDirs:
                     o.info('Moving to {}'.format(dst))
 
                     # Move the file
-                    fs.safeMove(src, dst)
+                    if fs.safeMove(src, dst):
+                        count = count + 1
 
             # Recursively delete unwanted files and update the count
             deletedFiles = fs.recursiveRemoveUnwantedFiles(film.sourcePath, deletedFiles)
@@ -174,3 +178,6 @@ for searchDir in config.sourceDirs:
                     fs.recursiveDeleteDir(film.originalPath)
                 else:
                     o.warn('Could not remove parent folder because it is not empty')
+
+plex.notify()
+o.end(count)

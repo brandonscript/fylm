@@ -141,11 +141,9 @@ TMDb = {
 # Plex config
 plex = {
     "enabled": True,
-    "key": "", # Copy the API key from any Plex URL
-    "server": "http://127.0.0.1",
-    "port": 32400,
-    "pathToBin": "/var/packages/Plex\ Media\ Server/target/Plex\ Media\ Scanner", # Path to Plex binary/exe 
-    "section": "1" # In Plex web, click a category, then copy the number after "/section" from the URL
+    "baseurl": "http://localhost:32400", # Plex url including : port
+    "token": "", # See https://support.plex.tv/hc/en-us/articles/204059436-Finding-an-authentication-token-X-Plex-Token
+    "sections": ["Films"] # List of Plex sections to update
 }
 
 #
