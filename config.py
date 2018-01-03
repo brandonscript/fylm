@@ -6,7 +6,7 @@ testMode = False
 
 #
 # debugMode: Writes search and result details (and retry attempts) out to the console
-debugMode = True
+debugMode = False
 
 #
 # strictMode: Uses intelligent string comparison to ensure titles are a good match
