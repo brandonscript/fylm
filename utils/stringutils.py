@@ -31,7 +31,7 @@ def sizeDiffString(src, dst):
     if sizeDiff < 0:
         return '{}{}'.format(prettySize(abs(sizeDiff)), ' smaller')
     elif sizeDiff > 0:
-        return '{}{}'.format(prettySize(abs(sizeDiff)), ' larger')
+        return '{}{}'.format(prettySize(abs(sizeDiff)), ' bigger')
     else:
         return 'identical size'
 

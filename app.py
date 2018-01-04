@@ -110,7 +110,7 @@ for searchDir in config.sourceDirs:
             
             # Abort the job if a duplicate is found
             if os.path.exists(dst):
-                o.warn('Aborting; duplicate file found ({})'.format(stringutils.sizeDiffString(src, dst)))
+                o.warn('Aborting; {} duplicate found ({})'.format(stringutils.prettySize(fs.size(dst)), stringutils.sizeDiffString(src, dst)))
                 continue
             else:
                 o.info('Moving to {}'.format(dst))
