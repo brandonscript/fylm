@@ -87,6 +87,7 @@ specialEditionStrings = [
     ["expanded.edition", "Expanded Edition"],
     ["unrated.remastered", "Unrated Remastered"],
     ["theatrical.remastered", "Theatrical Remastered"],
+    ["alternate.ending", "Alternate Ending"],
     ["special.edition", "Special Edition"],
     ["remastered", "Remastered"],
     ["extended", "Extended"],
