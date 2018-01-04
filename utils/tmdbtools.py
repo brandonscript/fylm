@@ -72,25 +72,25 @@ def search(title, year=None, recur=True, ignoreYear=False):
                 # Try the entire search loop again wtihout year
                 if ignoreYear is False: return search(title, year, recur, True)
 
-def checkMatch(i, title, year, proposedTitle, proposedYear, popularity):
+def checkMatch(i, origTitle, year, proposedTitle, proposedYear, popularity):
     # Checks the title found from searching TMDb to see if it's a close enough match and a popular title
 
     # Strip non-letters, numbers, the, a, and, and & so we can compare the meat of the titles
 
     stripComparisonChars = re.compile(r'([\W\d]|^(the|a)\b|, the)', re.I)
 
-    origTitle = re.sub(stripComparisonChars, '', title).lower()
+    origTitle = re.sub(stripComparisonChars, '', origTitle).lower()
     proposedTitle = re.sub(stripComparisonChars, '', proposedTitle).lower()
 
     yearSimilarity = yearsDeviation(year, proposedYear)
-    titleSimilarity = stringutils.similar(title, proposedTitle)
+    titleSimilarity = stringutils.similar(origTitle, proposedTitle) 
 
     o.debug("Comparing match {}: {}=={}, {}=={} (year diff: {}, popularity: {}, title similarity: {})".format(i, origTitle, proposedTitle, year, proposedYear, yearSimilarity, popularity, titleSimilarity))
 
     # Possibly a valid match based on year diff and popularity
-    if yearSimilarity <= config.maxYearDifference and popularity > config.minPopularity:
+    if yearSimilarity <= config.maxYearDifference and popularity >= config.minPopularity:
         # If strictMode is enabled we also need to check the title similarity
-        if config.strictMode and titleSimilarity > config.minTitleSimilarity:
+        if config.strictMode and titleSimilarity >= config.minTitleSimilarity:
             # If we get the titles and dates matching (within 1 year), or if we find a popular title, it's a match
             o.debug("Found a suitable match in strict mode")
             return True
