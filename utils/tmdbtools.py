@@ -77,7 +77,7 @@ def checkMatch(i, origTitle, year, proposedTitle, proposedYear, popularity):
 
     # Strip non-letters, numbers, the, a, and, and & so we can compare the meat of the titles
 
-    stripComparisonChars = re.compile(r'([\W\d]|^(the|a)\b|, the)', re.I)
+    stripComparisonChars = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
 
     origTitle = re.sub(stripComparisonChars, '', origTitle).lower()
     proposedTitle = re.sub(stripComparisonChars, '', proposedTitle).lower()
