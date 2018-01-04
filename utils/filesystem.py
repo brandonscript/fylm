@@ -100,13 +100,16 @@ def recursiveDeleteDir(dir, maxSize=50000):
 
 
 def size(path, mockBytes=None):
-    if os.path.exists(path):
-        bytes = mockBytes or os.path.getsize(path)
+    if mockBytes:
+        return mockBytes
+    elif os.path.exists(path):
         if os.path.isdir(path):
-            bytes = dirSize(path)
+            return dirSize(path)
+        else:
+            return os.path.getsize(path)
         return bytes
-    elif not mockBytes:
-        raise Exception('Could not determine file size at {}'.format(path))
+    else:
+        return None
 
 def dirSize(path):
     totalSize = 0

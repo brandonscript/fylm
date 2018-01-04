@@ -104,7 +104,9 @@ for searchDir in config.sourceDirs:
             o.interesting('⌥', film.newFilenameWithExt)
 
             dst = os.path.join(destDir, film.newFilenameWithExt)
-            src = os.path.join(searchDir, film.newFilenameWithExt)
+
+            # src won't be updated if we're running in test mode; use original path if required
+            src = os.path.join(searchDir, film.newFilenameWithExt) if not config.testMode else film.sourcePath
             
             # Abort the job if a duplicate is found
             if os.path.exists(dst):
