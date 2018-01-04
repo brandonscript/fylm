@@ -63,7 +63,7 @@ touch "Terminator.2.Judgement.Day.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.m
 touch "Terminator.2.Judgement.Day.Extended.Edition.1991.BluRay.1080p.x264-KILLERS.mkv"
 touch "Terminator.2.Judgement.Day.Unrated.1991.BluRay.1080p.x264-KILLERS.mkv"
 
-# These are files that are difficult to match
+# These are files that were particularly difficult to match and helps in fine tuning match algorithm
 touch "Locke 1080p (2013).mkv"
 touch "Mud 1080p (2012).mkv"
 touch "Once 720p (2006).mkv"
@@ -81,3 +81,9 @@ touch "Atlas Shrugged, Part II 1080p (2012).mkv"
 touch "Back to the Future {2} 1080p (1989).mkv"
 touch "Harry Potter {1} and the Philospher's Stone 1080p (2001).mkv"
 touch "Doctor Who (2015) 1080p.mkv"
+mkdir "Ouija.Summoning.2016.1080p.BluRay.x264-THUGLiNE"
+touch "Ring, The 1080p (2002).mkv"
+touch "Good, the Bad, & the Ugly, The 720p (1966).mkv"
+touch "Resident Evil {3.5} Degeneration 1080p (2008).mkv"
+touch "U-571 1080p (2000).mkv"
+touch "Road, The 1080p (2009).mkv"
