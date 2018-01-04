@@ -7,7 +7,7 @@ from plexapi.server import PlexServer
 from pyfancy import *
 
 def notify():
-    if config.plex["enabled"] is True:
+    if config.plex["enabled"] is True and config.silentMode is False:
         try:
             plex = PlexServer(baseurl=config.plex["baseurl"], token=config.plex["token"], timeout=10)
         except Exception as e:
@@ -17,5 +17,6 @@ def notify():
 
         p = pyfancy().white('\nUpdating plex...')
         for section in (plex.library.section(section) for section in config.plex["sections"]):
-            section.update()
+            if not config.testMode:
+                section.update()
         p.green(' Done ✓').output()

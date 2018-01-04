@@ -26,6 +26,7 @@ if args.debug: config.debugMode=args.debug
 if args.strict == 'no': config.strictMode=False
 if args.source: config.sourceDirs = [args.source]
 if args.limit: config.limit=args.limit
+config.silentMode = True if args.silent else False
 
 o.start()
 o.testMode()
