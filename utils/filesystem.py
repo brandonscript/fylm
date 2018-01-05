@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import os, shutil, glob
+import os, shutil, glob, unicodedata
 import config
+import stringutils
 import output as o
 
 SLASH = "\\" if (os.name == "nt") else "/"
@@ -128,6 +129,30 @@ def hasValidExt(filename):
 # Check if string has ignored strings
 def hasIgnoredSubstrings(filename):
     return any(word.lower() in filename.lower() for word in config.ignoreStrings)
+
+def findDuplicates(srcFilm, dst, ignoreEdition=False):
+
+    from film import Film
+
+    targetFilm = Film(dst)
+
+    # Enumerate files in destination dir
+    existingFiles = [unicodedata.normalize('NFC', file) for file in os.listdir(config.destDir)]
+   
+    o.debug('Searching for duplicates of {} {}'.format(srcFilm.title, srcFilm.year))
+    
+    # Convert files to films
+    existingFilms = [Film(os.path.join(config.destDir, file)) for file in existingFiles]
+
+    # Use lambda filter to find duplicates
+    duplicates = filter(lambda x: x.title == targetFilm.title and x.year == targetFilm.year and (ignoreEdition == True or x.edition == targetFilm.edition), existingFilms)
+
+    if len(duplicates) > 0:
+        o.warn('Aborting; {} duplicate{} found:'.format(len(duplicates), 's' if len(duplicates) > 1 else ''))
+        for d in duplicates:
+            o.warn("  '{}' is {} ({})".format(d.newFilename, stringutils.sizeDiffString(srcFilm.sourcePath, d.sourcePath), stringutils.prettySize(size(d.sourcePath))))
+
+    return duplicates
 
 # Check for valid file types inside this dir
 def validFiles(path):

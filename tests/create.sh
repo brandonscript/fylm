@@ -88,3 +88,4 @@ touch "Resident Evil {3.5} Degeneration 1080p (2008).mkv"
 touch "U-571 1080p (2000).mkv"
 touch "Road, The 1080p (2009).mkv"
 touch "Amélie 720p (2001).mkv"
+touch "After.Life (2010) 720p" # Will need to be renamed to 'AfterLife' else will never match

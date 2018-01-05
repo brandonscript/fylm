@@ -71,7 +71,7 @@ class Film:
     @property
     # For titles that begin with 'The', move it to the end: ', The'
     def titleThe(self):
-        if not self.isValidFilename: return None
+        if not self.isValidFilm: return None
         if re.search(r'(^the\b|, the)', self.title, re.I):
             return '{}{}'.format(re.sub(r'(^the\W+|, the)', '', self.title, flags=re.I), ', The')
         else: 
@@ -110,7 +110,7 @@ class Film:
 
     @property
     # Determine if in fact this is actually a film
-    def isValidFilename(self):
+    def isValidFilm(self):
         return all(check == True for check in [not self.isTVShow, self.year is not None])
 
     @property
@@ -120,7 +120,7 @@ class Film:
 
     @property
     # Is this a film file? Will always return False if isDir==True
-    def isFilm(self):
+    def isFilmFile(self):
         return any([self.ext in config.videoFileExts]) if self.isFile else False
 
     @property
