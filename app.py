@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
+from __future__ import unicode_literals
 
+import os, unicodedata
 import config
 from film import Film
 from utils import *
 
-import os
 from itertools import islice
 
 import argparse, requests, plexapi
@@ -31,6 +32,13 @@ config.silentMode = True if args.silent else False
 o.start()
 o.testMode()
 
+import tmdbsimple as tmdb
+
+if config.TMDb['enabled']:
+    tmdb.API_KEY = config.TMDb['key']
+
+# Search
+
 for searchDir in config.sourceDirs:
 
     # Clean trailing slashes
@@ -40,13 +48,13 @@ for searchDir in config.sourceDirs:
     for d in (d for d in [searchDir, destDirRoot] if not os.path.exists(d)): 
         o.error("'{}' does not exist; check folder path in config.py".format(d))
 
-    # Enumerate files in search dir(s), alphabetically, case insensitive
-    sortedFileList = [Film(os.path.join(searchDir, file)) for file in sorted(os.listdir(searchDir), key=lambda s: s.lower())]
+    # Sort and filter the search dir, convert to normalized (NFC) for MacOS
+    sortedDir = [unicodedata.normalize('NFC', file) for file in sorted(os.listdir(searchDir), key=lambda s: s.lower()) if file != '.DS_Store' and file != 'Thumbs.db']
 
-    # Clean known filesystem extras
-    sortedFileList = [f for f in sortedFileList if f.originalFilename != '.DS_Store' and f.originalFilename != 'Thumbs']
+    # Enumerate files in search dir(s), alphabetically, case insensitive
+    films = [Film(os.path.join(searchDir, file)) for file in sortedDir]
     
-    for film in islice(sortedFileList, config.limit if config.limit > 0 else None):
+    for film in islice(films, config.limit if config.limit > 0 else None):
 
         o.logFilm(film)
 
@@ -109,6 +117,8 @@ for searchDir in config.sourceDirs:
             # src won't be updated if we're running in test mode; use original path if required
             src = os.path.join(searchDir, film.newFilenameWithExt) if not config.testMode else film.sourcePath
             
+            # TODO Figure out how to determine handle multiple editions stored in the same folder
+
             # Abort the job if a duplicate is found
             if os.path.exists(dst):
                 o.warn('Aborting; {} duplicate found ({})'.format(stringutils.prettySize(fs.size(dst)), stringutils.sizeDiffString(src, dst)))

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
+from __future__ import unicode_literals
 
 import logging, re
 import tmdbsimple as tmdb
@@ -15,6 +16,7 @@ def search(title, year=None, recur=True, ignoreYear=False):
     o.disableLogging()
 
     if title is None: return
+
     o.debug("Searching {} {}".format(title, (year if not ignoreYear else None)))
 
     # Search
@@ -52,7 +54,7 @@ def search(title, year=None, recur=True, ignoreYear=False):
 
         # Loop through results until we find one that is a match, provided it has a release date
         for i, result in enumerate(results):
-            proposedTitle =result['title'].encode('utf-8')
+            proposedTitle =result['title']
             # Skip completely if result does not have a release date
             if result['release_date'] == '' or result['release_date'] is None:
                 continue

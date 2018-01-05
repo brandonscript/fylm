@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
+from __future__ import unicode_literals
 
 import os, shutil, glob
 import config
@@ -100,6 +101,7 @@ def recursiveDeleteDir(dir, maxSize=50000):
 
 
 def size(path, mockBytes=None):
+    """ Determine size of file or dir at path, or return mocked bytes """
     if mockBytes:
         return mockBytes
     elif os.path.exists(path):
