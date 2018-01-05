@@ -41,11 +41,12 @@ limit = 0
 # sourceDirs: An array of folders to search for films to rename.
 # For Windows paths, make sure you escape the path with a \, for example: r"D:\\Downloads"
 # For *nix, use standard path, for example: r"/path/to/folder"
-sourceDirs = [r"/Volumes/Films/_Rename"]
+# Use the 'u' prefix to ensure unicode chars are read properly
+sourceDirs = [u"/Volumes/Films/_Rename"]
 
 #
 # destDir: Destination folder, e.g. r"/Volumes/Films/_New"
-destDir = r"/Volumes/Films/HD"
+destDir = u'/Volumes/Films/HD'
 
 #
 # renamePattern: Permitted rename pattern objects: {title}, {title-the}, {year}, {quality}, {edition}, {media}
