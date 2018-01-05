@@ -53,7 +53,6 @@ destDir = u'/Volumes/Films/HD'
 # for using other characters with pattern objects, place them inside {} e.g. { - edition}
 # for escaping templating characters, use \{ \}, e.g. {|{edition\}}
 renamePattern = r"{title} {[edition]} {(year)} {media-}{quality}" 
-renamePattern = r"{title} {[edition]} {(year)} {quality}" 
 
 #
 # Array of words to always lowercase (if not at start of name) or always uppercase
