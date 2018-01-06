@@ -145,7 +145,6 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 
     for film in ifilter(lambda dstFilm: isDuplicate(srcFilm, dstFilm, ignoreEdition), existingFilms):
         duplicates.append(film)
-    # duplicates = [Film('/Volumes/Films/HD/2 Fast 2 Furious (2003) 1080p/2 Fast 2 Furious (2003) 1080p.mkv')]
 
     if len(duplicates) > 0:
         o.warn('Aborting; {} duplicate{} found:'.format(len(duplicates), 's' if len(duplicates) > 1 else ''))
@@ -157,7 +156,11 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 
 # Algorithm to determine if one film is a duplicate of another
 def isDuplicate(srcFilm, dstFilm, ignoreEdition):
-    # print('Checking {}'.format(dstFilm))
+    # Strip restricted chars
+    srcFilm.title = stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title)
+    dstFilm.title = stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title)
+
+    # Compare titles, years, and edition (default enabled)
     return srcFilm.title == dstFilm.title and srcFilm.year == dstFilm.year and (ignoreEdition == True or srcFilm.edition == dstFilm.edition)
 
 

@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import os, re
-import config, patterns
+import config
 from utils import *
 
 class Film:
