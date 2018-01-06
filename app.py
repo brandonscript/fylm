@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import os, unicodedata
+import os, unicodedata, itertools
 import config
 from film import Film
 from utils import *
@@ -37,6 +37,9 @@ def main():
 
     o.start()
     o.testMode()
+ 
+    # Enumerate destination directory for checking duplicates
+    existingFilms = [Film(os.path.join(config.destDir, file)) for file in [unicodedata.normalize('NFC', file) for file in os.listdir(config.destDir)]]
 
     # Search
 
@@ -107,18 +110,16 @@ def main():
 
                 # Rename the source file
                 fs.rename(film.sourcePath, film.newFilenameWithExt)
-                
                 o.interesting('⌥', film.newFilenameWithExt)
-
-                dst = os.path.join(destDir, film.newFilenameWithExt)
 
                 # src won't be updated if we're running in test mode; use original path if required
                 src = os.path.join(searchDir, film.newFilenameWithExt) if not config.testMode else film.sourcePath
-                
+                dst = os.path.join(destDir, film.newFilenameWithExt)
+
                 # TODO Figure out how to determine handle multiple editions stored in the same folder
 
                 # Check for duplicates and abort
-                if len(fs.findDuplicates(film, destDir)) > 0:
+                if len(fs.findDuplicates(film, destDir, existingFilms)) > 0:
                     continue
                 else:
                     
@@ -141,6 +142,10 @@ def main():
                     o.warn('No valid files found in this folder')
                     continue
 
+                # Check for duplicates and abort
+                if len(fs.findDuplicates(film, destDir, existingFilms)) > 0:
+                    continue    
+
                 # Create destination folder(s) if they don't exist
                 fs.recursiveCreateDir(destDir)
 
@@ -152,26 +157,17 @@ def main():
 
                     # Rename the file
                     fs.rename(file, newFilename)
+                    o.interesting('⌥', newFilename)
 
                     # Generate a new source path based on the new filename
                     src = os.path.join(os.path.dirname(file), newFilename)
                     dst = os.path.join(destDir, newFilename)
 
-                    o.interesting('⌥', newFilename)
+                    o.info('Moving to {}'.format(dst))
 
-                    # TODO Check for duplicate witout resolution
-
-                    # Abort the job if a duplicate is found
-                    fs.findDuplicates(dst)
-                    if fs.findDuplicate(dst):
-                        o.warn('Aborting; duplicate file found ({})'.format(stringutils.sizeDiffString(src, dst)))
-                        continue
-                    else:
-                        o.info('Moving to {}'.format(dst))
-
-                        # Move the file
-                        if fs.safeMove(src, dst):
-                            count = count + 1
+                    # Move the file
+                    if fs.safeMove(src, dst):
+                        count = count + 1
 
                 # Recursively delete unwanted files and update the count
                 deletedFiles = fs.recursiveRemoveUnwantedFiles(film.sourcePath, deletedFiles)

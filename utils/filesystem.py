@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import os, shutil, glob, unicodedata
+import os, shutil, glob
 import config
 import stringutils
 import output as o
+
+from itertools import ifilter
 
 SLASH = "\\" if (os.name == "nt") else "/"
 
@@ -130,29 +132,34 @@ def hasValidExt(filename):
 def hasIgnoredSubstrings(filename):
     return any(word.lower() in filename.lower() for word in config.ignoreStrings)
 
-def findDuplicates(srcFilm, dst, ignoreEdition=False):
+def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 
     from film import Film
 
-    targetFilm = Film(dst)
-
-    # Enumerate files in destination dir
-    existingFiles = [unicodedata.normalize('NFC', file) for file in os.listdir(config.destDir)]
+    dstFilm = Film(dst)
    
     o.debug('Searching for duplicates of {} {}'.format(srcFilm.title, srcFilm.year))
-    
-    # Convert files to films
-    existingFilms = [Film(os.path.join(config.destDir, file)) for file in existingFiles]
 
-    # Use lambda filter to find duplicates
-    duplicates = filter(lambda x: x.title == targetFilm.title and x.year == targetFilm.year and (ignoreEdition == True or x.edition == targetFilm.edition), existingFilms)
+    # Use fast ifilter to find duplicates
+    duplicates = []
+
+    for film in ifilter(lambda dstFilm: isDuplicate(srcFilm, dstFilm, ignoreEdition), existingFilms):
+        duplicates.append(film)
+    # duplicates = [Film('/Volumes/Films/HD/2 Fast 2 Furious (2003) 1080p/2 Fast 2 Furious (2003) 1080p.mkv')]
 
     if len(duplicates) > 0:
         o.warn('Aborting; {} duplicate{} found:'.format(len(duplicates), 's' if len(duplicates) > 1 else ''))
         for d in duplicates:
-            o.warn("  '{}' is {} ({})".format(d.newFilename, stringutils.sizeDiffString(srcFilm.sourcePath, d.sourcePath), stringutils.prettySize(size(d.sourcePath))))
+            o.warn("  '{}' is {} ({})".format(d.newFilenameWithExt, stringutils.sizeDiffString(srcFilm.sourcePath, d.sourcePath), stringutils.prettySize(size(d.sourcePath))))
 
+    o.debug('Found {} duplicates'.format(len(duplicates)))
     return duplicates
+
+# Algorithm to determine if one film is a duplicate of another
+def isDuplicate(srcFilm, dstFilm, ignoreEdition):
+    # print('Checking {}'.format(dstFilm))
+    return srcFilm.title == dstFilm.title and srcFilm.year == dstFilm.year and (ignoreEdition == True or srcFilm.edition == dstFilm.edition)
+
 
 # Check for valid file types inside this dir
 def validFiles(path):
