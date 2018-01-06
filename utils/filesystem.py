@@ -156,13 +156,12 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 
 # Algorithm to determine if one film is a duplicate of another
 def isDuplicate(srcFilm, dstFilm, ignoreEdition):
-    # Strip restricted chars
-    srcFilm.title = stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title)
-    dstFilm.title = stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title)
+    # Strip restricted chars and compare lowercase (because we're not doing TMDb lookups on the dstFilm)
+    srcTitle = stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title).lower()
+    dstTitle = stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title).lower()
 
     # Compare titles, years, and edition (default enabled)
-    return srcFilm.title == dstFilm.title and srcFilm.year == dstFilm.year and (ignoreEdition == True or srcFilm.edition == dstFilm.edition)
-
+    return srcTitle == dstTitle and srcFilm.year == dstFilm.year and (ignoreEdition == True or srcFilm.edition == dstFilm.edition)
 
 # Check for valid file types inside this dir
 def validFiles(path):
