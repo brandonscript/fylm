@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import os, shutil, glob
+import os, shutil, glob, re
 import config
 import stringutils
 import output as o
@@ -162,8 +162,11 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 def isDuplicate(srcFilm, dstFilm, ignoreEdition):
     if not srcFilm.title[0] == dstFilm.title[0]: return False
     # Strip restricted chars and compare lowercase (because we're not doing TMDb lookups on the dstFilm)
-    srcTitle = stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title).lower()
-    dstTitle = stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title).lower()
+    srcTitle = re.sub(r'[^\w\d\-\s&]', '', stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title).lower())
+    dstTitle = re.sub(r'[^\w\d\-\s&]', '', stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title).lower())
+
+    # Extreme duplicate debugging; will print a lot of lines
+    # print(srcTitle, srcFilm.year, srcFilm.edition, dstTitle, dstFilm.year, dstFilm.edition)
 
     # Strip edition from title if it wasn't removed
     if srcFilm.edition is not None:
