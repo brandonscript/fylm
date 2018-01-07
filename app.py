@@ -185,7 +185,8 @@ def main():
                 # check that source folder is now empty and < 1 KB
                 if config.cleanUpSource:
                     o.debug('Removing parent folder {}'.format(film.originalPath))
-                    if fs.size(film.originalPath) < 1000 and fs.countFilesInDir(film.originalPath) == 0:
+                    # Ensure the original folder is empty before we remove it, or assume we did (if in test mode)
+                    if (fs.size(film.originalPath) < 1000 and fs.countFilesInDir(film.originalPath) == 0) or config.testMode:
                         o.notice('Removing parent folder')
                         fs.recursiveDeleteDir(film.originalPath)
                     else:
