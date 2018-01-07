@@ -23,12 +23,14 @@ parser.add_argument('--debug', action="store_true", default=False) # Run in debu
 parser.add_argument('--strict', action="store", default=True, dest="strict") # Disable strict mode
 parser.add_argument('--source', action="store", default=None, dest="source", type=str) # Temporarily overwrite the configured source dir
 parser.add_argument('--limit', action="store", default=0, dest="limit", type=int) # Limit the number of files to rename and move
+parser.add_argument('--pop', action="store", default=None, dest="pop", type=int) # Limit the number of files to rename and move
 args = parser.parse_args()
 if args.test: config.testMode=args.test
 if args.debug: config.debugMode=args.debug
 if args.strict == 'no': config.strictMode=False
 if args.source: config.sourceDirs = [args.source]
 if args.limit: config.limit=args.limit
+if args.pop: config.minPopularity=args.pop
 config.silentMode = True if args.silent else False
 
 def main():
@@ -42,6 +44,8 @@ def main():
     existingFilms = [Film(os.path.join(config.destDir, file)) for file in [unicodedata.normalize('NFC', file) for file in os.listdir(config.destDir)]]
 
     # Search
+
+    # TODO add ability to skip certain files
 
     for searchDir in config.sourceDirs:
 

@@ -93,3 +93,8 @@ touch "Amélie 720p (2001).mkv"
 touch "After.Life (2010) 720p" # Will need to be renamed to 'AfterLife' else will never match
 touch "blow-mechanic.resurrection.2016.1080p.bluray.x264.mkv"
 touch "blow-the.comedian.2016.1080p.bluray.x264.mkv"
+touch "The.Witch.2015.1080p.BluRay.x264-DRONES.mkv"
+mkdir "Bridesmaids.1080p.Bluray.x264-TWiZTED"
+mkdir "IMAX.Journey.To.Space.2015.TrueHD.Atmos.AC3.1080p.BluRay.x264.HQ-TUSAHD"
+touch "Bicycling with Molière (2013).mkv"
+touch "A Place at the Table 720p (2012).mkv"
