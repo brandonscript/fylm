@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import config, patterns
 import re
 import filesystem as fs
+import output as o
 from difflib import SequenceMatcher
 
 def similar(a, b):
@@ -44,6 +45,12 @@ def percent(num):
 def cleanTitle(film):
     cleanedTitle = film.originalFilename
 
+    # Strip tag prefixes from filenames
+    for prefix in config.stripPrefixes:
+        if cleanedTitle.lower().startswith(prefix.lower()):
+            o.debug("Removed '{}' prefix".format(prefix))
+            cleanedTitle = cleanedTitle[len(prefix):]
+
     # Fix for titles that were previously changed to ', The'
     if re.search(r', the', cleanedTitle, re.I):
         cleanedTitle = '{}{}'.format('The ', re.sub(r', the', '', cleanedTitle, flags=re.I))
@@ -54,9 +61,9 @@ def cleanTitle(film):
     # Strip proper title by splitting on year (most common practice)
     cleanedTitle = cleanedTitle.split(str(film.year))[0]
     
-    # Strip unwanted strings from title
-    for word in config.stripStrings + ['480p', '720p', '1080p', '2160p']: 
-        cleanedTitle = ireplace(word, '', cleanedTitle)
+    # Strip quality strings from title
+    for q in ['480p', '720p', '1080p', '2160p']: 
+        cleanedTitle = ireplace(q, '', cleanedTitle)
 
     # Set 'always lowercase' chars to lower, 'always uppercase' to upper, and a fix for ', The'
     cleanedTitle = titleCase(cleanedTitle, config.alwaysLowercase, config.alwaysUppercase).strip()

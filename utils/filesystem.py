@@ -134,6 +134,10 @@ def hasIgnoredSubstrings(filename):
 
 def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 
+    if config.destDir in config.sourceDirs or not config.checkForDuplicates:
+        o.debug('Ignoring duplicates because destDir and sourceDir are the same')
+        return []
+
     from film import Film
 
     dstFilm = Film(dst)
@@ -159,6 +163,10 @@ def isDuplicate(srcFilm, dstFilm, ignoreEdition):
     # Strip restricted chars and compare lowercase (because we're not doing TMDb lookups on the dstFilm)
     srcTitle = stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title).lower()
     dstTitle = stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title).lower()
+
+    # Strip edition from title if it wasn't removed
+    if srcFilm.edition is not None:
+        dstTitle = stringutils.ireplace(srcFilm.edition, '', dstTitle).rstrip()
 
     # Compare titles, years, and edition (default enabled)
     return srcTitle == dstTitle and srcFilm.year == dstFilm.year and (ignoreEdition == True or srcFilm.edition == dstFilm.edition)

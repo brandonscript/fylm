@@ -46,6 +46,7 @@ sourceDirs = [u"/Volumes/Films/_Rename"]
 
 #
 # destDir: Destination folder, e.g. r"/Volumes/Films/_New"
+# Works best if source and destination are on the same partition, otherwise things are... slow
 destDir = u'/Volumes/Films/HD'
 
 #
@@ -67,6 +68,10 @@ minSizeInMiB = 200
 # useFolders: sorts files into identically named subfolders
 useFolders = True
 
+# checkForDuplicates: Do not check for duplicate files at the destination
+# If enabled, duplicates are considered based on matching titles and years, irrespective of naming convention
+checkForDuplicates = True
+
 #
 # specialEditionStrings: Strings that are likely to match a special edition, and a cleaned mapping for each
 # The first complete match will be used, so order them appropriately, e.g. place "extended.edition" before "extended"
@@ -76,6 +81,7 @@ specialEditionStrings = [
     ["extended.remastered", "Extended Remastered"],
     ["extended.edition", "Extended Edition"],
     ["directors.cut.remastered", "Director's Cut Remastered"],
+    ["25th.anniversary.edition", "25th Anniversary Edition"],
     ["25th.anniversary.ed", "25th Anniversary Edition"],
     ["25th.anniversary", "25th Anniversary"],
     ["dc.remastered", "Director's Cut Remastered"],
@@ -94,12 +100,13 @@ specialEditionStrings = [
     ["uncut", "Uncut"],
     ["unrated", "Unrated"],
     ["limited", "Limited"],
-    ["theatrical", "Theatrical"]
+    ["theatrical", "Theatrical"],
+    ["noir", "Noir"]
 ]
 
 #
-# stripStrings: Strip all instances of these strings from files (case insensitive)
-stripStrings = ['flame-', 'blow-', 'geckos-', 'rep-', 'pfa-', 'snow-']
+# stripPrefixes: Sometimes films are prefixed with tags; remove these when looking up
+stripPrefixes = ['ams-', 'flame-', 'blow-', 'geckos-', 'rep-', 'pfa-', 'snow-', 'refined-', 'japhson-', 'sector7-']
 
 #
 # restrictedChars: Strip all instances of these strings from files before writing to filesystem (case insensitive)
