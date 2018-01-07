@@ -160,6 +160,7 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 
 # Algorithm to determine if one film is a duplicate of another
 def isDuplicate(srcFilm, dstFilm, ignoreEdition):
+    if not srcFilm.title[0] == dstFilm.title[0]: return False
     # Strip restricted chars and compare lowercase (because we're not doing TMDb lookups on the dstFilm)
     srcTitle = stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title).lower()
     dstTitle = stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title).lower()
