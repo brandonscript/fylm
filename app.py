@@ -30,7 +30,7 @@ if args.debug: config.debugMode=args.debug
 if args.strict == 'no': config.strictMode=False
 if args.source: config.sourceDirs = [args.source]
 if args.limit: config.limit=args.limit
-if args.pop: config.minPopularity=args.pop
+if args.pop is not None: config.minPopularity=args.pop
 config.silentMode = True if args.silent else False
 
 def main():
