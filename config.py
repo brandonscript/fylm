@@ -109,10 +109,6 @@ specialEditionStrings = [
 stripPrefixes = ['ams-', 'flame-', 'blow-', 'geckos-', 'rep-', 'pfa-', 'snow-', 'refined-', 'japhson-', 'sector7-']
 
 #
-# restrictedChars: Strip all instances of these strings from files before writing to filesystem (case insensitive)
-restrictedChars = [':/\\']
-
-#
 # ignoreStrings: Ignore files with any of these strings (case insensitive)
 ignoreStrings = ['sample']
 
