@@ -39,24 +39,23 @@ def main():
 
     o.start()
     o.testMode()
+
+    # Create the destination dir if it does not exist
+    fs.recursiveCreateDir(config.destDir)
  
     # Enumerate destination directory for checking duplicates
-    existingFilms = [Film(os.path.join(config.destDir, file)) for file in [unicodedata.normalize('NFC', file) for file in os.listdir(config.destDir)]]
+    existingFilms = [Film(os.path.normpath(os.path.join(config.destDir, file))) for file in [unicodedata.normalize('NFC', file) for file in os.listdir(config.destDir)]]
 
     # Search
 
     # TODO add ability to skip certain files
 
-    for searchDir in config.sourceDirs:
+    for searchDir in [os.path.normpath(searchDir) for searchDir in config.sourceDirs]:
 
-        # Clean trailing slashes
-        searchDir = searchDir.rstrip(fs.SLASH) + fs.SLASH
-        destDirRoot = config.destDir.rstrip(fs.SLASH) + fs.SLASH
-
-        for d in (d for d in [searchDir, destDirRoot] if not os.path.exists(d)): 
+        for d in (d for d in [searchDir, config.destDir] if not os.path.exists(d)): 
             o.error("'{}' does not exist; check folder path in config.py".format(d))
 
-        # Sort and filter the search dir, convert to normalized (NFC) for MacOS
+        # Sort and filter the search dir, convert to normalized (NFC) for macOS
         sortedDir = [unicodedata.normalize('NFC', file) for file in sorted(os.listdir(searchDir), key=lambda s: s.lower()) if file != '.DS_Store' and file != 'Thumbs.db']
 
         # Enumerate files in search dir(s), alphabetically, case insensitive
@@ -102,9 +101,8 @@ def main():
                 # Lookup succeeded
                 o.filmDetails(film)
 
-            # Determine the full directory the file will be moved to
-
-            destDir = os.path.join(destDirRoot, film.newFilename if config.useFolders else None)
+            # Determine the full directory the file will be moved to, either a subfolder with the same name or the root destDir
+            destDir = os.path.normpath(os.path.join(config.destDir, film.newFilename)) if config.useFolders else config.destDir
 
             # TODO: Add console prompts to accept and cancel, and an ability to retry searching
 
@@ -114,11 +112,11 @@ def main():
 
                 # Rename the source file
                 fs.rename(film.sourcePath, film.newFilenameWithExt)
-                o.interesting('⌥', film.newFilenameWithExt)
+                o.interesting('⌥', film.newFilenameWithExt.replace(r':', '/'))
 
                 # src won't be updated if we're running in test mode; use original path if required
-                src = os.path.join(searchDir, film.newFilenameWithExt) if not config.testMode else film.sourcePath
-                dst = os.path.join(destDir, film.newFilenameWithExt)
+                src = os.path.normpath(os.path.join(searchDir, film.newFilenameWithExt)) if not config.testMode else film.sourcePath
+                dst = os.path.normpath(os.path.join(destDir, film.newFilenameWithExt))
 
                 # TODO Figure out how to determine handle multiple editions stored in the same folder
 
@@ -161,11 +159,11 @@ def main():
 
                     # Rename the file
                     fs.rename(file, newFilename)
-                    o.interesting('⌥', newFilename)
+                    o.interesting('⌥', newFilename.replace(r':', '/'))
 
                     # Generate a new source path based on the new filename
-                    src = os.path.join(os.path.dirname(file), newFilename)
-                    dst = os.path.join(destDir, newFilename)
+                    src = os.path.normpath(os.path.join(os.path.dirname(file), newFilename))
+                    dst = os.path.normpath(os.path.join(destDir, newFilename))
 
                     o.info('Moving to {}'.format(dst))
 

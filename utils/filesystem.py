@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import os, shutil, glob, re
+import os, shutil, glob, re, sys
 import config
 import stringutils
 import output as o
 
 from itertools import ifilter
-
-SLASH = "\\" if (os.name == "nt") else "/"
 
 def safeMove(src, dst):
 
@@ -19,11 +17,19 @@ def safeMove(src, dst):
     # Only perform destructive changes if not running in test mode
     if not config.testMode:
         # If safeCopy is enabled, files will always be copied even if they're on a different partition
+
+        # Handle darwin / converting to :
+        # On MacOS, we need to use a funky hack to replace / in a filename with :, in order to output it correctly
+        # Credit: https://stackoverflow.com/a/34504896/1214800
+        if sys.platform == 'darwin':
+            dst = os.path.join(os.path.dirname(dst), os.path.basename(dst).replace(r'/', ':'))
+
         try:
             if config.safeCopy: shutil.copy(src, dst)
             else: shutil.move(src, dst)
             return True
         except:
+            o.warn('Failed to move {} to {}'.format(src, dst))
             return False
 
     # TODO check that src and destination file size match approximately, and catch IOError
@@ -31,7 +37,13 @@ def safeMove(src, dst):
 def rename(src, newFilename):
     # Only perform destructive changes if not running in test mode
     if not config.testMode:
-        shutil.move(src, os.path.join(os.path.dirname(src), newFilename))
+        # Handle darwin / converting to :
+        # On MacOS, we need to use a funky hack to replace / in a filename with :, in order to output it correctly
+        # Credit: https://stackoverflow.com/a/34504896/1214800
+        if sys.platform == 'darwin':
+            newFilename = newFilename.replace(r'/', ':')
+
+        shutil.move(src, os.path.normpath(os.path.join(os.path.dirname(src), newFilename)))
 
 def countFilesInDir(path):
     return len([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
@@ -162,10 +174,10 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
 def isDuplicate(srcFilm, dstFilm, ignoreEdition):
     if not srcFilm.title[0] == dstFilm.title[0]: return False
     # Strip restricted chars and compare lowercase (because we're not doing TMDb lookups on the dstFilm)
-    srcTitle = re.sub(r'[^\w\d\-\s&]', '', stringutils.ireplaceChars(config.restrictedChars, '', srcFilm.title).lower())
-    dstTitle = re.sub(r'[^\w\d\-\s&]', '', stringutils.ireplaceChars(config.restrictedChars, '', dstFilm.title).lower())
+    srcTitle = re.sub(r'[^\w\d\-\s&]', '', stringutils.stripIllegalChars(srcFilm.title).lower())
+    dstTitle = re.sub(r'[^\w\d\-\s&]', '', stringutils.stripIllegalChars(dstFilm.title).lower())
 
-    # Extreme duplicate debugging; will print a lot of lines
+    # Extreme duplicate debugging; will print a lot of linesImportError: bad magic number in
     # print(srcTitle, srcFilm.year, srcFilm.edition, dstTitle, dstFilm.year, dstFilm.edition)
 
     # Strip edition from title if it wasn't removed

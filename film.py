@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import os, re
+import os, re, sys
 import config
 from utils import *
 
@@ -176,8 +176,11 @@ class Film:
         templateString = templateString.replace('\{', '{')
         templateString = templateString.replace('\}', '}')
 
-        # Strip restricted chars
-        templateString = stringutils.ireplaceChars(config.restrictedChars, '', templateString.strip())
+        # Strip illegal chars
+        templateString = stringutils.stripIllegalChars(templateString)
+
+        if sys.platform == 'darwin':
+            templateString = templateString.replace(r'/', ':') # Hack macOS titles with /
 
         # Strip extra whitespace
         return stringutils.stripExtraWhitespace(templateString)

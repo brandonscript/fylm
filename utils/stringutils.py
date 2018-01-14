@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import config, patterns
-import re
-import filesystem as fs
+import config
+import re, sys
+import utils.filesystem as fs
 import output as o
+import patterns
 from difflib import SequenceMatcher
 
 def similar(a, b):
@@ -78,8 +79,15 @@ def stripExtraWhitespace(str):
 def ireplace(find, repl, str):
     return re.compile(re.escape(find), re.I).sub(repl, str)
 
-def ireplaceChars(chars, repl, str):
-    return re.sub('[' + re.escape(''.join(chars)) + ']', repl, str, flags=re.I)
+def stripIllegalChars(str):
+
+    # If the char separates a word, e.g. Face/Off, we need to preserve that separation with a -
+    str = re.sub(r'(?<=\S)[' + patterns.illegalChars + r'](?=\S)', '-', str)
+    
+    # If it terminates another word, e.g. Mission: Impossible, we replace it, and any surrounding spaces with a single space
+    str = re.sub(r'\s?[' + patterns.illegalChars + r']\s?', ' ', str)
+
+    return str
 
 def titleCase(str, alwaysLowercase, alwaysUppercase):
     wordList = re.split(' ', str)

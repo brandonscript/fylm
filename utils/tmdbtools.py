@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 from __future__ import unicode_literals
 
-import logging, re
+import logging, re, sys
 import tmdbsimple as tmdb
 import config
 from utils import *
@@ -16,6 +16,12 @@ def search(title, year=None, recur=True, ignoreYear=False):
     o.disableLogging()
 
     if title is None: return
+
+    # Handle darwin / converting to :
+    # On MacOS, we need to use a funky hack to replace / in a filename with :, in order to output it correctly
+    # Credit: https://stackoverflow.com/a/34504896/1214800
+    if sys.platform == 'darwin':
+        title = title.replace(r':', '/')
 
     o.debug("Searching {} {}".format(title, (year if not ignoreYear else None)))
 
