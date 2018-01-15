@@ -25,7 +25,7 @@ parser.add_argument('--force', action="store_true", default=False) # Forcibly as
 parser.add_argument('--overwrite', action="store_true", default=False) # Forcibly overwrite duplicate files regardless of size diff
 parser.add_argument('--source', action="store", default=None, dest="source", type=str) # Temporarily overwrite the configured source dir
 parser.add_argument('--limit', action="store", default=0, dest="limit", type=int) # Limit the number of files to rename and move
-parser.add_argument('--pop', action="store", default=None, dest="pop", type=int) # Limit the number of files to rename and move
+parser.add_argument('--pop', action="store", default=None, dest="pop", type=float) # Limit the number of files to rename and move
 
 args = parser.parse_args()
 if args.test is True: config.testMode=True
