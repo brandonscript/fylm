@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*- 
 ### begin config
 
 #
@@ -13,6 +14,16 @@ debugMode = False
 # Good if your titles are accurate, may miss some matches if they are not
 # If you disable this, you may find some innaccurate matches
 strictMode = True 
+
+#
+# forceMode: Forcibly assumes that all subfolders in the source dirs are films
+# THIS CAN BE DANGEROUS, so use with caution (or at least --test first)
+forceMode = False
+
+#
+# overwriteDuplicates: Forcibly overwrite duplicate files regardless of size diff
+# THIS CAN BE DANGEROUS, so use with caution (or at least --test first)
+overwriteDuplicates = False
 
 #
 # minTitleSimilarity: Min % similarity (0.0 - 1.0) that a matched title should be to the original
