@@ -1,6 +1,4 @@
 
 *.log
 *.pyc
-tests/*.mkv
-tests/*.avi
-tests/*.srt
+tests/files
