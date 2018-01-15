@@ -34,6 +34,7 @@ def search(title, year=None, recur=True, ignoreYear=False):
     o.enableLogging()
 
     # If no results, we have a few things to try
+
     # ... stripping 'the' or 'a' from the beginning (or ', the' from the end) of the title
     if len(results) == 0 and patterns.stripArticles.match(title):
         o.debug('0 results - strip the, a, ,the')

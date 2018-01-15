@@ -66,6 +66,10 @@ def cleanTitle(film):
     for q in ['480p', '720p', '1080p', '2160p']: 
         cleanedTitle = ireplace(q, '', cleanedTitle)
 
+    # Add back in . to titles or strings we know we need to keep periods
+    for keepPeriodStr in config.keepPeriod:
+        cleanedTitle = cleanedTitle.lower().replace(keepPeriodStr.lower().replace('.', ' '), keepPeriodStr)
+
     # Set 'always lowercase' chars to lower, 'always uppercase' to upper, and a fix for ', The'
     cleanedTitle = titleCase(cleanedTitle, config.alwaysLowercase, config.alwaysUppercase).strip()
 
