@@ -6,6 +6,8 @@ import logging, datetime, sys
 import config, stringutils, film
 from pyfancy import *
 
+divider = '======================================'
+
 def start():
     log('\n{}{}{}'.format(('-'*50), now, ('-'*50)))
     log('Scanning {}'.format(', '.join(config.sourceDirs)))
@@ -15,7 +17,17 @@ def start():
 def testMode():
     if config.testMode:
         log(' *** TEST MODE *** ')
-        pyfancy().magenta('  *** TEST MODE ***\nNo changes will be made\n').output()
+        pyfancy().bold().dim('{}\nTEST MODE\nNo changes will be made\n{}\n'.format(divider, divider)).output()
+
+def forceMode():
+    if config.forceMode:
+        log(' *** FORCE MODE *** ')
+        pyfancy().bold().yellow('{}\nFORCE MODE\nSmart folder checking will be disabled\nAssuming all folders are films\n{}\n'.format(divider, divider)).output()        
+
+def overwriteDuplicates():
+    if config.overwriteDuplicates:
+        log(' *** OVERWRITE DUPLICATES *** ')
+        pyfancy().bold().yellow('{}\nOVERWRITE DUPLICATES ENABLED\nDuplicate files will be overwritten\n(File size will be ignored)\n{}\n'.format(divider, divider)).output()        
 
 def end(count):
     s = "Successfully moved {} films".format(count)

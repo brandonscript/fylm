@@ -163,7 +163,10 @@ def findDuplicates(srcFilm, dst, existingFilms, ignoreEdition=False):
         duplicates.append(film)
 
     if len(duplicates) > 0:
-        o.warn('Aborting; {} duplicate{} found:'.format(len(duplicates), 's' if len(duplicates) > 1 else ''))
+        if config.overwriteDuplicates is False:
+            o.warn('{} duplicate{} found (aborting):'.format(len(duplicates), 's' if len(duplicates) > 1 else ''))
+        else:
+            o.warn('{} duplicate{} found (overwriting):'.format(len(duplicates), 's' if len(duplicates) > 1 else ''))
         for d in duplicates:
             o.warn("  '{}' is {} ({})".format(d.newFilenameWithExt, stringutils.sizeDiffString(srcFilm.sourcePath, d.sourcePath), stringutils.prettySize(size(d.sourcePath))))
 

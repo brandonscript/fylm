@@ -21,13 +21,18 @@ parser.add_argument('--silent', action="store_true", default=False) # Do not sen
 parser.add_argument('--test', action="store_true", default=False) # Run in non-destructive test mode only; do not rename or move files
 parser.add_argument('--debug', action="store_true", default=False) # Run in debug mode with extra console output
 parser.add_argument('--strict', action="store", default=True, dest="strict") # Disable strict mode
+parser.add_argument('--force', action="store_true", default=False) # Forcibly assume that all folders are films (do not skip)
+parser.add_argument('--overwrite', action="store_true", default=False) # Forcibly overwrite duplicate files regardless of size diff
 parser.add_argument('--source', action="store", default=None, dest="source", type=str) # Temporarily overwrite the configured source dir
 parser.add_argument('--limit', action="store", default=0, dest="limit", type=int) # Limit the number of files to rename and move
 parser.add_argument('--pop', action="store", default=None, dest="pop", type=int) # Limit the number of files to rename and move
+
 args = parser.parse_args()
-if args.test: config.testMode=args.test
-if args.debug: config.debugMode=args.debug
+if args.test is True: config.testMode=True
+if args.debug is True: config.debugMode=True
 if args.strict == 'no': config.strictMode=False
+if args.force is True: config.forceMode=True
+if args.overwrite is True: config.overwriteDuplicates=True
 if args.source: config.sourceDirs = [args.source]
 if args.limit: config.limit=args.limit
 if args.pop is not None: config.minPopularity=args.pop
@@ -39,6 +44,8 @@ def main():
 
     o.start()
     o.testMode()
+    o.forceMode()
+    o.overwriteDuplicates()
 
     # Create the destination dir if it does not exist
     fs.recursiveCreateDir(config.destDir)
@@ -81,7 +88,7 @@ def main():
                 o.skip(film, '(unknown title)')
                 continue      
 
-            if film.isDir and film.year is None:
+            if film.isDir and film.year is None and config.forceMode is False:
                 o.skip(film, '(probably not a film)')
                 continue
 
@@ -122,17 +129,17 @@ def main():
 
                 # Check for duplicates and abort
                 if len(fs.findDuplicates(film, destDir, existingFilms)) > 0:
-                    continue
-                else:
+                    if config.overwriteDuplicates == False:
+                        continue
                     
-                    # Create destination folder(s) if they don't exist
-                    fs.recursiveCreateDir(destDir)                
+                # Create destination folder(s) if they don't exist
+                fs.recursiveCreateDir(destDir)                
 
-                    o.info('Moving to {}'.format(dst))
-                    # Move the file
-                    if fs.safeMove(src, dst):
-                        count = count + 1
-                    film.sourcePath = dst
+                o.info('Moving to {}'.format(dst))
+                # Move the file
+                if fs.safeMove(src, dst):
+                    count = count + 1
+                film.sourcePath = dst
                         
             # Or if it's a directory, clean it up
             elif film.isDir:
@@ -146,7 +153,8 @@ def main():
 
                 # Check for duplicates and abort
                 if len(fs.findDuplicates(film, destDir, existingFilms)) > 0:
-                    continue    
+                    if config.overwriteDuplicates == False:
+                        continue 
 
                 # Create destination folder(s) if they don't exist
                 fs.recursiveCreateDir(destDir)
