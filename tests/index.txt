@@ -39,6 +39,7 @@
 9477       King Arthur                              2004
 9477       King Arthur                              2004
 210479     Locke                                    2014
+76341      Mad Max: Fury Road                       2015
 254905     Manglehorn                               2015
 316023     Mike and Dave Need Wedding Dates         2016
 103731     Mud                                      2013
@@ -56,6 +57,7 @@
 7737       Resident Evil: Extinction                2007
 565        The Ring                                 2002
 20766      The Road                                 2009
+330459     Rogue One: A Star Wars Story             2016
 9257       S.W.A.T.                                 2003
 390054     Sand Castle                              2017
 12405      Slumdog Millionaire                      2008
@@ -78,4 +80,5 @@
 260202     Turks & Caicos                           2014
 3536       U-571                                    2000
 752        V for Vendetta                           2006
+10681      WALL·E                                   2008
 281338     War for the Planet of the Apes           2017
