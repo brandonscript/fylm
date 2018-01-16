@@ -43,9 +43,6 @@ def main():
     count = 0
 
     o.start()
-    o.testMode()
-    o.forceMode()
-    o.overwriteDuplicates()
 
     # Create the destination dir if it does not exist
     fs.recursiveCreateDir(config.destDir)

@@ -16,7 +16,11 @@ class Film:
         self.sourcePath = file
 
         # Internal title property for storing cleaned title
-        self._title = None
+        self._title = stringutils.cleanTitle(self)
+
+        # Internal property for storing edition
+        self._edition = None
+        self.parseEdition()
 
         # Internal title property for storing back up file size
         self._size = None
@@ -27,6 +31,7 @@ class Film:
         # Match id and % similarity to original title
         self.id = None 
         self.similarity = 0
+
 
     @property
     # Original file name of film without extension, attempt to derive from folder first, then file
@@ -64,10 +69,6 @@ class Film:
     def setTitle(self, value):
         self._title = value
 
-    # Re-cleans the title from the original filename, overwriting any other previous replacements
-    def recleanTitle(self):
-        self._title = stringutils.cleanTitle(self)
-
     @property
     # For titles that begin with 'The', move it to the end: ', The'
     def titleThe(self):
@@ -93,13 +94,19 @@ class Film:
         return quality
 
     @property
-    # Special edition keyword detection, e.g. "Unrated Extended Director's Cut Shiny Edition!"
+    # Getter for edition
     def edition(self):
-        for key, value in config.specialEditionStrings:
-            rx = re.compile(key, re.I)
+        return self._edition
+
+    # Special edition keyword detection, e.g. "Unrated Extended Director's Cut Shiny Edition!"
+    # TODO Don't like how this is architected
+    def parseEdition(self):
+        for key, value in config.specialEditionPatterns:
+            rx = re.compile(r'\b' + key + r'\b', re.I)
             if re.search(rx, self.originalFilename):
+                self._edition = value
                 self.setTitle(re.sub(rx, '', self.title))
-                return value
+                break
 
     @property
     # Originating media; currently only supports BluRay, WEBRip, and defaults to None

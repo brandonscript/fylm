@@ -48,11 +48,12 @@ class FilmsTestCase(unittest.TestCase):
                 or film.originalFilename == "pfa-outlaws.and.angels.1080p"
                 or film.originalFilename == "tl-lk.1080p.mkv"
                 or film.originalFilename == "geckos-t2-trainspotting-1080p.mkv"
+                or film.originalFilename == "Rogue.One.A.Star.Wars.Story.4K.HDR.10bit.BT2020.Chroma.422.Edition.DTS.HD.MA-VISIONPLUSHDR1000.mp4"
                 or film.originalFilename == "Bridesmaids.1080p.Bluray.x264-TWiZTED"):
                 self.assertFalse(film.isValidFilm)
                 print(' ✓ pass   Not a film: {}'.format(film.originalFilename))
-            else:
-                # print('Y: {}'.format(film.originalFilename))
+            else: 
+                # print(film.originalFilename) # debug
                 self.assertTrue(film.isValidFilm)
 
     # @unittest.skip("Skip long running testSearchTMDb")
@@ -66,10 +67,16 @@ class FilmsTestCase(unittest.TestCase):
                 film.searchTMDb()
 
                 self.assertIsNotNone(film.title)
+                if film.id is None:
+                    print(' 𝗑 fail  {}\n'.format(film.originalFilename))
+                    print('\n'.join("%s: %s" % item for item in vars(film).items()) + '\n')
                 self.assertIsNotNone(film.id)
+
+                # Skip this line once in order to retrieve a new output for index.txt
                 self.assertEqual(film.id, idIndex[idx])
+
                 self.assertIsNotNone(film.year)
-                sys.stdout.write(" ✓ pass   {} {} {} {} \n".format(film.title.ljust(40)[:40], str(film.year).ljust(6)[:6], str(film.id).ljust(10)[:10], film.originalFilename))
+                print(" ✓ pass   {} {} {} {}".format(film.title.ljust(40)[:40], str(film.year).ljust(6)[:6], str(film.id).ljust(10)[:10], film.originalFilename))
                 idx = idx + 1
             else:
                 self.assertIsNone(film.id)
@@ -86,10 +93,6 @@ class FilmsTestCase(unittest.TestCase):
                 film.setTitle("jibberish")
                 self.assertEqual(film.title, "jibberish")
                 self.assertEqual(film._title, "jibberish")
-                # re-clean
-                film.recleanTitle()
-                self.assertEqual(film.title, origTitle)
-                self.assertEqual(film._title, origTitle)
 
     def testTitleThe(self):
         # Check that films beginning with 'The' have it moved to the end, ', The'
@@ -117,10 +120,11 @@ class FilmsTestCase(unittest.TestCase):
     def testEdition(self):
         # Check that editions, when detected, are set correctly and cleaned from original string
         for film in [Film(file) for file in files]:
-            for key, value in config.specialEditionStrings:
-                if key in film.originalFilename.lower():
+            for key, value in config.specialEditionPatterns:
+                rx = re.compile(r'\b' + key + r'\b', re.I)
+                if re.search(rx, film.originalFilename):
                     self.assertEqual(film.edition, value)
-                    self.assertNotIn(key, film.title.lower())
+                    self.assertFalse(re.search(rx, film.title))
                     break
 
     def testIsValidFileExt(self):

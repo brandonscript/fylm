@@ -13,6 +13,9 @@ def start():
     log('Scanning {}'.format(', '.join(config.sourceDirs)))
     print("Scanning subfolders and files in " + ', '.join(config.sourceDirs))
     print("Please wait...\n")
+    testMode()
+    forceMode()
+    overwriteDuplicates()
 
 def testMode():
     if config.testMode:
