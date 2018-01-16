@@ -84,21 +84,23 @@ useFolders = True
 checkForDuplicates = True
 
 #
-# specialEditionStrings: Strings that are likely to match a special edition, and a cleaned mapping for each
+# specialEditionPatterns: Strings that are likely to match a special edition, and a cleaned mapping for each
 # The first complete match will be used, so order them appropriately, e.g. place "extended.edition" before "extended"
 # Always separate with '.' because these will be compiled into regular expressions
-specialEditionStrings = [
-    ["extended.directors.cut", "Extended Director's Cut"],
+# Because these will ultimately be transformed into regular expressions, you can also use regex patterns for matching
+specialEditionPatterns = [
+    ["extended.director.?s.cut", "Extended Director's Cut"],
     ["extended.remastered", "Extended Remastered"],
     ["extended.edition", "Extended Edition"],
-    ["directors.cut.remastered", "Director's Cut Remastered"],
-    ["25th.anniversary.edition", "25th Anniversary Edition"],
-    ["25th.anniversary.ed", "25th Anniversary Edition"],
+    ["director.?s.cut.remastered", "Director's Cut Remastered"],
+    ["25th.anniversary.ed(ition)?", "25th Anniversary Edition"],
     ["25th.anniversary", "25th Anniversary"],
+    ["extended.collector.?s.edition", "Extended Collector's Edition"],
+    ["collector.?s.edition", "Collector's Edition"],
     ["dc.remastered", "Director's Cut Remastered"],
     ["se.remastered", "Special Edition Remastered"],
-    ["unrated.directors.cut", "Unrated Director's Cut"],
-    ["directors.cut", "Director's Cut"],
+    ["unrated.director.?s.cut", "Unrated Director's Cut"],
+    ["(dc|director.?s.cut)", "Director's Cut"],
     ["ultimate.expanded.edition", "Ultimate Expanded Edition"],
     ["ultimate.edition", "Ultimate Edition"],
     ["expanded.edition", "Expanded Edition"],
