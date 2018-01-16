@@ -130,6 +130,10 @@ ignoreStrings = ['sample']
 videoFileExts = ['.mkv', '.m4v', '.mp4', '.avi']
 
 #
+# keepPeriod: Array of strings that should retain the period '.' in the name when searching, e.g. L.A. or S.W.A.T.
+keepPeriod = ['L.A.', 'S.W.A.T.', 'After.Life']
+
+#
 # extraExts: Array of additional file types to move and rename with films, e.g. srt, nfo
 extraExts = ['.srt']
 
