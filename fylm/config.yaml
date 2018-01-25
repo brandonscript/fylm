@@ -1,0 +1,246 @@
+# --source={/single/folder/path, overwrites the default configured here}
+# This is an array of folders to search for files you want to rename.
+# For Windows paths, make sure you escape the path with a \, for example: "D:\\Downloads".
+# For *nix, use standard path, for example: "/path/to/folde".
+source_dirs:
+  - '/Volumes/Films/#new'
+
+# Destination, e.g. "/Volumes/Films/HD".
+# fylm works best if the source and destination are on the same partition, otherwise files end up being copied, which can take a long time.
+#   TODO: Enable a workflow that allows looking up all films and verifying the results before actually performing the move/copy.
+destination_dir: /Volumes/Films/HD
+
+# Template pattern for renaming files.
+# Valid template objects: {title}, {title-the}, {year}, {quality}, {edition}, {media}
+# If you want to add characters with pattern objects, place them inside {} e.g. { - edition}.
+# For escaping templating delimiters, use \{ \}, e.g. {|{edition\}}.
+rename_pattern: '{title} {[edition]} {(year)} {quality}'
+
+# Sort files into identically named subfolders when moving them, e.g. /Volumes/Films/HD/The Last Starfighter (1984) 1080p/{files go here}.
+use_folders: true
+
+# Remove unwanted files from source folders after the important files have been copied.
+remove_unwanted_files: true
+
+# Remove the original source subfolder left behind after the important files have been copied, as long as it is not the root source dir.
+remove_source: true
+
+# Ignore files/folders smaller than this size, in MB. Good for skipping poorly named samples, or tiny files.
+# Recommended setting: between 10 and 50 MB.
+min_filesize: 10
+
+# Path Where history.log will be written.
+log_path: ./
+
+# --test 
+# Write to the console as if moving/renaming/removing files but does not actually make changes.
+test: false
+
+# --debug
+# Write advanced debugging details to the console.
+debug: false
+
+# --no-strict (disable)
+# Use intelligent string comparison algorithm to ensure titles are properly matched.
+# If your titles are accurate (parsable), this is the safest way to go, and results in the most
+# accurate matching. Turning strict mode off will take the first match from TMDb even if the titles don't match.
+strict: true
+
+# --limit={int, 0 = no limit}
+# Limits the number of files that are checked/renamed in a single run. Useful for doing large rename jobs, 
+# where you want to manually check matches with --test before performing destructive changes.
+limit: 0
+
+# --force-lookup
+# DANGER ZONE
+# This options disables the intelligent file/folder check that ensures they appear to be film-like 
+# in name (e.g. have a year, valid filetype, and are not a TV show) before we look them up. Every file and folder
+# will be checked in the source folders (except TV shows) which not only takes longer, but could find some 
+# false-positive results. Best to test first before running.
+force_lookup: false
+
+# --overwrite
+# DANGER ZONE
+# Forcibly overwrite any file (or matching files inside a film folder) with the same name, 
+# regardless of size difference. Highly recomment enabling check_for_duplicates with this
+# feature enabled, otherwise any file with the name at the destination will be silently
+# overwritten. Best to test first before running.
+overwrite_duplicates: false
+
+# Copy files to the destination, verify, and delete originals, instead of move.
+# This is the default behavior when source and destination are on different partitions (or network)
+# TODO: Currently files are not verified. Add integrity (bitwise or hash?) check and a new 'verify' flag.
+safe_copy: false
+
+# Check the destionation dir for duplicate files before copying. Adds some processing time, but prevents mistakes.
+# Duplicates are considered based on matching titles and years, irrespective of naming convention. 
+# Different editions are not considered duplicates, and will be moved separately.
+check_for_duplicates: true
+
+# --quiet
+# Do not send notifications or update Plex
+quiet: false
+
+tmdb:
+
+  # By default, this app looks up and matches film titles from TMDb. 
+  # Setting 'enabled' to false will turn off the TMDb lookup service, and use best-guess offline cleanup of filenames.
+
+  # You will need an API key to The Movie Database to access the API. To obtain a key, follow these steps:
+  #  1. Register for, and verify, an account at https://www.themoviedb.org
+  #  2. Select the API section on left side of your account page.
+  #  3. Click on the link to generate a new API key and copy it here.
+   
+  # API reference docs: https://www.themoviedb.org/documentation/api
+  enabled: true
+
+  # TMDb API Key
+  key: YOUR_API_KEY
+
+  # Percentage similarity (from 0.0 - 1.0) that a title retrieved from TMDb should be to the original.
+  # Adjust this value as needed to find correct matches, but test first to check for incorrect matches.
+  # Can be disabled on the fly by setting strict-mode to false or using --strict=no.
+  min_title_similarity: 0.5
+
+  # Difference in years between lookup year and TMDb results to still consider a valid match, as 
+  # long as the titles match.
+  max_year_diff: 1
+
+  # --pop={float}
+  # Minimum popularity ranking on TMDb to consider a valid match.
+  # Popular titles generally rank above 10, though some obscure ones rank between 1 and 2
+  min_popularity: 1.5
+
+plex:
+
+  # If you run a Plex server, you may want to notify it when new files are added. Configure your Plex
+  # details here. 
+  
+  # You'll need a Plex token in order to do this. To obtain a key, follow these steps:
+  #  1. Launch Plex and log in
+  #  2. From any item in your library, click the ••• icon, and select 'Get Info'
+  #  3. At the bottom of the inspector panel, click "View XML"
+  #  4. In the new tab that opens (with the raw XML data), inspect the URL, and look for 'X-Plex-Token' in the URL.
+  #  5. Copy that value into the 'token' property below.
+   
+  # For more help, see: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
+  enabled: true
+
+  # Plex base URL including port, e.g. http://127.0.0.1:32400
+  baseurl: 'http://127.0.0.1:32400'
+
+  # Plex token
+  token: YOUR_PLEX_TOKEN
+
+  # Sections to notify to check for updates, e.g. - Movies
+  sections:
+    - Movies
+
+pushover:
+
+  # Pushover will receive a notification when moves are complete
+  #   TODO Not implemented
+  # enabled: false
+
+  # Pushover API key
+  # key: uFX5ZFkRPoyG72DYcoV1dBoEwT7t7i
+
+# An array of words (typically articles) to force lowercase if they're in the middle of a title.
+always_lowercase: 
+  - a
+  - an
+  - of
+  - the
+  - is
+  - 'on'
+  - at
+  - in
+  - and
+  - to
+
+# An array of words (typically roman numerals) to force uppercase if they're in the middle of a title.
+always_uppercase: 
+  - I
+  - II
+  - III
+  - IV
+  - V
+  - VI
+  - VII
+  - VIII
+  - IX
+  - X
+  - XI
+  - XII
+  - XIII
+  - TRON
+
+# An array of tuples containing period-separated words or regular expressions that match special editions.
+# The second element in the tuple is the re-formatted/prettified 'edition' string.
+# Order matters here: the first full match will be used, e.g. "extended.edition" will match before "extended".
+# Always separate with '.' because these will be compiled into regular expressions.
+edition_map: [
+  ["extended.director.?s.cut", "Extended Director's Cut"],
+  ["extended.remastered", "Extended Remastered"],
+  ["extended.edition", "Extended Edition"],
+  ["director.?s.cut.remastered", "Director's Cut Remastered"],
+  ["25th.anniversary.ed(ition)?", "25th Anniversary Edition"],
+  ["25th.anniversary", "25th Anniversary"],
+  ["extended.collector.?s.edition", "Extended Collector's Edition"],
+  ["collector.?s.edition", "Collector's Edition"],
+  ["dc.remastered", "Director's Cut Remastered"],
+  ["se.remastered", "Special Edition Remastered"],
+  ["unrated.director.?s.cut", "Unrated Director's Cut"],
+  ["(dc|director.?s.cut)", "Director's Cut"],
+  ["ultimate.expanded.edition", "Ultimate Expanded Edition"],
+  ["ultimate.edition", "Ultimate Edition"],
+  ["expanded.edition", "Expanded Edition"],
+  ["unrated.remastered", "Unrated Remastered"],
+  ["theatrical.remastered", "Theatrical Remastered"],
+  ["alternate.ending", "Alternate Ending"],
+  ["special.edition", "Special Edition"],
+  ["remastered", "Remastered"],
+  ["extended", "Extended"],
+  ["uncut", "Uncut"],
+  ["unrated", "Unrated"],
+  ["limited", "Limited"],
+  ["theatrical", "Theatrical"],
+  ["noir", "Noir"]
+]
+
+# Strip these strings from the beginning of titles (case insensitive). 
+# Sometimes files are prefixed with tags, and we don't want to include them in the tmdb search or match.
+strip_prefixes:
+  - ams-
+  - flame-
+  - blow-
+  - geckos-
+  - rep-
+  - pfa-
+  - snow-
+  - refined-
+  - japhson-
+  - sector7-
+
+# If any of these strings are found (case insensitive) in a filename, the entire file will be ignored.  
+# A word of caution: adding common words here (especially words found in titles) will result in files/folders
+# being (unexpectedly) skipped.
+ignore_strings:
+  - sample
+
+# keep_period: Array of strings that should retain the period in the name when searching, e.g. L.A. or S.W.A.T.
+keep_period:
+  - L.A.
+  - S.W.A.T.
+  - After.Life
+
+# Array of valid video filetypes
+video_exts:
+  - .mkv
+  - .m4v
+  - .mp4
+  - .avi
+
+# Array of additional filetypes to move and rename with films, e.g. srt, nfo    
+extra_exts:
+  - .srt

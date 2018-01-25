@@ -1,24 +1,52 @@
-# Provides methods for manipulating text styling in specific terminals.
-# Uses a basic chaining method where text properties are added by calling
-# methods with related names.
-# 
-# For example, to print "Hello, world!" in red:
-#   print pyfancy().red("Hello, world!").get()
-#
-# Styles can be changed for different text components. Example:
-#   print pyfancy().red("Hello").raw(", ").blue("world!").get()
-#
-# No output text is necessary when calling a styling method. This allows
-# styles to be stacked:
-#   print pyfancy().red().bold("Hello, world!").get()
-#
-# There are two provided ways to access the modified text. The first is
-# direct access to the string object called "out". However, accessing this
-# object will not reset the style, so any text outputted after will have
-# the same style as whatever the text was at the end of the chain.
-# 
-# The get() method is better for accessing text because it resets the text
-# style so no new text will have unwanted styling.
+# -*- coding: utf-8 -*- 
+# MIT License
+
+# Copyright (c) 2017 Cosmic Open Source Projects
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+"""Provides methods for manipulating text styling in specific terminals.
+
+Uses a builder pattern to chain outputs, for example, to print "Hello, world!" 
+in red:
+    
+    print pyfancy().red("Hello, world!").get()
+
+Styles can be changed for different text components. Example:
+    
+    print pyfancy().red("Hello").raw(", ").blue("world!").get()
+
+No output text is necessary when calling a styling method. This allows
+styles to be stacked:
+    
+    print pyfancy().red().bold("Hello, world!").get()
+
+There are two provided ways to access the modified text. The first is
+direct access to the string object called "out". However, accessing this
+object will not reset the style, so any text outputted after will have
+the same style as whatever the text was at the end of the chain.
+
+The get() method is better for accessing text because it resets the text
+style so no new text will have unwanted styling.
+
+    pyfancy: the main class exported by this module.
+"""
 
 class pyfancy:
     def __str__(self): return self.get()
