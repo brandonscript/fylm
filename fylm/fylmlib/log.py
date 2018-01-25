@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +37,7 @@ class log:
     """Main class for log writing methods.
 
     All methods are class methods, thus this class should never be instantiated.
-    """  
+    """
     @classmethod
     def config(cls):
         """Configure the logger. In test mode, it is disabled.
@@ -46,14 +46,14 @@ class log:
             cls.disable()
         else:
             logging.basicConfig(format = '%(message)s', filename = config.log_path + 'history.log', level = logging.DEBUG)
-    
+
     @classmethod
     def disable(cls):
         """Disable logging. Cannot be called in debug mode.
         """
         if not config.debug:
             logging.disable(sys.maxint)
-    
+
     @classmethod
     def enable(cls):
         """Enable logging. Only can be executed in live mode, since there
@@ -67,13 +67,13 @@ class log:
         """Convenience method to write info to log with an indent and prefix.
         """
         log.info('\t→ {}'.format(text))
-    
+
     @classmethod
     def info(cls, text):
         """Write info to log.
         """
         logging.info('{} ... {}'.format(NOW, text))
-    
+
     @classmethod
     def error(cls, text):
         """Write an error to the log and raise an Exception.

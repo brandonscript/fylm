@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,8 +18,8 @@
 A collection of class methods that handles file system CRUD operations, like
 get, move, rename, and delete. Also includes filesize detector methods.
 
-    dir: directory operations exported by this module.
-    file: file operations exported by this module.
+    dirops: directory operations exported by this module.
+    fileops: file operations exported by this module.
     size: file and dir size calculator
 """
 
@@ -39,7 +39,7 @@ from fylmlib.console import console
 import fylmlib.formatter as formatter
 import fylmlib.existing_films as existing_films
 
-class dir:
+class dirops:
     """Directory-related class method operations.
     """
     @classmethod
@@ -52,8 +52,8 @@ class dir:
 
         Args:
             paths: (list) paths to verify existence.
-        """   
-        for d in (d for d in paths if not os.path.exists(d)): 
+        """
+        for d in (d for d in paths if not os.path.exists(d)):
             console.error("'{}' does not exist; check folder path in config.yaml".format(d))
 
     @classmethod
@@ -62,7 +62,7 @@ class dir:
 
         Scan one level deep of the target dir to get a list of existing films. Since
         this is used exclusively for duplicate checking, this method is skipped when
-        duplicate checking is disabled. Sets the global property `existing_films.cache` 
+        duplicate checking is disabled. Sets the global property `existing_films.cache`
         when complete.
 
         Args:
@@ -74,7 +74,7 @@ class dir:
         # Import Film here to avoid circular import conflicts.
         from fylmlib.film import Film
 
-        # If check_for_duplicates is disabled, we don't care about duplicates, and 
+        # If check_for_duplicates is disabled, we don't care about duplicates, and
         # don't need to spend cycles processing duplicates. Return an empty array.
         if config.check_for_duplicates is False:
             return
@@ -84,7 +84,7 @@ class dir:
 
         # Map a list of valid and sanitized files to Film objects
         existing_films = map(
-            Film, 
+            Film,
             [os.path.normpath(os.path.join(config.destination_dir, file)) for file in cls.sanitize_dir_list(os.listdir(dir))]
         )
         console.debug('Found {}'.format(len(existing_films)))
@@ -94,8 +94,8 @@ class dir:
     def get_new_films(cls, dir):
         """Get a list of new potenial films we want to tidy up.
 
-        Scan one level deep of the target dir to get a list of potential new files/folders. 
-        
+        Scan one level deep of the target dir to get a list of potential new files/folders.
+
         Args:
             dir: (unicode) path to search for new films.
         Returns:
@@ -109,12 +109,12 @@ class dir:
         # the resulting list of files alphabetically, case-insensitive.
         sorted_files = sorted(cls.sanitize_dir_list(os.listdir(dir)), key=lambda s: s.lower())
 
-        # If using the `limit` option, create a sliced list to limit the number of 
+        # If using the `limit` option, create a sliced list to limit the number of
         # files to be processed.
         limited_files = islice(sorted_files, config.limit if config.limit > 0 else None)
 
         # Map the sorted/filtered list to Film objects.
-        return map(Film, [os.path.join(dir, file) for file in limited_files])  
+        return map(Film, [os.path.join(dir, file) for file in limited_files])
 
     @classmethod
     # Check for valid file types inside this dir
@@ -122,8 +122,8 @@ class dir:
         """Get a list valid files inside the specified dir.
 
         Scan deeply in the specified dir to get a list of valid files, as
-        determined by the config.video_exts and config.extra_exts properties. 
-        
+        determined by the config.video_exts and config.extra_exts properties.
+
         Args:
             dir: (unicode) path to search for valid files.
         Returns:
@@ -132,13 +132,13 @@ class dir:
 
         # Call dir.find_deep to search for files within the specified dir.
         # Filter the results using a lambda function.
-        valid_files = cls.find_deep(dir, lambda x: 
+        valid_files = cls.find_deep(dir, lambda x:
 
             # A valid file must have a valid extension
-            file.has_valid_ext(x) 
+            fileops.has_valid_ext(x)
 
             # It must not contain an ignored string (e.g. 'sample')
-            and not file.contains_ignored_strings(x) 
+            and not fileops.contains_ignored_strings(x)
 
             # And it must be at least a certain filesize
             and size(x) >= config.min_filesize * 1024 * 1024)
@@ -146,9 +146,9 @@ class dir:
         # If debugging, print the resulting list of files
         for f in valid_files:
             console.debug('   Found "{}" ({}) in {}'.format(
-                os.path.basename(f), 
+                os.path.basename(f),
                 formatter.pretty_size(size(f)), dir))
-        return valid_files      
+        return valid_files
 
     @classmethod
     def sanitize_dir_list(cls, files):
@@ -158,8 +158,8 @@ class dir:
         On macOS, unicode normalization must take place for loading files with
         unicode chars. This method correctly normalizes these strings.
         It also will remove .DS_Store and Thumbs.db from the list, since we
-        don't ever care to count, or otherwise observe, these system files. 
-        
+        don't ever care to count, or otherwise observe, these system files.
+
         Args:
             files: (unicode) list of files in dir.
         Returns:
@@ -172,11 +172,11 @@ class dir:
         """Get a list of invalid files inside the specified dir.
 
         Scan deeply in the specified dir to get a list of invalid files, as
-        determined by the config.video_exts and config.extra_exts properties. 
+        determined by the config.video_exts and config.extra_exts properties.
         We do not check filesize here, because while we may not want to
-        rename and move vide/extra files that are too small, we probably 
+        rename and move vide/extra files that are too small, we probably
         don't want to delete them.
-        
+
         Args:
             dir: (unicode) path to search for invalid files.
         Returns:
@@ -185,13 +185,13 @@ class dir:
 
         # Call dir.find_deep to search for files within the specified dir.
         # Filter the results using a lambda function.
-        return cls.find_deep(dir, lambda x: 
+        return cls.find_deep(dir, lambda x:
 
             # An invalid file might contain an ignored string (e.g. 'sample')
-            file.contains_ignored_strings(x) 
+            fileops.contains_ignored_strings(x)
 
             # Or it may not have a valid file extension
-            or not file.has_valid_ext(x))
+            or not fileops.has_valid_ext(x))
 
     @classmethod
     def create_deep(cls, dir):
@@ -199,18 +199,18 @@ class dir:
 
         Using recursion, create a directory tree as specified in the dir
         param.
-        
+
         Args:
             dir: (unicode) path to create.
         """
 
         # Because this is a destructive action, we will not create the
         # dir tree if running in test mode.
-        if not config.test: 
+        if not config.test:
 
             # If the path exists, there's no point in trying to create it.
             if not os.path.exists(dir):
-                try: 
+                try:
                     console.debug("Creating destination {}".format(dir))
                     os.makedirs(dir)
                 # If the dir creation fails, raise an Exception.
@@ -222,9 +222,9 @@ class dir:
     def find_deep(cls, root_dir, func=None):
         """Deeply search the specified dir and return all files.
 
-        Using recursion, search the specified path for files. 
-        Pass an optional function to filter results. 
-        
+        Using recursion, search the specified path for files.
+        Pass an optional function to filter results.
+
         Args:
             root_dir: (unicode) path to search for files.
             func: (function) user-defined or lambda function to use as a filter.
@@ -243,8 +243,8 @@ class dir:
         """Recursively delete dir and all its contents, if less than max_size.
 
         Using recursion, delete all files and folders in the specified dir and
-        itself if the total dir size is less than max_size (default 50 KB). 
-        
+        itself if the total dir size is less than max_size (default 50 KB).
+
         Args:
             dir: (unicode) path to be recursively deleted.
             max_size: (int) optional max size in Bytes a folder can be to qualify for deletion. Default=50000.
@@ -257,7 +257,7 @@ class dir:
 
             # An emergency safety check in case there's an attempt to delete / (root!) or one of the source_paths.
             if dir == '/' or dir in config.source_dirs:
-                raise Exception("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(dir)) 
+                raise Exception("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(dir))
 
             # Otherwise, only perform destructive actions if we're running in live mode.
             elif not config.test:
@@ -271,15 +271,15 @@ class dir:
         else:
             console.debug("Will not delete {} because it is not empty".format(dir))
 
-    # 
+    #
     @classmethod
     def delete_unwanted_files(cls, dir, count=0):
         """Delete all unwanted files in the specified dir.
 
-        Using recursion, delete all invalid (unwanted) files and folders in the specified dir, 
+        Using recursion, delete all invalid (unwanted) files and folders in the specified dir,
         keeping track of the number of files that were deleted.
         This could be dangerous, be careful not to accidentally run it on something like... /
-        
+
         Args:
             dir: (unicode) root path where contents will be deleted.
             count: (int) optional current number of deleted files (in case this is called multiple times
@@ -292,15 +292,15 @@ class dir:
             # Search for invalid files, enumerate them, and delete them.
             for f in [f for f in cls.get_invalid_files(dir) if os.path.isfile(f)]:
                 # Increment count if deletion was successful
-                count += file.delete(f)
+                count += fileops.delete(f)
         return count
 
     @classmethod
     def count_files_deep(cls, dir):
         """Deeply count the number of files in the specified dir.
 
-        Recursively count the number of files inside the specified dir. 
-        
+        Recursively count the number of files inside the specified dir.
+
         Args:
             dir: (unicode) path to be recursively searched
         Returns:
@@ -313,15 +313,15 @@ class dir:
             # If it's not a dir or doesn't exist, return False
             return False
 
-class file:
+class fileops:
     """File-related class method operations.
     """
     @classmethod
     def has_valid_ext(cls, path):
         """Check if file has a valid extension.
 
-        Check the specified file's extension against config.video_exts and config.extra_exts. 
-        
+        Check the specified file's extension against config.video_exts and config.extra_exts.
+
         Args:
             path: (unicode) path of file to check.
         Returns:
@@ -330,7 +330,6 @@ class file:
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
-
     def safe_move(cls, src, dst):
         """Performs a 'safe' move operation.
 
@@ -355,8 +354,8 @@ class file:
         console.debug("\nWill move '{}'".format(src))
         console.debug("       To '{}'\n".format(dst))
 
-        # Check if a file already exists with the same name as the one we're moving. 
-        # By default, abort here (otherwise shutil.move would silently overwrite it) 
+        # Check if a file already exists with the same name as the one we're moving.
+        # By default, abort here (otherwise shutil.move would silently overwrite it)
         # and print a warning to the console. If check_for_duplicates is disabled AND
         # overwrite_duplicates is enabled, proceed anyway, otherwise forcibly prevent
         # app from accidentally overwriting files.
@@ -396,8 +395,8 @@ class file:
         """Renames a file using shutil.move.
 
         Renames a file using shutil.move, which under the hood, intelligently determines
-        whether or not to use os.rename or shutil.copy. Normally this wouldn't matter, but 
-        this allows the function to be flexible enough to support srt/dst being on 
+        whether or not to use os.rename or shutil.copy. Normally this wouldn't matter, but
+        this allows the function to be flexible enough to support srt/dst being on
         different partitions.
 
         Args:
@@ -421,18 +420,18 @@ class file:
         if src == dst:
             return
 
-        # Check if a file already exists (case sensitive) with the same name as the 
-        # one we're renaming. If it does, abort (otherwise shutil.move would 
+        # Check if a file already exists (case sensitive) with the same name as the
+        # one we're renaming. If it does, abort (otherwise shutil.move would
         # silently overwrite it) and print a warning to the console.
         if os.path.exists(dst) and os.path.basename(src) == os.path.basename(dst):
             console.warn('Unable to rename {} (identical file already exists)'.format(dst))
             return
 
         # Only perform destructive changes if we're in live mode.
-        if not config.test:   
+        if not config.test:
 
-            # Rename the file using shutil.move (instead of os.rename). (os.rename won't work if the 
-            # src/dst are on different partitions, so we use shutil.move instead). There is also 
+            # Rename the file using shutil.move (instead of os.rename). (os.rename won't work if the
+            # src/dst are on different partitions, so we use shutil.move instead). There is also
             # some funky (untested) Windows-related stuff that makes .move the obvious choice.
             shutil.move(src, dst)
 
@@ -441,7 +440,7 @@ class file:
         """Determines of a file contains any of the ignored substrings (e.g. 'sample').
 
         Checks a path string and determines if it contains any of the forbidden substrins.
-        A word of caution: if you add anything common to the config, you may prevent some 
+        A word of caution: if you add anything common to the config, you may prevent some
         files from being moved.
 
         Args:
@@ -455,7 +454,7 @@ class file:
     def delete(cls, file):
         """Deletes a file.
 
-        Attempts to delete the specified file, and returns a number that can be used to 
+        Attempts to delete the specified file, and returns a number that can be used to
         increment a counter if the deletion was successful.
 
         Args:
@@ -476,23 +475,23 @@ class file:
                 # Return 0 because we don't want a success counter to increment.
                 return 0
 
-        # If we're running in test mode, return a mock success (we assume the deletion 
+        # If we're running in test mode, return a mock success (we assume the deletion
         # would have been successful had it actually run).
         else: return 1
 
 def size(path, mock_bytes=None):
     """Determine the size of a file or dir.
 
-    Determine the size of a file or dir at the specified path. Also supports passing 
+    Determine the size of a file or dir at the specified path. Also supports passing
     a 'mock_bytes' artifact for testing.
-    
+
     Args:
         path: (unicode) file or folder to determine size.
     Returns:
         Size of file or folder, in bytes (B), or None if path does not exist.
     """
 
-    # If the mock_bytes param is set, return it. 
+    # If the mock_bytes param is set, return it.
     # This is used only for testing.
     if mock_bytes:
         return mock_bytes
@@ -518,7 +517,7 @@ def _size_dir(dir):
 
     Determine the size of directory at the specified path by recursively calculating
     the size of each file contained within.
-    
+
     Args:
         dir: (unicode) folder to determine size.
     Returns:

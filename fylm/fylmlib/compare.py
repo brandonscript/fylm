@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,9 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Object comparison tools for Fylm.  
+"""Object comparison tools for Fylm.
 
-This module provides tools which are used to compare different object types 
+This module provides tools which are used to compare different object types
 during runtime.
 """
 
@@ -40,7 +40,7 @@ def string_similarity(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 def year_deviation(year, proposed_year):
-    """Calculate the difference between the expected year of a film to a 
+    """Calculate the difference between the expected year of a film to a
     counterpart release year retrieved from TMDb.
 
     Args:
@@ -50,12 +50,12 @@ def year_deviation(year, proposed_year):
         A deviation, in years, between the parsed year and the proposed year.
     """
 
-    # If the original year was not specified, 
+    # If the original year was not specified,
     # we assume the resulting year is acceptable, and thus we return a 0 deviation.
     if proposed_year is None or year is None: return 0
 
     # Calculate the absolute difference in years and return the value.
-    return abs(year - proposed_year) 
+    return abs(year - proposed_year)
 
 def initial_chars_match(a, b, chars):
     """Determine if the first n characters of two strings are identical (case
@@ -67,7 +67,7 @@ def initial_chars_match(a, b, chars):
         chars: (int) the number of characters to compare
     Returns:
         True if the characters match (case insensitive), else false
-    """    
+    """
     return a.lower()[:chars] == b.lower()[:chars]
 
 # Algorithm to determine if one film is a duplicate of another
@@ -84,7 +84,7 @@ def is_duplicate(film, existing_film):
     # Import Film here to avoid circular import conflicts
     from film import Film
 
-    # Strip restricted chars from both films' titles, and compare lowercase (this 
+    # Strip restricted chars from both films' titles, and compare lowercase (this
     # is important because we're not doing TMDb lookups on the existing film, and
     # we can't guarantee it was named with the correct case)
     title = re.sub(r'[^\w\d\-\s&]', '', formatter.strip_illegal_chars(film.title).lower())
@@ -94,6 +94,6 @@ def is_duplicate(film, existing_film):
     # This assumes that you may want to keep two different editions of the same film,
     # but works well with identifying copies with a different resolution or quality.
 
-    return (title == existing_title 
-        and film.year == existing_film.year 
+    return (title == existing_title
+        and film.year == existing_film.year
         and film.edition == existing_film.edition)

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # MIT License
 
 # Copyright (c) 2017 Cosmic Open Source Projects
@@ -23,18 +23,18 @@
 
 """Provides methods for manipulating text styling in specific terminals.
 
-Uses a builder pattern to chain outputs, for example, to print "Hello, world!" 
+Uses a builder pattern to chain outputs, for example, to print "Hello, world!"
 in red:
-    
+
     print pyfancy().red("Hello, world!").get()
 
 Styles can be changed for different text components. Example:
-    
+
     print pyfancy().red("Hello").raw(", ").blue("world!").get()
 
 No output text is necessary when calling a styling method. This allows
 styles to be stacked:
-    
+
     print pyfancy().red().bold("Hello, world!").get()
 
 There are two provided ways to access the modified text. The first is
@@ -114,27 +114,27 @@ class pyfancy:
     def add(self,addition):
         self.out += addition;
         return self
-    
+
     def read(self,file):
         f = open(file, 'r')
         self.out += f.read()
         f.close()
         return self
-    
+
     def reset(self):
         self.out = ""
         return self
-      
+
     #Alternate between all the colours of the rainbow
     #No orange, replaced with lightRed
     #No purple/violet so I ignored it
     def rainbow(self,addition=""):
         x = 0
-        for i in range(len(addition)): 
+        for i in range(len(addition)):
             if (addition[i] in [" ", "\t", "\n", "\r"]): x+=1
             [self.red, self.light_red, self.yellow, self.green, self.light_blue, self.blue][(i-x) % 6](addition[i])
         return self
-    
+
     def strip(self):
         text = ""
         i = 0
@@ -153,7 +153,7 @@ class pyfancy:
             text += self.out[i]
             i += 1
         return text
-    
+
     # Simply apply the attribute with the given name
     def attr(self,name):
         if name in self.codes:
@@ -164,7 +164,7 @@ class pyfancy:
     # For example, .parse("{red Hello}") is the same as .red("Hello")
     # Multiple attributes can be specified by commas, eg {red,bold Hello}
     # Brackets can be nested, eg {red Hello, {bold world}!}
-    # Brackets can be escaped with backslashes 
+    # Brackets can be escaped with backslashes
     def parse(self,text):
         i = 0 # Current index
         props = [] # Property stack; required for nested brackets
@@ -207,7 +207,7 @@ class pyfancy:
                 self.out += c
             i += 1
         return self
-                        
+
 
     # Multicolored text
     def multi(self,string):

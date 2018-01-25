@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,20 +41,20 @@ if config.tmdb.enabled:
 
 class _TmdbResult:
     """An internal class for handling a TMDb search result object.
-    
-    An internal class that accepts a raw movie result from the 
+
+    An internal class that accepts a raw movie result from the
     TMDb API and translates it into a usable object.
 
     Attributes:
-        search_string:      Search string that was used to retrieve this result 
+        search_string:      Search string that was used to retrieve this result
                             from the TMDb API.
 
         title:              Original title that was parsed from the file/folder.
 
-        proposed_title:     The title of the TMDb search result, cleaned and 
+        proposed_title:     The title of the TMDb search result, cleaned and
                             filesystem-friendly.
 
-        search_year:        Year that was used to retrieve this result from the 
+        search_year:        Year that was used to retrieve this result from the
                             TMDb API.
 
         year:               Original year that was parsed from the film's path.
@@ -70,7 +70,7 @@ class _TmdbResult:
         title_similarity:   Returns a decimal value between 0 and 1 representing
                             the similarity between parsed title and proposed title.
 
-        year_deviation:     Absolute difference in years between the parsed year and 
+        year_deviation:     Absolute difference in years between the parsed year and
                             the proposed release year.
 
         is_potential_match: Performs a checking algorithm to determine if the search
@@ -93,9 +93,9 @@ class _TmdbResult:
         this instance.
         """
         for key, value in {
-            "id": raw_result['id'], 
-            "popularity": raw_result['popularity'], 
-            "proposed_title": raw_result['title'], 
+            "id": raw_result['id'],
+            "popularity": raw_result['popularity'],
+            "proposed_title": raw_result['title'],
             "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0
         }.items():
             setattr(self, key, value)
@@ -113,12 +113,12 @@ class _TmdbResult:
         """
 
         # Because we can't guarantee how similar parsed titles will be to search results,
-        # (mixed case, missing symbols, or illegal OS chars), we strip unwanted chars from 
+        # (mixed case, missing symbols, or illegal OS chars), we strip unwanted chars from
         # both the original and TMDb title, and convert both to lowercase so we can get
         # a more accurate string comparison.
         title_stripped = re.sub(patterns.strip_when_comparing, '', self.title).lower()
         proposed_title_stripped = re.sub(patterns.strip_when_comparing, '', self.proposed_title or '').lower()
-        
+
         # Compare the strings and return the float value.
         return compare.string_similarity(title_stripped, proposed_title_stripped)
 
@@ -134,9 +134,9 @@ class _TmdbResult:
 
     def is_potential_match(self, i):
         """Determine if a search result is a viable match candidate.
-        
-        config.yaml contains several options that govern search results. 
-        This method checks the result against these expectations to 
+
+        config.yaml contains several options that govern search results.
+        This method checks the result against these expectations to
         determine if the result is a potential match.
 
         Args:
@@ -146,37 +146,37 @@ class _TmdbResult:
         Returns:
             True if the TMDb result is a viable match candidate, else False.
         """
-        
+
         # TODO: Remove this overbearing console debug in a future release
         # console.debug('   Comparing match {}: {}=={} / {}=={} ({} match, {} year diff)'.format(
         #     i,
-        #     self.search_string, 
-        #     self.proposed_title, 
+        #     self.search_string,
+        #     self.proposed_title,
         #     self.year,
-        #     self.proposed_year, 
+        #     self.proposed_year,
         #     formatter.percent(self.title_similarity),
         #     self.year_deviation))
 
         # Check that the year deviation is acceptable and check that the
         # popularity is acceptable.
-        if (self.year_deviation <= config.tmdb.max_year_diff 
+        if (self.year_deviation <= config.tmdb.max_year_diff
             and self.popularity >= config.tmdb.min_popularity):
 
             # Construct a string for outputting debug details.
             debug_quality_string = "({} / {} year diff)".format(formatter.percent(self.title_similarity), self.year_deviation)
 
-            # Check to see if the first letter of both titles match, otherwise we 
+            # Check to see if the first letter of both titles match, otherwise we
             # might get some false positives when searching for shorter titles. E.g.
-            # "Once" would still match "At Once" if title_similarity is set to 0.5, 
+            # "Once" would still match "At Once" if title_similarity is set to 0.5,
             # but we can rule it out because the first chars don't match.
             initial_chars_match = compare.initial_chars_match(
-                formatter.strip_the(self.title), 
+                formatter.strip_the(self.title),
                 formatter.strip_the(self.proposed_title), 1)
 
             # If strict mode is enabled, we we need to validate that the title
             # similarity is acceptable and that the initial chars match.
-            if (config.strict is True 
-                and self.title_similarity >= config.tmdb.min_title_similarity 
+            if (config.strict is True
+                and self.title_similarity >= config.tmdb.min_title_similarity
                 and initial_chars_match):
                 console.debug("   Found a potential match in strict mode {}".format(debug_quality_string))
                 return True
@@ -192,8 +192,8 @@ class _TmdbResult:
 
     def is_instant_match(self, i):
         """Determine if a search result is an instant match.
-        
-        This method checks the result against 'ideal' expectations to 
+
+        This method checks the result against 'ideal' expectations to
         determine if the result qualifies as an instant match.
 
         Returns:
@@ -208,14 +208,14 @@ class _TmdbResult:
         # and is at most the second result. This limitation is imposed
         # based on the theory that if by the second result is no good result is
         # found, we should check for all potential results and find the best.
-        if (self.title_similarity >= ideal_title_similarity 
-            and self.year == self.proposed_year 
+        if (self.title_similarity >= ideal_title_similarity
+            and self.year == self.proposed_year
             and i < 3):
             console.debug('   Instant match: {} ({})'.format(self.proposed_title, self.proposed_year))
             return True
         else:
             return False
-        
+
 class _TmdbSearchConstructor:
     """An Internal class that constructs a set of search functions.
 
@@ -232,7 +232,7 @@ class _TmdbSearchConstructor:
         These searches will be executed in order, until either an instant
         match is found, or all search functions have executed. Once
         complete, each result will be mapped to a copy of the originating
-        _TmdbResult object. 
+        _TmdbResult object.
 
         The arguments passed here are used to construct modified search
         functions, and must remain intact in order to validate results.
@@ -257,7 +257,7 @@ class _TmdbSearchConstructor:
 def search(search_string, year=None):
     """Search TMDb for the specified string and year.
 
-    This function proxies the search_string and year to functions 
+    This function proxies the search_string and year to functions
     constructed by a _TmdbSearchConstructor, then processes
     the results to determine if any of the TMDb results are
     potential (or instant) matches.
@@ -271,16 +271,16 @@ def search(search_string, year=None):
     """
 
     # If the search string is empty or None, abort.
-    if search_string is None or search_string == '': 
+    if search_string is None or search_string == '':
         return
 
-    # On macOS, we need to use a funky hack to replace / in a filename with :, 
+    # On macOS, we need to use a funky hack to replace / in a filename with :,
     # in order to output it correctly.
     # Credit: https://stackoverflow.com/a/34504896/1214800
     if sys.platform == 'darwin':
         search_string = search_string.replace(r':', '/')
 
-    console.debug('\nInit search set for "{}" {}'.format(search_string, year))  
+    console.debug('\nInit search set for "{}" {}'.format(search_string, year))
 
     # Initialize a array to store potential matches.
     potential_matches = []
@@ -294,16 +294,16 @@ def search(search_string, year=None):
         # Execute search() and iterate the raw JSON results.
         for raw_result in search():
 
-            # First, increment the counter, because we've performed a search 
+            # First, increment the counter, because we've performed a search
             # and will inspect the result.
             count += 1
 
-            # Create a copy of the origin _TmdbResult object, and map the raw  
+            # Create a copy of the origin _TmdbResult object, and map the raw
             # search result JSON to it.
             result = copy.deepcopy(tmdb_result)
             result._map_raw_result(raw_result)
 
-            # Check for an instant match first. 
+            # Check for an instant match first.
             if result.is_instant_match(count):
 
                 # If one is found, return it immediately, breaking the loop.
@@ -315,9 +315,9 @@ def search(search_string, year=None):
 
                 # If a potential match is found, we save try the next search method.
                 potential_matches.append(result)
-    
+
     # If no instant match was found, sort the results so we can return the most
-    #  likely match. Sort criteria: 
+    #  likely match. Sort criteria:
     #   - prefer lowest year deviation first (0 is better than 1), then
     #   - prefer highest title similarity second (a 0.7 is better than a 0.4)
     sorted_results = sorted(potential_matches, key=lambda r: (r.year_deviation, -r.title_similarity))
@@ -345,7 +345,7 @@ def _primary_year_search(search_string, year=None):
         A raw array of TMDb results.
     """
 
-    # Example API call: 
+    # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={search_string}&api_key=KEY&include_adult=true
 
     console.debug('Searching: "{}" / {} - primary release year'.format(search_string, year))
@@ -379,7 +379,7 @@ def _basic_search(search_string, year=None):
         A raw array of TMDb results.
     """
 
-    # Example API call: 
+    # Example API call:
     #    https://api.themoviedb.org/3/search/movie?year={year}&query={search_string}&api_key=KEY&include_adult=true
 
     console.debug('Searching: "{}" / {} - basic year'.format(search_string, year))
@@ -405,7 +405,7 @@ def _strip_articles_search(search_string, year=None):
     Strip 'the' or 'a' from the beginning of the search string
     (or ', the' from the end) in order to check for mistakenly
     added prefix/suffix articles. Search TMDb with the stripped
-    string and year, using the attributes 'query' and 'year'. 
+    string and year, using the attributes 'query' and 'year'.
 
     Args:
         search_string: (unicode) string to search for.
@@ -415,7 +415,7 @@ def _strip_articles_search(search_string, year=None):
         A raw array of TMDb results.
     """
 
-    # Example API call: 
+    # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={search_string}&api_key=KEY&include_adult=true
 
     console.debug('Searching: "{}" / {} - strip articles, primary release year'.format(search_string, year))
@@ -423,7 +423,7 @@ def _strip_articles_search(search_string, year=None):
     # Disable logging to avoid overloading it with HTTP request logs.
     log.disable()
 
-    # Instantiate a TMDb search object. 
+    # Instantiate a TMDb search object.
     s = tmdb.Search()
 
     # Build the search query and execute the search.
@@ -439,7 +439,7 @@ def _recursive_rstrip_search(search_string, year=None):
     """Recursively remove the last word when searching TMDb.
 
     Perform multiple searches, each time removing the last word
-    from the search string until all words (except 'The') have 
+    from the search string until all words (except 'The') have
     been searched. For example, when we have:
 
         The.Matchstick.Heist.BluRay.1080p.Some-tag.Why.2008.Year.At.End.mkv
@@ -456,7 +456,7 @@ def _recursive_rstrip_search(search_string, year=None):
         The.Matchstick.Heist.BluRay
         The.Matchstick.Heist
 
-    ...and then we have a match.        
+    ...and then we have a match.
 
     Args:
         search_string: (unicode) string to search for.
@@ -466,7 +466,7 @@ def _recursive_rstrip_search(search_string, year=None):
         A (rather large) raw array of TMDb results.
     """
 
-    # Example API call: 
+    # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={search_string}&api_key=KEY&include_adult=true
 
     # Create an empty array to handle raw API results.
@@ -482,7 +482,7 @@ def _recursive_rstrip_search(search_string, year=None):
 
         # Each time the iterator (i) increases in value, we strip a word
         # from the end of the search string. Then we forward a new
-        # search to the primary year search method and return, and append 
+        # search to the primary year search method and return, and append
         # the search results.
         raw_results += _primary_year_search(search_string.rsplit(' ', i)[0], year)
 

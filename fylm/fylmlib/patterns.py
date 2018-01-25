@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 
 """A set of regular expression patterns.
 
-This module exports a set of regular expressions used for matching values 
+This module exports a set of regular expressions used for matching values
 in file/folder paths.
 """
 
@@ -31,13 +31,13 @@ import sys
 year = re.compile(r'\W+(?P<year>19[1-9]\d|20[0-9]\d|21[0-5]\d)')
 
 # Compiled pattern that matches 720p, 1080p, of 2160p, case insensitive.
-quality = re.compile(r'(?P<quality>(?:72|108|216)0p?)', re.I) 
+quality = re.compile(r'(?P<quality>(?:72|108|216)0p?)', re.I)
 
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
 media = re.compile(r'(?:(?P<bluray>bluray|bdremux)|(?P<web>web-?dl|webrip)|(?P<hdtv>hdtv))', re.I)
 
-# Compiled pattern that matches all unwanted characters that should be 
-# stripped from a title: 
+# Compiled pattern that matches all unwanted characters that should be
+# stripped from a title:
 #   - From entire title: . (period) _ (underscore) - (hyphen) and {}[]() (brackets/braces)
 #   - From the end of a string: non-word chars and whitespace
 strip_from_title = re.compile(r'([\._·\-\[\]{}\(\)]|[\s\W]+$)')
@@ -45,11 +45,11 @@ strip_from_title = re.compile(r'([\._·\-\[\]{}\(\)]|[\s\W]+$)')
 # Uncompiled pattern that matches illegal OS chars. Must remain uncompiled here.
 illegal_chars = r'/?<>\:*|"' if (sys.platform == "win32") else r':'
 
-# Compiled pattern of chars/articles to remove when using the _strip_articles 
+# Compiled pattern of chars/articles to remove when using the _strip_articles
 # TMDb search option.
 strip_articles_search = re.compile(r'(^(the|a)\s|, the$)', re.I)
 
 # Compiled pattern that matches articles 'the' and 'a' from the beginning, and
 # ', the' from the end of a string. Used for comparing local titles to potential
 # TMDb matches.
-strip_when_comparing = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I) 
+strip_when_comparing = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)

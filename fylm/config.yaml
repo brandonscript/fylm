@@ -95,7 +95,7 @@ tmdb:
   enabled: true
 
   # TMDb API Key
-  key: YOUR_API_KEY
+  key: YOUR_KEY_HERE
 
   # Percentage similarity (from 0.0 - 1.0) that a title retrieved from TMDb should be to the original.
   # Adjust this value as needed to find correct matches, but test first to check for incorrect matches.
@@ -130,7 +130,7 @@ plex:
   baseurl: 'http://127.0.0.1:32400'
 
   # Plex token
-  token: YOUR_PLEX_TOKEN
+  token: YOUR_KEY_HERE
 
   # Sections to notify to check for updates, e.g. - Movies
   sections:

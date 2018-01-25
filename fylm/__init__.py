@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ import os
 from fylmlib.config import config
 from fylmlib.console import console
 from fylmlib.process import process
-import fylmlib.file_operations as fops
+import fylmlib.operations as ops
 import fylmlib.notify as notify
 import fylmlib.counter as counter
 import fylmlib.existing_films as existing_films
@@ -41,12 +41,12 @@ def main():
 
     # Initialize the success counter.
     counter.count = 0
-    
+
     # Print the welcome message to the console.
     console.start()
 
     # Attempt to create the destination dir if it does not exist.
-    fops.dir.create_deep(config.destination_dir)
+    ops.dirops.create_deep(config.destination_dir)
 
     # Scan the destination dir for existing films.
     existing_films.load()
@@ -57,17 +57,17 @@ def main():
     for source_dir in [os.path.normpath(x) for x in config.source_dirs]:
 
         # Verify that source and destination paths exist.
-        fops.dir.verify_paths_exist([source_dir, config.destination_dir])
+        ops.dirops.verify_paths_exist([source_dir, config.destination_dir])
 
         # Retrieve a list of films from the current source dir.
-        films = fops.dir.get_new_films(source_dir)
+        films = ops.dirops.get_new_films(source_dir)
 
         # Iterate each film.
         for film in films:
 
             # Print the film details to the console.
             console.film_loaded(film)
-            
+
             # If the film should be ignored, print the reason why, and skip.
             if film.should_ignore is True:
                 console.skip(film, film.ignore_reason)
@@ -84,15 +84,15 @@ def main():
             # If the lookup was successful, print the results to the console.
             console.film_details(film)
 
-            # If duplicate checking is enabled and the film is a duplicate, abort, 
-            # *unless* overwriting is enabled. `is_duplicate` will always return 
+            # If duplicate checking is enabled and the film is a duplicate, abort,
+            # *unless* overwriting is enabled. `is_duplicate` will always return
             # false if duplicate checking is disabled.
             if film.is_duplicate and config.overwrite_duplicates == False:
                 continue
 
-            # Attempt to Create the destination folder (fails silently if it 
+            # Attempt to Create the destination folder (fails silently if it
             # already exists).
-            fops.dir.create_deep(film.destination_dir)        
+            ops.dirops.create_deep(film.destination_dir)
 
             # If it is a file and as a valid extension, process it as a file
             if film.is_file and film.has_valid_ext:

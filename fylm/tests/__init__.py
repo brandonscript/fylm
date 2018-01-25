@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,7 +29,7 @@ from threading import Thread
 from Queue import Queue
 
 from fylmlib.config import config
-import fylmlib.file_operations as fops
+import fylmlib.operations as ops
 
 from tests.make import make
 
@@ -46,14 +46,14 @@ files_path = 'tests/files'
 config.min_filesize = 0
 
 # Make test files.
-tests_map = make('tests/files.json', files_path) 
+tests_map = make('tests/files.json', files_path)
 
 # If you change the number of valid films in the json map,
 # update valid_films_count to match.
 valid_films_count = 105
 
 # Load films and filter them into valid films.
-films = fops.dir.get_new_films(files_path)
+films = ops.dirops.get_new_films(files_path)
 valid_films = filter(lambda film: not film.should_ignore, films)
 
 # Async handling for lookups.
@@ -84,7 +84,7 @@ class FylmTestCase(unittest.TestCase):
     def test_search_tmdb(self):
         # Look up films by name from TMDb and update title
         print_title('Film.search_tmdb()')
-        
+
         print('Searching {} titles (this may take several minutes), please wait...'.format(len(valid_films)))
 
         # TODO: Debug this and figure out if we can improve the thread limiting to match the API's rate limit header
@@ -100,7 +100,7 @@ class FylmTestCase(unittest.TestCase):
         q.join()
         sys.stdout.write("\033[F") # back to previous line
         sys.stdout.write("\033[K") # clear line
-        
+
         for film in valid_films:
             matching_tests = filter(lambda x: x.expected_title == film.title, tests_map)
             if len(matching_tests) == 0:

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,14 +27,14 @@ import re
 
 from fylmlib.config import config
 from fylmlib.console import console
-import fylmlib.file_operations as fops
+import fylmlib.operations as ops
 import fylmlib.counter as counter
 
 class process:
     """Main class for scanning for and processing films.
 
     All methods are class methods, thus this class should never be instantiated.
-    """ 
+    """
 
     # TODO: (Possible) handle multiple editions stored in the same folder.
     @classmethod
@@ -43,24 +43,24 @@ class process:
 
         Args:
             film: (Film) film object to process.
-        """                
+        """
 
         # Rename the source file to its new filename
-        fops.file.rename(film.source_path, film.new_filename__ext())
+        ops.fileops.rename(film.source_path, film.new_filename__ext())
 
         # Update the source path of the film if we're running in live mode
         # to its new name.
         if config.test is False:
             film.source_path = os.path.normpath(os.path.join(os.path.dirname(film.source_path), film.new_filename__ext()))
 
-        # Generate a new source path based on the new filename and the 
+        # Generate a new source path based on the new filename and the
         # destination dir.
         dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext()))
 
         console.info('Moving to {}'.format(dst))
 
         # Move the file. (Only executes in live mode).
-        if fops.file.safe_move(film.source_path, dst):
+        if ops.fileops.safe_move(film.source_path, dst):
 
             # If move was successful, update the counter.
             counter.add(1)
@@ -84,9 +84,9 @@ class process:
         queued_files = []
 
         # Enumerate valid files.
-        for file in valid_files:
+        for file in film.valid_files:
 
-            # Generate new filename based on film's corrected name and 
+            # Generate new filename based on film's corrected name and
             # the iterated file's extension.
             new_filename__ext = film.new_filename__ext(os.path.splitext(file)[1])
 
@@ -107,18 +107,18 @@ class process:
                 src = os.path.normpath(os.path.join(os.path.dirname(file), os.path.basename(dst)))
 
             # Rename the source file to its new filename
-            fops.file.rename(file, os.path.basename(dst))
+            ops.fileops.rename(file, os.path.basename(dst))
 
             console.info('Moving to {}'.format(dst))
 
             # Move the file. (Only executes in live mode).
-            if fops.file.safe_move(src, dst):
+            if ops.fileops.safe_move(src, dst):
 
                 # If move was successful, update the counter.
                 counter.add(1)
 
         # Recursively delete unwanted files and update the count.
-        deleted_files_count = fops.dir.delete_unwanted_files(film.source_path, deleted_files_count)
+        deleted_files_count = ops.dirops.delete_unwanted_files(film.source_path, deleted_files_count)
 
         # When all copying is done, update the film's source_path to the new location
         # of its parent folder at the destination.
@@ -127,23 +127,23 @@ class process:
         # Print results of removing unwanted files.
         if config.remove_unwanted_files:
             console.notice('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
-            
-        # Remove the original source parent folder, if it is safe to do so (and 
-        # the feature is enabled in config). First check that the source folder is 
+
+        # Remove the original source parent folder, if it is safe to do so (and
+        # the feature is enabled in config). First check that the source folder is
         # empty, and that it is < 1 KB in size. If true, remove it.
         if config.remove_source:
             console.debug('Removing parent folder {}'.format(film.original_path))
-            
+
             # Max size a dir can be to qualify for removal
             max_size = 1000
-            if (fops.size(film.original_path) < max_size and fops.dir.count_files_deep(film.original_path) == 0) or config.test:
+            if (ops.size(film.original_path) < max_size and ops.dirops.count_files_deep(film.original_path) == 0) or config.test:
 
                 # Check that the file is smaller than max_size, and deep count the number
                 # of files inside. Automatically ignores system files like .DS_Store.
                 # If running in test mode, we 'mock' this response by pretending the folder
                 # was removed.
                 console.notice('Removing parent folder')
-                fops.dir.delete_dir_and_contents(film.original_path, max_size)
+                ops.dirops.delete_dir_and_contents(film.original_path, max_size)
             else:
 
                 # If the parent folder fails the deletion qualification, print to console.

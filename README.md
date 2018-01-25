@@ -1,8 +1,8 @@
-![version](https://img.shields.io/badge/version-0.2.0--alpha-orange.svg)
+![version](https://img.shields.io/badge/version-0.2.0--alpha-orange.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8fcfaf45a6494aedb4b0340461c2b79b)](https://www.codacy.com/app/brandonscript/fylm)
 
 ### Overview
 
-Fylm is a wonderful automated command line app for organizing your film media. You can pronounce it **Film** or **File 'em**, whichever you like! 
+Fylm is a wonderful automated command line app for organizing your film media. You can pronounce it **Film** or **File 'em**, whichever you like!
 
 It uses (highly suspect) regular expressions to identify film files (or folders), then looks them up on [TMDb](https://www.themoviedb.org) to get all the correct details. Once that's over and done with, it'll rename them according to your OCD standards, and move them.
 
@@ -47,8 +47,8 @@ All of Fylm's options are configured in `config.yaml`. Options of note that you 
 If you don't want or need anything special, simply:
 
     python fylm
-    
-from the root project folder will run the app. 
+
+from the root project folder will run the app.
 
 However, since we're putting a lot of faith in machines and automation, there are times when you should walk before you run, and look before you leap. For that, there are several great command line options available to you. Most of these can be configured in config.yaml, but using the command line option will override whatever is in config:
 
@@ -63,7 +63,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --no-strict
 	
 - `quiet` will suppress notifications or updates to services like Plex.
-- `test` will run the app in sandbox mode, which means no changes will actually be performed on the filesystem. A good rule of thumb is to always test first before you run the app on a long list of files. 
+- `test` will run the app in sandbox mode, which means no changes will actually be performed on the filesystem. A good rule of thumb is to always test first before you run the app on a long list of files.
 - `debug` will run the app with some extra details (ok, verbose word porridge) in the console.
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.
@@ -80,7 +80,7 @@ To run tests:
 
     cd fylm/
     python -m unittest tests`
-    
+
 <sub>(Bonus points if you send in a PR that allows tests to run from the project root.)</sub>
 
 #### Contributing

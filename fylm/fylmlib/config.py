@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +40,7 @@ def construct_yaml_str(self, node):
         yaml string constructor
     """
 
-    # Override the default string handling function 
+    # Override the default string handling function
     # to always return unicode objects.
     return self.construct_scalar(node)
 
@@ -52,7 +52,7 @@ class _Config:
     """Main class for handling app options.
 
     TODO: Convert this class to a singleton property that is only loaded once.
-    """    
+    """
     def __init__(self):
         """Load config.yaml and map CLI arguments, if applicable.
         """
@@ -73,8 +73,8 @@ class _Config:
         # This option will suppress notifications or updates to services like Plex.
         parser.add_argument(
             '-q',
-            '--quiet', 
-            action="store", 
+            '--quiet',
+            action="store",
             default=False,
             dest="quiet",
             help='Do not send notifications or update Plex')
@@ -85,8 +85,8 @@ class _Config:
         # results before running a live operation.
         parser.add_argument(
             '-t',
-            '--test', 
-            action="store_true", 
+            '--test',
+            action="store_true",
             default=False,
             dest="test",
             help='Run in non-destructive test mode only (nothing is renamed, moved, or deleted)')
@@ -96,8 +96,8 @@ class _Config:
         # when developing or debugging difficult titles/files.
         parser.add_argument(
             '-d',
-            '--debug', 
-            action="store_true", 
+            '--debug',
+            action="store_true",
             default=False,
             dest="debug",
             help='Display extra debugging information in the console output')
@@ -106,20 +106,20 @@ class _Config:
         # This option disables the intelligent string comparison algorithm that verifies titles
         # (and years) are a match. Use with caution; likely will result in false-positives.
         parser.add_argument(
-            '--no-strict', 
-            action="store_false", 
-            default=True, 
+            '--no-strict',
+            action="store_false",
+            default=True,
             dest="strict",
             help='Disable intelligent string comparison algorithm which ensure titles are a match')
 
         # -f, --force-lookup
-        # This option will force the app to look up any file or folder in the search dirs (except 
-        # TV shows), even if they don't fit the naming criteria to be considered a film (e.g. have 
+        # This option will force the app to look up any file or folder in the search dirs (except
+        # TV shows), even if they don't fit the naming criteria to be considered a film (e.g. have
         # a year and valid ext).
         parser.add_argument(
             '-f',
-            '--force-lookup', 
-            action="store_true", 
+            '--force-lookup',
+            action="store_true",
             default=False,
             dest="force_lookup",
             help='Assume that all files/folders (except TV shows) in source dir(s) are films, and look them all up')
@@ -129,8 +129,8 @@ class _Config:
         # because this could be very destructive. (suggest running in test mode first!).
         parser.add_argument(
             '-o',
-            '--overwrite', 
-            action="store_true", 
+            '--overwrite',
+            action="store_true",
             default=False,
             dest="overwrite_duplicates",
             help=('Forcibly overwrite any file (or matching files inside a film folder) with the same name, '
@@ -139,10 +139,10 @@ class _Config:
         # --source
         # This option overrides the source dirs configured in config.yaml.
         parser.add_argument(
-            '--source', 
-            action="store", 
-            default=None, 
-            dest="source_dirs", 
+            '--source',
+            action="store",
+            default=None,
+            dest="source_dirs",
             type=list,
             help='Override the configured source dir(s) (only one dir supported)')
 
@@ -150,10 +150,10 @@ class _Config:
         # This option limits the number of files/folders processed during a single operation.
         parser.add_argument(
             '-l',
-            '--limit', 
-            action="store", 
-            default=0, 
-            dest="limit", 
+            '--limit',
+            action="store",
+            default=0,
+            dest="limit",
             type=int,
             help='Limit the number of files to rename and move in a single pass')
 
@@ -162,13 +162,13 @@ class _Config:
         # it to be considered a potential match. Set to 0 to disable (accept all results).
         parser.add_argument(
             '-p',
-            '--pop', 
-            action="store", 
-            default=None, 
-            dest="min_popularity", 
+            '--pop',
+            action="store",
+            default=None,
+            dest="min_popularity",
             type=float,
             help='Minimum popularity ranking on TMDb to consider a valid match')
-        
+
         # Parse known args and discard any we don't know about.
         args, unknown = parser.parse_known_args()
 
@@ -192,12 +192,12 @@ class _Config:
             Value for specified key
         """
 
-        # Override the default string handling function 
+        # Override the default string handling function
         # to always return unicode objects
         try:
             return self.config[name]
         except KeyError:
-            # Previously this was thought to be a good idea - returning args, but it has proven 
+            # Previously this was thought to be a good idea - returning args, but it has proven
             # to return some bad data (empty DotMap objects)
             #   return getattr(self.args, name
 

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,8 @@
 
 """String formatting tools for Fylm.
 
-This module contains several string manipulation tools used for 
-string cleaning, improving comparison results, and outputting 
+This module contains several string manipulation tools used for
+string cleaning, improving comparison results, and outputting
 human-readable information to the console/log.
 """
 
@@ -46,7 +46,7 @@ def build_new_filename(film):
     # Create a mutable copy of the original renaming pattern
     template = copy.copy(config.rename_pattern)
 
-    # Generate a key-value map of available template properties, 
+    # Generate a key-value map of available template properties,
     # each mapped to its associated film property.
     pattern_map = [
         ["title", film.title],
@@ -59,24 +59,24 @@ def build_new_filename(film):
 
     # Enumerate the pattern map
     for key, value in pattern_map:
-        
-        # Generate a regular expression that suppports the keyword inside { } 
+
+        # Generate a regular expression that suppports the keyword inside { }
         # and uses capture groups to preserve additional formatting characters.
-        # The expression matches `{<anything>key<anything>}`, except where 
+        # The expression matches `{<anything>key<anything>}`, except where
         # { } are escaped with backslashes, i.e. \{ and \}.
         rx = re.compile(r'\{([^\{]*)' + key + r'([^\}]*)\}', re.I)
-        
+
         # Check for a match
         match = re.search(rx, template)
 
         # Replace the template key in the pattern and strip the surrounding { }.
-        # We add capture groups back in here to preserve extraneous chars that were 
+        # We add capture groups back in here to preserve extraneous chars that were
         # in the original match. This allows for conditional chars to be added to
-        # the template string, so that `{ - edition}` will be replaced with 
+        # the template string, so that `{ - edition}` will be replaced with
         # ` - Director's Cut` *only* if film.edition isn't blank.
         replacement = '{}{}{}'.format(match.groups()[0], value, match.groups()[1]) if match and match.groups() is not None else value
 
-        # Update the template by replacing the original template match (e.g. `{title}`) 
+        # Update the template by replacing the original template match (e.g. `{title}`)
         # with the replacement (e.g. `Furngully The Last Rainforest`).
         template = re.sub(rx, replacement if value is not None else '', template)
 
@@ -87,20 +87,20 @@ def build_new_filename(film):
     # Strip illegal chars
     template = strip_illegal_chars(template)
 
-    # Hack macOS titles that read / from the filesystem as :. If we don't do this, 
+    # Hack macOS titles that read / from the filesystem as :. If we don't do this,
     # we end up with the app trying to create folders for any title that contains
     # a /. Looking at you, Face/Off.
     if sys.platform == 'darwin':
         template = template.replace(r'/', ':')
 
-    # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become 
+    # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
     # `Dude Where's My Car`).
     return strip_extra_whitespace(template)
 
 def pretty_size(bytes, measure=None):
     """Pretty format filesize/bytes into human-readable strings.
 
-    Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default, 
+    Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,
     this measurement is automatically calculated depending on filesize,
     but can be overridden by passing `measure` key.
 
@@ -120,35 +120,35 @@ def pretty_size(bytes, measure=None):
 
         # Round to nearest whole number.
         "KB": round(bytes / 1000.0, 0),
-        "KiB": round(bytes / 1024.0, 0), 
+        "KiB": round(bytes / 1024.0, 0),
 
         # Round to one decimal place.
         "MB": round(bytes / 1000.0 / 1000.0, 1),
-        "MiB": round(bytes / 1024.0 / 1024.0, 1), 
+        "MiB": round(bytes / 1024.0 / 1024.0, 1),
 
         # Round to two decimal places.
         "GB": round(bytes / 1000.0 / 1000.0 / 1000.0, 2),
-        "GiB": round(bytes / 1024.0 / 1024.0 / 1024.0, 2) 
+        "GiB": round(bytes / 1024.0 / 1024.0 / 1024.0, 2)
     }
 
     # If measure was specified, format and return. This is usually used when calling
     # this function recursively, but can be called manually.
-    if measure: 
+    if measure:
         return '{} {}'.format(pretty_size_map[measure], measure)
-    elif pretty_size_map['GiB'] > 1: 
+    elif pretty_size_map['GiB'] > 1:
         return pretty_size(bytes, 'GiB')
-    elif pretty_size_map['MiB'] > 1: 
+    elif pretty_size_map['MiB'] > 1:
         return pretty_size(bytes, 'MiB')
-    elif pretty_size_map['KiB'] > 1: 
+    elif pretty_size_map['KiB'] > 1:
         return pretty_size(bytes, 'KiB')
-    else: 
+    else:
         return '{} {}'.format(bytes, 'B')
 
 def pretty_size_diff(src, dst):
     """Pretty format filesize comparison.
 
-    Compares two files/folders and prints the destination's difference in size in a 
-    human-readable manner, e.g. if src is 500 MB and dst is 300 MB, it will print 
+    Compares two files/folders and prints the destination's difference in size in a
+    human-readable manner, e.g. if src is 500 MB and dst is 300 MB, it will print
     '200 MB smaller'.
 
     Args:
@@ -159,7 +159,7 @@ def pretty_size_diff(src, dst):
     """
 
     # Import size here to avoid circular import conflicts.
-    from fylmlib.file_operations import size
+    from fylmlib.operations import size
 
     # Get the size of both source and destionation, then subtract the size of the
     # destination from the size of the source.
@@ -229,11 +229,11 @@ def strip_illegal_chars(s):
         A string without restricted chars.
     """
 
-    # If the char separates a word, e.g. Face/Off, we need to preserve that 
+    # If the char separates a word, e.g. Face/Off, we need to preserve that
     # separation with a dash (-).
     s = re.sub(r'(?<=\S)[' + patterns.illegal_chars + r'](?=\S)', '-', s)
-    
-    # If it terminates another word, e.g. Mission: Impossible, we replace it 
+
+    # If it terminates another word, e.g. Mission: Impossible, we replace it
     # and any surrounding spaces with a single space instead. This will later
     # be corrected when strip_extra_whitespace is called.
     s = re.sub(r'\s?[' + patterns.illegal_chars + r']\s?', ' ', s)
@@ -242,7 +242,7 @@ def strip_illegal_chars(s):
 def strip_extra_whitespace(s):
     """Replace repeating whitespace chars in a string with a single space.
 
-    Search for repeating whitespace chars in a string and replace them with 
+    Search for repeating whitespace chars in a string and replace them with
     a single space.
 
     Args:
@@ -250,7 +250,7 @@ def strip_extra_whitespace(s):
     Returns:
         A string without repeating whitespace chars.
     """
-    return ' '.join(s.split()).strip()    
+    return ' '.join(s.split()).strip()
 
 def correct_title_case(title, always_lowercase, always_uppercase):
     """Convert a title to best-guess title case.
@@ -276,14 +276,14 @@ def correct_title_case(title, always_lowercase, always_uppercase):
 
     # Loop through each word (beginning from the second word).
     for word in words[1:]:
-        # If the word, lowercased, is in the always_lowercase array, 
+        # If the word, lowercased, is in the always_lowercase array,
         # lowercase it.
         # Or if the word, uppercased, is in the always_uppercase array,
         # uppercase it.
         # Otherwise, keep the word capitalized().
         final.append(
-            word.lower() in always_lowercase and word.lower() 
-            or word.upper() in always_uppercase and word.upper() 
+            word.lower() in always_lowercase and word.lower()
+            or word.upper() in always_uppercase and word.upper()
             or word.capitalize())
 
     # Join the resulting array back together with a space.

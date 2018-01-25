@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,7 +32,7 @@ def add(num):
 
     Args:
         num: (int) the number to add to the existing count.
-    """    
+    """
 
     # Pull in the module's (global) count variable.
     global count

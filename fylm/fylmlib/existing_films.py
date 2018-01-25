@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*- 
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,14 +30,14 @@ cache = []
 
 def load():
     """Load existing films from the destination dir.
-    """    
+    """
 
     # Import file operations here to avoid circular conflicts
-    import fylmlib.file_operations as fops
+    import fylmlib.operations as ops
 
     # Pull in the module's (global) cache variable.
     global cache
 
     # Scan the destination directory for existing films, which sets
     # the existing_films cache. This is used for duplicate checking.
-    cache = fops.dir.get_existing_films(config.destination_dir)
+    cache = ops.dirops.get_existing_films(config.destination_dir)
