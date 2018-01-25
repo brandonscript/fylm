@@ -49,7 +49,7 @@ tests_map = make('tests/files.json', files_path)
 
 # If you change the number of valid films in the json map,
 # update valid_films_count to match.
-valid_films_count = 105
+valid_films_count = 106
 
 # Load films and filter them into valid films.
 films = ops.dirops.get_new_films(files_path)

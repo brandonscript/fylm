@@ -52,6 +52,7 @@ def main():
     existing_films.load()
 
     # TODO: add interactive option to skip, confirm, and correct matches
+    # TODO: add recursive searching inside poorly named folders
 
     # Iterate each path in the config.source_dirs array.
     for source_dir in [os.path.normpath(x) for x in config.source_dirs]:
