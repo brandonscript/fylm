@@ -81,9 +81,6 @@ def is_duplicate(film, existing_film):
         True if the films are identical, else False
     """
 
-    # Import Film here to avoid circular import conflicts
-    from film import Film
-
     # Strip restricted chars from both films' titles, and compare lowercase (this
     # is important because we're not doing TMDb lookups on the existing film, and
     # we can't guarantee it was named with the correct case)

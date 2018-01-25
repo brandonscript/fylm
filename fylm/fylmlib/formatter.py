@@ -97,15 +97,15 @@ def build_new_filename(film):
     # `Dude Where's My Car`).
     return strip_extra_whitespace(template)
 
-def pretty_size(bytes, measure=None):
-    """Pretty format filesize/bytes into human-readable strings.
+def pretty_size(size_in_bytes, measure=None):
+    """Pretty format filesize/size_in_bytes into human-readable strings.
 
     Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,
     this measurement is automatically calculated depending on filesize,
     but can be overridden by passing `measure` key.
 
     Args:
-        bytes (int): file size in bytes
+        size_in_bytes (int): file size in bytes
         measure (unicode): (optional) key value for the pretty_size_map to force
                            formatting to a specific measurement.
     Returns:
@@ -116,19 +116,19 @@ def pretty_size(bytes, measure=None):
     pretty_size_map = {
 
         # Do not round.
-        "B": bytes,
+        "B": size_in_bytes,
 
         # Round to nearest whole number.
-        "KB": round(bytes / 1000.0, 0),
-        "KiB": round(bytes / 1024.0, 0),
+        "KB": round(size_in_bytes / 1000.0, 0),
+        "KiB": round(size_in_bytes / 1024.0, 0),
 
         # Round to one decimal place.
-        "MB": round(bytes / 1000.0 / 1000.0, 1),
-        "MiB": round(bytes / 1024.0 / 1024.0, 1),
+        "MB": round(size_in_bytes / 1000.0 / 1000.0, 1),
+        "MiB": round(size_in_bytes / 1024.0 / 1024.0, 1),
 
         # Round to two decimal places.
-        "GB": round(bytes / 1000.0 / 1000.0 / 1000.0, 2),
-        "GiB": round(bytes / 1024.0 / 1024.0 / 1024.0, 2)
+        "GB": round(size_in_bytes / 1000.0 / 1000.0 / 1000.0, 2),
+        "GiB": round(size_in_bytes / 1024.0 / 1024.0 / 1024.0, 2)
     }
 
     # If measure was specified, format and return. This is usually used when calling
@@ -136,13 +136,13 @@ def pretty_size(bytes, measure=None):
     if measure:
         return '{} {}'.format(pretty_size_map[measure], measure)
     elif pretty_size_map['GiB'] > 1:
-        return pretty_size(bytes, 'GiB')
+        return pretty_size(size_in_bytes, 'GiB')
     elif pretty_size_map['MiB'] > 1:
-        return pretty_size(bytes, 'MiB')
+        return pretty_size(size_in_bytes, 'MiB')
     elif pretty_size_map['KiB'] > 1:
-        return pretty_size(bytes, 'KiB')
+        return pretty_size(size_in_bytes, 'KiB')
     else:
-        return '{} {}'.format(bytes, 'B')
+        return '{} {}'.format(size_in_bytes, 'B')
 
 def pretty_size_diff(src, dst):
     """Pretty format filesize comparison.

@@ -23,8 +23,6 @@ output to the log module.
 
 from __future__ import unicode_literals
 
-import sys
-import logging
 import datetime
 
 from pyfancy import *
@@ -110,84 +108,84 @@ class console:
         log.info(s)
 
     @classmethod
-    def debug(cls, str):
+    def debug(cls, s):
         """Print debugging details, if config.debug is enabled.
 
         Args:
-            str: (unicode) String to print/log
+            s: (unicode) String to print/log
         """
-        if config.debug is True: print(str)
+        if config.debug is True: print(s)
 
     @classmethod
-    def info(cls, str):
+    def info(cls, s):
         """Print and log less important text. Prints dark gray.
 
         Args:
-            str: (unicode) String to print/log.
+            s: (unicode) String to print/log.
         """
-        pyfancy().dark_gray('{}{}'.format(INDENT_PREFIX, str)).output()
-        log.detail(str)
+        pyfancy().dark_gray('{}{}'.format(INDENT_PREFIX, s)).output()
+        log.detail(s)
 
     @classmethod
-    def error(cls, str):
+    def error(cls, s):
         """Print an error, then call log.error, which raises an Exception. Prints red.
 
         Args:
-            str: (unicode) String to print/log.
+            s: (unicode) String to print/log.
         """
-        log.error(str)
+        log.error(s)
 
     @classmethod
-    def interesting(cls, str, highlight):
+    def interesting(cls, s, highlight):
         """Print important text to the console. Prints white first, then a green highlight.
 
         Args:
-            str: (unicode) String to print white and send to log.
+            s: (unicode) String to print white and send to log.
             highlight: (unicode) String to print green and send to log.
         """
-        pyfancy().white('{}{} '.format(INDENT_PREFIX, str)).green(highlight).output()
-        log.detail('{}{}'.format(str, highlight))
+        pyfancy().white('{}{} '.format(INDENT_PREFIX, s)).green(highlight).output()
+        log.detail('{}{}'.format(s, highlight))
 
     @classmethod
-    def warn(cls, str):
+    def warn(cls, s):
         """Print and log a warning. Prints red.
 
         Args:
-            str: (unicode) String to print/log.
+            s: (unicode) String to print/log.
         """
-        pyfancy().red('{}{}'.format(INDENT_PREFIX, str)).output()
-        log.detail(str)
+        pyfancy().red('{}{}'.format(INDENT_PREFIX, s)).output()
+        log.detail(s)
 
     @classmethod
-    def red(cls, str):
+    def red(cls, s):
         """Print and log text in red. Prints red.
 
         Args:
-            str: (unicode) String to print/log.
+            s: (unicode) String to print/log.
         """
-        pyfancy().red('{}'.format(str)).output()
-        log.detail(str)
+        pyfancy().red('{}'.format(s)).output()
+        log.detail(s)
 
     @classmethod
-    def notice(cls, str):
+    def notice(cls, s):
         """Print and log unimportant text. Prints dim (darker gray).
 
         Args:
-            str: (unicode) String to print/log.
+            s: (unicode) String to print/log.
         """
-        pyfancy().dim('{}{}'.format(INDENT_PREFIX, str)).output()
-        log.detail(str)
+        pyfancy().dim('{}{}'.format(INDENT_PREFIX, s)).output()
+        log.detail(s)
 
     @classmethod
-    def skip(cls, film, str):
+    def skip(cls, film, s):
         """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
 
         Args:
             film: (Film) Film that was skipped.
-            str: (unicode) Reason the film was skipped
+            s: (unicode) Reason the film was skipped
         """
-        pyfancy().red('{}{}'.format(MAIN_PREFIX, film.original_filename)).dark_gray(' {}'.format(str)).output()
-        log.detail(str)
+        pyfancy().red('{}{}'.format(MAIN_PREFIX, film.original_filename)).dark_gray(' {}'.format(s)).output()
+        log.detail(s)
 
     @classmethod
     def film_details(cls, film):

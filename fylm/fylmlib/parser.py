@@ -142,9 +142,14 @@ class parser:
             match is found.
         """
         match = re.search(patterns.media, os.path.basename(source_path))
-        return "BluRay" if match and match.group('bluray') else None
-        return "WEB-DL" if match and match.group('web') else None
-        return "HDTV" if match and match.group('hdtv') else None
+        if match and match.group('bluray'):
+            return "BluRay"
+        elif match and match.group('web'):
+            return "WEB-DL"
+        elif match and match.group('hdtv'):
+            return "HDTV"
+        else:
+            return None
 
     @classmethod
     def get_edition(cls, source_path):

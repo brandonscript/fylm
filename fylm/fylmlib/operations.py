@@ -384,7 +384,7 @@ class fileops:
                 # Otherwise, move the file instead.
                 else: shutil.move(src, dst)
                 return True
-            except:
+            except IOError:
 
                 # Catch exception and soft warn in the console (don't raise Exception).
                 console.warn('Failed to move {} to {}'.format(src, dst))

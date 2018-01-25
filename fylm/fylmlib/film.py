@@ -22,7 +22,6 @@ from __future__ import unicode_literals
 
 import os
 import re
-import sys
 from itertools import ifilter
 
 from fylmlib.config import config
