@@ -34,12 +34,12 @@ def make(json_path, files_path):
     # Clean up first
     try:
         shutil.rmtree(root_dir)
-    except:
+    except Exception:
         pass
 
     try:
         os.makedirs(root_dir)
-    except:
+    except Exception:
         pass
 
     with io.open(json_path, mode="r", encoding="utf-8") as json_data:
