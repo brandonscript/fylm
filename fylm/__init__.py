@@ -77,7 +77,7 @@ def main():
             film.search_tmdb()
 
             # If the search failed, or TMDb is disabled, print why, and skip.
-            if film.id is None and config.search_tmdb is True:
+            if film.tmdb_id is None and config.search_tmdb is True:
                 console.skip(film, film.ignore_reason)
                 continue
 

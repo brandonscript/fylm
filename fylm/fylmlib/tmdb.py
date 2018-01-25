@@ -22,7 +22,6 @@ This module performs searches and handles results from TMDb.
 
 from __future__ import unicode_literals
 
-import logging
 import re
 import sys
 import copy
@@ -63,7 +62,7 @@ class _TmdbResult:
 
         proposed_year:      The primary release year of the TMDb search result.
 
-        id:                 The TMDb ID of the search result.
+        tmdb_id:            The TMDb ID of the search result.
 
         popularity:         The TMDb popularity ranking of the search result.
 
@@ -76,14 +75,14 @@ class _TmdbResult:
         is_potential_match: Performs a checking algorithm to determine if the search
                             result qualifies as a potential match.
     """
-    def __init__(self, search_string, search_year, year=None, title=None, proposed_title=None, proposed_year=None, id=None, popularity=0):
+    def __init__(self, search_string, search_year, year=None, title=None, proposed_title=None, proposed_year=None, tmdb_id=None, popularity=0):
         self.search_string = search_string
         self.title = search_string
         self.proposed_title = proposed_title
         self.search_year = search_year
         self.year = search_year or year
         self.proposed_year = proposed_year
-        self.id = id
+        self.tmdb_id = tmdb_id
         self.popularity = popularity
 
     def _map_raw_result(self, raw_result):
@@ -93,7 +92,7 @@ class _TmdbResult:
         this instance.
         """
         for key, value in {
-            "id": raw_result['id'],
+            "tmdb_id": raw_result['id'],
             "popularity": raw_result['popularity'],
             "proposed_title": raw_result['title'],
             "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0

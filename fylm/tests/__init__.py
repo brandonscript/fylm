@@ -30,7 +30,6 @@ from Queue import Queue
 
 from fylmlib.config import config
 import fylmlib.operations as ops
-
 from tests.make import make
 
 DIVIDER = '======================================================================'
@@ -115,17 +114,17 @@ class FylmTestCase(unittest.TestCase):
             self.assertIsNotNone(film.title)
             self.assertEqual(film.title, test_film.expected_title)
 
-            if film.id != test_film.expected_id:
+            if film.tmdb_id != test_film.expected_id:
                 print(' 𝗑 fail  {}\n'.format(film.original_filename))
                 print('\n'.join("%s: %s" % item for item in vars(film).items()) + '\n')
-            self.assertIsNotNone(film.id)
-            self.assertEqual(film.id, test_film.expected_id)
+            self.assertIsNotNone(film.tmdb_id)
+            self.assertEqual(film.tmdb_id, test_film.expected_id)
 
             self.assertIsNotNone(film.year)
-            print(" ✓ pass   {} {} {} {}".format(film.title.ljust(40)[:40], str(film.year).ljust(6)[:6], str(film.id).ljust(10)[:10], film.original_filename))
+            print(" ✓ pass   {} {} {} {}".format(film.title.ljust(40)[:40], str(film.year).ljust(6)[:6], str(film.tmdb_id).ljust(10)[:10], film.original_filename))
         for not_a_film in list(set(films) - set(valid_films)):
             print(" ✓ pass   {} {}".format(not_a_film.ignore_reason, not_a_film.original_filename))
-            self.assertIsNone(not_a_film.id)
+            self.assertIsNone(not_a_film.tmdb_id)
 
     def test_title_the(self):
         # Check that films beginning with 'The' have it moved to the end, ', The'

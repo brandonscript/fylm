@@ -15,7 +15,6 @@
 
 from __future__ import unicode_literals
 
-import unittest
 import os
 import io
 import shutil
@@ -52,8 +51,8 @@ def make(json_path, files_path):
                 for file in test_film['files']:
                     parent_dir = test_film['dir'] if 'dir' in test_film else ''
                     open(os.path.join(root_dir, parent_dir, file), 'a').close()
-            id = test_film['id'] if 'id' in test_film else None
+            tmdb_id = test_film['tmdb_id'] if 'tmdb_id' in test_film else None
             title = test_film['title'] if 'title' in test_film else None
-            tests_map.append(_MockFilm(title, id))
+            tests_map.append(_MockFilm(title, tmdb_id))
 
         return tests_map

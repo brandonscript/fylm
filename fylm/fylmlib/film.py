@@ -27,7 +27,6 @@ from itertools import ifilter
 from fylmlib.config import config
 from fylmlib.console import console
 from fylmlib.parser import parser
-import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 import fylmlib.tmdb as tmdb
 import fylmlib.compare as compare
@@ -48,7 +47,7 @@ class Film:
         title_the:          For titles that begin with 'The', move it
                             to the end of the title: ', The'.
 
-        id:                 TMDb ID for film.
+        tmdb_id:            TMDb ID for film.
 
         year:               Primary release year.
 
@@ -123,7 +122,7 @@ class Film:
         self.edition = parser.get_edition(source_path)
         self.media = parser.get_media(source_path)
         self.quality = parser.get_quality(source_path)
-        self.id = None
+        self.tmdb_id = None
         self.title_similarity = 0
         self.ignore_reason = None
 
@@ -327,9 +326,9 @@ class Film:
             result = tmdb.search(self.title, self.year)
 
             if result is not None:
-                # If we find a result, update title, id, year, and the title_similarity.
+                # If we find a result, update title, tmdb_id, year, and the title_similarity.
                 self.title = result.proposed_title
-                self.id = result.id
+                self.tmdb_id = result.tmdb_id
                 self.year = result.proposed_year
                 self.title_similarity = result.title_similarity
             else:

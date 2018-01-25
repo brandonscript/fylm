@@ -28,7 +28,6 @@ from __future__ import unicode_literals
 import os
 import shutil
 import glob
-import re
 import sys
 import errno
 import unicodedata
@@ -37,7 +36,6 @@ from itertools import islice
 from fylmlib.config import config
 from fylmlib.console import console
 import fylmlib.formatter as formatter
-import fylmlib.existing_films as existing_films
 
 class dirops:
     """Directory-related class method operations.
@@ -57,16 +55,16 @@ class dirops:
             console.error("'{}' does not exist; check folder path in config.yaml".format(d))
 
     @classmethod
-    def get_existing_films(cls, dir):
+    def get_existing_films(cls, path):
         """Get a list of existing films.
 
-        Scan one level deep of the target dir to get a list of existing films. Since
+        Scan one level deep of the target path to get a list of existing films. Since
         this is used exclusively for duplicate checking, this method is skipped when
         duplicate checking is disabled. Sets the global property `existing_films.cache`
         when complete.
 
         Args:
-            dir: (unicode) path to search for existing films.
+            path: (unicode) path to search for existing films.
         Returns:
             A list of existing Film objects.
         """
@@ -85,19 +83,19 @@ class dirops:
         # Map a list of valid and sanitized files to Film objects
         existing_films = map(
             Film,
-            [os.path.normpath(os.path.join(config.destination_dir, file)) for file in cls.sanitize_dir_list(os.listdir(dir))]
+            [os.path.normpath(os.path.join(config.destination_dir, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
         )
         console.debug('Found {}'.format(len(existing_films)))
         return existing_films
 
     @classmethod
-    def get_new_films(cls, dir):
+    def get_new_films(cls, path):
         """Get a list of new potenial films we want to tidy up.
 
-        Scan one level deep of the target dir to get a list of potential new files/folders.
+        Scan one level deep of the target dpathir to get a list of potential new files/folders.
 
         Args:
-            dir: (unicode) path to search for new films.
+            path: (unicode) path to search for new films.
         Returns:
             An array of potential films.
         """
@@ -105,34 +103,34 @@ class dirops:
         # Import Film here to avoid circular import conflicts.
         from fylmlib.film import Film
 
-        # Enumerate the search dir for files/subfolders, sanitize them, then finally sort
+        # Enumerate the search path for files/subfolders, sanitize them, then finally sort
         # the resulting list of files alphabetically, case-insensitive.
-        sorted_files = sorted(cls.sanitize_dir_list(os.listdir(dir)), key=lambda s: s.lower())
+        sorted_files = sorted(cls.sanitize_dir_list(os.listdir(path)), key=lambda s: s.lower())
 
         # If using the `limit` option, create a sliced list to limit the number of
         # files to be processed.
         limited_files = islice(sorted_files, config.limit if config.limit > 0 else None)
 
         # Map the sorted/filtered list to Film objects.
-        return map(Film, [os.path.join(dir, file) for file in limited_files])
+        return map(Film, [os.path.join(path, file) for file in limited_files])
 
     @classmethod
-    # Check for valid file types inside this dir
-    def get_valid_files(cls, dir):
-        """Get a list valid files inside the specified dir.
+    # Check for valid file types inside this path
+    def get_valid_files(cls, path):
+        """Get a list valid files inside the specified path.
 
-        Scan deeply in the specified dir to get a list of valid files, as
+        Scan deeply in the specified path to get a list of valid files, as
         determined by the config.video_exts and config.extra_exts properties.
 
         Args:
-            dir: (unicode) path to search for valid files.
+            path: (unicode) path to search for valid files.
         Returns:
             An array of valid files.
         """
 
-        # Call dir.find_deep to search for files within the specified dir.
+        # Call dirops.find_deep to search for files within the specified path.
         # Filter the results using a lambda function.
-        valid_files = cls.find_deep(dir, lambda x:
+        valid_files = cls.find_deep(path, lambda x:
 
             # A valid file must have a valid extension
             fileops.has_valid_ext(x)
@@ -147,7 +145,7 @@ class dirops:
         for f in valid_files:
             console.debug('   Found "{}" ({}) in {}'.format(
                 os.path.basename(f),
-                formatter.pretty_size(size(f)), dir))
+                formatter.pretty_size(size(f)), path))
         return valid_files
 
     @classmethod
@@ -168,7 +166,7 @@ class dirops:
         return filter(lambda f: f != '.DS_Store' and f != 'Thumbs.db', [unicodedata.normalize('NFC', file) for file in files])
 
     @classmethod
-    def get_invalid_files(cls, dir):
+    def get_invalid_files(cls, path):
         """Get a list of invalid files inside the specified dir.
 
         Scan deeply in the specified dir to get a list of invalid files, as
@@ -178,14 +176,14 @@ class dirops:
         don't want to delete them.
 
         Args:
-            dir: (unicode) path to search for invalid files.
+            path: (unicode) path to search for invalid files.
         Returns:
             An array of invalid files.
         """
 
         # Call dir.find_deep to search for files within the specified dir.
         # Filter the results using a lambda function.
-        return cls.find_deep(dir, lambda x:
+        return cls.find_deep(path, lambda x:
 
             # An invalid file might contain an ignored string (e.g. 'sample')
             fileops.contains_ignored_strings(x)
@@ -194,29 +192,29 @@ class dirops:
             or not fileops.has_valid_ext(x))
 
     @classmethod
-    def create_deep(cls, dir):
-        """Deeply create the specified dir and any required parent dirs.
+    def create_deep(cls, path):
+        """Deeply create the specified path and any required parent paths.
 
-        Using recursion, create a directory tree as specified in the dir
+        Using recursion, create a directory tree as specified in the path
         param.
 
         Args:
-            dir: (unicode) path to create.
+            path: (unicode) path to create.
         """
 
         # Because this is a destructive action, we will not create the
-        # dir tree if running in test mode.
+        # path tree if running in test mode.
         if not config.test:
 
             # If the path exists, there's no point in trying to create it.
-            if not os.path.exists(dir):
+            if not os.path.exists(path):
                 try:
-                    console.debug("Creating destination {}".format(dir))
-                    os.makedirs(dir)
+                    console.debug("Creating destination {}".format(path))
+                    os.makedirs(path)
                 # If the dir creation fails, raise an Exception.
                 except OSError as e:
                     if e.errno != errno.EEXIST:
-                        console.error('Unable to create {}'.format(dir))
+                        console.error('Unable to create {}'.format(path))
 
     @classmethod
     def find_deep(cls, root_dir, func=None):
@@ -226,7 +224,7 @@ class dirops:
         Pass an optional function to filter results.
 
         Args:
-            root_dir: (unicode) path to search for files.
+            root_path: (unicode) path to search for files.
             func: (function) user-defined or lambda function to use as a filter.
         Returns:
             A filtered array of files.
@@ -239,41 +237,41 @@ class dirops:
         return filter(func, cls.sanitize_dir_list(results))
 
     @classmethod
-    def delete_dir_and_contents(cls, dir, max_size=50000):
-        """Recursively delete dir and all its contents, if less than max_size.
+    def delete_dir_and_contents(cls, path, max_size=50000):
+        """Recursively delete dir path and all its contents, if less than max_size.
 
         Using recursion, delete all files and folders in the specified dir and
         itself if the total dir size is less than max_size (default 50 KB).
 
         Args:
-            dir: (unicode) path to be recursively deleted.
+            path: (unicode) path to be recursively deleted.
             max_size: (int) optional max size in Bytes a folder can be to qualify for deletion. Default=50000.
         """
 
         # First we ensure the dir is less than the max_size threshold, otherwise abort.
-        if _size_dir(dir) < max_size:
+        if _size_dir(path) < max_size:
 
-            console.debug("Recursively deleting {}".format(dir))
+            console.debug("Recursively deleting {}".format(path))
 
             # An emergency safety check in case there's an attempt to delete / (root!) or one of the source_paths.
             if dir == '/' or dir in config.source_dirs:
-                raise Exception("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(dir))
+                raise Exception("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(path))
 
             # Otherwise, only perform destructive actions if we're running in live mode.
             elif not config.test:
                 try:
-                    shutil.rmtree(dir)
+                    shutil.rmtree(path)
 
                 # Catch resource busy error
                 except OSError as e:
                     if e.args[0] == 16:
-                        console.error('Tried to remove {} but file is in use'.format(dir))
+                        console.error('Tried to remove {} but file is in use'.format(path))
         else:
-            console.debug("Will not delete {} because it is not empty".format(dir))
+            console.debug("Will not delete {} because it is not empty".format(path))
 
     #
     @classmethod
-    def delete_unwanted_files(cls, dir, count=0):
+    def delete_unwanted_files(cls, path, count=0):
         """Delete all unwanted files in the specified dir.
 
         Using recursion, delete all invalid (unwanted) files and folders in the specified dir,
@@ -281,7 +279,7 @@ class dirops:
         This could be dangerous, be careful not to accidentally run it on something like... /
 
         Args:
-            dir: (unicode) root path where contents will be deleted.
+            path: (unicode) root path where contents will be deleted.
             count: (int) optional current number of deleted files (in case this is called multiple times
         Returns:
             Number of files that were deleted successfully.
@@ -290,25 +288,25 @@ class dirops:
         # Only delete unwanted files if enabled in config
         if config.remove_unwanted_files:
             # Search for invalid files, enumerate them, and delete them.
-            for f in [f for f in cls.get_invalid_files(dir) if os.path.isfile(f)]:
+            for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
                 # Increment count if deletion was successful
                 count += fileops.delete(f)
         return count
 
     @classmethod
-    def count_files_deep(cls, dir):
+    def count_files_deep(cls, path):
         """Deeply count the number of files in the specified dir.
 
         Recursively count the number of files inside the specified dir.
 
         Args:
-            dir: (unicode) path to be recursively searched
+            path: (unicode) path to be recursively searched
         Returns:
             Number of files, recursively, that exist in the specified dir.
         """
-        if os.path.exists(dir) and os.path.isdir(dir):
+        if os.path.exists(path) and os.path.isdir(path):
             # If it's a directory, we count the files inside, deeply
-            return len(cls.find_deep(dir))
+            return len(cls.find_deep(path))
         else:
             # If it's not a dir or doesn't exist, return False
             return False
@@ -469,7 +467,7 @@ class fileops:
                 os.remove(file)
                 # If successful, return 1, for a successful op.
                 return 1
-            except Exception as e:
+            except Exception:
                 # Handle any exceptions gracefully and warn the console.
                 console.warn('Unable to remove {}'.format(file))
                 # Return 0 because we don't want a success counter to increment.
@@ -512,18 +510,18 @@ def size(path, mock_bytes=None):
     else:
         return None
 
-def _size_dir(dir):
+def _size_dir(path):
     """Determine the total size of a directory.
 
     Determine the size of directory at the specified path by recursively calculating
     the size of each file contained within.
 
     Args:
-        dir: (unicode) folder to determine size.
+        path: (unicode) folder to determine size.
     Returns:
         Combined size of folder, in bytes (B), or None if dir does not exist.
     """
-    if not os.path.exists(dir):
+    if not os.path.exists(path):
         return None
 
     # Start with a dir size of 0 bytes
@@ -531,7 +529,7 @@ def _size_dir(dir):
 
     # Call os.walk() to get all files, recursively in the dir, then add up the file
     # size for each file.
-    for root, dirs, files in os.walk(dir):
+    for root, dirs, files in os.walk(path):
         for f in files:
             fp = os.path.join(root, f)
             dir_size += (os.path.getsize(fp) if os.path.isfile(fp) else 0)

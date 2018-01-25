@@ -200,10 +200,10 @@ class console:
 
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
-            if film.id is not None:
+            if film.tmdb_id is not None:
                 p = pyfancy().white(INDENT_PREFIX).green(u'✓ {} ({})'.format(film.title, film.year)).dark_gray()
-                p.add(' [{}] {} match'.format(film.id, formatter.percent(film.title_similarity))).output()
-                log.detail(u'✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.id, formatter.percent(film.title_similarity)))
+                p.add(' [{}] {} match'.format(film.tmdb_id, formatter.percent(film.title_similarity))).output()
+                log.detail(u'✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
             else:
                 pyfancy().white(INDENT_PREFIX).red('𝗑 {} ({})'.format(film.title, film.year)).output()
                 log.detail(u'𝗑 Not found')

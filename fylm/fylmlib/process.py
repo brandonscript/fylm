@@ -23,7 +23,6 @@ This module scans for and processes films.
 from __future__ import unicode_literals
 
 import os
-import re
 
 from fylmlib.config import config
 from fylmlib.console import console
