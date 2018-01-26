@@ -8,6 +8,7 @@ install:
   - pip install --quiet plexapi
   - pip install --quiet future
   - pip install --quiet pyyaml
+  - pip install --quiet dotmap
 
 script:
   - cd fylm; python -m unittest tests
