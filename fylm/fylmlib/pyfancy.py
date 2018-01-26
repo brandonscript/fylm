@@ -48,6 +48,9 @@ style so no new text will have unwanted styling.
     pyfancy: the main class exported by this module.
 """
 
+from __future__ import unicode_literals
+from __future__ import print_function
+
 class pyfancy:
     def __str__(self): return self.get()
     def __init__(self, parseText="", obj=""):

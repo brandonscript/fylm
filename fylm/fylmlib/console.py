@@ -34,6 +34,9 @@ from fylmlib.config import config
 from fylmlib.log import log
 import fylmlib.formatter as formatter
 
+# Hijack STDOUT and re-encode it, for TravisCI
+sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
+
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 DIVIDER = '======================================'

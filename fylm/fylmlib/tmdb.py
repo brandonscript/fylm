@@ -23,7 +23,6 @@ This module performs searches and handles results from TMDb.
 from __future__ import unicode_literals
 
 import re
-import sys
 import copy
 
 import tmdbsimple as tmdb
