@@ -22,8 +22,11 @@ output to the log module.
 """
 
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import datetime
+import io
+import sys
 
 from pyfancy import *
 

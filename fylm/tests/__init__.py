@@ -24,13 +24,16 @@ import unicodedata
 import io
 import random
 import time
+# import threading
 from glob import glob
-from threading import Thread
-from Queue import Queue
+# from Queue import Queue
 
 from fylmlib.config import config
 import fylmlib.operations as ops
 from tests.make import make
+
+# Hijack STDOUT and re-encode it, for TravisCI
+sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
 
 DIVIDER = '======================================================================'
 
@@ -67,17 +70,34 @@ valid_films = filter(lambda film: not film.should_ignore, films)
 # TMDb is rate-limited to 40 requests every 10 seconds. The async functionality
 # works, but often exceeds the rate limit.
 # Read more: https://developers.themoviedb.org/3/getting-started/request-rate-limiting
-q = Queue(maxsize=0)
-num_threads = 1
+# q = Queue(maxsize=2)
+# num_threads = 1
 
+# TODO: Async had to be disabled in order to run on TravisCI
+#       because of rate limiting.
 def lookup_async(film):
-    while True:
-        film = q.get()
+    # while True:
+    # film = q.get()
+    
+    try:
         film.search_tmdb()
-        sys.stdout.write('█')
-        # TODO: Add % calculator and print.
-        sys.stdout.flush()
-        q.task_done()
+
+    # TODO: Figure out which HTTPError is actually being thrown, and 
+    # which module it belongs to so we can inspect the X-Rate-Limit
+    # header.
+    except Exception:
+        time.sleep(5.0)
+        film.search_tmdb()
+
+    print('█', end='')
+
+    # TODO: Add % calculator and print.
+    sys.stdout.flush()
+    # q.task_done()
+
+    # TODO: A more graceful way of handling rate limiting in TravisCI.
+    if os.environ.get('TMDB_KEY') is not None:
+        time.sleep(0.5)
 
 class FylmTestCase(unittest.TestCase):
 
@@ -90,29 +110,31 @@ class FylmTestCase(unittest.TestCase):
 
     # @unittest.skip("Skip long running test_search_tmdb")
     def test_search_tmdb(self):
+
         # Look up films by name from TMDb and update title
         print_title('Film.search_tmdb()')
 
         print('Searching {} titles (this may take several minutes), please wait...'.format(len(valid_films)))
 
         # TODO: Debug this and figure out if we can improve the thread limiting to match the API's rate limit header
-        for _ in range(num_threads):
-            t = Thread(target=lookup_async, args=(q,))
-            t.daemon = True
-            t.start()
+        # for _ in range(num_threads):
+        #     t = threading.Thread(target=lookup_async, args=(q,))
+        #     t.daemon = True
+        #     t.start()
 
         for film in valid_films:
-            q.put(film)
+            # q.put(film)
+            lookup_async(film)
 
         # Retrieve finished threads
-        q.join()
+        # q.join()
         sys.stdout.write("\033[F") # back to previous line
         sys.stdout.write("\033[K") # clear line
 
         for film in valid_films:
             matching_tests = filter(lambda x: x.expected_title == film.title, tests_map)
             if len(matching_tests) == 0:
-                raise Exception('No matching tests found for "{}"; check that there is a matching title property in files.json'.format(film.title))
+                raise Exception('No matching tests found for "{}" (expected {}); check that there is a matching title property in files.json'.format(film.title, x.expected_title))
 
             # Get the first matching title in the tests map
             test_film = matching_tests[0]

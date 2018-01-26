@@ -402,9 +402,10 @@ class fileops:
         """
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
+        # If we don't do this, the filesystem will try and create a new folder instead
+        # of the correct filename.
         # Credit: https://stackoverflow.com/a/34504896/1214800
-        if sys.platform == 'darwin':
-            new_filename = new_filename.replace(r'/', ':')
+        new_filename = new_filename.replace(r'/', ':')
 
         # Generate a destination string based on src's path and the new filename
         dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename))

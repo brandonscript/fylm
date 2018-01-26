@@ -276,8 +276,7 @@ def search(search_string, year=None):
     # On macOS, we need to use a funky hack to replace / in a filename with :,
     # in order to output it correctly.
     # Credit: https://stackoverflow.com/a/34504896/1214800
-    if sys.platform == 'darwin':
-        search_string = search_string.replace(r':', '/')
+    search_string = search_string.replace(r':', '/')
 
     console.debug('\nInit search set for "{}" {}'.format(search_string, year))
 

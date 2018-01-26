@@ -90,8 +90,7 @@ def build_new_filename(film):
     # Hack macOS titles that read / from the filesystem as :. If we don't do this,
     # we end up with the app trying to create folders for any title that contains
     # a /. Looking at you, Face/Off.
-    if sys.platform == 'darwin':
-        template = template.replace(r'/', ':')
+    template = template.replace(r'/', ':')
 
     # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
     # `Dude Where's My Car`).
