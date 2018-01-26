@@ -1,0 +1,13 @@
+language: python
+
+python:
+  - 2.7
+
+install:
+  - pip install --quiet tmdbsimple
+  - pip install --quiet plexapi
+  - pip install --quiet future
+  - pip install --quiet yaml
+
+script:
+  - cd fylm; python -m unittest tests

@@ -67,6 +67,7 @@ def lookup_async(film):
         film = q.get()
         film.search_tmdb()
         sys.stdout.write('█')
+        # TODO: Add % calculator and print.
         sys.stdout.flush()
         q.task_done()
 
