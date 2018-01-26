@@ -1,4 +1,4 @@
-![version](https://img.shields.io/badge/version-0.2.0--alpha-orange.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8fcfaf45a6494aedb4b0340461c2b79b)](https://www.codacy.com/app/brandonscript/fylm)
+![version](https://img.shields.io/badge/version-0.2.0--alpha-orange.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8fcfaf45a6494aedb4b0340461c2b79b)](https://www.codacy.com/app/brandonscript/fylm) [![Build Status](https://travis-ci.org/brandonscript/fylm.svg?branch=master)](https://travis-ci.org/brandonscript/fylm)
 
 ### Overview
 
@@ -26,8 +26,7 @@ Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stab
 - `pip install tmdbsimple`
 - `pip install plexapi`
 - `pip install future`
-- `pip install pyyaml`
-- `pip install dotmap`
+- `pip install yaml`
 
 If you don't use `pip`, then you will need to install these manually, or download them and include them inside your copy of Fylm. Or shake a magic stick and hope it works (hint: it won't).
 
@@ -35,13 +34,13 @@ If you don't use `pip`, then you will need to install these manually, or downloa
 
 All of Fylm's options are configured in `config.yaml`. Options of note that you should set up:
 
-- `source_dirs`
-- `destination_dir`
-- `rename_pattern`
-- `tmdb.key`
-- `plex.baseurl`
-- `plex.token`
-- `plex.sections`
+- source_dirs
+- destination_dir
+- rename_pattern
+- tmdb.key
+- plex.baseurl
+- plex.token
+- plex.sections
 
 ### Running
 
@@ -69,7 +68,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.
 - `force-lookup` will look everything in your source folder(s) up on TMDb, even if something doesn't appear to be a film. Helpful for finding files with missing years, but can take a lot longer to run.
-- `overwrite` will *overwrite* any duplicates at the destination. Use with caution (and run `--test` first!). Also HIGHLY recomment you keep `check_for_duplicates` enabled if you intend to overwrite duplicates, otherwise the Apache 2.0 license isn't liable for lost data.
+- `overwrite` means thatany duplicates it finds at the destination will be *overwritten*. Use with caution (and run `--test` first!). Also HIGHLY recomment you keep `check_for_duplicates` enabled if you intend to overwrite duplicates, otherwise the Apache 2.0 license isn't liable for lost data.
 - `source` overrides your usual `source_dir` setting with a new source folder.
 - `no-strict` will dramatically reduce the criteria that is is used to validate TMDb matches. Expect red herrings. Lots. So, `--test` first.
 
