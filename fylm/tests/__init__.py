@@ -41,8 +41,16 @@ print('Init tests...')
 
 files_path = 'tests/files'
 
+# Set config to quiet so that TravisCI doesn't fail attempting to send
+# notifications to 127.0.0.1.
+config.quiet = True
+
 # Set the minimum filesize to 0 so we can load mock files
 config.min_filesize = 0
+
+# TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
+# if it is available.
+if os.environ.get('TMDB_KEY') is not None: config.tmdb.key = os.environ.get('TMDB_KEY')
 
 # Make test files.
 tests_map = make('tests/files.json', files_path)

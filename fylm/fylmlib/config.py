@@ -74,7 +74,7 @@ class _Config:
         parser.add_argument(
             '-q',
             '--quiet',
-            action="store",
+            action="store_true",
             default=False,
             dest="quiet",
             help='Do not send notifications or update Plex')
