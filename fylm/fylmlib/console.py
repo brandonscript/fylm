@@ -21,8 +21,7 @@ output to the log module.
     console: the main class exported by this module.
 """
 
-from __future__ import unicode_literals
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 import datetime
 import io

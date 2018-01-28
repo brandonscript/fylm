@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import unicode_literals
-from __future__ import print_function
+from __future__ import unicode_literals, print_function
 
 import unittest
 import os
@@ -31,9 +30,6 @@ from glob import glob
 from fylmlib.config import config
 import fylmlib.operations as ops
 from tests.make import make
-
-# Hijack STDOUT and re-encode it, for TravisCI
-sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
 
 DIVIDER = '======================================================================'
 

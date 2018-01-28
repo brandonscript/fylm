@@ -45,6 +45,9 @@ def main():
     # Print the welcome message to the console.
     console.start()
 
+    # TODO: different destinations for different qualities, based
+    # on a map.
+
     # Attempt to create the destination dir if it does not exist.
     ops.dirops.create_deep(config.destination_dir)
 
