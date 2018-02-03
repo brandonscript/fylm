@@ -60,6 +60,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --limit=n, -l
     --pop=n, -p
     --force-lookup, -f
+    --no-duplicates, -d
     --overwrite, -o
     --source
     --no-strict
@@ -71,6 +72,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.
 - `force-lookup` will look everything in your source folder(s) up on TMDb, even if something doesn't appear to be a film. Helpful for finding files with missing years, but can take a lot longer to run.
+- `no-duplicates` will disable duplicate checking entirely.
 - `overwrite` means thatany duplicates it finds at the destination will be *overwritten*. Use with caution (and run `--test` first!). Also HIGHLY recomment you keep `check_for_duplicates` enabled if you intend to overwrite duplicates, otherwise the Apache 2.0 license isn't liable for lost data.
 - `source` overrides your usual `source_dir` setting with new source folder(s). Comma separate multiple folders.
 - `no-strict` will dramatically reduce the criteria that is is used to validate TMDb matches. Expect red herrings. Lots. So, `--test` first.

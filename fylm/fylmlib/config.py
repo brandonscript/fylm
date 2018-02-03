@@ -134,6 +134,15 @@ class _Config:
             dest="force_lookup",
             help='Assume that all files/folders (except TV shows) in source dir(s) are films, and look them all up')
 
+        # --no-duplicates
+        # This option disables duplicate checking.
+        parser.add_argument(
+            '--no-duplicates',
+            action="store_false",
+            default=True,
+            dest="no_duplicates",
+            help='Disable duplicate checking')
+
         # -o, --overwrite
         # This option will cause duplicate files to be forcibly overwritten. Use with EXTREME CAUTION,
         # because this could be very destructive. (suggest running in test mode first!).
@@ -189,6 +198,7 @@ class _Config:
         if args.rename_only is True: self.config.rename_only = True
         if args.strict is False: self.config.strict = False
         if args.force_lookup is True: self.config.force_lookup = True
+        if args.no_duplicates is False: self.config.check_for_duplicates = False
         if args.overwrite_duplicates is True: self.config.overwrite_duplicates = True
         if args.source_override: self.config.source_dirs = args.source_override.split(",")
         if args.limit: self.config.limit = args.limit
