@@ -96,7 +96,7 @@ def build_new_filename(film):
     # `Dude Where's My Car`).
     return strip_extra_whitespace(template)
 
-def pretty_size(size_in_bytes, measure=None):
+def pretty_size(size_in_bytes=0, measure=None):
     """Pretty format filesize/size_in_bytes into human-readable strings.
 
     Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,

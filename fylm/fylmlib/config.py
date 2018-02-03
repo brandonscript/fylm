@@ -142,9 +142,9 @@ class _Config:
             '--source',
             action="store",
             default=None,
-            dest="source_dirs",
-            type=list,
-            help='Override the configured source dir(s) (only one dir supported)')
+            dest="source_override",
+            type=unicode,
+            help='Override the configured source dir(s) (comma separate multiple folders)')
 
         # -l, --limit
         # This option limits the number of files/folders processed during a single operation.
@@ -179,7 +179,7 @@ class _Config:
         if args.strict is False: self.config.strict = False
         if args.force_lookup is True: self.config.force_lookup = True
         if args.overwrite_duplicates is True: self.config.overwrite_duplicates = True
-        if args.source_dirs: self.config.source_dirs = args.source_dirs
+        if args.source_override: self.config.source_dirs = args.source_override.split(",")
         if args.limit: self.config.limit = args.limit
         if args.min_popularity is not None: self.config.min_popularity = args.min_popularity
 
