@@ -376,6 +376,7 @@ class fileops:
                 # If safe_copy is enabled, copy instead of move.
                 # Files will always be copied even if they're on a different partition, but this behavior can be
                 # forced by enabling safe_copy in config.
+                # TODO: Add .partial~ to in-progress copy and rename after verified.
                 if config.safe_copy: shutil.copy(src, dst)
 
                 # Otherwise, move the file instead.

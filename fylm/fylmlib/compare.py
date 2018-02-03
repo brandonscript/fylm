@@ -25,6 +25,7 @@ import re
 from difflib import SequenceMatcher
 
 import fylmlib.formatter as formatter
+import fylmlib.patterns as patterns
 
 def string_similarity(a, b):
     """Use SequenceMatcher to determine how similar one string is to another,
@@ -85,6 +86,10 @@ def is_duplicate(film, existing_film):
     # is important because we're not doing TMDb lookups on the existing film, and
     # we can't guarantee it was named with the correct case)
     title = re.sub(r'[^\w\d\-\s&]', '', formatter.strip_illegal_chars(film.title).lower())
+
+    # Because existing_title is run through the Film init, which executes 
+    # strip_from_title, we need to perform the same step on the original title.
+    title = re.sub(patterns.strip_from_title, ' ', title)
     existing_title = re.sub(r'[^\w\d\-\s&]', '', formatter.strip_illegal_chars(existing_film.title).lower())
 
     # Return True if title, year, and edition are equal, otherwise return False.
