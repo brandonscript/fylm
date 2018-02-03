@@ -60,6 +60,11 @@ def main():
     # Iterate each path in the config.source_dirs array.
     for source_dir in [os.path.normpath(x) for x in config.source_dirs]:
 
+        # If 'rename_only' is enabled, we need to override the configured
+        # destination dir with the source dir.
+        if config.rename_only is True:
+            config.destination_dir = source_dir
+
         # Verify that source and destination paths exist.
         ops.dirops.verify_paths_exist([source_dir, config.destination_dir])
 

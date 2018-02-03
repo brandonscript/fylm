@@ -102,6 +102,16 @@ class _Config:
             dest="debug",
             help='Display extra debugging information in the console output')
 
+        # -r, --rename
+        # This option will rename films in place without moving or copying them.
+        parser.add_argument(
+            '-r',
+            '--rename',
+            action="store_true",
+            default=False,
+            dest="rename_only",
+            help='Rename films in place without moving or copying them')
+
         # --no-strict
         # This option disables the intelligent string comparison algorithm that verifies titles
         # (and years) are a match. Use with caution; likely will result in false-positives.
@@ -176,6 +186,7 @@ class _Config:
         if args.quiet is True: self.config.quiet = True
         if args.test is True: self.config.test = True
         if args.debug is True: self.config.debug = True
+        if args.rename_only is True: self.config.rename_only = True
         if args.strict is False: self.config.strict = False
         if args.force_lookup is True: self.config.force_lookup = True
         if args.overwrite_duplicates is True: self.config.overwrite_duplicates = True

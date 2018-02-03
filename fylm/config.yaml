@@ -40,6 +40,10 @@ test: false
 # Write advanced debugging details to the console.
 debug: false
 
+# --rename
+# Rename files and folders in place without moving or copying them.
+rename_only: true
+
 # --no-strict (disable)
 # Use intelligent string comparison algorithm to ensure titles are properly matched.
 # If your titles are accurate (parsable), this is the safest way to go, and results in the most
@@ -197,6 +201,7 @@ edition_map: [
   ["director.?s.definitive.edition", "Director's Definitive Edition"],
   ["(dc|director.?s.cut|dircut)", "Director's Cut"],
   ["unrated.extended.cut", "Unrated Extended Cut"],
+  ["(uce|ultimate.collectors.edition)", "Ultimate Collector's Edition"],
   ["ultimate.expanded.edition", "Ultimate Expanded Edition"],
   ["ultimate.edition", "Ultimate Edition"],
   ["expanded.edition", "Expanded Edition"],
@@ -206,6 +211,7 @@ edition_map: [
   ["alternate.ending", "Alternate Ending"],
   ["special.edition", "Special Edition"],
   ["theatrical.cut", "Theatrical Cut"],
+  ["final.cut", "Final Cut"],
   ["extended.cut", "Extended Cut"],
   ["remastered", "Remastered"],
   ["extended", "Extended"],
