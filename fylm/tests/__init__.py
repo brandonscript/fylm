@@ -49,7 +49,8 @@ config.min_filesize = 0
 
 # TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
 # if it is available.
-if os.environ.get('TMDB_KEY') is not None: config.tmdb.key = os.environ.get('TMDB_KEY')
+if os.environ.get('TMDB_KEY') is not None: 
+    config['tmdb']['key'] = os.environ.get('TMDB_KEY')
 
 # Make test files.
 tests_map = make('tests/files.json', files_path)
