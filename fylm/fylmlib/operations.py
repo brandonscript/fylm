@@ -54,16 +54,17 @@ class dirops:
             console.error("'{}' does not exist; check folder path in config.yaml".format(d))
 
     @classmethod
-    def get_existing_films(cls, path):
+    def get_existing_films(cls, paths):
         """Get a list of existing films.
 
-        Scan one level deep of the target path to get a list of existing films. Since
+        Scan one level deep of the target paths to get a list of existing films. Since
         this is used exclusively for duplicate checking, this method is skipped when
         duplicate checking is disabled. Sets the global property `existing_films.cache`
         when complete.
 
         Args:
-            path: (unicode) path to search for existing films.
+            paths: (dict) a set of unicode paths to search for existing films.
+                   Must be passed in the form of: { "<quality>": "<path>" }
         Returns:
             A list of existing Film objects.
         """
@@ -79,11 +80,16 @@ class dirops:
         # Enumerate the destination directory and check for duplicates.
         console.debug('Checking for existing films...')
 
-        # Map a list of valid and sanitized files to Film objects
-        existing_films = map(
-            Film,
-            [os.path.normpath(os.path.join(config.destination_dir, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
-        )
+        existing_films = []
+
+        # Map a list of valid and sanitized files to Film objects by iterating
+        # over paths for 720p, 1080p, 4K, and SD qualities.
+        for quality, path in paths.items():
+            if os.path.normpath(path) not in map(lambda d: os.path.normpath(d), config.source_dirs):
+                existing_films += map(
+                    Film,
+                    [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
+                )
         console.debug('Found {}'.format(len(existing_films)))
         return existing_films
 
@@ -372,10 +378,13 @@ class fileops:
 
         # Only perform destructive changes if running in live mode.
         if not config.test:
+
+            #TODO: Add copy progress bar for moving/copying to different partitions.
+
             try:
                 # If safe_copy is enabled, copy instead of move.
-                # Files will always be copied even if they're on a different partition, but this behavior can be
-                # forced by enabling safe_copy in config.
+                # Files will always be copied even if they're on a different partition, 
+                # but this behavior can be forced by enabling safe_copy in config.
                 # TODO: Add .partial~ to in-progress copy and rename after verified.
                 if config.safe_copy: shutil.copy(src, dst)
 

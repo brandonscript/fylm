@@ -40,4 +40,4 @@ def load():
 
     # Scan the destination directory for existing films, which sets
     # the existing_films cache. This is used for duplicate checking.
-    cache = ops.dirops.get_existing_films(config.destination_dir)
+    cache = ops.dirops.get_existing_films(config.destination_dirs)

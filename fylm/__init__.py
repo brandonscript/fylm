@@ -45,11 +45,16 @@ def main():
     # Print the welcome message to the console.
     console.start()
 
-    # TODO: different destinations for different qualities, based
-    # on a map.
+    # Attempt to create the destination dirs if they does not exist.
+    for q, d in config.destination_dirs.items():
+        ops.dirops.create_deep(d)
 
-    # Attempt to create the destination dir if it does not exist.
-    ops.dirops.create_deep(config.destination_dir)
+    # Verify that destination paths exist.
+    ops.dirops.verify_paths_exist([
+        config.destination_dirs['SD'],
+        config.destination_dirs['720p'],
+        config.destination_dirs['1080p'],
+        config.destination_dirs['4K']])
 
     # Scan the destination dir for existing films.
     existing_films.load()
@@ -60,13 +65,8 @@ def main():
     # Iterate each path in the config.source_dirs array.
     for source_dir in [os.path.normpath(x) for x in config.source_dirs]:
 
-        # If 'rename_only' is enabled, we need to override the configured
-        # destination dir with the source dir.
-        if config.rename_only is True:
-            config.destination_dir = source_dir
-
-        # Verify that source and destination paths exist.
-        ops.dirops.verify_paths_exist([source_dir, config.destination_dir])
+        # Verify that source path exists.
+        ops.dirops.verify_paths_exist([source_dir])
 
         # Retrieve a list of films from the current source dir.
         films = ops.dirops.get_new_films(source_dir)

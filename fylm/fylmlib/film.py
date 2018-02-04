@@ -211,7 +211,24 @@ class Film:
 
     @property
     def destination_dir(self):
-        return os.path.normpath(os.path.join(config.destination_dir, self.new_filename)) if config.use_folders else config.destination_dir
+        # If 'rename_only' is enabled, we need to override the configured
+        # destination dir with the source dir.
+        
+        dst = ''
+        if config.rename_only is True:
+            dst = os.path.basename(self.source_path)
+        elif self.quality == '720p':
+            dst = config.destination_dirs['720p']
+        elif self.quality == '1080p':
+            dst = config.destination_dirs['1080p']
+        elif self.quality == '2160p':
+            dst = config.destination_dirs['4K']
+        elif self.quality == None:
+            dst = config.destination_dirs['SD']
+        else:
+            dst = config.destination_dirs['default']
+        
+        return os.path.normpath(os.path.join(dst, self.new_filename)) if config.use_folders else config.destination_dir
 
     @property
     def should_ignore(self):
