@@ -18,7 +18,7 @@
 This module is used to send notifications to various external integrations.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 from plexapi.server import PlexServer
 from pyfancy import *

@@ -20,7 +20,7 @@ string cleaning, improving comparison results, and outputting
 human-readable information to the console/log.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import re
 import copy

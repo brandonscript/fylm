@@ -21,7 +21,7 @@ CLI argumants.
     config: an instance of the main class (_Config) exported by this module.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import argparse
 import yaml

@@ -19,7 +19,7 @@ This module provides tools which are used to compare different object types
 during runtime.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import re
 from difflib import SequenceMatcher

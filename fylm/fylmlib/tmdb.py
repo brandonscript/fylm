@@ -20,7 +20,7 @@ This module performs searches and handles results from TMDb.
     search: the main method exported by this module.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import re
 import copy

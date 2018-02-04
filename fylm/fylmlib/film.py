@@ -18,7 +18,7 @@
     Film: the main class exported by this module.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import os
 import re

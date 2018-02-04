@@ -23,7 +23,7 @@ get, move, rename, and delete. Also includes filesize detector methods.
     size: file and dir size calculator
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import os
 import shutil

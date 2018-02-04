@@ -21,7 +21,7 @@ singleton nature. It is used to keep track of successful moves/renames.
     count: main property exported by this module.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 # Counter property
 count = 0

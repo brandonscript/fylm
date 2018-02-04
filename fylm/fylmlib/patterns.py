@@ -19,7 +19,7 @@ This module exports a set of regular expressions used for matching values
 in file/folder paths.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import re
 import sys

@@ -22,7 +22,7 @@ Because it runs solely in the command line (and autonomously), you can
 easily wire it up as a post script for services like SABnzbd.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import os
 

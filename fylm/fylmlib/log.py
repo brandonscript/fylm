@@ -20,7 +20,7 @@ This module handles all the log output for the app.
     log: the main class exported by this module.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import sys
 import logging

@@ -21,7 +21,7 @@ singleton/cache nature. It is used to check for duplicate films.
     cache: main property exported by this module.
 """
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 from fylmlib.config import config
 
