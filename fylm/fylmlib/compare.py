@@ -93,7 +93,6 @@ def is_duplicate(film, existing_film):
     # strip_from_title, we need to perform the same step on the original title.
     title = re.sub(patterns.strip_from_title, ' ', title).strip()
     existing_title = re.sub(invalid_comparison_chars, '', formatter.strip_illegal_chars(existing_film.title).lower()).strip()
-    print(title, existing_title)
 
     # Return True if title, year, and edition are equal, otherwise return False.
     # This assumes that you may want to keep two different editions of the same film,
