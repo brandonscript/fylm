@@ -82,15 +82,18 @@ def is_duplicate(film, existing_film):
         True if the films are identical, else False
     """
 
+    invalid_comparison_chars = re.compile(r'[^\w\d\-\s&.]', re.I)
+
     # Strip restricted chars from both films' titles, and compare lowercase (this
     # is important because we're not doing TMDb lookups on the existing film, and
     # we can't guarantee it was named with the correct case)
-    title = re.sub(r'[^\w\d\-\s&]', '', formatter.strip_illegal_chars(film.title).lower())
+    title = re.sub(invalid_comparison_chars, '', formatter.strip_illegal_chars(film.title).lower())
 
     # Because existing_title is run through the Film init, which executes 
     # strip_from_title, we need to perform the same step on the original title.
-    title = re.sub(patterns.strip_from_title, ' ', title)
-    existing_title = re.sub(r'[^\w\d\-\s&]', '', formatter.strip_illegal_chars(existing_film.title).lower())
+    title = re.sub(patterns.strip_from_title, ' ', title).strip()
+    existing_title = re.sub(invalid_comparison_chars, '', formatter.strip_illegal_chars(existing_film.title).lower()).strip()
+    print(title, existing_title)
 
     # Return True if title, year, and edition are equal, otherwise return False.
     # This assumes that you may want to keep two different editions of the same film,

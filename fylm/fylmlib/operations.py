@@ -91,7 +91,9 @@ class dirops:
                     [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
                 )
         console.debug('Found {}'.format(len(existing_films)))
-        return existing_films
+
+        # Sort the existing films alphabetically, case-insensitive, and return.
+        return sorted(existing_films, key=lambda s: s.title.lower())
 
     @classmethod
     def get_new_films(cls, path):
