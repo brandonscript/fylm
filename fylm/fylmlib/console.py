@@ -141,15 +141,15 @@ class console:
         log.error(s)
 
     @classmethod
-    def interesting(cls, s, highlight):
+    def interesting(cls, s, highlight='', lowlight=''):
         """Print important text to the console. Prints white first, then a green highlight.
 
         Args:
             s: (unicode) String to print white and send to log.
             highlight: (unicode) String to print green and send to log.
         """
-        pyfancy().white('{}{} '.format(INDENT_PREFIX, s)).green(highlight).output()
-        log.detail('{}{}'.format(s, highlight))
+        pyfancy().white('{}{} '.format(INDENT_PREFIX, s)).green(highlight).dark_gray().dim(' ({})'.format(lowlight)).output()
+        log.detail('{} {}'.format(s, highlight))
 
     @classmethod
     def warn(cls, s):

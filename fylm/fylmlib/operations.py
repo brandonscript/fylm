@@ -401,7 +401,7 @@ class fileops:
                 return False
 
     @classmethod
-    def rename(cls, src, new_filename):
+    def rename(cls, src, new_filename, size=0):
         """Renames a file using shutil.move.
 
         Renames a file using shutil.move, which under the hood, intelligently determines
@@ -423,7 +423,7 @@ class fileops:
         # Generate a destination string based on src's path and the new filename
         dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename))
 
-        console.interesting('⌥', os.path.basename(dst).replace(r':', '/'))
+        console.interesting('⌥', os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
 
         # Silently abort if the src==dst (we don't need to waste cycles renaming files
         # that are already correctly named). This also allows us to check for identically
