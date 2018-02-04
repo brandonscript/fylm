@@ -205,7 +205,7 @@ class _Config:
         if args.min_popularity is not None: self.config.min_popularity = args.min_popularity
 
         # Normalize the paths in source_dirs.
-        self.config.source_dirs = map(lambda d: os.path.normpath(d), self.config.source_dirs)
+        self.config.source_dirs = [os.path.normpath(d) for d in self.config.source_dirs]
 
 # Create a referenceable singleton for _Config()
 config = _Config().config

@@ -227,7 +227,7 @@ class Film:
             dst = os.path.basename(self.source_path)
         else:
             try:
-                dst = config.destination_dirs[self.quality] or config.destination_dirs['default']
+                dst = config.destination_dirs[quality_map[self.quality]] or config.destination_dirs['default']
             except KeyError:
                 dst = config.destination_dirs['default']
         
