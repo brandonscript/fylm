@@ -13,7 +13,7 @@ source_dirs:
 destination_dirs:
   720p: /Volumes/Films/HD
   1080p: /Volumes/Films/HD
-  4K: /Volumes/Films/4K
+  2160p: /Volumes/Films/4K
   SD: /Volumes/Films/SD
   default: /Volumes/Films/#new
 

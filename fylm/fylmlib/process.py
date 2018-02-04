@@ -48,7 +48,8 @@ class process:
         ops.fileops.rename(film.source_path, film.new_filename__ext())
 
         # Update the source path of the film if we're running in live mode
-        # to its new name.
+        # to its new name, otherwise the move will fail (because it will 
+        # be looking for its original filename).
         if config.test is False:
             film.source_path = os.path.normpath(os.path.join(os.path.dirname(film.source_path), film.new_filename__ext()))
 
@@ -119,18 +120,20 @@ class process:
         # Recursively delete unwanted files and update the count.
         deleted_files_count = ops.dirops.delete_unwanted_files(film.source_path, deleted_files_count)
 
-        # When all copying is done, update the film's source_path to the new location
-        # of its parent folder at the destination.
+        # Update the film's source_path to the new location of its parent folder at 
+        # the destination once all files have been moved.
         film.source_path = film.destination_dir
 
         # Print results of removing unwanted files.
-        if config.remove_unwanted_files:
+        if config.remove_unwanted_files and deleted_files_count > 0:
             console.notice('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
 
         # Remove the original source parent folder, if it is safe to do so (and
         # the feature is enabled in config). First check that the source folder is
-        # empty, and that it is < 1 KB in size. If true, remove it.
-        if config.remove_source:
+        # empty, and that it is < 1 KB in size. If true, remove it. We also
+        # don't want to try and remove the source folder if the original source
+        # is the same as the destination.
+        if config.remove_source and film.original_path != film.destination_dir:
             console.debug('Removing parent folder {}'.format(film.original_path))
 
             # Max size a dir can be to qualify for removal
