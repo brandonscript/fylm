@@ -148,12 +148,13 @@ class dirops:
             # And it must be at least a certain filesize
             and size(x) >= config.min_filesize * 1024 * 1024)
 
-        # If debugging, print the resulting list of files
-        for f in valid_files:
-            console.debug('   Found "{}" ({}) in {}'.format(
-                os.path.basename(f),
-                formatter.pretty_size(size(f)), path))
-        return valid_files
+        # If debugging, print the resulting list of files and sizes.
+        if config.debug is True:
+            for f in valid_files:
+                console.debug('   Found "{}" ({}) in {}'.format(
+                    os.path.basename(f),
+                    formatter.pretty_size(size(f)), path))
+        return sorted(valid_files, key=os.path.getsize, reverse=True)
 
     @classmethod
     def sanitize_dir_list(cls, files):
