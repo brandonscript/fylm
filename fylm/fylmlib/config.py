@@ -29,7 +29,7 @@ import os
 import codecs
 from yaml import Loader, SafeLoader
 
-from dotmap import DotMap
+from attrdict import AttrDict
 
 def construct_yaml_str(self, node):
     """Hijack the yaml module loader to return unicode.
@@ -62,9 +62,9 @@ class _Config:
         # TODO: Perhaps we can improve this fragile hack using __future__?
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.yaml')
 
-        # Load the config file and map it to a 'DotMap', a dot-notated dictionary.
+        # Load the config file and map it to a 'AttrDict', a dot-notated dictionary.
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
-            self.config = DotMap(yaml.load(yaml_config_file.read()))
+            self.config = AttrDict(yaml.load(yaml_config_file.read()))
 
         # Initialize the CLI argument parser.
         parser = argparse.ArgumentParser(description = 'A delightful filing and renaming app for film lovers.')
@@ -204,26 +204,8 @@ class _Config:
         if args.limit: self.config.limit = args.limit
         if args.min_popularity is not None: self.config.min_popularity = args.min_popularity
 
-    def __getattr__(self, name):
-        """Override getter for _Config() to allow top-level DotMap retrieval.
-
-        Args:
-            name: (unicode) Key name for config property.
-        Returns:
-            Value for specified key
-        """
-
-        # Override the default string handling function
-        # to always return unicode objects
-        try:
-            return self.config[name]
-        except KeyError:
-            # Previously this was thought to be a good idea - returning args, but it has proven
-            # to return some bad data (empty DotMap objects)
-            #   return getattr(self.args, name
-
-            # Instead, just return None.
-            return None
+        # Normalize the paths in source_dirs.
+        self.config.source_dirs = map(lambda d: os.path.normpath(d), self.config.source_dirs)
 
 # Create a referenceable singleton for _Config()
-config = _Config()
+config = _Config().config

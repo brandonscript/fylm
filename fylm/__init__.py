@@ -46,15 +46,11 @@ def main():
     console.start()
 
     # Attempt to create the destination dirs if they does not exist.
-    for q, d in config.destination_dirs.items():
-        ops.dirops.create_deep(d)
+    for _, dr in config.destination_dirs.items():
+        ops.dirops.create_deep(dr)
 
     # Verify that destination paths exist.
-    ops.dirops.verify_paths_exist([
-        config.destination_dirs['SD'],
-        config.destination_dirs['720p'],
-        config.destination_dirs['1080p'],
-        config.destination_dirs['4K']])
+    ops.dirops.verify_paths_exist(list(config.destination_dirs.values()))
 
     # Scan the destination dir for existing films.
     existing_films.load()

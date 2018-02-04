@@ -84,8 +84,8 @@ class dirops:
 
         # Map a list of valid and sanitized files to Film objects by iterating
         # over paths for 720p, 1080p, 4K, and SD qualities.
-        for quality, path in paths.items():
-            if os.path.normpath(path) not in map(lambda d: os.path.normpath(d), config.source_dirs):
+        for path in list(set(path for _, path in paths.items())):
+            if os.path.normpath(path) not in config.source_dirs:
                 existing_films += map(
                     Film,
                     [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]

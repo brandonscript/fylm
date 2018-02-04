@@ -23,7 +23,6 @@ human-readable information to the console/log.
 from __future__ import unicode_literals
 
 import re
-import sys
 import copy
 
 from fylmlib.config import config

@@ -213,20 +213,23 @@ class Film:
     def destination_dir(self):
         # If 'rename_only' is enabled, we need to override the configured
         # destination dir with the source dir.
+
+        quality_map = [
+            ['SD', 'SD'],
+            ['720p', '720p'],
+            ['1080p', '1080p'],
+            ['2160p', '4K'],
+            ['default', 'default']
+        ]
         
         dst = ''
         if config.rename_only is True:
             dst = os.path.basename(self.source_path)
-        elif self.quality == '720p':
-            dst = config.destination_dirs['720p']
-        elif self.quality == '1080p':
-            dst = config.destination_dirs['1080p']
-        elif self.quality == '2160p':
-            dst = config.destination_dirs['4K']
-        elif self.quality == None:
-            dst = config.destination_dirs['SD']
         else:
-            dst = config.destination_dirs['default']
+            try:
+                dst = config.destination_dirs[self.quality] or config.destination_dirs['default']
+            except KeyError:
+                dst = config.destination_dirs['default']
         
         return os.path.normpath(os.path.join(dst, self.new_filename)) if config.use_folders else config.destination_dir
 

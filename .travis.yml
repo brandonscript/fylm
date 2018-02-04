@@ -10,7 +10,7 @@ install:
   - pip install --quiet plexapi
   - pip install --quiet future
   - pip install --quiet pyyaml
-  - pip install --quiet dotmap
+  - pip install --quiet attrdict
 
 script:
   - cd fylm; python -m unittest tests
