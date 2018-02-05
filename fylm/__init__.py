@@ -39,80 +39,91 @@ __version__ = '0.2.0-alpha'
 def main():
     """Main program."""
 
-    # Initialize the success counter.
-    counter.count = 0
+    import fylmlib.cursor as cursor
 
-    # Print the welcome message to the console.
-    console.start()
+    try:
+        # Initialize the success counter.
+        counter.count = 0
 
-    # Attempt to create the destination dirs if they does not exist.
-    for _, dr in config.destination_dirs.items():
-        ops.dirops.create_deep(dr)
+        # Print the welcome message to the console.
+        console.start()
 
-    # Verify that destination paths exist.
-    ops.dirops.verify_paths_exist(list(config.destination_dirs.values()))
+        # Attempt to create the destination dirs if they does not exist.
+        for _, dr in config.destination_dirs.items():
+            ops.dirops.create_deep(dr)
 
-    # Scan the destination dir for existing films.
-    existing_films.load()
+        # Verify that destination paths exist.
+        ops.dirops.verify_paths_exist(list(config.destination_dirs.values()))
 
-    # TODO: add interactive option to skip, confirm, and correct matches
-    # TODO: add recursive searching inside poorly named folders
+        # Scan the destination dir for existing films.
+        existing_films.load()
 
-    # Iterate each path in the config.source_dirs array.
-    for source_dir in [os.path.normpath(x) for x in config.source_dirs]:
+        # TODO: add interactive option to skip, confirm, and correct matches
+        # TODO: add recursive searching inside poorly named folders
 
-        # Verify that source path exists.
-        ops.dirops.verify_paths_exist([source_dir])
+        # Iterate each path in the config.source_dirs array.
+        for source_dir in [os.path.normpath(x) for x in config.source_dirs]:
 
-        # Retrieve a list of films from the current source dir.
-        films = ops.dirops.get_new_films(source_dir)
+            # Verify that source path exists.
+            ops.dirops.verify_paths_exist([source_dir])
 
-        # Iterate each film.
-        for film in films:
+            # Retrieve a list of films from the current source dir.
+            films = ops.dirops.get_new_films(source_dir)
 
-            # Print the film details to the console.
-            console.film_loaded(film)
+            # Iterate each film.
+            for film in films:
 
-            # If the film should be ignored, print the reason why, and skip.
-            if film.should_ignore is True:
-                console.skip(film, film.ignore_reason)
-                continue
+                # Print the film details to the console.
+                console.film_loaded(film)
 
-            # Search TMDb for film details (if enabled).
-            film.search_tmdb()
+                # If the film should be ignored, print the reason why, and skip.
+                if film.should_ignore is True:
+                    console.skip(film, film.ignore_reason)
+                    continue
 
-            # If the search failed, or TMDb is disabled, print why, and skip.
-            if film.tmdb_id is None and config.tmdb.enabled is True:
-                console.skip(film, film.ignore_reason)
-                continue
+                # Search TMDb for film details (if enabled).
+                film.search_tmdb()
 
-            # If the lookup was successful, print the results to the console.
-            console.film_details(film)
+                # If the search failed, or TMDb is disabled, print why, and skip.
+                if film.tmdb_id is None and config.tmdb.enabled is True:
+                    console.skip(film, film.ignore_reason)
+                    continue
 
-            # If duplicate checking is enabled and the film is a duplicate, abort,
-            # *unless* overwriting is enabled. `is_duplicate` will always return
-            # false if duplicate checking is disabled.
-            if film.is_duplicate and config.overwrite_duplicates == False:
-                continue
+                # If the lookup was successful, print the results to the console.
+                console.film_details(film)
 
-            # Attempt to Create the destination folder (fails silently if it
-            # already exists).
-            ops.dirops.create_deep(film.destination_dir)
+                # If duplicate checking is enabled and the film is a duplicate, abort,
+                # *unless* overwriting is enabled. `is_duplicate` will always return
+                # false if duplicate checking is disabled.
+                if film.is_duplicate and config.overwrite_duplicates == False:
+                    continue
 
-            # If it is a file and as a valid extension, process it as a file
-            if film.is_file and film.has_valid_ext:
-                process.file(film)
+                # Attempt to Create the destination folder (fails silently if it
+                # already exists).
+                ops.dirops.create_deep(film.destination_dir)
 
-            # Otherwise if it's a folder, process it as a folder containing
-            # potentially multiple related files.
-            elif film.is_dir:
-                process.dir(film)
+                # If it is a file and as a valid extension, process it as a file
+                if film.is_file and film.has_valid_ext:
+                    process.file(film)
 
-    # When all films have been processed, notify Plex (if enabled).
-    notify.plex()
+                # Otherwise if it's a folder, process it as a folder containing
+                # potentially multiple related files.
+                elif film.is_dir:
+                    process.dir(film)
 
-    # Print the summary.
-    console.end(counter.count)
+        # When all films have been processed, notify Plex (if enabled).
+        notify.plex()
+
+        # Print the summary.
+        console.end(counter.count)
+    
+    except (KeyboardInterrupt, SystemExit):
+
+        from fylmlib.cursor import cursor
+        # Don't leave the cursor hidden
+        cursor.show()
+        print('\nFylm was stopped.')
+
 
 if __name__ == "__main__":
     main()

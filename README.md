@@ -31,6 +31,7 @@ Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stab
 - `pip install future`
 - `pip install yaml`
 - `pip install attrdict`
+- `pip install python-pushover`
 
 If you don't use `pip`, then you will need to install these manually, or download them and include them inside your copy of Fylm. Or shake a magic stick and hope it works (hint: it won't).
 
