@@ -64,7 +64,8 @@ class dirops:
         Returns:
             True, if f1 and f2 are on the same parition, else False.
         """
-        return os.stat(os.path.dirname(f1)).st_dev == os.stat(os.path.dirname(f2)).st_dev
+        return (os.path.exists(f1) and os.path.exists(f2)
+            and os.stat(os.path.dirname(f1)).st_dev == os.stat(os.path.dirname(f2)).st_dev)
 
     @classmethod
     def get_existing_films(cls, paths):
@@ -135,7 +136,6 @@ class dirops:
         return map(Film, [os.path.join(path, file) for file in limited_files])
 
     @classmethod
-    # Check for valid file types inside this path
     def get_valid_files(cls, path):
         """Get a list valid files inside the specified path.
 
@@ -472,6 +472,9 @@ class fileops:
 
         # Show the cursor.
         cursor.show()
+
+        # Clear the progress bar from the console.
+        console.clearline()
 
     @classmethod
     def _copyfileobj(cls, fsrc, fdst, callback, total, length=16*1024):

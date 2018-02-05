@@ -110,6 +110,14 @@ class console:
         sys.stdout.flush()
 
     @classmethod
+    def clearline(cls):
+        """Clears the current printed line.
+        """
+
+        # Clear line.
+        sys.stdout.write("\033[K") 
+
+    @classmethod
     def end(cls, count):
         """Print and log the closing summary prior to exit.
 
