@@ -28,6 +28,7 @@ from fylmlib.config import config
 from fylmlib.console import console
 import fylmlib.operations as ops
 import fylmlib.counter as counter
+import fylmlib.notify as notify
 
 class process:
     """Main class for scanning for and processing films.
@@ -67,6 +68,9 @@ class process:
             # If move was successful, update the counter.
             counter.add(1)
 
+            # Notify Pushover
+            notify.pushover(film)
+
         # Update the film's source_path again with its final destination.
         film.source_path = dst
 
@@ -81,9 +85,13 @@ class process:
         # Create a local counter to track deleted (unwanted) files.
         deleted_files_count = 0
 
-        # Create a list for files to queue. This is used to guarantee
+        # Create a list to hold queued files. This is used to guarantee
         # uniqueness in name.
         queued_files = []
+
+        # Create a counter to track successfully copied files.
+        copied_files = 0
+        expected_files = len(film.valid_files)
 
         # Enumerate valid files.
         for file in film.valid_files:
@@ -118,6 +126,15 @@ class process:
 
                 # If move was successful, update the counter.
                 counter.add(1)
+
+                # Update the list of copied files
+                copied_files += 1
+
+        # If the number of copied files matches the number of valid files, then
+        # we can send the pushover notification.
+        if copied_files == expected_files:
+            # Notify Pushover of successful move.
+            notify.pushover(film)
 
         # Recursively delete unwanted files and update the count.
         deleted_files_count = ops.dirops.delete_unwanted_files(film.source_path, deleted_files_count)

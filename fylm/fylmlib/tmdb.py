@@ -59,6 +59,8 @@ class _TmdbResult:
                             Used primarily to compare the year we expect the film
                             was released, to what a TMDb result thinks it is.
 
+        overview:           TMDb short description (overview) of the film.
+
         proposed_year:      The primary release year of the TMDb search result.
 
         tmdb_id:            The TMDb ID of the search result.
@@ -74,15 +76,16 @@ class _TmdbResult:
         is_potential_match: Performs a checking algorithm to determine if the search
                             result qualifies as a potential match.
     """
-    def __init__(self, search_string, search_year, year=None, title=None, proposed_title=None, proposed_year=None, tmdb_id=None, popularity=0):
+    def __init__(self, search_string, search_year, year=None, overview=None, title=None, proposed_title=None, proposed_year=None):
         self.search_string = search_string
         self.title = search_string
         self.proposed_title = proposed_title
         self.search_year = search_year
         self.year = search_year or year
+        self.overview = None
         self.proposed_year = proposed_year
-        self.tmdb_id = tmdb_id
-        self.popularity = popularity
+        self.tmdb_id = None
+        self.popularity = 0
 
     def _map_raw_result(self, raw_result):
         """Map properties to this object from a raw JSON result.
@@ -92,6 +95,7 @@ class _TmdbResult:
         """
         for key, value in {
             "tmdb_id": raw_result['id'],
+            "overview": raw_result['overview'],
             "popularity": raw_result['popularity'],
             "proposed_title": raw_result['title'],
             "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0

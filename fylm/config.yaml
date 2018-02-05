@@ -149,12 +149,14 @@ plex:
 
 pushover:
 
-  # Pushover will receive a notification when moves are complete
-  #   TODO Not implemented
-  # enabled: false
+  # Pushover will receive a notification when films have been processed.
+  enabled: true
 
-  # Pushover API key
-  # key: uFX5ZFkRPoyG72DYcoV1dBoEwT7t7i
+  # Pushover app token, obtained from https://pushover.net/apps
+  app_token: 'YOUR_APP_TOKEN_HERE'
+
+  # Pushover user key, obtained from https://pushover.net
+  user_key: 'YOUR_USER_KEY_HERE'
 
 # An array of words (typically articles) to force lowercase if they're in the middle of a title.
 always_lowercase: 

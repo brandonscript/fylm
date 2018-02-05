@@ -51,6 +51,8 @@ class Film:
 
         year:               Primary release year.
 
+        overview:           A short description of the film.
+
         edition:            Special edition.
 
         media:              Original release media, e.g. BluRay.
@@ -119,6 +121,7 @@ class Film:
         self.source_path = source_path
         self.title = parser.get_title(source_path)
         self.year = parser.get_year(source_path)
+        self.overview = None
         self.edition = parser.get_edition(source_path)
         self.media = parser.get_media(source_path)
         self.quality = parser.get_quality(source_path)
@@ -339,6 +342,7 @@ class Film:
             if result is not None:
                 # If we find a result, update title, tmdb_id, year, and the title_similarity.
                 self.title = result.proposed_title
+                self.overview = result.overview
                 self.tmdb_id = result.tmdb_id
                 self.year = result.proposed_year
                 self.title_similarity = result.title_similarity

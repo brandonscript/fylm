@@ -21,6 +21,7 @@ This module is used to send notifications to various external integrations.
 from __future__ import unicode_literals, print_function
 
 from plexapi.server import PlexServer
+from pushover import init, Client
 from pyfancy import *
 
 from fylmlib.log import log
@@ -67,4 +68,23 @@ def plex():
         # Re-enable logging when done.
         log.enable()
 
-# TODO: Add Pushover integration.
+def pushover(film):
+    """Pushover notification handler.
+
+    Notify Pushover that an action has been performed.
+    """
+
+    # Check if Pushover notifications are enabled, and that we're not running in quiet mode.
+    if config.pushover.enabled is True and config.quiet is False:
+
+        # Application API token/key, which can be found by selecting your app
+        # from https://pushover.net/apps and copying the key.
+        init(config.pushover.app_token)
+
+        # Initialize the Pushover client with your Pushover user key, which can
+        # be found at https://pushover.net
+        pushover = Client(config.pushover.user_key)
+
+        message = ('. '.join(film.overview.split('.  ')[:2]) + '.'[:200] + '...') if len(film.overview) > 200 else film.overview
+
+        pushover.send_message("{} ({})\n{}".format(film.title, film.year, message), title='Fylm Added')
