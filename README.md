@@ -12,17 +12,18 @@ It uses (highly suspect) regular expressions to identify film files (or folders)
 
 Fylm can:
 
-- Rename messy files and folders like `high.noon.1952.1080p.a.lot.of.OTHER-JUNK` to make them pretty, like `High Noon (1952) 1080p`.
-- Look film titles and years up on TMDb so you don't have to, and use them to correctly name things.
+- Rename messy files and folders like `high.noon.1952.1080p.this.OTHER-JUNK` and make them pretty, like `High Noon (1952) 1080p`
+- Look film details up on TMDb so you don't have to, ensuring things are named correctly.
 - Notify your Plex Media Server when it adds something new.
 - Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd.
 - Delete extra files you don't want, moving only the important bits you care about.
 - Run in test mode so you can verify search results before committing.
 - Log what it does, so if (not saying they will, but if) things go sideways, you can see why.
+- Send you informative notifications to your phone when it does things.
 
 ### Installing
 
-For now, Fylm is only guaranteed to run on Python 2.7. You can try running it on 3.X and see what happens.
+For now, Fylm is only guaranteed to run on Python 2.7. You can try running it on 3.X and see what happens 😈.
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
