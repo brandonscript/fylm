@@ -80,7 +80,6 @@ overwrite_duplicates: false
 
 # Copy files to the destination, verify, and delete originals, instead of move.
 # This is the default behavior when source and destination are on different partitions (or network)
-# TODO: Currently files are not verified. Add integrity (bitwise or hash?) check and a new 'verify' flag.
 safe_copy: false
 
 # Check the destionation dir for duplicate files before copying. Adds some processing time, but prevents mistakes.
