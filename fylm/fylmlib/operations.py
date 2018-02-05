@@ -64,7 +64,7 @@ class dirops:
         Returns:
             True, if f1 and f2 are on the same parition, else False.
         """
-        return (os.path.exists(f1) and os.path.exists(f2)
+        return (os.path.exists(os.path.dirname(f1)) and os.path.exists(os.path.dirname(f2))
             and os.stat(os.path.dirname(f1)).st_dev == os.stat(os.path.dirname(f2)).st_dev)
 
     @classmethod
