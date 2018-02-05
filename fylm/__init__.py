@@ -34,7 +34,7 @@ import fylmlib.notify as notify
 import fylmlib.counter as counter
 import fylmlib.existing_films as existing_films
 
-__version__ = '0.2.0-alpha'
+__version__ = '0.2.1-alpha'
 
 def main():
     """Main program."""
@@ -122,7 +122,7 @@ def main():
         from fylmlib.cursor import cursor
         # Don't leave the cursor hidden
         cursor.show()
-        print('\nFylm was stopped.')
+        print('\nBye, Fylm.')
 
 
 if __name__ == "__main__":
