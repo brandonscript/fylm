@@ -32,6 +32,7 @@ from pyfancy import *
 from fylmlib.config import config
 from fylmlib.log import log
 import fylmlib.formatter as formatter
+import fylmlib.progress as progress
 
 # Hijack STDOUT and re-encode it, for TravisCI
 sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
@@ -102,13 +103,20 @@ class console:
             pyfancy().bold().yellow('{}\nOVERWRITE DUPLICATES ENABLED\nDuplicate files will be overwritten\n(File size will be ignored)\n{}\n'.format(DIVIDER, DIVIDER)).output()
 
     @classmethod
+    def copy_progress(cls, copied, total):
+        """Print progress bar to terminal.
+        """
+        print('      ' + progress.progress_bar(100 * copied / total), end='\r')
+        sys.stdout.flush()
+
+    @classmethod
     def end(cls, count):
         """Print and log the closing summary prior to exit.
 
         Args:
             count: (int) Count of successful moves/renames, from counter module.
         """
-        s = "Successfully moved {} films".format(count)
+        s = "Successfully moved {} film{}".format(count, '' if count == 1 else 's')
         print(s)
         log.info(s)
 

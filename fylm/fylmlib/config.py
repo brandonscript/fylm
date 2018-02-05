@@ -50,8 +50,6 @@ SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
 class _Config:
     """Main class for handling app options.
-
-    TODO: Convert this class to a singleton property that is only loaded once.
     """
     def __init__(self):
         """Load config.yaml and map CLI arguments, if applicable.

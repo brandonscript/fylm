@@ -34,6 +34,7 @@ from itertools import islice
 
 from fylmlib.config import config
 from fylmlib.console import console
+from fylmlib.cursor import cursor
 import fylmlib.formatter as formatter
 
 class dirops:
@@ -52,6 +53,18 @@ class dirops:
         """
         for d in (d for d in paths if not os.path.exists(d)):
             console.error("'{}' does not exist; check folder path in config.yaml".format(d))
+
+    @classmethod
+    def is_same_partition(cls, f1, f2):
+        """Determine if f1 and f2 are on the same partition.
+
+        Args:
+            f1: (unicode) path of source file/folder
+            f2: (unicode) path of destination file/folder
+        Returns:
+            True, if f1 and f2 are on the same parition, else False.
+        """
+        return os.stat(os.path.dirname(f1)).st_dev == os.stat(os.path.dirname(f2)).st_dev
 
     @classmethod
     def get_existing_films(cls, paths):
@@ -277,7 +290,6 @@ class dirops:
         else:
             console.debug("Will not delete {} because it is not empty".format(path))
 
-    #
     @classmethod
     def delete_unwanted_files(cls, path, count=0):
         """Delete all unwanted files in the specified dir.
@@ -336,19 +348,17 @@ class fileops:
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
-    def safe_move(cls, src, dst):
+    def safe_move(cls, src, dst, expected_size):
         """Performs a 'safe' move operation.
 
         Performs some additional checks before moving files. Optionally supports
         config.safe_copy, which forcibly copies files from one folder to the next
         instead of moving them, even if the files exist on the same partition.
-        TODO: Add in copy/move verification (filesize matches)
-        TODO: delete original source file after copying.
-        TODO: catch IOError
-
+        
         Args:
             src: (unicode) path of file to move.
             dst: (unicode) destination for file to move to.
+            expected_size: (int) size in bytes the file is expected to be.
         Returns:
             True if the file move was successful, else False.
         """
@@ -381,24 +391,111 @@ class fileops:
 
         # Only perform destructive changes if running in live mode.
         if not config.test:
-
-            #TODO: Add copy progress bar for moving/copying to different partitions.
-
             try:
-                # If safe_copy is enabled, copy instead of move.
-                # Files will always be copied even if they're on a different partition, 
-                # but this behavior can be forced by enabling safe_copy in config.
-                # TODO: Add .partial~ to in-progress copy and rename after verified.
-                if config.safe_copy: shutil.copy(src, dst)
+                # If safe_copy is enabled, or if partition is not the same, copy instead.
+                if config.safe_copy or not dirops.is_same_partition(src, dst): 
+                    
+                    # Generate a new filename using .partial~ to indicate the file
+                    # has not be completely copied.
+                    partial_dst = '{}.partial~'.format(dst)
 
+                    # Copy the file using progress bar
+                    cls.copy_with_progress(src, partial_dst)
+
+                    # Verify that the file is the correct size.
+                    if size(partial_dst) == expected_size:
+                        os.rename(partial_dst, partial_dst.rsplit('.partial~', 1)[0])
+                        os.remove(src)
+
+                    # If not, then we print an error.
+                    else:
+                        console.warn("File sizes don't match after copying {} to {}".format(src, dst))
+                
                 # Otherwise, move the file instead.
-                else: shutil.move(src, dst)
+                else: 
+                    shutil.move(src, dst)
+
                 return True
             except IOError:
 
                 # Catch exception and soft warn in the console (don't raise Exception).
                 console.warn('Failed to move {} to {}'.format(src, dst))
                 return False
+
+    @classmethod
+    def copy_with_progress(cls, src, dst, follow_symlinks=True):
+        """Copy data from src to dst and print a progress bar.
+
+        If follow_symlinks is not set and src is a symbolic link, a new
+        symlink will be created instead of copying the file it points to.
+
+        Args:
+            src: (unicode) path to source file.
+            dst: (unicode) path to destionation.
+            follow_symlinks: (bool) follows symbolic links to files and re-creates them.
+
+        """
+
+        # Hide the cursor
+        cursor.hide()
+
+        # If the destination is a folder, include the folder
+        # in the destination copy.
+        if os.path.isdir(dst):
+            dst = os.path.join(dst, os.path.basename(src))
+
+        # If the source and destination are the same, abort.
+        if shutil._samefile(src, dst):
+            return
+
+        for fn in [src, dst]:
+            try:
+                st = os.stat(fn)
+            except OSError:
+                # File most likely does not exist.
+                pass
+            else:
+                if shutil.stat.S_ISFIFO(st.st_mode):
+                    raise shutil.SpecialFileError("`%s` is a named pipe" % fn)
+
+        # Handle symlinks.
+        if not follow_symlinks and os.path.islink(src):
+            os.symlink(os.readlink(src), dst)
+        else:
+            size = os.stat(src).st_size
+            with open(src, 'rb') as fsrc:
+                with open(dst, 'wb') as fdst:
+                    cls._copyfileobj(fsrc, fdst, callback=console.copy_progress, total=size)
+        
+        # Perform a low-level copy.
+        shutil.copymode(src, dst)
+
+        # Show the cursor.
+        cursor.show()
+
+    @classmethod
+    def _copyfileobj(cls, fsrc, fdst, callback, total, length=16*1024):
+        """Internal method for low-level copying.
+
+        Executes low-level file system copy and calls back progress
+        to progress bar function.
+
+        Args:
+            fsrc: (unicode) path to source file.
+            fdst: (unicode) path to destionation.
+            callback: (function) callback function to be called when progress is changed.
+            total: (int) total expected size of file in B.
+            length: (int) total length of buffer.
+
+        """
+        copied = 0
+        while True:
+            buf = fsrc.read(length)
+            if not buf:
+                break
+            fdst.write(buf)
+            copied += len(buf)
+            callback(copied, total=total)
 
     @classmethod
     def rename(cls, src, new_filename, size=0):
