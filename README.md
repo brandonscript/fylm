@@ -1,5 +1,7 @@
 ![version](https://img.shields.io/badge/version-0.2.0--alpha-orange.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8fcfaf45a6494aedb4b0340461c2b79b)](https://www.codacy.com/app/brandonscript/fylm) [![Build Status](https://travis-ci.org/brandonscript/fylm.svg?branch=master)](https://travis-ci.org/brandonscript/fylm)
 
+<img src="https://i.imgur.com/X53grFH.png" width="200">
+
 ### Overview
 
 Fylm is a wonderful automated command line app for organizing your film media. You can pronounce it **Film** or **File 'em**, whichever you like!
@@ -43,6 +45,8 @@ All of Fylm's options are configured in `config.yaml`. Options of note that you 
 - plex.baseurl
 - plex.token
 - plex.sections
+
+If you're using Pushover, you might also want to add the [Fylm logo](https://imgur.com/a/wm3LS) to your app.
 
 ### Running
 
@@ -92,3 +96,7 @@ To run tests:
 #### Contributing
 
 Contributions are welcome! Please send in a PR with a clear explanation of what you're adding and why, and where applicable, add tests (a new test class, even!) to validate.
+
+#### Credits
+
+Icon made by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/)
