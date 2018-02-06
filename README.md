@@ -32,7 +32,7 @@ Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stab
 - `pip install tmdbsimple`
 - `pip install plexapi`
 - `pip install future`
-- `pip install yaml`
+- `pip install pyyaml`
 - `pip install attrdict`
 - `pip install python-pushover`
 
@@ -93,7 +93,7 @@ Test coverage is meek. But at least there are tests for the `Film` class. These 
 To run tests:
 
     cd fylm/
-    python -m unittest tests`
+    python -m unittest tests
 
 <sub>(Bonus points if you send in a PR that allows tests to run from the project root.)</sub>
 
@@ -103,4 +103,4 @@ Contributions are welcome! Please send in a PR with a clear explanation of what 
 
 #### Credits
 
-Icon made by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/)
+Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/)
