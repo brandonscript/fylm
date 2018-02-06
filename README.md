@@ -12,7 +12,9 @@ It uses (highly suspect) regular expressions to identify film files (or folders)
 
 Fylm can:
 
-- Rename messy files and folders like `high.noon.1952.1080p.this.OTHER-JUNK` and make them pretty, like `High Noon (1952) 1080p`
+- Rename messy files and folders and make them pretty, like
+
+  `high.noon.1952.1080p.this.OTHER-JUNK` → `High Noon (1952) 1080p`
 - Look film details up on TMDb so you don't have to, ensuring things are named correctly.
 - Notify your Plex Media Server when it adds something new.
 - Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd.
