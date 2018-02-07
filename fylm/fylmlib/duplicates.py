@@ -44,7 +44,7 @@ def check(film):
     # If check for duplicates is disabled, return an empty array (because we don't care if they exist).
     # DANGER ZONE: With check_for_duplicates disabled and overwrite_existing enabled, any files
     # with the same name at the destination will be silently overwritten.
-    if config.duplicate_checking.enabled is False:
+    if config.duplicate_checking.enabled is False or config.rename_only is True:
         console.debug('Duplicate checking is disabled, skipping.')
         return []
 
@@ -101,7 +101,8 @@ def should_replace(film, duplicate):
     #   2160p: [] # Do not replace 2160p films with any other quality
     #   1080p: [] # Do not replace 1080p films with any other quality
     #   720p: ['1080p'] # Replace 720p films with 1080p
-    #   SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) with 1080p or 720p
+    #   SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) 
+    #       with 1080p or 720p
     if film.quality in config.duplicate_replacing.replace_quality[duplicate.quality or 'SD']:
         return True
 
