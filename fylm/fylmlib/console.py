@@ -129,7 +129,7 @@ class console:
         Args:
             count: (int) Count of successful moves/renames, from counter module.
         """
-        s = "Successfully moved {} film{}".format(count, '' if count == 1 else 's')
+        s = "Successfully {} {} film{}".format('renamed' if config.rename_only else 'moved', count, '' if count == 1 else 's')
         print(s)
         log.info(s)
 
