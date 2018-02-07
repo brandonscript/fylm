@@ -149,7 +149,7 @@ class _Config:
             '--overwrite',
             action="store_true",
             default=False,
-            dest="overwrite_duplicates",
+            dest="overwrite_existing",
             help=('Forcibly overwrite any file (or matching files inside a film folder) with the same name, '
                   'regardless of size difference) # Forcibly overwrite duplicate files regardless of size diff'))
 
@@ -196,8 +196,8 @@ class _Config:
         if args.rename_only is True: self.config.rename_only = True
         if args.strict is False: self.config.strict = False
         if args.force_lookup is True: self.config.force_lookup = True
-        if args.no_duplicates is False: self.config.check_for_duplicates = False
-        if args.overwrite_duplicates is True: self.config.overwrite_duplicates = True
+        if args.no_duplicates is False: self.config.duplicate_checking.enabled = False
+        if args.overwrite_existing is True: self.config.overwrite_existing = True
         if args.source_override: self.config.source_dirs = args.source_override.split(",")
         if args.limit: self.config.limit = args.limit
         if args.min_popularity is not None: self.config.min_popularity = args.min_popularity

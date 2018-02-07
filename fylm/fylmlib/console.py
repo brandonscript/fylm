@@ -27,12 +27,17 @@ import datetime
 import io
 import sys
 
+from colors import color
 from pyfancy import *
 
 from fylmlib.config import config
 from fylmlib.log import log
+from fylmlib.ansi import ansi
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
+
+# TODO: Overhaul console to support a set of common patterns, 
+# colors, and a more flexible API.
 
 # Hijack STDOUT and re-encode it, for TravisCI
 sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
@@ -52,13 +57,13 @@ class console:
     def start(cls):
         """Print and log the initial welcome header.
         """
-        log.info('{}{}{}'.format(('-'*50), NOW, ('-'*50)))
+        log.info('{}{}{}'.format(('-'*40), NOW, ('-'*40)))
         log.info('Scanning {}'.format(', '.join(config.source_dirs)))
         print("Fylm is scanning " + ', '.join(config.source_dirs))
         print("Please wait...\n")
         console._notify_test()
         console._notify_force_lookup()
-        console._notify_overwrite_duplicates()
+        console._notify_overwrite_existing()
 
     @classmethod
     def film_loaded(cls, film):
@@ -92,15 +97,15 @@ class console:
         """
         if config.force_lookup:
             log.info(' *** FORCE MODE *** ')
-            pyfancy().bold().yellow('{}\nFORCE MODE\nSmart folder checking will be disabled\nAssuming all folders are films\n{}\n'.format(DIVIDER, DIVIDER)).output()
+            pyfancy().bold().light_yellow('{}\nFORCE MODE\nSmart folder checking will be disabled\nAssuming all folders are films\n{}\n'.format(DIVIDER, DIVIDER)).output()
 
     @classmethod
-    def _notify_overwrite_duplicates(cls):
+    def _notify_overwrite_existing(cls):
         """Print and log a warning header to indicate that Fylm will overwrite duplicates.
         """
-        if config.overwrite_duplicates:
-            log.info(' *** OVERWRITE DUPLICATES *** ')
-            pyfancy().bold().yellow('{}\nOVERWRITE DUPLICATES ENABLED\nDuplicate files will be overwritten\n(File size will be ignored)\n{}\n'.format(DIVIDER, DIVIDER)).output()
+        if config.overwrite_existing:
+            log.info(' *** OVERWRITE MODE *** ')
+            pyfancy().bold().red('{}\nOVERWRITE EXISTING ENABLED\nExisting files will be overwritten\n{}\n'.format(DIVIDER, DIVIDER)).output()
 
     @classmethod
     def copy_progress(cls, copied, total):
@@ -129,13 +134,18 @@ class console:
         log.info(s)
 
     @classmethod
+    def exit_early(cls):
+        print(color('\nBye, Fylicia.', fg=ansi.pink))
+
+    @classmethod
     def debug(cls, s):
         """Print debugging details, if config.debug is enabled.
 
         Args:
             s: (unicode) String to print/log
         """
-        if config.debug is True: print(s)
+        if config.debug is True: 
+            print(s)
 
     @classmethod
     def info(cls, s):
@@ -157,15 +167,87 @@ class console:
         log.error(s)
 
     @classmethod
-    def interesting(cls, s, highlight='', lowlight=''):
-        """Print important text to the console. Prints white first, then a green highlight.
+    def rename(cls, title='', size=''):
+        """Print film rename details to the console. Prints white first, then a green highlight.
 
         Args:
-            s: (unicode) String to print white and send to log.
-            highlight: (unicode) String to print green and send to log.
+            title: (unicode) String to print green and send to log.
+            size: (float) String to print white and send to log.
         """
-        pyfancy().white('{}{} '.format(INDENT_PREFIX, s)).green(highlight).dark_gray().dim(' ({})'.format(lowlight)).output()
-        log.detail('{} {}'.format(s, highlight))
+        pyfancy().white('{}⌥ '.format(INDENT_PREFIX)).raw(color(title, fg=ansi.green)).dark_gray().dim(' ({})'.format(size)).output()
+        log.detail('⌥{} {}'.format(title, size))
+
+    @classmethod
+    def duplicates(cls, film):
+        """Print any duplicates found to the console.
+
+        Args:
+            film: (Film) Inbound film that has been marked as duplicate.
+            size: ([Film]) Array of duplicate Film objects.
+        """
+
+        # Import duplicates' should_replace function here to prevent circular imports.
+        from duplicates import should_replace, should_keep_both
+
+        if len(film.duplicates) > 0:
+            console.info('{} duplicate{} found:'.format(
+                len(film.duplicates),
+                '' if len(film.duplicates) == 1 else 's'))
+            for d in film.duplicates:
+
+                pretty_size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
+                pretty_size = formatter.pretty_size(d.size)
+
+                # If the film will be replaced, print info:
+                if should_replace(film, d):
+                    console.replacing(
+                        "  Replacing '{}'".format(d.new_filename__ext()),
+                        " ({})".format(pretty_size),
+                        " [{}]".format(pretty_size_diff))
+                elif should_keep_both(film, d):
+                    console.info("  Keeping '{}' ({}) [{}]".format(
+                        d.new_filename__ext(), 
+                        pretty_size,
+                        pretty_size_diff))
+                else:
+                    console.warn("  Ignoring because '{}' ({}) is {}".format(
+                        d.new_filename__ext(), 
+                        pretty_size,
+                        pretty_size_diff))
+
+    @classmethod
+    def replacing(cls, s1, s2, s3):
+        """Print and log replacement text, note, and dim.
+
+        Args:
+            s1: (unicode) String 1 to print/log.
+            s2: (unicode) String 2 to print/log.
+            s3: (unicode) String 3 to print/log.
+        """
+        pyfancy().raw(
+            color('%s%s' % (INDENT_PREFIX, s1), fg=ansi.blue)).raw(
+            color(s2, fg=ansi.blue)).dark_gray().dim(s3).output()
+        log.detail('{}{}{}'.format(s1, s2, s3))
+
+    @classmethod
+    def interesting(cls, s):
+        """Print and log interesting text. Prints green.
+
+        Args:
+            s: (unicode) String to print/log.
+        """
+        pyfancy().raw(color('{}{}'.format(INDENT_PREFIX, s)), fg=ansi.green).output()
+        log.detail(s)
+
+    @classmethod
+    def caution(cls, s):
+        """Print and log caution text. Prints yellow.
+
+        Args:
+            s: (unicode) String to print/log.
+        """
+        pyfancy().yellow('{}{}'.format(INDENT_PREFIX, s)).output()
+        log.detail(s)
 
     @classmethod
     def warn(cls, s):
@@ -174,7 +256,7 @@ class console:
         Args:
             s: (unicode) String to print/log.
         """
-        pyfancy().red('{}{}'.format(INDENT_PREFIX, s)).output()
+        pyfancy().raw(color('{}{}'.format(INDENT_PREFIX, s), fg=ansi.red)).output()
         log.detail(s)
 
     @classmethod
@@ -188,13 +270,13 @@ class console:
         log.detail(s)
 
     @classmethod
-    def notice(cls, s):
-        """Print and log unimportant text. Prints dim (darker gray).
+    def dim(cls, s):
+        """Print and log unimportant text. Prints dim (darker).
 
         Args:
             s: (unicode) String to print/log.
         """
-        pyfancy().dim('{}{}'.format(INDENT_PREFIX, s)).output()
+        pyfancy().dark_gray().dim('{}{}'.format(INDENT_PREFIX, s)).output()
         log.detail(s)
 
     @classmethod
@@ -217,14 +299,16 @@ class console:
         """
 
         # Print original filename and size.
-        pyfancy().bold('{}{}{} ({})'.format(MAIN_PREFIX, film.original_filename, film.ext or '', formatter.pretty_size(film.size))).output()
+        p = pyfancy().bold('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
+        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size)), fg=ansi.gray))
+        p.output()
 
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
             if film.tmdb_id is not None:
-                p = pyfancy().white(INDENT_PREFIX).green(u'✓ {} ({})'.format(film.title, film.year)).dark_gray()
+                p = pyfancy().white(INDENT_PREFIX).raw(color('✓ {} ({})'.format(film.title, film.year), fg=ansi.green)).dark_gray()
                 p.add(' [{}] {} match'.format(film.tmdb_id, formatter.percent(film.title_similarity))).output()
-                log.detail(u'✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
+                log.detail('✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
             else:
-                pyfancy().white(INDENT_PREFIX).red('𝗑 {} ({})'.format(film.title, film.year)).output()
-                log.detail(u'𝗑 Not found')
+                pyfancy().white(INDENT_PREFIX).red('× {} ({})'.format(film.title, film.year)).output()
+                log.detail('× Not found')

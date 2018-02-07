@@ -22,16 +22,14 @@ from __future__ import unicode_literals, print_function
 
 import os
 import re
-from itertools import ifilter
 
 from fylmlib.config import config
 from fylmlib.console import console
 from fylmlib.parser import parser
 import fylmlib.formatter as formatter
 import fylmlib.tmdb as tmdb
-import fylmlib.compare as compare
 import fylmlib.operations as ops
-import fylmlib.existing_films as existing_films
+import fylmlib.duplicates as duplicates
 
 class Film:
     """An object that identifies and processes film attributes.
@@ -128,6 +126,9 @@ class Film:
         self.tmdb_id = None
         self.title_similarity = 0
         self.ignore_reason = None
+
+        # Internal setter for `duplicates`.
+        self._duplicates = None
 
         # Internal setter for `ext`.
         # We use this because at times `source_path` is overwritten.
@@ -256,61 +257,16 @@ class Film:
     def duplicates(self):
         """Get a list of duplicates from a list of existing films.
 
-        Compare the film objects to an array of exsiting films in
+        Compare the film objects to an array of existing films in
         order to determine if any duplicates exist at the destination.
         Criteria for a duplicate: title, year, and edition must match (case insensitive).
 
         Returns:
             A an array of duplicate films.
         """
-
-        # If check for duplicates is disabled, return an empty array (because we don't care if they exist).
-        # DANGER ZONE: With check_for_duplicates disabled and overwrite_duplicates enabled, any files
-        # with the same name at the destination will be silently overwritten.
-        if config.check_for_duplicates is False:
-            console.debug('Duplicate checking is disabled, skipping.')
-            return []
-
-        console.debug('Searching for duplicates of "{}" ({})'.format(self.title, self.year))
-
-        # Filter the existing_films cache array to titles beginning with the first letter of the
-        # current film, then use fast ifilter to check for duplicates. Then we filter out empty folder,
-        # folders with no valid media folders, and keep only non-empty folders and files.
-        # TODO: Add tests to ensure this works for 'title-the' naming convention as well.
-        duplicates = list(ifilter(lambda d:
-                # First letter of the the potential duplicate's title must be the same.
-                # Checking this first allows us to have a much smaller list to compare against.
-                d.title[0] == self.title[0]
-
-                # Check that the film is actually a duplicate in name/year/edition
-                and compare.is_duplicate(self, d)
-
-                and ((
-                    d.is_dir
-                    # If the potential duplicate is a dir, check that it contains at least
-                    # one valid file.
-                    and len(ops.dirops.get_valid_files(d.source_path)) > 0)
-
-                    # Or if it is a file, it is definitely a duplicate.
-                    or d.is_file),
-
-            # Perform the filter against the existing films cache.
-            existing_films.cache))
-
-        # Print any duplicates found to the console
-        console.debug('   Total duplicate(s) found: {}'.format(len(duplicates)))
-        if len(duplicates) > 0:
-            console.warn('{} duplicate{} found ({}):'.format(
-                len(duplicates),
-                '' if len(duplicates) == 1 else 's',
-                'overwriting' if config.overwrite_duplicates is True else 'aborting'))
-            for d in duplicates:
-                console.warn("  '{}' is {} ({})".format(
-                    d.new_filename__ext(),
-                    formatter.pretty_size_diff(self.source_path, d.source_path),
-                    formatter.pretty_size(ops.size(d.source_path))))
-
-        return duplicates
+        if self._duplicates is None:
+            self._duplicates = duplicates.check(self)
+        return self._duplicates
 
     @property
     def is_duplicate(self):

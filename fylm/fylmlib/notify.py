@@ -23,7 +23,9 @@ from __future__ import unicode_literals, print_function
 from plexapi.server import PlexServer
 from pushover import init, Client
 from pyfancy import *
+from colors import color
 
+from fylmlib.ansi import ansi
 from fylmlib.log import log
 from fylmlib.config import config
 from fylmlib.console import console
@@ -55,6 +57,7 @@ def plex():
             console.error(e)
             return
 
+        # TODO: Move these outputs to console class
         p = pyfancy().white('\nUpdating plex...')
 
         # If the connection was successful, tell Plex to update specified sections if running
@@ -63,7 +66,7 @@ def plex():
             for section in (plex.library.section(section) for section in config.plex.sections):
                 section.update()
 
-        p.green(' Done ✓').output()
+        p.raw(color(' Done ✓', fg=ansi.green)).output()
 
         # Re-enable logging when done.
         log.enable()

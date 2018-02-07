@@ -6,11 +6,14 @@ python:
   - 2.7.10
 
 install:
-  - pip install --quiet tmdbsimple
-  - pip install --quiet plexapi
+
   - pip install --quiet future
   - pip install --quiet pyyaml
+  - pip install --quiet ansicolors
   - pip install --quiet attrdict
+  - pip install --quiet tmdbsimple
+  - pip install --quiet plexapi
+  - pip install --quiet python-pushover
 
 script:
   - cd fylm; python -m unittest tests

@@ -22,6 +22,10 @@ This module generates a progress bar from a percentage and width.
 
 from __future__ import unicode_literals, print_function
 
+from colors import color
+
+from fylmlib.ansi import ansi
+
 def progress_bar(percentage, width=50):
     """Generates a progress bar for writing to console.
 
@@ -32,8 +36,8 @@ def progress_bar(percentage, width=50):
         A compiled progress bar for outputting to console.
     """
 
-    FULL_BLOCK = '█'
-    INCOMPLETE_BLOCK_GRAD = ['░', '▒', '▓']
+    FULL_BLOCK = color('█', fg=ansi.pink)
+    INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), color('▒', fg=ansi.dark_gray), color('▓', fg=ansi.dark_gray)]
 
     assert(isinstance(percentage, float) or isinstance(percentage, int))
     assert(0. <= percentage <= 100.)

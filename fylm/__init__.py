@@ -32,6 +32,7 @@ from fylmlib.process import process
 import fylmlib.operations as ops
 import fylmlib.notify as notify
 import fylmlib.counter as counter
+import fylmlib.duplicates as duplicates
 import fylmlib.existing_films as existing_films
 
 __version__ = '0.2.1-alpha'
@@ -95,8 +96,28 @@ def main():
                 # If duplicate checking is enabled and the film is a duplicate, abort,
                 # *unless* overwriting is enabled. `is_duplicate` will always return
                 # false if duplicate checking is disabled.
-                if film.is_duplicate and config.overwrite_duplicates == False:
-                    continue
+                if film.is_duplicate:
+                    console.duplicates(film)
+
+                    # If all of the duplicates should not be replaced, skip this film.
+                    if all(
+                        not duplicates.should_replace(film, d) 
+                        and not duplicates.should_keep_both(film, d) 
+                        for d in film.duplicates):
+                        continue
+
+                    # Otherwise, remove any duplicate that we don't want to keep.
+                    else:
+                        # Loop through each duplicate that should be replaced.
+                        for d in filter(lambda d: duplicates.should_replace(film, d), film.duplicates):
+
+                            # Delete the duplicate's source dir if it's a folder.
+                            if d.is_dir:
+                                ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1)
+
+                            # Or if it's a single file, delete the file.
+                            else:
+                                ops.fileops.delete(film.source_path)
 
                 # Attempt to Create the destination folder (fails silently if it
                 # already exists).
@@ -122,7 +143,7 @@ def main():
         from fylmlib.cursor import cursor
         # Don't leave the cursor hidden
         cursor.show()
-        print('\nBye, Fylm.')
+        console.exit_early()
 
 
 if __name__ == "__main__":

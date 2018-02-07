@@ -88,7 +88,7 @@ class dirops:
 
         # If check_for_duplicates is disabled, we don't care about duplicates, and
         # don't need to spend cycles processing duplicates. Return an empty array.
-        if config.check_for_duplicates is False:
+        if config.duplicate_checking.enabled is False:
             return
 
         # Enumerate the destination directory and check for duplicates.
@@ -270,7 +270,7 @@ class dirops:
         """
 
         # First we ensure the dir is less than the max_size threshold, otherwise abort.
-        if _size_dir(path) < max_size:
+        if _size_dir(path) < max_size or max_size == -1:
 
             console.debug("Recursively deleting {}".format(path))
 
@@ -286,9 +286,9 @@ class dirops:
                 # Catch resource busy error
                 except OSError as e:
                     if e.args[0] == 16:
-                        console.error('Tried to remove {} but file is in use'.format(path))
+                        console.error('Tried to remove %s but file is in use' % path)
         else:
-            console.debug("Will not delete {} because it is not empty".format(path))
+            console.debug("Will not delete %s because it is not empty" % path)
 
     @classmethod
     def delete_unwanted_files(cls, path, count=0):
@@ -305,12 +305,16 @@ class dirops:
             Number of files that were deleted successfully.
         """
 
-        # Only delete unwanted files if enabled in config
-        if config.remove_unwanted_files:
-            # Search for invalid files, enumerate them, and delete them.
-            for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
-                # Increment count if deletion was successful
-                count += fileops.delete(f)
+        # Only perform destructive actions if in live mode.
+        if not config.test:
+            # Only delete unwanted files if enabled in config
+            if config.remove_unwanted_files:
+                # Search for invalid files, enumerate them, and delete them.
+                for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
+                    # Increment count if deletion was successful.
+                    # `fileops.delete` has test check built in, so
+                    # no need to check here.
+                    count += fileops.delete(f)
         return count
 
     @classmethod
@@ -372,16 +376,14 @@ class fileops:
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
-        # and print a warning to the console. If check_for_duplicates is disabled AND
-        # overwrite_duplicates is enabled, proceed anyway, otherwise forcibly prevent
-        # app from accidentally overwriting files.
+        # and print a warning to the console. If overwrite_existing is enabled, 
+        # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
         if os.path.exists(dst):
-            if config.check_for_duplicates is True or config.overwrite_duplicates is False:
+            if config.overwrite_existing is False:
                 console.warn('Unable to move {} (identical file already exists)'.format(dst))
                 return
             else:
-                # Duplicate checking was disabled and overwrite was enabled, so warn,
-                # and proceed.
+                # File overwriting is enabled, so warn, and proceed.
                 console.warn('Overwriting existing file {}')
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
@@ -523,7 +525,7 @@ class fileops:
         # Generate a destination string based on src's path and the new filename
         dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename))
 
-        console.interesting('⌥', os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
+        console.rename(os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
 
         # Silently abort if the src==dst (we don't need to waste cycles renaming files
         # that are already correctly named). This also allows us to check for identically

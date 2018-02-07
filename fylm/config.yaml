@@ -72,20 +72,44 @@ force_lookup: false
 
 # --overwrite
 # DANGER ZONE
-# Forcibly overwrite any file (or matching files inside a film folder) with the same name, 
-# regardless of size difference. Highly recomment enabling check_for_duplicates with this
-# feature enabled, otherwise any file with the name at the destination will be silently
-# overwritten. Best to test first before running.
-overwrite_duplicates: false
+# Forcibly (and silently) overwrite any file (or matching files inside a film folder) with the same name.
+# Best to test first before running.
+overwrite_existing: false
 
+# --no-duplicates
+duplicate_checking:
+
+  # Check the destionation dir for duplicate files before copying. Adds some processing time, 
+  # but allows you to replace existing files with newer/better ones.
+  enabled: true
+
+  # TODO: Not implemented
+  # Duplicate matching criteria. By default, if a title, year, and edition match, a film is considered
+  # a duplicate.
+  # criteria: 
+  #  - title
+  #  - year
+  #  - edition
+
+duplicate_replacing:
+
+  # Enables duplicate replacing, allowing films with different qualities to be replaced.
+  # This option requires duplicate_checking to be enabled.
+  enabled: true
+
+  # Replace duplicates of identical quality if the existing film is smaller.
+  replace_smaller: true
+
+  # Replace duplicates of a specific quality with a better quality, regardless of size.
+  replace_quality: 
+    2160p: [] # Do not replace 2160p films with any other quality
+    1080p: [] # Do not replace 1080p films with any other quality
+    720p: ['1080p'] # Replace 720p films with 1080p
+    SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) with 1080p or 720p
+      
 # Copy files to the destination, verify, and delete originals, instead of move.
 # This is the default behavior when source and destination are on different partitions (or network)
 safe_copy: false
-
-# Check the destionation dir for duplicate files before copying. Adds some processing time, but prevents mistakes.
-# Duplicates are considered based on matching titles and years, irrespective of naming convention. 
-# Different editions are not considered duplicates, and will be moved separately.
-check_for_duplicates: true
 
 # --quiet
 # Do not send notifications or update Plex

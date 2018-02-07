@@ -14,7 +14,7 @@ Fylm can:
 
 - Rename messy files and folders and make them pretty, like
 
-  `high.noon.1952.1080p.this.OTHER-JUNK` → `High Noon (1952) 1080p`
+  `high.noon.1952.1080p.this.OTHER-JUNK` » `High Noon (1952) 1080p`
 - Look film details up on TMDb so you don't have to, ensuring things are named correctly.
 - Notify your Plex Media Server when it adds something new.
 - Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd.
@@ -29,12 +29,13 @@ For now, Fylm is only guaranteed to run on Python 2.7. You can try running it on
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
-- `pip install tmdbsimple`
-- `pip install plexapi`
-- `pip install future`
-- `pip install pyyaml`
-- `pip install attrdict`
-- `pip install python-pushover`
+ - `pip install future`
+ - `pip install pyyaml`
+ - `pip install ansicolors`
+ - `pip install attrdict`
+ - `pip install tmdbsimple`
+ - `pip install plexapi`
+ - `pip install python-pushover`
 
 If you don't use `pip`, then you will need to install these manually, or download them and include them inside your copy of Fylm. Or shake a magic stick and hope it works (hint: it won't).
 
