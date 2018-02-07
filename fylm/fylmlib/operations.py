@@ -164,8 +164,9 @@ class dirops:
             # It must not contain an ignored string (e.g. 'sample')
             and not fileops.contains_ignored_strings(x)
 
-            # And it must be at least a certain filesize
-            and size(x) >= config.min_filesize * 1024 * 1024)
+            # And it must be at least a certain filesize if it is a film,
+            # or not 0 bytes if it's a supplementary file.
+            and cls.is_acceptable_size(x))
 
         # If debugging, print the resulting list of files and sizes.
         if config.debug is True:
@@ -174,6 +175,21 @@ class dirops:
                     os.path.basename(f),
                     formatter.pretty_size(size(f)), path))
         return sorted(valid_files, key=os.path.getsize, reverse=True)
+
+    @classmethod
+    def is_acceptable_size(cls, file):
+        """Determine if a file is an acceptable size.
+
+        Args:
+            file: (unicode) path to file.
+        Returns:
+            True, if the file is an acceptable size, else False.
+        """
+        s = size(file)
+        is_video = any([file.endswith(ext) for ext in config.video_exts])
+        is_extra = any([file.endswith(ext) for ext in config.extra_exts])
+        return ((s >= config.min_filesize * 1024 * 1024 and is_video) 
+            or (s >= 0 and is_extra))
 
     @classmethod
     def sanitize_dir_list(cls, files):
