@@ -58,9 +58,12 @@ class process:
         # destination dir.
         dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext()))
 
-        console.info('{} to {}'.format(
-            'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(film.source_path, dst)) else 'Moving', 
-            dst))
+        if film.source_path != dst:
+            console.info('{} to {}'.format(
+                'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(film.source_path, dst)) else 'Moving', 
+                dst))
+        else:
+            console.dim('Already moved and renamed')
 
         # Move the file. (Only executes in live mode).
         if ops.fileops.safe_move(film.source_path, dst, film.size):
@@ -118,8 +121,13 @@ class process:
 
             # Rename the source file to its new filename
             ops.fileops.rename(file, os.path.basename(dst), ops.size(file))
-
-            console.info('{} to {}'.format('Copying' if (config.safe_copy or not ops.dirops.is_same_partition(src, dst)) else 'Moving', dst))
+    
+            if src != dst:
+                console.info('{} to {}'.format(
+                    'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(src, dst)) else 'Moving', 
+                    dst))
+            else:
+                console.dim('Already moved and renamed')
 
             # Move the file. (Only executes in live mode).
             if ops.fileops.safe_move(src, dst, film.size):

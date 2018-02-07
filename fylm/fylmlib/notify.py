@@ -42,8 +42,9 @@ def plex():
     Notify Plex that it should check for updates.
     """
 
-    # Check if Plex notifications are enabled, and that we're not running in quiet mode.
-    if config.plex.enabled is True and config.quiet is False:
+    # Check if Plex notifications are enabled, and that we're not running in 
+    # quiet or rename modes.
+    if config.plex.enabled is True and config.quiet is False and config.rename_only is False:
 
         # Disable the log so that HTTP ops aren't printed to the log.
         log.disable()
@@ -77,8 +78,9 @@ def pushover(film):
     Notify Pushover that an action has been performed.
     """
 
-    # Check if Pushover notifications are enabled, and that we're not running in quiet mode.
-    if config.pushover.enabled is True and config.quiet is False:
+    # Check if Pushover notifications are enabled, and that we're not running in 
+    # quiet or rename modes.
+    if config.pushover.enabled is True and config.quiet is False and config.rename_only is False:
 
         # Application API token/key, which can be found by selecting your app
         # from https://pushover.net/apps and copying the key.
