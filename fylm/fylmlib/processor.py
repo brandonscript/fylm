@@ -26,6 +26,7 @@ import os
 
 from fylmlib.config import config
 from fylmlib.console import console
+from fylmlib.subtitle import Subtitle
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
@@ -46,7 +47,7 @@ class process:
         """
 
         # Rename the source file to its new filename
-        ops.fileops.rename(film.source_path, film.new_filename__ext(), film.size)
+        ops.fileops.rename(film.source_path, film.new_filename__ext, film.size)
 
         # Update the source path of the film if we're running in live mode
         # to its new name, otherwise the move will fail (because it will 
@@ -99,13 +100,19 @@ class process:
         # Enumerate valid files.
         for file in film.valid_files:
 
-            # Generate new filename based on film's corrected name and
-            # the iterated file's extension.
-            new_filename__ext = film.new_filename__ext(os.path.splitext(file)[1])
+            # Split filename and ext for inner file.
+            src = file
+            ext = os.path.splitext(file)[1]
 
-            # Generate new source and destination paths based on the new filename
-            src = os.path.normpath(os.path.join(os.path.dirname(file), new_filename__ext))
-            dst = os.path.normpath(os.path.join(film.destination_dir, new_filename__ext))
+            # Generate a new filename based on the film's title, and alter it
+            # depending on whether the file is a subtitle, or if it needs to be
+            # renamed to prevent clobbering.
+            dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext(ext)))
+
+            # If it is a subtitle, we try to find the language.
+            if Subtitle.is_subtitle(src):
+                # Update the destination file with the subtitle language
+                dst = Subtitle(src).insert_lang(dst) or dst
 
             # Append the destination to the queued files list
             queued_files.append(dst)
@@ -115,17 +122,22 @@ class process:
             # e.g. My Little Pony.srt would become My Little Pony.1.srt if its already
             # in the queue.
             if queued_files.count(dst) > 1:
-                filename, ext = os.path.splitext(dst)
-                dst = '{}.{}{}'.format(filename, queued_files.count(dst) - 1, ext)
-                src = os.path.normpath(os.path.join(os.path.dirname(file), os.path.basename(dst)))
+                new_filename, ext = os.path.splitext(dst)
+
+                # If there's a duplicate filename, we need to rename each file
+                # sequentially to prevent clobbering.
+                dst = '{}.{}{}'.format(new_filename, queued_files.count(dst) - 1, ext)
 
             # Rename the source file to its new filename
-            ops.fileops.rename(file, os.path.basename(dst), ops.size(file))
-    
+            ops.fileops.rename(src, os.path.basename(dst), ops.size(file))
+
+            # Update source with the newly renamed path, derived from destination name, in 
+            # case it was altered by subtitle or duplicate clobber prevention.
+            src = os.path.normpath(os.path.join(os.path.dirname(src), os.path.basename(dst)))
             if src != dst:
                 console.info('{} to {}'.format(
                     'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(src, dst)) else 'Moving', 
-                    dst))
+                    os.path.dirname(dst)))
             else:
                 console.dim('Already moved and renamed')
 
@@ -141,6 +153,7 @@ class process:
         # If the number of copied files matches the number of valid files, then
         # we can send the pushover notification.
         if copied_files == expected_files:
+
             # Notify Pushover of successful move.
             notify.pushover(film)
 

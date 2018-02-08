@@ -28,7 +28,7 @@ import os
 
 from fylmlib.config import config
 from fylmlib.console import console
-from fylmlib.process import process
+from fylmlib.processor import process
 import fylmlib.operations as ops
 import fylmlib.notify as notify
 import fylmlib.counter as counter

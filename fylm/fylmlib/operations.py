@@ -525,7 +525,7 @@ class fileops:
             callback(copied, total=total)
 
     @classmethod
-    def rename(cls, src, new_filename, size=0):
+    def rename(cls, src, new_filename__ext, size=0):
         """Renames a file using shutil.move.
 
         Renames a file using shutil.move, which under the hood, intelligently determines
@@ -535,17 +535,17 @@ class fileops:
 
         Args:
             src: (unicode) full path (including filename) of file to move.
-            new_filename: (unicode) new filename (not including path).
+            new_filename__ext: (unicode) new filename.ext (not including path).
         """
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # If we don't do this, the filesystem will try and create a new folder instead
         # of the correct filename.
         # Credit: https://stackoverflow.com/a/34504896/1214800
-        new_filename = new_filename.replace(r'/', ':')
+        new_filename__ext = new_filename__ext.replace(r'/', ':')
 
         # Generate a destination string based on src's path and the new filename
-        dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename))
+        dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename__ext))
 
         console.rename(os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
 

@@ -73,7 +73,7 @@
   },
   {
     "code": "bn",
-    "name": "Bengali; Bangla"
+    "name": "Bengali, Bangla"
   },
   {
     "code": "bh",
@@ -101,7 +101,7 @@
   },
   {
     "code": "ca",
-    "name": "Catalan; Valencian"
+    "name": "Catalan, Valencian"
   },
   {
     "code": "ch",
@@ -113,7 +113,7 @@
   },
   {
     "code": "ny",
-    "name": "Chichewa; Chewa; Nyanja"
+    "name": "Chichewa, Chewa, Nyanja"
   },
   {
     "code": "zh",
@@ -149,7 +149,7 @@
   },
   {
     "code": "dv",
-    "name": "Divehi; Dhivehi; Maldivian;"
+    "name": "Divehi, Dhivehi, Maldivian"
   },
   {
     "code": "nl",
@@ -193,7 +193,7 @@
   },
   {
     "code": "ff",
-    "name": "Fula; Fulah; Pulaar; Pular"
+    "name": "Fula, Fulah, Pulaar, Pular"
   },
   {
     "code": "gl",
@@ -221,7 +221,7 @@
   },
   {
     "code": "ht",
-    "name": "Haitian; Haitian Creole"
+    "name": "Haitian, Haitian Creole"
   },
   {
     "code": "ha",
@@ -229,7 +229,7 @@
   },
   {
     "code": "he",
-    "name": "Hebrew (modern)"
+    "name": "Hebrew"
   },
   {
     "code": "hz",
@@ -529,7 +529,7 @@
   },
   {
     "code": "ro",
-    "name": "Romanian, [])"
+    "name": "Romanian"
   },
   {
     "code": "ru",
@@ -537,7 +537,7 @@
   },
   {
     "code": "sa",
-    "name": "Sanskrit (Saá¹ská¹›ta)"
+    "name": "Sanskrit, Saá¹ská¹›ta"
   },
   {
     "code": "sc",
@@ -565,7 +565,7 @@
   },
   {
     "code": "gd",
-    "name": "Scottish Gaelic; Gaelic"
+    "name": "Scottish Gaelic, Gaelic"
   },
   {
     "code": "sn",
@@ -581,7 +581,7 @@
   },
   {
     "code": "sl",
-    "name": "Slovene"
+    "name": "Slovene, Slovenian"
   },
   {
     "code": "so",
@@ -597,7 +597,7 @@
   },
   {
     "code": "es",
-    "name": "Spanish; Castilian"
+    "name": "Spanish, Castilian"
   },
   {
     "code": "su",
@@ -653,7 +653,7 @@
   },
   {
     "code": "to",
-    "name": "Tonga (Tonga Islands)"
+    "name": "Tonga"
   },
   {
     "code": "tr",
