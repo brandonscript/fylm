@@ -30,6 +30,7 @@ from fylmlib.subtitle import Subtitle
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
+import fylmlib.duplicates as duplicates
 
 class process:
     """Main class for scanning for and processing films.
@@ -67,7 +68,10 @@ class process:
             console.dim('Already moved and renamed')
 
         # Move the file. (Only executes in live mode).
-        if ops.fileops.safe_move(film.source_path, dst, film.size):
+        # If this film is a duplicate and is set to replace an existing film, suppress
+        # the overwrite warning.
+        should_replace = film.is_duplicate and duplicates.should_replace(film, dst)
+        if ops.fileops.safe_move(film.source_path, dst, expected_size=film.size, should_replace=should_replace):
 
             # If move was successful, update the counter.
             counter.add(1)
@@ -111,7 +115,7 @@ class process:
 
             # If it is a subtitle, we try to find the language.
             if Subtitle.is_subtitle(src):
-                # Update the destination file with the subtitle language
+                # Insert the language into the subtitle filename.
                 dst = Subtitle(src).insert_lang(dst) or dst
 
             # Append the destination to the queued files list
@@ -142,7 +146,10 @@ class process:
                 console.dim('Already moved and renamed')
 
             # Move the file. (Only executes in live mode).
-            if ops.fileops.safe_move(src, dst, film.size):
+            # If this film is a duplicate and is set to replace an existing film, suppress
+            # the overwrite warning.
+            should_replace = film.is_duplicate and duplicates.should_replace(film, dst)
+            if ops.fileops.safe_move(src, dst, expected_size=film.size, should_replace=should_replace):
 
                 # If move was successful, update the counter.
                 counter.add(1)

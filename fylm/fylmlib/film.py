@@ -73,6 +73,9 @@ class Film:
         size:               Size of file or folder contents belonging
                             to the film.
 
+        size_of_video:      Size of file or largest video file inside
+                            a film folder.
+
         new_filename:       Uses the configured templating pattern to
                             generate a new filename.
 
@@ -137,6 +140,9 @@ class Film:
         # Internal setter for `size`.
         self._size = None
 
+        # Internal setter for `size_of_video`.
+        self._size_of_video = None
+
         # Internal setter for (immutable) `original_path`.
         # Do not change even if the file is renamed, moved, or copied.
         self._original_path = source_path
@@ -160,6 +166,12 @@ class Film:
         if not self._size:
             self._size = ops.size(self.source_path)
         return self._size
+
+    @property
+    def size_of_video(self):
+        if not self._size_of_video:
+            self._size_of_video = ops.size_of_video(self.source_path)
+        return self._size_of_video
 
     @property
     def title_the(self):

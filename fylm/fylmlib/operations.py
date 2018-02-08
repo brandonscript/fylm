@@ -374,7 +374,7 @@ class fileops:
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
-    def safe_move(cls, src, dst, expected_size):
+    def safe_move(cls, src, dst, expected_size, should_replace=False):
         """Performs a 'safe' move operation.
 
         Performs some additional checks before moving files. Optionally supports
@@ -385,6 +385,8 @@ class fileops:
             src: (unicode) path of file to move.
             dst: (unicode) destination for file to move to.
             expected_size: (int) size in bytes the file is expected to be.
+            should_replace: (bool) True if a film is expected to replace a duplicate,
+                            else False.
         Returns:
             True if the file move was successful, else False.
         """
@@ -401,12 +403,17 @@ class fileops:
         # and print a warning to the console. If overwrite_existing is enabled, 
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
         if os.path.exists(dst):
-            if config.overwrite_existing is False:
-                console.warn('Unable to move {} (identical file already exists)'.format(dst))
-                return
-            else:
-                # File overwriting is enabled, so warn, and proceed.
-                console.warn('Overwriting existing file {}')
+            # If the file is not a duplicate (and shouldn't be replacing), then warn 
+            # console. Generally this point of code won't be reached because duplicate
+            # checking *should* have already removed duplicates at the destination.
+            if should_replace is False:
+                if config.overwrite_existing is False:
+                    console.warn('Unable to move {} (identical file already exists)'.format(dst))
+                    return
+                else:
+                    # File overwriting is enabled and not marked to replace, so warn, 
+                    # and proceed.
+                    console.warn('Overwriting existing file {}')
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
@@ -638,6 +645,55 @@ def size(path, mock_bytes=None):
         # the size of each file inside.
         if os.path.isdir(path):
             return _size_dir(path)
+
+        # If it's a file, we simply call getsize().
+        else:
+            return os.path.getsize(path)
+
+    # If the path doesn't exist, we return None
+    else:
+        return None
+
+def size_of_video(path, mock_bytes=None):
+    """Determine the size of a file or largest video file in dir.
+
+    Determine the size of a file or largest video file in dir at the specified path. 
+    Also supports passing a 'mock_bytes' artifact for testing.
+
+    Args:
+        path: (unicode) file or folder to determine size of video file.
+    Returns:
+        Size of largest video file, in bytes (B), or None if path does not exist.
+    """
+
+    # If the mock_bytes param is set, return it.
+    # This is used only for testing.
+    if mock_bytes:
+        return mock_bytes
+
+    # First check that the path actually exists before we try to determine its size.
+    elif os.path.exists(path):
+
+        # If it's a directory, we need to find the largest video file, recursively.
+        if os.path.isdir(path):
+            
+            try:
+                video_files = filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path))
+
+                # Re-populate list with filename, size tuples
+                for i in xrange(len(video_files)):
+                    video_files[i] = (video_files[i], os.path.getsize(video_files[i]))
+
+                # Sort list by file size from largest to smallest and return the first file.
+                video_files.sort(key=lambda v: v[1], reverse=True)
+
+                # Return second value (size) of first file in sorted array.
+                return video_files[0][1]
+            # If an out of range error is encountered, something went wrong and the file
+            # probably doesn't exist.
+            except IndexError:
+                return 0
+
 
         # If it's a file, we simply call getsize().
         else:

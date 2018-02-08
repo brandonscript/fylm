@@ -86,7 +86,7 @@ def should_replace(film, duplicate):
     
     Args:
         film (Film): Film object to determine if it should replace a duplicate.
-        duplicate (Film): Duplicate object to check `film` against.
+        duplicate (Film or path): Verified duplicate object to check `film` against.
     Returns:
         True if `film` should replace `duplicate`.
     """
@@ -94,6 +94,11 @@ def should_replace(film, duplicate):
     # If duplicate replacing is disabled, don't replace.
     if config.duplicate_replacing.enabled is False:
         return False
+
+    # If the duplicate is a path and not a film, we need to load it.
+    from fylmlib.film import Film
+    if not isinstance(duplicate, Film):
+        duplicate = Film(duplicate)
 
     # Replace quality takes a dict of arrays for each quality, which governs whether
     # a specific quality has the ability to replace another. By default, this map
@@ -123,10 +128,15 @@ def should_keep_both(film, duplicate):
     
     Args:
         film (Film): Film object to determine if it should replace a duplicate.
-        duplicate (Film): Duplicate object to check `film` against.
+        duplicate (Film or path): Duplicate object to check `film` against.
     Returns:
         True if `film` and `duplicate` should both be kept, else False.
     """
+
+    # If the duplicate is a path and not a film, we need to load it.
+    from fylmlib.film import Film
+    if not isinstance(duplicate, Film):
+        duplicate = Film(duplicate)
 
     # If new and existing films have a different quality, and the new film is larger 
     # (better), if the new film doesn't qualify as a replacement, we can assume that 

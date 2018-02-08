@@ -72,7 +72,7 @@ class console:
         Args:
             film: (Film) film to pass to debug calls.
         """
-        log.info('{} ({})'.format(film.source_path, formatter.pretty_size(film.size)))
+        log.info('{} ({})'.format(film.source_path, formatter.pretty_size(film.size_of_video)))
         if film.title is not None:
             console.debug('----------------------------')
             console.debug('Init film object:\n')
@@ -81,7 +81,7 @@ class console:
             console.debug('edition\t{}'.format(film.edition))
             console.debug('media\t{}'.format(film.media))
             console.debug('quality\t{}'.format(film.quality))
-            console.debug('size\t{}'.format(formatter.pretty_size(film.size)))
+            console.debug('size\t{}'.format(formatter.pretty_size(film.size_of_video)))
 
     @classmethod
     def _notify_test(cls):
@@ -300,7 +300,7 @@ class console:
 
         # Print original filename and size.
         p = pyfancy().bold('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
-        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size)), fg=ansi.gray))
+        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
         p.output()
 
         # Only print lookup results if TMDb searching is enabled.
