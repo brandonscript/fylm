@@ -31,11 +31,6 @@ class _Languages:
     """An array of Language objects, loaded from language.json.
     """
     def __init__(self):
-        try:
-            return self.languages
-        except AttributeError:
-            pass
-
         # Load json from languages.json
         data = json.load(open(os.path.join(os.path.dirname(__file__), 'languages.json')))
 

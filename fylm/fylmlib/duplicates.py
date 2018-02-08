@@ -25,7 +25,7 @@ from fylmlib.config import config
 from fylmlib.console import console
 import fylmlib.compare as compare
 import fylmlib.operations as ops
-import fylmlib.formatter as formatter
+# TODO: Move existing_films to duplicates module
 import fylmlib.existing_films as existing_films
 
 def check(film):
@@ -134,6 +134,7 @@ def should_keep_both(film, duplicate):
     """
 
     # If the duplicate is a path and not a film, we need to load it.
+    # TODO: Don't really want to have to do this here.
     from fylmlib.film import Film
     if not isinstance(duplicate, Film):
         duplicate = Film(duplicate)
