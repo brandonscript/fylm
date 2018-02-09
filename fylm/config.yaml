@@ -47,6 +47,10 @@ test: false
 # Write advanced debugging details to the console.
 debug: false
 
+# --no-console
+# Do not write any information to console or stdout.
+no_console: false
+
 # --rename
 # Rename files and folders in place without moving or copying them.
 rename_only: false

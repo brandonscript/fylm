@@ -26,6 +26,7 @@ from __future__ import unicode_literals, print_function
 import argparse
 import yaml
 import os
+import sys
 import codecs
 from yaml import Loader, SafeLoader
 
@@ -99,6 +100,15 @@ class _Config:
             default=False,
             dest="debug",
             help='Display extra debugging information in the console output')
+
+        # --no-console
+        # This option disables console output and stdout.
+        parser.add_argument(
+            '--no-console',
+            action="store_true",
+            default=False,
+            dest="no_console",
+            help='Disable console output and stdout')
 
         # -r, --rename
         # This option will rename films in place without moving or copying them.
@@ -193,6 +203,7 @@ class _Config:
         if args.quiet is True: self.config.quiet = True
         if args.test is True: self.config.test = True
         if args.debug is True: self.config.debug = True
+        if args.no_console is True: self.config.no_console = True
         if args.rename_only is True: self.config.rename_only = True
         if args.strict is False: self.config.strict = False
         if args.force_lookup is True: self.config.force_lookup = True
@@ -201,6 +212,10 @@ class _Config:
         if args.source_override: self.config.source_dirs = args.source_override.split(",")
         if args.limit: self.config.limit = args.limit
         if args.min_popularity is not None: self.config.min_popularity = args.min_popularity
+
+        # Supress console if no_console is true.
+        if args.no_console is True:
+            sys.stdout = None
 
         # Normalize the paths in source_dirs.
         self.config.source_dirs = [os.path.normpath(d) for d in self.config.source_dirs]
