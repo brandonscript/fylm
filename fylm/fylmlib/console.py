@@ -39,9 +39,6 @@ import fylmlib.progress as progress
 # TODO: Overhaul console to support a set of common patterns, 
 # colors, and a more flexible API.
 
-# Hijack STDOUT and re-encode it, for TravisCI
-# sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
-
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 DIVIDER = '======================================'
