@@ -104,7 +104,7 @@ class dirops:
 
         # Map a list of valid and sanitized files to Film objects by iterating
         # over paths for 720p, 1080p, 4K, and SD qualities.
-        for path in list(set(path for _, path in paths.items())):
+        for path in list(set(os.path.normpath(path) for _, path in paths.items())):
             if os.path.normpath(path) not in config.source_dirs:
                 existing_films += map(
                     Film,
@@ -119,7 +119,7 @@ class dirops:
     def get_new_films(cls, path):
         """Get a list of new potenial films we want to tidy up.
 
-        Scan one level deep of the target dpathir to get a list of potential new files/folders.
+        Scan one level deep of the target path to get a list of potential new files/folders.
 
         Args:
             path: (unicode) path to search for new films.
