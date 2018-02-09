@@ -1,4 +1,5 @@
 {
+    "valid_films": 10,
     "files": [
         {
             "dir": "10.Cloverfield.Lane.2016.1080p.BluRay.x264-SPARKS",
@@ -67,6 +68,22 @@
             ],
             "tmdb_id": 19995,
             "title": "Avatar"
+        },
+        {
+            "dir": "Mad Max Fury Road 2015 UltraHD BluRay 2160p HEVC BT2020 TrueHD 7 1 Atmos-HDLeader",
+            "files": [
+                "main_file.mkv"
+            ],
+            "tmdb_id": 76341,
+            "title": "Mad Max: Fury Road"
+        },
+        {
+            "dir": "Million Dollar Duck (1971)",
+            "files": [
+                "million.dollar.duck.1971.avi"
+            ],
+            "tmdb_id": 22777,
+            "title": "The Million Dollar Duck"
         }
     ]
 }

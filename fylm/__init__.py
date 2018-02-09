@@ -36,7 +36,7 @@ import fylmlib.counter as counter
 import fylmlib.duplicates as duplicates
 import fylmlib.existing_films as existing_films
 
-__version__ = '0.2.1-alpha'
+__version__ = '0.2.2-alpha'
 
 def main():
     """Main program."""

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import __init__ as test
+from __future__ import unicode_literals, print_function, absolute_import
 
-test.unittest.main()
+from fylmlib.config import config
+import fylm
+import conftest
+
+# Enable this to turn on test mode in config
+# config.test = True
+
+# Set up the source and destination for test files.
+config.source_dirs = [conftest.films_src_path]
+config.destination_dirs = conftest.films_dst_paths
+
+# Overwrite the app's pre-loaded config.
+fylm.config = config
+
+# Execute
+fylm.main()
+
+# assert 0
