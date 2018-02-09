@@ -408,7 +408,7 @@ class fileops:
             # checking *should* have already removed duplicates at the destination.
             if should_replace is False:
                 if config.overwrite_existing is False:
-                    console.warn('Unable to move {} (identical file already exists)'.format(dst))
+                    console.warn('Unable to move (identical file already exists)')
                     return
                 else:
                     # File overwriting is enabled and not marked to replace, so warn, 

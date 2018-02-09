@@ -61,9 +61,7 @@ class process:
         dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext()))
 
         if film.source_path != dst:
-            console.info('{} to {}'.format(
-                'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(film.source_path, dst)) else 'Moving', 
-                dst))
+            console.info(cls._console_move_string(film.source_path, dst))
         else:
             console.dim('Already moved and renamed')
 
@@ -139,9 +137,7 @@ class process:
             # case it was altered by subtitle or duplicate clobber prevention.
             src = os.path.normpath(os.path.join(os.path.dirname(src), os.path.basename(dst)))
             if src != dst:
-                console.info('{} to {}'.format(
-                    'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(src, dst)) else 'Moving', 
-                    os.path.dirname(dst)))
+                console.info(cls._console_move_string(src, dst))
             else:
                 console.dim('Already moved and renamed')
 
@@ -197,3 +193,11 @@ class process:
 
                 # If the parent folder fails the deletion qualification, print to console.
                 console.warn('Will not remove parent folder because it is not empty')
+
+    @classmethod
+    def _console_move_string(cls, src, dst):
+        return '{} to {}'.format(
+            'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(src, dst)) else 'Moving', 
+            os.path.dirname(dst))
+
+
