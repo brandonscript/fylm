@@ -25,6 +25,7 @@ easily wire it up as a post script for services like SABnzbd.
 from __future__ import unicode_literals, print_function
 
 import os
+import sys
 
 from fylmlib.config import config
 from fylmlib.console import console
@@ -39,8 +40,6 @@ __version__ = '0.2.1-alpha'
 
 def main():
     """Main program."""
-
-    import fylmlib.cursor as cursor
 
     try:
         # Initialize the success counter.
@@ -139,12 +138,14 @@ def main():
         console.end(counter.count)
     
     except (KeyboardInterrupt, SystemExit):
-
-        from fylmlib.cursor import cursor
-        # Don't leave the cursor hidden
-        cursor.show()
         console.exit_early()
-
+    except IOError as e:
+        console.red('IOError: %s' % e)
+        exit()
+    finally:
+        # Don't leave the cursor hidden
+        from fylmlib.cursor import cursor
+        cursor.show()
 
 if __name__ == "__main__":
     main()

@@ -28,8 +28,8 @@ import io
 import sys
 
 from colors import color
-from pyfancy import *
 
+from fylmlib.pyfancy import *
 from fylmlib.config import config
 from fylmlib.log import log
 from fylmlib.ansi import ansi
@@ -40,7 +40,7 @@ import fylmlib.progress as progress
 # colors, and a more flexible API.
 
 # Hijack STDOUT and re-encode it, for TravisCI
-sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
+# sys.stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf8')
 
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -158,13 +158,14 @@ class console:
         log.detail(s)
 
     @classmethod
-    def error(cls, s):
+    def error(cls, s, x=Exception):
         """Print an error, then call log.error, which raises an Exception. Prints red.
 
         Args:
             s: (unicode) String to print/log.
         """
         log.error(s)
+        raise x(s)
 
     @classmethod
     def rename(cls, title='', size=''):

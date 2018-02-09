@@ -22,9 +22,9 @@ from __future__ import unicode_literals, print_function
 
 from plexapi.server import PlexServer
 from pushover import init, Client
-from pyfancy import *
 from colors import color
 
+from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
 from fylmlib.log import log
 from fylmlib.config import config

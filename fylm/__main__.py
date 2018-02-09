@@ -14,6 +14,8 @@
 
 """Main entry point."""
 
+from __future__ import unicode_literals, print_function
+
 import __init__ as fylm
 
 fylm.main()

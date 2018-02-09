@@ -26,8 +26,7 @@ import sys
 import logging
 import datetime
 
-from pyfancy import *
-
+from fylmlib.pyfancy import *
 from fylmlib.config import config
 
 # Define some pretty console output constants
@@ -80,7 +79,6 @@ class log:
         """
         text = '{} - Error: {}'.format(NOW, text)
         logging.error(text)
-        raise Exception(text)
 
 # Configure the logger when this module is loaded.
 log.config()

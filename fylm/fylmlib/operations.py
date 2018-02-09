@@ -52,7 +52,7 @@ class dirops:
             paths: (list) paths to verify existence.
         """
         for d in (d for d in paths if not os.path.exists(d)):
-            console.error("'{}' does not exist; check folder path in config.yaml".format(d))
+            console.error("'{}' does not exist; check folder path in config.yaml".format(d), IOError)
 
     @classmethod
     def is_same_partition(cls, f1, f2):
