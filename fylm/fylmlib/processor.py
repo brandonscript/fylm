@@ -48,7 +48,7 @@ class process:
         """
 
         # Rename the source file to its new filename
-        ops.fileops.rename(film.source_path, film.new_filename__ext, film.size)
+        ops.fileops.rename(film.source_path, film.new_filename__ext(), film.size)
 
         # Update the source path of the film if we're running in live mode
         # to its new name, otherwise the move will fail (because it will 
