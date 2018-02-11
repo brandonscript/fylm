@@ -63,7 +63,7 @@ class _Config:
 
         # Load the config file and map it to a 'AttrMap', a dot-notated dictionary.
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
-            self.config = AttrMap(yaml.load(yaml_config_file.read()))
+            self.config = AttrMap(yaml.load(yaml_config_file.read()), sequence_type=list)
 
         # Initialize the CLI argument parser.
         parser = argparse.ArgumentParser(description = 'A delightful filing and renaming app for film lovers.')
@@ -197,7 +197,7 @@ class _Config:
             help='Minimum popularity ranking on TMDb to consider a valid match')
 
         # Parse known args and discard any we don't know about.
-        args, unknown = parser.parse_known_args()
+        args, _ = parser.parse_known_args()
 
         # Re-map arg values onto known options already loaded from config.yaml.
         if args.quiet is True: self.config.quiet = True
@@ -217,8 +217,13 @@ class _Config:
         if args.no_console is True:
             sys.stdout = None
 
-        # Normalize the paths in source_dirs.
-        self.config.source_dirs = [os.path.normpath(d) for d in self.config.source_dirs]
+        # Normalize the paths in source_dirs and remove duplicates.
+        self.config.source_dirs = list(set([os.path.normpath(d) for d in self.config.source_dirs]))
 
+    def reload(self):
+        """Reload config from config.yaml.
+        """
+        self = _Config()
 # Create a referenceable singleton for _Config()
 config = _Config().config
+config.reload = _Config().reload
