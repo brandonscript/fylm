@@ -142,7 +142,7 @@ class console:
             s: (unicode) String to print/log
         """
         if config.debug is True: 
-            print(s)
+            print(color(s, fg=ansi.debug))
 
     @classmethod
     def info(cls, s):

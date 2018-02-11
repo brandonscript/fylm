@@ -41,5 +41,6 @@ class _AnsiColors:
         self.dark_gray = 238
         self.light_gray = 248
         self.white = 255
+        self.debug = 24
 
 ansi = _AnsiColors()
