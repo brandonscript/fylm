@@ -79,8 +79,7 @@ class dirops:
 
         Scan one level deep of the target paths to get a list of existing films. Since
         this is used exclusively for duplicate checking, this method is skipped when
-        duplicate checking is disabled. Sets the global property `existing_films.cache`
-        when complete.
+        duplicate checking is disabled.
 
         Args:
             paths: (dict) a set of unicode paths to search for existing films.
@@ -110,8 +109,8 @@ class dirops:
                     Film,
                     [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
                 )
-        console.debug('Found {}'.format(len(existing_films)))
-
+        console.debug('Found {} duplicates'.format(len(existing_films)))
+        [console.debug(' - %s' % f.source_path) for f in sorted(existing_films, key=lambda s: s.title.lower())]
         # Sort the existing films alphabetically, case-insensitive, and return.
         return sorted(existing_films, key=lambda s: s.title.lower())
 
@@ -168,10 +167,18 @@ class dirops:
             # or not 0 bytes if it's a supplementary file.
             and cls.is_acceptable_size(x))
 
+        # Remove duplicates in case we've 
+
         # If debugging, print the resulting list of files and sizes.
         if config.debug is True:
-            for f in valid_files:
-                console.debug('   Found "{}" ({}) in {}'.format(
+            
+            # Get caller of this method
+            import inspect
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            for f in list(set(valid_files)):
+                console.debug('\n`{}` found "{}" ({})\nin {}'.format(
+                    calframe[1][3],
                     os.path.basename(f),
                     formatter.pretty_size(size(f)), path))
         return sorted(valid_files, key=os.path.getsize, reverse=True)
@@ -310,7 +317,7 @@ class dirops:
                     if e.args[0] == 16:
                         console.error('Tried to remove %s but file is in use' % path)
         else:
-            console.debug("Will not delete %s because it is not empty" % path)
+            console.debug("Will not delete %s because it is not empty (or test mode)" % path)
 
     @classmethod
     def delete_unwanted_files(cls, path, count=0):
@@ -680,7 +687,7 @@ def size_of_video(path, mock_bytes=None):
             try:
                 video_files = filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path))
 
-                # Re-populate list with filename, size tuples
+                # Re-populate list with (filename, size) tuples
                 for i in xrange(len(video_files)):
                     video_files[i] = (video_files[i], os.path.getsize(video_files[i]))
 

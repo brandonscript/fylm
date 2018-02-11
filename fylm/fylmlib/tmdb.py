@@ -213,7 +213,7 @@ class _TmdbResult:
         if (self.title_similarity >= ideal_title_similarity
             and self.year == self.proposed_year
             and i < 3):
-            console.debug('   Instant match: {} ({})'.format(self.proposed_title, self.proposed_year))
+            console.debug('Instant match: {} ({})'.format(self.proposed_title, self.proposed_year))
             return True
         else:
             return False

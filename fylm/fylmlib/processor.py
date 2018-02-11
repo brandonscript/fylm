@@ -27,10 +27,10 @@ import os
 from fylmlib.config import config
 from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
+from fylmlib.duplicates import duplicates
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
-import fylmlib.duplicates as duplicates
 
 class process:
     """Main class for scanning for and processing films.

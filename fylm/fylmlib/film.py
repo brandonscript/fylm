@@ -28,7 +28,6 @@ from fylmlib.parser import parser
 import fylmlib.formatter as formatter
 import fylmlib.tmdb as tmdb
 import fylmlib.operations as ops
-import fylmlib.duplicates as duplicates
 
 class Film:
     """An object that identifies and processes film attributes.
@@ -142,6 +141,9 @@ class Film:
         # Internal setter for `size_of_video`.
         self._size_of_video = None
 
+        # Internal setter for `valid_files`.
+        self._valid_files = None
+
         # Internal setter for (immutable) `original_path`.
         # Do not change even if the file is renamed, moved, or copied.
         self._original_path = source_path
@@ -201,7 +203,9 @@ class Film:
 
     @property
     def valid_files(self):
-        return ops.dirops.get_valid_files(self.source_path)
+        if self._valid_files is None:
+            self._valid_files = ops.dirops.get_valid_files(self.source_path)
+        return self._valid_files
 
     @property
     def new_filename(self):
@@ -275,8 +279,11 @@ class Film:
         Returns:
             A an array of duplicate films.
         """
+        # Import duplicates here to avoid circular imports.
+        from fylmlib.duplicates import duplicates
+
         if self._duplicates is None:
-            self._duplicates = duplicates.check(self)
+            self._duplicates = duplicates.find(self)
         return self._duplicates
 
     @property

@@ -185,7 +185,7 @@ class console:
         """
 
         # Import duplicates' should_replace function here to prevent circular imports.
-        from duplicates import should_replace, should_keep_both
+        from fylmlib.duplicates import duplicates
 
         if len(film.duplicates) > 0:
             console.info('{} duplicate{} found:'.format(
@@ -197,12 +197,12 @@ class console:
                 pretty_size = formatter.pretty_size(d.size)
 
                 # If the film will be replaced, print info:
-                if should_replace(film, d):
+                if duplicates.should_replace(film, d):
                     console.replacing(
                         "  Replacing '{}'".format(d.new_filename__ext()),
                         " ({})".format(pretty_size),
                         " [{}]".format(pretty_size_diff))
-                elif should_keep_both(film, d):
+                elif duplicates.should_keep_both(film, d):
                     console.info("  Keeping '{}' ({}) [{}]".format(
                         d.new_filename__ext(), 
                         pretty_size,
