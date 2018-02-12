@@ -96,7 +96,7 @@ class console:
         p = pyfancy().bold().red('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
         p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
         p.output()
-        pyfancy().red('{}{}'.format(INDENT_PREFIX, film.ignore_reason)).output()
+        pyfancy().red().dim('{}{}'.format(INDENT_PREFIX, film.ignore_reason)).output()
         log.detail("Skipping (%s)" % film.ignore_reason)
 
     @classmethod

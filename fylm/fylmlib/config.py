@@ -214,8 +214,8 @@ class _Config:
         if args.limit: self.config.limit = args.limit
         if args.min_popularity is not None: self.config.min_popularity = args.min_popularity
 
-        # Supress console if no_console is true.
-        if args.no_console is True:
+        # Supress console if no_console is true.        
+        if self.config.no_console is True:
             sys.stdout = None
 
         # Normalize the paths in source_dirs and remove duplicates.
