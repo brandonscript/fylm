@@ -24,46 +24,39 @@ import time
 import json
 import shutil
 import pytest
+import itertools
+
+# Use requests-cache to reduce remote API requests. 
+import requests_cache
+requests_cache.install_cache('fylm-test')
 
 # Add the cwd to the path so we can load fylmlib modules and fylm app.
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
+import fylm
 from fylmlib.config import config
+from fylmlib.parser import parser
 import fylmlib.operations as ops
-from make import make_files
+from make import make_mock_files
 
 # Set config to quiet so that TravisCI doesn't fail attempting to send
 # notifications to 127.0.0.1.
 config.quiet = True
-# config.no_console = True
+
+# Set the filename that contains test files
+test_files = 'files.json'
 
 # TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
 # if it is available.
 if os.environ.get('TMDB_KEY') is not None: 
     config['tmdb']['key'] = os.environ.get('TMDB_KEY')
 
-# Helper functions.
-def lookup_sync(film):
-    try:
-        film.search_tmdb()
-
-    # TODO: Figure out which HTTPError is actually being thrown, and 
-    # which module it belongs to so we can inspect the X-Rate-Limit
-    # header.
-    except Exception:
-        time.sleep(5.0)
-        film.search_tmdb()
-
-    # TODO: A more graceful way of handling rate limiting in TravisCI.
-    if os.environ.get('TMDB_KEY') is not None:
-        time.sleep(0.5)
-
 def full_path(path):
-    return os.path.join(os.path.abspath(os.path.dirname(__file__)), path)
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)), path).strip()
 
 # Configure source and destination paths for test files.
-films_src_path = full_path('files/#new/')
+films_src_path = full_path('files/#new')
 
 # Film destination map
 films_dst_paths = {
@@ -74,22 +67,106 @@ films_dst_paths = {
     'default': full_path('files/SD')
 }
 
-# Make test files.
-make_result = make_files('files_mini.json', films_src_path)
+all_test_films = []
+expected = []
+expected_no_lookup = []
+ignored = []
 
-# If you change the number of valid films in the json map,
-# update valid_films_count to match.
-tests_map = make_result[0]
-valid_films_count = make_result[1]
+films = []
+valid_films = []
 
-# Load films and filter them into valid films.
-films = ops.dirops.get_new_films(films_src_path)
-valid_films = filter(lambda film: not film.should_ignore, films)
+def setup():
+    global all_test_films
+    global expected
+    global ignored
+    global films
+    global valid_films
+    global films_src_path
+    global films_dst_paths
 
-for _, dr in films_dst_paths.items():
+    cleanup_all()
+
+    make_empty_dirs()
+
+    make_result = make_mock_files(test_files, films_src_path)
+
+    all_test_films = make_result.all_test_films
+    expected = make_result.expected
+    expected_no_lookup = make_result.expected
+    ignored = make_result.ignored
+
+    # Load films and filter them into valid films.
+    films = ops.dirops.get_new_films(films_src_path)
+    valid_films = filter(lambda film: not film.should_ignore, films)  
+
+    # [print(v.title, v.ignore_reason) for v in films]
+    # exit()
+
+    # Set dirs
+    config.source_dirs = [films_src_path]
+    config.destination_dirs = films_dst_paths
+
+    fylm.config = config
+
+def make_empty_dirs():
+    global films_src_path
+    global films_dst_paths
+
     try:
-        shutil.rmtree(dr)
+        os.makedirs(films_src_path)
     except Exception:
         pass
-    ops.dirops.create_deep(dr)
 
+    for _, dr in films_dst_paths.items():
+        try:
+            os.makedirs(dr)
+        except Exception:
+            pass
+
+def cleanup_src_files():
+    global films_src_path
+
+    for o in os.listdir(films_src_path):
+        path = os.path.join(films_src_path, o)
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+            elif os.path.isdir(path): 
+                shutil.rmtree(path)
+        except Exception:
+            pass
+
+def cleanup_all():
+    global films_src_path
+    global films_dst_paths
+
+    try:
+        shutil.rmtree(films_src_path)
+    except Exception:
+        pass
+
+    for _, dr in films_dst_paths.items():
+        try:
+            shutil.rmtree(dr)
+        except Exception:
+            pass
+
+def moved_films():
+    global films_dst_paths
+
+    return sorted(list(set(itertools.chain.from_iterable(
+        [ops.dirops.get_valid_files(dr) for _, dr in list(set(films_dst_paths.items()))]
+    ))))
+
+def expected_path(expected, folder=True):
+    quality = parser.get_quality(expected)
+    return os.path.join(config.destination_dirs[quality or 'SD'], os.path.splitext(expected)[0] if folder is True else '', expected)
+
+# Set up on first load
+setup()
+
+# Skip cleanup to manually inspect test results
+def pytest_sessionfinish(session, exitstatus):
+    # setup()
+    pass
+    # cleanup_all()

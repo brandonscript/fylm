@@ -99,7 +99,7 @@ Test coverage is meek. But at least there are tests for the `Film` class, and mo
 To run tests:
 
     cd fylm/
-    pytest
+    pytest --no-print-logs
 
 #### Contributing
 

@@ -23,27 +23,50 @@ import json
 import pytest
 
 from fylmlib.config import config
+from fylmlib.parser import parser
+import fylm
 import conftest
 
-class TestFilmClass(object):
+# @pytest.mark.skip()
+class TestFilm(object):
 
-    def test_valid_films(self):
-        # Assert that we're getting the expected number of valid films.
-        assert(len(conftest.valid_films) == conftest.valid_films_count)
-
-    # @pytest.mark.skip(reason="Skip long running test_search_tmdb")
+    # @pytest.mark.skip(reason="Slow")
     @pytest.mark.slow
     def test_search_tmdb(self):
 
+        conftest.setup()
+
+        fylm.config.tmdb.enabled = True
+        assert(fylm.config.tmdb.enabled is True)
+
         # Look up films by name from TMDb and update title
         for film in conftest.valid_films:
-            conftest.lookup_sync(film)
+            try:
+                film.search_tmdb()
 
-        for film in conftest.valid_films:
-            matching_tests = filter(lambda x: x.expected_title == film.title, conftest.tests_map)
-            if len(matching_tests) == 0:
-                raise Exception('No matching tests found for "{}" (expected {}); check that there is a matching title property in files.json'.format(film.title, x.expected_title))
+            # TODO: Figure out which HTTPError is actually being thrown, and 
+            # which module it belongs to so we can inspect the X-Rate-Limit
+            # header.
+            except Exception:
+                time.sleep(5.0)
+                film.search_tmdb()
 
+            # TODO: A more graceful way of handling rate limiting in TravisCI.
+            # if os.environ.get('TMDB_KEY') is not None:
+            #     time.sleep(0.5)
+
+            # Use this for debugging test matches
+            # for f in conftest.all_test_films:
+            #     if f.expected_title == film.title:
+            #         print(f.acceptable_names, f.expected_title)
+
+            matching_tests = filter(lambda t: (t.expected_title == film.title and len(t.acceptable_names) > 0), conftest.all_test_films)
+
+            print("Looking up '%s' (%s)" % (film.title, film.year))
+
+            # Ensure that at least one matching test is found for the film
+            assert(len(matching_tests) > 0)
+            
             # Get the first matching title in the tests map
             test_film = matching_tests[0]
 
@@ -52,6 +75,7 @@ class TestFilmClass(object):
             assert(film.tmdb_id is not None)
             assert(film.tmdb_id == test_film.expected_id)
             assert(film.year is not None)
+
         for not_a_film in list(set(conftest.films) - set(conftest.valid_films)):
             assert(not_a_film.tmdb_id is None)
 
@@ -88,10 +112,15 @@ class TestFilmClass(object):
                     assert(not re.search(rx, film.title))
                     break
 
-    def test_is_file_dir(self):
-        # Check file extensions
+    def test_is_file_or_dir(self):
+        # Check file extensions to verify whether source is a file or a dir
         for film in conftest.films:
             if film.is_file:
                 assert(film.ext is not None and [film.ext in config.video_exts + config.extra_exts])
             elif film.is_dir:
                 assert(film.ext == None)
+
+    def test_should_ignore(self):
+        # Check that ignored films will be ignored
+        for ignored in conftest.ignored:
+            assert(ignored not in [os.path.basename(f.source_path) for f in conftest.valid_films])

@@ -1,89 +1,147 @@
 {
-    "valid_films": 10,
-    "files": [
+    "test_films": [
         {
             "dir": "10.Cloverfield.Lane.2016.1080p.BluRay.x264-SPARKS",
             "files": [
-                "main_file.mkv"
+                {
+                    "expect": "10 Cloverfield Lane (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
             ],
-            "tmdb_id": 333371,
-            "title": "10 Cloverfield Lane"
+            "title": "10 Cloverfield Lane",
+            "tmdb_id": 333371
         },
         {
             "files": [
-                "2001 A Space Odyssey.BluRay.1080p.DTS.x264-CHD.mkv",
-                "2001.A.Space.odyssey.1968.1080p.BluRay.x264.anoXmous.mkv"
+                {
+                    "expect": "2001 A Space Odyssey (1968) 1080p.mkv",
+                    "filename": "2001.A.Space.odyssey.1968.1080p.BluRay.x264.anoXmous.mkv"
+                }
             ],
-            "tmdb_id": 62,
-            "title": "2001: A Space Odyssey"
+            "title": "2001: A Space Odyssey",
+            "tmdb_id": 62
         },
         {
             "files": [
-                "Slumdog Millionaire 720p (2009).mkv"
+                {
+                    "expect": null,
+                    "filename": "2001 A Space Odyssey.BluRay.1080p.DTS.x264-CHD.mkv"
+                }
             ],
-            "tmdb_id": 12405,
-            "title": "Slumdog Millionaire"
+            "title": "2001: A Space Odyssey",
+            "tmdb_id": 62
         },
         {
             "files": [
-                "Rogue.One.A.Star.Wars.Story.4K.HDR.10bit.BT2020.Chroma.422.Edition.DTS.HD.MA-VISIONPLUSHDR1000.mp4"
+                {
+                    "expect_no_lookup": "Slumdog Millionaire (2009) 720p.mkv",
+                    "expect": "Slumdog Millionaire (2008) 720p.mkv",
+                    "filename": "Slumdog Millionaire 720p (2009).mkv"
+                }
             ],
-            "tmdb_id": 330459,
-            "title": "Rogue One: A Star Wars Story"
+            "note": "Year of file doesn't match (intentional)",
+            "title": "Slumdog Millionaire",
+            "tmdb_id": 12405
         },
         {
             "files": [
-                "WALL·E (2008) 1080p.mkv"
+                {
+                    "expect": null,
+                    "filename": "Rogue.One.A.Star.Wars.Story.4K.HDR.10bit.BT2020.Chroma.422.Edition.DTS.HD.MA-VISIONPLUSHDR1000.mp4"
+                }
             ],
-            "tmdb_id": 10681,
-            "title": "WALL·E"
+            "title": "Rogue One: A Star Wars Story",
+            "tmdb_id": 330459
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "WALL E (2008) 1080p.mkv",
+                    "expect": "WALL·E (2008) 1080p.mkv",
+                    "filename": "WALL·E (2008) 1080p.mkv"
+                }
+            ],
+            "title": "WALL·E",
+            "tmdb_id": 10681
         },
         {
             "dir": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p",
             "files": [
-                "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv"
+                {
+                    "expect": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv",
+                    "filename": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv"
+                }
             ],
-            "tmdb_id": 11884,
-            "title": "The Last Starfighter"
+            "title": "The Last Starfighter",
+            "tmdb_id": 11884
         },
         {
             "files": [
-                "ferngully.the.last.rainforest.1992.1080-hd4u.mkv"
+                {
+                    "expect": "FernGully The Last Rainforest (1992) 1080p.mkv",
+                    "filename": "ferngully.the.last.rainforest.1992.1080-hd4u.mkv"
+                }
             ],
-            "tmdb_id": 13225,
-            "title": "FernGully: The Last Rainforest"
+            "title": "FernGully: The Last Rainforest",
+            "tmdb_id": 13225
         },
         {
             "dir": "As.Good.as.It.Gets.1997.Bluray.1080p.DTS-HD.x264-Grym",
             "files": [
-                "main_file.mkv"
+                {
+                    "expect": "As Good as It Gets (1997) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
             ],
-            "tmdb_id": 2898,
-            "title": "As Good as It Gets"
+            "title": "As Good as It Gets",
+            "tmdb_id": 2898
         },
         {
-            "dir": "Avatar.Extended.Collector's.Edition.2009.BluRay.1080p.DTS.x264-CHD",
+            "dir": "Avatar.Extended.Collectors.Edition.2009.BluRay.1080p.DTS.x264-CHD",
             "files": [
-                "main_file.mkv"
+                {
+                    "expect": "Avatar [Extended Collector's Edition] (2009) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
             ],
-            "tmdb_id": 19995,
-            "title": "Avatar"
+            "title": "Avatar",
+            "tmdb_id": 19995
         },
         {
             "dir": "Mad Max Fury Road 2015 UltraHD BluRay 2160p HEVC BT2020 TrueHD 7 1 Atmos-HDLeader",
             "files": [
-                "main_file.mkv"
+                {
+                    "expect": "Mad Max Fury Road (2015) 2160p.mkv",
+                    "filename": "main_file.mkv"
+                }
             ],
-            "tmdb_id": 76341,
-            "title": "Mad Max: Fury Road"
+            "title": "Mad Max: Fury Road",
+            "tmdb_id": 76341
         },
         {
             "dir": "Million Dollar Duck (1971)",
             "files": [
-                "million.dollar.duck.1971.avi"
+                {
+                    "expect_no_lookup": "Million Dollar Duck (1971).avi",
+                    "expect": "The Million Dollar Duck (1971).avi",
+                    "filename": "million.dollar.duck.1971.avi"
+                }
             ],
-            "tmdb_id": 22777,
-            "title": "The Million Dollar Duck"
+            "title": "The Million Dollar Duck",
+            "tmdb_id": 22777
+        },
+        {
+            "dir": "Face:Off 1080p (1997)",
+            "files": [
+                {
+                    "expect_no_lookup": "Face-Off (1997) 1080p.mkv",
+                    "expect": "Face-Off (1997) 1080p.mkv",
+                    "filename": "Face:Off 1080p (1997).mkv"
+                }
+            ],
+            "note": "On MacOS (probably *nix too) this will create Face/Off..mkv",
+            "title": "Face/Off",
+            "tmdb_id": 754
         }
     ]
 }
