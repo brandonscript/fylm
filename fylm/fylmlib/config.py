@@ -228,7 +228,8 @@ class _Config:
     def reload(self):
         """Reload config from config.yaml.
         """
-        self = _Config()
+        self.__init__()
+        
 # Create a referenceable singleton for _Config()
 config = _Config().config
 config.reload = _Config().reload

@@ -85,7 +85,7 @@ setup(
         'dev': [
             'pytest'
         ]
-    }
+    },
 
     # Entry points
     entry_points={

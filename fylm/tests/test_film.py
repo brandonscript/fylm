@@ -15,11 +15,7 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
-import os
 import re
-import sys
-import time
-import json
 import pytest
 
 from fylmlib.config import config

@@ -16,14 +16,9 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import os
-import re
 import sys
-import io
-import random
 import time
-import json
 import shutil
-import pytest
 import itertools
 
 # Use requests-cache to reduce remote API requests. 

@@ -110,7 +110,7 @@ class dirops:
                     [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
                 )
         console.debug('Found {} duplicates'.format(len(existing_films)))
-        [console.debug(' - %s' % f.source_path) for f in sorted(existing_films, key=lambda s: s.title.lower())]
+        (console.debug(' - %s' % f.source_path) for f in sorted(existing_films, key=lambda s: s.title.lower()))
         # Sort the existing films alphabetically, case-insensitive, and return.
         return sorted(existing_films, key=lambda s: s.title.lower())
 

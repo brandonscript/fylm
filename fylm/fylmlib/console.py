@@ -24,7 +24,6 @@ output to the log module.
 from __future__ import unicode_literals, print_function
 
 import datetime
-import io
 import sys
 
 from colors import color
