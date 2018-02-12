@@ -31,6 +31,7 @@ import codecs
 from yaml import Loader, SafeLoader
 
 from attrdict import AttrMap
+import requests_cache
 
 def construct_yaml_str(self, node):
     """Hijack the yaml module loader to return unicode.
@@ -219,6 +220,10 @@ class _Config:
 
         # Normalize the paths in source_dirs and remove duplicates.
         self.config.source_dirs = list(set([os.path.normpath(d) for d in self.config.source_dirs]))
+
+        # Set up cache.
+        if self.config.cache is True:
+            requests_cache.install_cache('fylm')
 
     def reload(self):
         """Reload config from config.yaml.

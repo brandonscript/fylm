@@ -61,6 +61,9 @@ rename_only: false
 # accurate matching. Turning strict mode off will take the first match from TMDb even if the titles don't match.
 strict: true
 
+# Cache TMDb responses for faster loading.
+cache: true
+
 # --limit={int, 0 = no limit}
 # Limits the number of files that are checked/renamed in a single run. Useful for doing large rename jobs, 
 # where you want to manually check matches with --test before performing destructive changes.

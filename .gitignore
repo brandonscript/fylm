@@ -3,3 +3,4 @@
 *.pyc
 fylm/tests/files
 .pytest_cache
+*.sqlite

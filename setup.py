@@ -75,6 +75,7 @@ setup(
         'pyyaml', 
         'ansicolors',
         'attrdict', 
+        'requests-cache',
         'tmdbsimple', 
         'plexapi', 
         'python-pushover'],

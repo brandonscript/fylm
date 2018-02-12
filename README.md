@@ -33,6 +33,7 @@ Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stab
  - `pip install pyyaml`
  - `pip install ansicolors`
  - `pip install attrdict`
+ - `pip install requests-cache`
  - `pip install tmdbsimple`
  - `pip install plexapi`
  - `pip install python-pushover`
