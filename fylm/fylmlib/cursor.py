@@ -42,26 +42,32 @@ class cursor:
     def hide(cls):
         """Hides the cursor in the console.
         """
-        if os.name == 'nt':
-            ci = _CursorInfo()
-            handle = ctypes.windll.kernel32.GetStdHandle(-11)
-            ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
-            ci.visible = False
-            ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
-        elif os.name == 'posix':
-            sys.stdout.write("\033[?25l")
-            sys.stdout.flush()
+        try:
+            if os.name == 'nt':
+                ci = _CursorInfo()
+                handle = ctypes.windll.kernel32.GetStdHandle(-11)
+                ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+                ci.visible = False
+                ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+            elif os.name == 'posix':
+                sys.stdout.write("\033[?25l")
+                sys.stdout.flush()
+        except Exception:
+            pass
 
     @classmethod            
     def show(cls):
         """Shows the cursor in the console.
         """
-        if os.name == 'nt':
-            ci = _CursorInfo()
-            handle = ctypes.windll.kernel32.GetStdHandle(-11)
-            ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
-            ci.visible = True
-            ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
-        elif os.name == 'posix':
-            sys.stdout.write("\033[?25h")
-            sys.stdout.flush()
+        try:
+            if os.name == 'nt':
+                ci = _CursorInfo()
+                handle = ctypes.windll.kernel32.GetStdHandle(-11)
+                ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+                ci.visible = True
+                ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+            elif os.name == 'posix':
+                sys.stdout.write("\033[?25h")
+                sys.stdout.flush()
+        except Exception:
+            pass
