@@ -218,6 +218,10 @@ class _Config:
         if self.config.no_console is True:
             sys.stdout = None
 
+        # For tests on Travis, set min_filesize to 0
+        if os.environ.get('TMDB_KEY') is not None:
+            self.config.min_filesize = 0
+
         # Normalize the paths in source_dirs and remove duplicates.
         self.config.source_dirs = list(set([os.path.normpath(d) for d in self.config.source_dirs]))
 
@@ -229,7 +233,7 @@ class _Config:
         """Reload config from config.yaml.
         """
         self.__init__()
-        
+
 # Create a referenceable singleton for _Config()
 config = _Config().config
 config.reload = _Config().reload

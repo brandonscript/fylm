@@ -178,7 +178,6 @@ class TestReplace(object):
         fylm.config.reload()
 
     def test_replace_smaller(self):
-        global files
 
         # Set up config
         fylm.config.test = False

@@ -70,14 +70,14 @@ class TestConfig(object):
         fylm.config.tmdb.enabled = False
         assert(fylm.config.tmdb.enabled is False)
 
-        existing_files_before = ops.dirops.get_valid_files(conftest.films_src_path)
+        # existing_files_before = ops.dirops.get_valid_files(conftest.films_src_path)
         
         # Execute
         fylm.main()
 
         moved_films = conftest.moved_films()
 
-        existing_films_after = map(Film, sorted(ops.dirops.get_valid_files(conftest.films_src_path)))
+        # existing_films_after = map(Film, sorted(ops.dirops.get_valid_files(conftest.films_src_path)))
         
         # Assert that changes were made successfully
         assert(len(moved_films) > 0)

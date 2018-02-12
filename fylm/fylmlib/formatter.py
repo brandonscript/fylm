@@ -110,6 +110,9 @@ def pretty_size(size_in_bytes=0, measure=None):
         A human-readable formatted filesize string.
     """
 
+    # Force size_in_bytes to be an integer
+    size_in_bytes = size_in_bytes or 0
+
     # Map out the math required to re-calculate bytes into human-readable formats.
     pretty_size_map = {
 
