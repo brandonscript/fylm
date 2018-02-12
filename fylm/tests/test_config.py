@@ -15,10 +15,6 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
-import os
-import itertools
-import pytest
-import filecmp
 # import toolz
 
 from fylmlib.film import Film

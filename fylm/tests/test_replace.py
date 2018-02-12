@@ -16,9 +16,7 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import os
-import itertools
 import pytest
-import filecmp
 
 from fylmlib.config import config
 import fylmlib.operations as ops
@@ -52,7 +50,6 @@ clean_files = {
 class TestReplace(object):
 
     def test_replace_all_with_2160p(self):
-        global files
 
         # Set up config
         fylm.config.test = False
@@ -96,7 +93,6 @@ class TestReplace(object):
         fylm.config.reload()
 
     def test_keep_all_2160p(self):
-        global files
 
         # Set up config
         fylm.config.test = False
@@ -139,7 +135,6 @@ class TestReplace(object):
         fylm.config.reload()
 
     def test_keep_2160p_and_1080p(self):
-        global files
 
         # Set up config
         fylm.config.test = False
@@ -213,7 +208,6 @@ class TestReplace(object):
         fylm.config.reload()
 
     def test_do_not_replace_larger(self):
-        global files
 
         # Set up config
         fylm.config.test = False

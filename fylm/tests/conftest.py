@@ -17,7 +17,6 @@ from __future__ import unicode_literals, print_function, absolute_import
 
 import os
 import sys
-import time
 import shutil
 import itertools
 
@@ -87,7 +86,7 @@ def setup():
 
     all_test_films = make_result.all_test_films
     expected = make_result.expected
-    expected_no_lookup = make_result.expected
+    expected_no_lookup = make_result.expected_no_lookup
     ignored = make_result.ignored
 
     # Load films and filter them into valid films.

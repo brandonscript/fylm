@@ -15,14 +15,9 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
-import os
-import itertools
 import pytest
-import filecmp
 
 from fylmlib.config import config
-from fylmlib.parser import parser
-import fylmlib.operations as ops
 import fylm
 import conftest
 

@@ -33,9 +33,10 @@ class MockFilm:
         self.acceptable_names = acceptable_names
 
 class MakeFilmsResult:
-    def __init__(self, all_test_films, expected, ignored):
+    def __init__(self, all_test_films, expected, expected_no_lookup, ignored):
         self.all_test_films = all_test_films
         self.expected = expected
+        self.expected_no_lookup = expected_no_lookup
         self.ignored = ignored
 
 def make_mock_file(path, size):
@@ -122,7 +123,7 @@ def make_mock_files(json_path, files_path):
             title = test_film['title'] if 'title' in test_film else None
             all_test_films.append(MockFilm(title, tmdb_id, acceptable_names))
 
-        return MakeFilmsResult(sorted(all_test_films), sorted(expected), sorted(ignored))
+        return MakeFilmsResult(sorted(all_test_films), sorted(expected), sorted(expected_no_lookup), sorted(ignored))
 
 if __name__ == '__main__':
     make_mock_files('files.json', 'files/#new/')

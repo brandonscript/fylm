@@ -16,10 +16,10 @@
 from __future__ import unicode_literals, print_function, absolute_import
 
 import re
+import os
 import pytest
 
 from fylmlib.config import config
-from fylmlib.parser import parser
 import fylm
 import conftest
 
