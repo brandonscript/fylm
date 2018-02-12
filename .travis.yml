@@ -16,7 +16,6 @@ install:
   - pip install --quiet python-pushover
   - pip install --quiet pytest
   - pip install --quiet requests-cache
-  # - pip install --quiet toolz
 
 script:
-  - cd fylm; pytest --no-print-logs
+  - cd fylm; pytest
