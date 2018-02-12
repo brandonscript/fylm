@@ -89,7 +89,7 @@ def build_new_filename(film):
     # Hack macOS titles that read / from the filesystem as :. If we don't do this,
     # we end up with the app trying to create folders for any title that contains
     # a /. Looking at you, Face/Off.
-    template = template.replace(r'/', ':')
+    template = template.replace(r'/', '-')
 
     # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
     # `Dude Where's My Car`).
@@ -270,7 +270,7 @@ def correct_title_case(title, always_lowercase, always_uppercase):
     words = re.split(' ', title)
 
     # First we capitalize the first char in each word.
-    final = [words[0].capitalize()]
+    final = [words[0].title()]
 
     # Loop through each word (beginning from the second word).
     for word in words[1:]:
@@ -282,7 +282,7 @@ def correct_title_case(title, always_lowercase, always_uppercase):
         final.append(
             word.lower() in always_lowercase and word.lower()
             or word.upper() in always_uppercase and word.upper()
-            or word.capitalize())
+            or word.title())
 
     # Join the resulting array back together with a space.
     return ' '.join(final)

@@ -69,13 +69,13 @@ def main():
             # Iterate each film.
             for film in films:
 
-                # Print the film details to the console.
-                console.film_loaded(film)
-
                 # If the film should be ignored, print the reason why, and skip.
                 if film.should_ignore is True:
-                    console.skip(film, film.ignore_reason)
+                    console.skip(film)
                     continue
+
+                # Print the film details to the console.
+                console.film_loaded(film)
 
                 # Search TMDb for film details (if enabled).
                 film.search_tmdb()
@@ -86,7 +86,7 @@ def main():
                     continue
 
                 # If the lookup was successful, print the results to the console.
-                console.film_details(film)
+                console.lookup_result(film)
 
                 # If duplicate checking is enabled and the film is a duplicate, abort,
                 # *unless* overwriting is enabled. `is_duplicate` will always return

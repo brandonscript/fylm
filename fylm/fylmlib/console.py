@@ -69,6 +69,11 @@ class console:
         Args:
             film: (Film) film to pass to debug calls.
         """
+        # Print original filename and size.
+        p = pyfancy().bold('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
+        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
+        p.output()
+
         log.info('{} ({})'.format(film.source_path, formatter.pretty_size(film.size_of_video)))
         if film.title is not None:
             console.debug('----------------------------')
@@ -79,6 +84,38 @@ class console:
             console.debug('media\t{}'.format(film.media))
             console.debug('quality\t{}'.format(film.quality))
             console.debug('size\t{}'.format(formatter.pretty_size(film.size_of_video)))
+
+
+    @classmethod
+    def skip(cls, film):
+        """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
+
+        Args:
+            film: (Film) Film that was skipped.
+        """
+        p = pyfancy().bold().red('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
+        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
+        p.output()
+        pyfancy().red('{}{}'.format(INDENT_PREFIX, film.ignore_reason)).output()
+        log.detail("Skipping (%s)" % film.ignore_reason)
+
+    @classmethod
+    def lookup_result(cls, film):
+        """Print and log film details.
+
+        Args:
+            film: (Film) Film to print/log.
+        """
+        
+        # Only print lookup results if TMDb searching is enabled.
+        if config.tmdb.enabled is True:
+            if film.tmdb_id is not None:
+                p = pyfancy().white(INDENT_PREFIX).raw(color('✓ {} ({})'.format(film.title, film.year), fg=ansi.green)).dark_gray()
+                p.add(' [{}] {} match'.format(film.tmdb_id, formatter.percent(film.title_similarity))).output()
+                log.detail('✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
+            else:
+                pyfancy().white(INDENT_PREFIX).red('× {} ({})'.format(film.title, film.year)).output()
+                log.detail('× Not found')
 
     @classmethod
     def _notify_test(cls):
@@ -173,7 +210,7 @@ class console:
             size: (float) String to print white and send to log.
         """
         pyfancy().white('{}⌥ '.format(INDENT_PREFIX)).raw(color(title, fg=ansi.green)).dark_gray().dim(' ({})'.format(size)).output()
-        log.detail('⌥{} {}'.format(title, size))
+        log.detail('⌥ {} {}'.format(title, size))
 
     @classmethod
     def duplicates(cls, film):
@@ -276,37 +313,3 @@ class console:
         """
         pyfancy().dark_gray().dim('{}{}'.format(INDENT_PREFIX, s)).output()
         log.detail(s)
-
-    @classmethod
-    def skip(cls, film, s):
-        """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
-
-        Args:
-            film: (Film) Film that was skipped.
-            s: (unicode) Reason the film was skipped
-        """
-        pyfancy().red('{}{}'.format(MAIN_PREFIX, film.original_filename)).dark_gray(' {}'.format(s)).output()
-        log.detail(s)
-
-    @classmethod
-    def film_details(cls, film):
-        """Print and log film details.
-
-        Args:
-            film: (Film) Film to print/log.
-        """
-
-        # Print original filename and size.
-        p = pyfancy().bold('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
-        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
-        p.output()
-
-        # Only print lookup results if TMDb searching is enabled.
-        if config.tmdb.enabled is True:
-            if film.tmdb_id is not None:
-                p = pyfancy().white(INDENT_PREFIX).raw(color('✓ {} ({})'.format(film.title, film.year), fg=ansi.green)).dark_gray()
-                p.add(' [{}] {} match'.format(film.tmdb_id, formatter.percent(film.title_similarity))).output()
-                log.detail('✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
-            else:
-                pyfancy().white(INDENT_PREFIX).red('× {} ({})'.format(film.title, film.year)).output()
-                log.detail('× Not found')

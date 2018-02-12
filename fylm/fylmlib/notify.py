@@ -44,7 +44,10 @@ def plex():
 
     # Check if Plex notifications are enabled, and that we're not running in 
     # quiet or rename modes.
-    if config.plex.enabled is True and config.quiet is False and config.rename_only is False:
+    if (config.plex.enabled is True 
+        and config.quiet is False 
+        and config.rename_only is False
+        and config.test is False):
 
         # Disable the log so that HTTP ops aren't printed to the log.
         log.disable()

@@ -120,7 +120,7 @@ class Film:
         self.source_path = source_path
         self.title = parser.get_title(source_path)
         self.year = parser.get_year(source_path)
-        self.overview = None
+        self.overview = ''
         self.edition = parser.get_edition(source_path)
         self.media = parser.get_media(source_path)
         self.quality = parser.get_quality(source_path)
@@ -246,25 +246,25 @@ class Film:
     @property
     def should_ignore(self):
         if ops.fileops.contains_ignored_strings(self.original_filename):
-            self.ignore_reason = '(ignored string)'
+            self.ignore_reason = 'Ignored string'
 
         elif self.is_file and not self.has_valid_ext:
-            self.ignore_reason = '(not a valid file extension)'
+            self.ignore_reason = 'Not a valid file extension'
 
         elif self.is_tv_show:
-            self.ignore_reason = '(appears to be a TV show)'
+            self.ignore_reason = 'Appears to be a TV show'
 
         elif self.is_dir and len(self.valid_files) == 0:
-            self.ignore_reason = '(no valid files found in this folder)'
+            self.ignore_reason = 'No valid files found in this folder'
 
         elif self.title is None:
-            self.ignore_reason = '(unknown title)'
+            self.ignore_reason = 'Unknown title'
 
         elif self.year is None and (config.force_lookup is False or config.tmdb.enabled is False):
-            self.ignore_reason = '(unknown year)'
+            self.ignore_reason = 'Unknown year'
 
         elif self.size < config.min_filesize * 1024 * 1024 and self.is_video_file:
-            self.ignore_reason = '({} is too small)'.format(formatter.pretty_size(self.size))
+            self.ignore_reason = '%s is too small' % formatter.pretty_size(self.size)
 
         return self.ignore_reason is not None
 

@@ -94,7 +94,7 @@ class dirops:
         # If check_for_duplicates is disabled, we don't care about duplicates, and
         # don't need to spend cycles processing duplicates. Return an empty array.
         if config.duplicate_checking.enabled is False:
-            return
+            return []
 
         # Enumerate the destination directory and check for duplicates.
         console.debug('Checking for existing films...')
@@ -425,7 +425,7 @@ class fileops:
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
         if sys.platform == 'darwin':
-            dst = os.path.join(os.path.dirname(dst), os.path.basename(dst).replace(r'/', ':'))
+            dst = os.path.join(os.path.dirname(dst), os.path.basename(dst).replace(r'/', '-'))
 
         # Only perform destructive changes if running in live mode.
         if not config.test:
@@ -556,12 +556,13 @@ class fileops:
         # If we don't do this, the filesystem will try and create a new folder instead
         # of the correct filename.
         # Credit: https://stackoverflow.com/a/34504896/1214800
-        new_filename__ext = new_filename__ext.replace(r'/', ':')
+        new_filename__ext = new_filename__ext.replace(r'/', '-')
 
         # Generate a destination string based on src's path and the new filename
         dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename__ext))
 
-        console.rename(os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
+        # DEPRECATED
+        # console.rename(os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
 
         # Silently abort if the src==dst (we don't need to waste cycles renaming files
         # that are already correctly named). This also allows us to check for identically
