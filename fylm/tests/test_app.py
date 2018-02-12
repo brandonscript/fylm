@@ -38,7 +38,6 @@ class TestApp(object):
         conftest.setup()
 
         fylm.config.quiet = True
-        fylm.config.no_console = True
         fylm.config.test = False
         fylm.config.use_folders = True
         fylm.config.tmdb.enabled = False
@@ -64,7 +63,6 @@ class TestApp(object):
         conftest.setup()
 
         fylm.config.quiet = True
-        fylm.config.no_console = True
         fylm.config.test = False
         fylm.config.use_folders = True
         fylm.config.tmdb.enabled = True
@@ -86,7 +84,6 @@ class TestApp(object):
         conftest.setup()
         
         fylm.config.quiet = True
-        fylm.config.no_console = True
         fylm.config.test = False
         fylm.config.use_folders = False
         fylm.config.tmdb.enabled = True
