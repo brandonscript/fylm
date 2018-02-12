@@ -53,6 +53,10 @@ class parser:
         # Create a title object based on the name of the file or active folder.
         title = os.path.basename(source_path)
 
+        # If the film is a file, remove the extension.
+        if os.path.isfile(source_path):
+            title = os.path.splitext(title)[0]
+
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
             if title.lower().startswith(prefix.lower()):
