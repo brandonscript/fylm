@@ -39,7 +39,7 @@ from make import make_mock_files
 config.quiet = True
 
 # Set the filename that contains test files
-test_files = 'files.json'
+test_files = 'files_mini.json'
 
 # TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
 # if it is available.

@@ -49,7 +49,7 @@ class TestFilm(object):
                 film.search_tmdb()
 
             # TODO: A more graceful way of handling rate limiting in TravisCI.
-            if os.environ.get('TMDB_KEY') is not None:
+            if os.environ.get('TRAVIS') is not None:
                 time.sleep(0.5)
 
             # Use this for debugging test matches

@@ -122,7 +122,7 @@ def main():
         console.exit_early()
     except IOError as e:
         console.red('IOError: %s' % e)
-        if os.environ.get('TRAVIS') is not None:
+        if os.environ.get('TRAVIS') is None:
             exit()
     finally:
         # Don't leave the cursor hidden
