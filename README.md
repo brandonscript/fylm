@@ -29,14 +29,10 @@ For now, Fylm is only guaranteed to run on Python 2.7. You can try running it on
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
- - `pip install future`
- - `pip install pyyaml`
- - `pip install ansicolors`
- - `pip install attrdict`
- - `pip install requests-cache`
- - `pip install tmdbsimple`
- - `pip install plexapi`
- - `pip install python-pushover`
+    (sudo) pip install -r requirements.txt
+    # or
+    (sudo) python2 -m pip install -r requirements.txt
+    (sudo) python3 -m pip install -r requirements.txt
 
 If you don't use `pip`, then you will need to install these manually, or download them and include them inside your copy of Fylm. Or shake a magic stick and hope it works (hint: it won't).
 
@@ -92,14 +88,17 @@ However, since we're putting a lot of faith in machines and automation, there ar
 
 #### Testing
 
-Test coverage is meek. But at least there are tests for the `Film` class, and more are coming soon. Tests are run using `pytest`:
+Tests are run using `pytest`. To install:
 
-- `sudo -H pip install -U pytest`
+    (sudo) pip install -r requirements-dev.txt
+    # or
+    (sudo) python2 -m pip install -r requirements-dev.txt
+    (sudo) python3 -m pip install -r requirements-dev.txt
 
 To run tests:
 
     cd fylm/
-    pytest --no-print-logs
+    pytest (--no-print-logs)
 
 #### Contributing
 

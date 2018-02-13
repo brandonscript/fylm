@@ -1,6 +1,7 @@
-
 *.log
 *.pyc
 fylm/tests/files
 .pytest_cache
 *.sqlite
+*.egg
+*.egg-info

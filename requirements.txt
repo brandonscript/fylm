@@ -1,0 +1,8 @@
+future==0.16.0
+pyyaml==3.12
+ansicolors==1.1.8
+attrdict==2.0.0
+requests-cache==0.4.13
+tmdbsimple==2.1.0
+plexapi==3.0.5
+python-pushover==0.3
