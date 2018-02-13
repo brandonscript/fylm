@@ -202,7 +202,7 @@ class TestReplace(object):
         # Assert that the new, larger 1080p file overwrites the existing, smaller one
         assert(not os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
-        assert(    os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])) == pytest.approx(big_size))
+        assert(    os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])) == pytest.approx(big_size, 10))
         # Reset config
         fylm.config.reload()
 
@@ -231,6 +231,6 @@ class TestReplace(object):
         # Assert that the new, larger 1080p file overwrites the existing, smaller one
         assert(    os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
-        assert(    os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])) == pytest.approx(big_size))
+        assert(    os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])) == pytest.approx(big_size, 10))
         # Reset config
         fylm.config.reload()

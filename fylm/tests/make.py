@@ -26,8 +26,8 @@ kb = 1024
 mb = kb * 1024
 gb = mb * 1024
 
-# For tests on Travis, set min_filesize to 0
-if os.environ.get('TMDB_KEY') is not None:
+# For tests on Travis, miniaturize filesizes.
+if os.environ.get('TRAVIS') is not None:
     kb = 1
     mb = kb * 1
     gb = mb * 1024
