@@ -219,7 +219,7 @@ class _Config:
             sys.stdout = None
 
         # For tests on Travis, set min_filesize to 0
-        if os.environ.get('TMDB_KEY') is not None:
+        if os.environ.get('TRAVIS') is not None:
             self.config.min_filesize = 0
 
         # Normalize the paths in source_dirs and remove duplicates.

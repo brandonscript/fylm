@@ -15,9 +15,6 @@
 
 from __future__ import unicode_literals, print_function, absolute_import
 
-# import toolz
-
-from fylmlib.film import Film
 from fylmlib.config import config
 import fylmlib.operations as ops
 import fylm
