@@ -24,6 +24,8 @@ from __future__ import unicode_literals, print_function
 
 import re
 import copy
+import time
+from functools import partial
 
 import tmdbsimple as tmdb
 
@@ -357,8 +359,10 @@ def _primary_year_search(search_string, year=None):
     # Instantiate a TMDb search object.
     s = tmdb.Search()
 
-    # Build the search query and execute the search.
-    s.movie(query=search_string, primary_release_year=year, include_adult='true')
+    # Build the search query and execute the search in the rate limit handler.
+    _search_rate_limit_handler(
+        lambda: s.movie(query=search_string, primary_release_year=year, include_adult='true')
+    )
 
     # Re-enable the log.
     log.enable()
@@ -391,8 +395,10 @@ def _basic_search(search_string, year=None):
     # Instantiate a TMDb search object.
     s = tmdb.Search()
 
-    # Build the search query and execute the search.
-    s.movie(query=search_string, year=year, include_adult='true')
+    # Build the search query and execute the search in the rate limit handler.
+    _search_rate_limit_handler(
+        lambda: s.movie(query=search_string, year=year, include_adult='true')
+    )
 
     # Re-enable the log.
     log.enable()
@@ -427,8 +433,10 @@ def _strip_articles_search(search_string, year=None):
     # Instantiate a TMDb search object.
     s = tmdb.Search()
 
-    # Build the search query and execute the search.
-    s.movie(query=re.sub(patterns.strip_articles_search, '', search_string), primary_release_year=year, include_adult='true')
+    # Build the search query and execute the search in the rate limit handler.
+    _search_rate_limit_handler(
+        lambda: s.movie(query=re.sub(patterns.strip_articles_search, '', search_string), primary_release_year=year, include_adult='true')
+    )
 
     # Re-enable the log.
     log.enable()
@@ -489,3 +497,18 @@ def _recursive_rstrip_search(search_string, year=None):
 
     # Return the raw results.
     return raw_results
+
+def _search_rate_limit_handler(q):
+    while True:
+        try:
+            # Build the search query and execute the search.
+            q()
+
+            if os.environ.get('TRAVIS') is not None:
+                time.sleep(0.5)
+
+        except Exception as e:
+            if re.search('^429', unicode(e)):
+                time.sleep(5.0)
+            else:
+                break

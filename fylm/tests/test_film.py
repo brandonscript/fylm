@@ -38,19 +38,7 @@ class TestFilm(object):
 
         # Look up films by name from TMDb and update title
         for film in conftest.valid_films:
-            try:
-                film.search_tmdb()
-
-            # TODO: Figure out which HTTPError is actually being thrown, and 
-            # which module it belongs to so we can inspect the X-Rate-Limit
-            # header.
-            except Exception:
-                time.sleep(5.0)
-                film.search_tmdb()
-
-            # TODO: A more graceful way of handling rate limiting in TravisCI.
-            if os.environ.get('TRAVIS') is not None:
-                time.sleep(0.5)
+            film.search_tmdb()
 
             # Use this for debugging test matches
             # for f in conftest.all_test_films:
