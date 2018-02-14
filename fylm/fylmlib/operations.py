@@ -697,8 +697,8 @@ def size_of_video(path, mock_bytes=None):
                 video_files = list(filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path)))
 
                 # Re-populate list with (filename, size) tuples
-                for i in range(len(video_files)):
-                    video_files[i] = (video_files[i], os.path.getsize(video_files[i]))
+                for i, file in enumerate(video_files):
+                    video_files[i] = (file, os.path.getsize(file))
 
                 # Sort list by file size from largest to smallest and return the first file.
                 video_files.sort(key=lambda v: v[1], reverse=True)

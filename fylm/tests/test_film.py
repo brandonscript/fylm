@@ -18,7 +18,6 @@ from builtins import *
 
 import re
 import os
-import time
 
 import pytest
 

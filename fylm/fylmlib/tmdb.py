@@ -484,11 +484,10 @@ def _search_handler(**kwargs):
         # Catch rate limiting errors
         except Exception as e:
             console.debug(e)
-            raise e
             if re.search('^429', str(e)):
                 time.sleep(5.0)
             else:
-                break
+                raise e
         finally:
             # If Travis is running, delay so we don't
             # hit the rate limit.
