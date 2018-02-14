@@ -18,6 +18,7 @@ from builtins import *
 
 import os
 import sys
+
 import pytest
 
 from fylmlib.config import config
@@ -69,7 +70,7 @@ class TestDirOperations(object):
         conftest.setup()
 
         all_films = ops.dirops.get_new_films(conftest.films_src_path)
-        valid_films = filter(lambda film: not film.should_ignore, all_films)
+        valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
         # Assert that we're getting the expected number of films.
         assert(len(all_films) == len(conftest.all_test_films))

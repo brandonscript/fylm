@@ -23,10 +23,10 @@ This module performs searches and handles results from TMDb.
 from __future__ import unicode_literals, print_function
 from builtins import *
 
+import os
 import re
 import copy
 import time
-from functools import partial
 
 import tmdbsimple as tmdb
 
@@ -243,7 +243,7 @@ class _TmdbSearchConstructor:
         functions, and must remain intact in order to validate results.
 
         Args:
-            title: (unicode) original parsed title of the film.
+            title: (str, utf-8) original parsed title of the film.
             year: (int) original parsed year of the film.
 
         Returns:
@@ -268,7 +268,7 @@ def search(search_string, year=None):
     potential (or instant) matches.
 
     Args:
-        search_string: (unicode) string to search for.
+        search_string: (str, utf-8) string to search for.
         year: (int) year to search for.
 
     Returns:
@@ -342,7 +342,7 @@ def _primary_year_search(search_string, year=None):
     attributes 'query' and 'primary_release_year'.
 
     Args:
-        search_string: (unicode) string to search for.
+        search_string: (str, utf-8) string to search for.
         year: (int) year to search for.
 
     Returns:
@@ -354,22 +354,12 @@ def _primary_year_search(search_string, year=None):
 
     console.debug('Searching: "{}" / {} - primary release year'.format(search_string, year))
 
-    # Disable logging to avoid overloading it with HTTP request logs.
-    log.disable()
-
-    # Instantiate a TMDb search object.
-    s = tmdb.Search()
-
     # Build the search query and execute the search in the rate limit handler.
-    _search_rate_limit_handler(
-        lambda: s.movie(query=search_string, primary_release_year=year, include_adult='true')
+    return _search_handler(
+        query=search_string, 
+        primary_release_year=year,
+        include_adult='true'
     )
-
-    # Re-enable the log.
-    log.enable()
-
-    # Return the raw JSON results array.
-    return s.results
 
 def _basic_search(search_string, year=None):
     """Search TMDb for a string and a general year.
@@ -378,7 +368,7 @@ def _basic_search(search_string, year=None):
     attributes 'query' and 'year'.
 
     Args:
-        search_string: (unicode) string to search for.
+        search_string: (str, utf-8) string to search for.
         year: (int) year to search for.
 
     Returns:
@@ -390,22 +380,12 @@ def _basic_search(search_string, year=None):
 
     console.debug('Searching: "{}" / {} - basic year'.format(search_string, year))
 
-    # Disable logging to avoid overloading it with HTTP request logs.
-    log.disable()
-
-    # Instantiate a TMDb search object.
-    s = tmdb.Search()
-
     # Build the search query and execute the search in the rate limit handler.
-    _search_rate_limit_handler(
-        lambda: s.movie(query=search_string, year=year, include_adult='true')
+    return _search_handler(
+        query=search_string, 
+        year=year,
+        include_adult='true'
     )
-
-    # Re-enable the log.
-    log.enable()
-
-    # Return the raw JSON results array.
-    return s.results
 
 def _strip_articles_search(search_string, year=None):
     """Strip 'the' and 'a' from the search string when searching TMDb.
@@ -416,7 +396,7 @@ def _strip_articles_search(search_string, year=None):
     string and year, using the attributes 'query' and 'year'.
 
     Args:
-        search_string: (unicode) string to search for.
+        search_string: (str, utf-8) string to search for.
         year: (int) year to search for.
 
     Returns:
@@ -428,22 +408,12 @@ def _strip_articles_search(search_string, year=None):
 
     console.debug('Searching: "{}" / {} - strip articles, primary release year'.format(search_string, year))
 
-    # Disable logging to avoid overloading it with HTTP request logs.
-    log.disable()
-
-    # Instantiate a TMDb search object.
-    s = tmdb.Search()
-
     # Build the search query and execute the search in the rate limit handler.
-    _search_rate_limit_handler(
-        lambda: s.movie(query=re.sub(patterns.strip_articles_search, '', search_string), primary_release_year=year, include_adult='true')
+    return _search_handler(
+        query=re.sub(patterns.strip_articles_search, '', search_string), 
+        primary_release_year=year, 
+        include_adult='true'
     )
-
-    # Re-enable the log.
-    log.enable()
-
-    # Return the raw JSON results array.
-    return s.results
 
 def _recursive_rstrip_search(search_string, year=None):
     """Recursively remove the last word when searching TMDb.
@@ -469,7 +439,7 @@ def _recursive_rstrip_search(search_string, year=None):
     ...and then we have a match.
 
     Args:
-        search_string: (unicode) string to search for.
+        search_string: (str, utf-8) string to search for.
         year: (int) year to search for.
 
     Returns:
@@ -499,17 +469,32 @@ def _recursive_rstrip_search(search_string, year=None):
     # Return the raw results.
     return raw_results
 
-def _search_rate_limit_handler(q):
+def _search_handler(**kwargs):
+
+    # Instantiate a TMDb search object.
+    search = tmdb.Search()
+
+    # Disable the log
+    log.disable()
     while True:
         try:
             # Build the search query and execute the search.
-            q()
-
-            if os.environ.get('TRAVIS') is not None:
-                time.sleep(0.5)
-
+            search.movie(**kwargs)
+            break
+        # Catch rate limiting errors
         except Exception as e:
-            if re.search('^429', unicode(e)):
+            console.debug(e)
+            raise e
+            if re.search('^429', str(e)):
                 time.sleep(5.0)
             else:
                 break
+        finally:
+            # If Travis is running, delay so we don't
+            # hit the rate limit.
+            if os.environ.get('TRAVIS') is not None:
+                time.sleep(0.5)
+
+    # Re-enable the log                
+    log.enable()
+    return search.results

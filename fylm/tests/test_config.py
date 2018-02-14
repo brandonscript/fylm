@@ -16,6 +16,8 @@
 from __future__ import unicode_literals, print_function, absolute_import
 from builtins import *
 
+import pytest
+
 from fylmlib.config import config
 import fylmlib.operations as ops
 import fylm

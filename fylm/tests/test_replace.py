@@ -17,6 +17,14 @@ from __future__ import unicode_literals, print_function, absolute_import
 from builtins import *
 
 import os
+
+try:
+    from math import isclose
+except ImportError:
+    from pytest import approx
+    def isclose(a, b, abs_tol=0.0):
+        return a == approx(b, abs_tol)
+
 import pytest
 
 from fylmlib.config import config
@@ -50,6 +58,7 @@ clean_files = {
 # @pytest.mark.skip()
 class TestReplace(object):
 
+    # @pytest.mark.skip()
     def test_replace_all_with_2160p(self):
 
         # Set up config
@@ -93,6 +102,7 @@ class TestReplace(object):
         # Reset config
         fylm.config.reload()
 
+    # @pytest.mark.skip()
     def test_keep_all_2160p(self):
 
         # Set up config
@@ -135,6 +145,7 @@ class TestReplace(object):
         # Reset config
         fylm.config.reload()
 
+    # @pytest.mark.skip()
     def test_keep_2160p_and_1080p(self):
 
         # Set up config
@@ -178,6 +189,7 @@ class TestReplace(object):
         # Reset config
         fylm.config.reload()
 
+    # @pytest.mark.skip()
     def test_replace_smaller(self):
 
         # Set up config
@@ -203,10 +215,11 @@ class TestReplace(object):
         # Assert that the new, larger 1080p file overwrites the existing, smaller one
         assert(not os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
-        assert(    os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])) == pytest.approx(big_size, 10))
+        assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
         # Reset config
         fylm.config.reload()
 
+    # @pytest.mark.skip()
     def test_do_not_replace_larger(self):
 
         # Set up config
@@ -232,6 +245,6 @@ class TestReplace(object):
         # Assert that the new, larger 1080p file overwrites the existing, smaller one
         assert(    os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
-        assert(    os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])) == pytest.approx(big_size, 10))
+        assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
         # Reset config
         fylm.config.reload()

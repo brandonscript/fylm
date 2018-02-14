@@ -45,7 +45,7 @@ class parser:
         or folder path into a more pleasant film title.
 
         Args:
-            source_path: (unicode) full path of file or folder.
+            source_path: (str, utf-8) full path of file or folder.
 
         Returns:
             A clean and well-formed film title.
@@ -116,7 +116,7 @@ class parser:
         at you, 2001: A Space Odyssey).
 
         Args:
-            source_path: (unicode) full path of file or folder.
+            source_path: (str, utf-8) full path of file or folder.
 
         Returns:
             A 4-digit integer representing the release year, or None if
@@ -140,7 +140,7 @@ class parser:
         Use regular expressions to identity the original media of the file.
 
         Args:
-            source_path: (unicode) full path of file or folder.
+            source_path: (str, utf-8) full path of file or folder.
 
         Returns:
             A string representing the original media format, or None, if no
@@ -165,7 +165,7 @@ class parser:
         config.edition_map.
 
         Args:
-            source_path: (unicode) full path of file or folder.
+            source_path: (str, utf-8) full path of file or folder.
 
         Returns:
             A corrected string representing the film's edition, or None.
@@ -184,7 +184,7 @@ class parser:
         (e.g. 720p, 1080p, or 2160p).
 
         Args:
-            source_path: (unicode) full path of file or folder.
+            source_path: (str, utf-8) full path of file or folder.
 
         Returns:
             A corrected string representing the film's edition, or None.
@@ -210,7 +210,7 @@ class parser:
         tuple containing the first matching regular expression.
 
         Args:
-            source_path: (unicode) full path of file or folder.
+            source_path: (str, utf-8) full path of file or folder.
 
         Returns:
             A (key, value) tuple containing either a matching regular expression and its

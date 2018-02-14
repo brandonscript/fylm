@@ -22,8 +22,10 @@ import shutil
 import itertools
 
 # Use requests-cache to reduce remote API requests. 
+from datetime import timedelta
 import requests_cache
-requests_cache.install_cache('fylm-test')
+requests_cache.install_cache('fylm_test_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
+requests_cache.core.remove_expired_responses()
 
 # Add the cwd to the path so we can load fylmlib modules and fylm app.
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
@@ -40,7 +42,14 @@ from make import make_mock_files
 config.quiet = True
 
 # Set the filename that contains test files
-test_files = 'files.json'
+test_files = 'files_short.json'
+
+# Travis doesn't do well with Unicode, so we give up.
+if os.environ.get('TRAVIS') is not None:
+    if sys.version_info[0] < 3:
+        test_files = 'files_no_unicode.json'
+    else:
+        test_files = 'files_short.json'  
 
 # TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
 # if it is available.
@@ -92,7 +101,7 @@ def setup():
 
     # Load films and filter them into valid films.
     films = ops.dirops.get_new_films(films_src_path)
-    valid_films = filter(lambda film: not film.should_ignore, films)  
+    valid_films = list(filter(lambda film: not film.should_ignore, films))
 
     # [print(v.title, v.ignore_reason) for v in films]
     # exit()

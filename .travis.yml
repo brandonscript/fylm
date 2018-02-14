@@ -3,19 +3,12 @@ language: python
 dist: trusty
 
 python:
-  - 2.7.10
+  - "2.7"
+  - "3.6"
 
 install:
-
-  - pip install --quiet future
-  - pip install --quiet pyyaml
-  - pip install --quiet ansicolors
-  - pip install --quiet attrdict
-  - pip install --quiet tmdbsimple
-  - pip install --quiet plexapi
-  - pip install --quiet python-pushover
-  - pip install --quiet pytest
-  - pip install --quiet requests-cache
+  - pip install -r requirements.txt
+  - pip install -r requirements-test.txt
 
 script:
   - cd fylm; pytest

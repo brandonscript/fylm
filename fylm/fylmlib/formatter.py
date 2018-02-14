@@ -105,7 +105,7 @@ def pretty_size(size_in_bytes=0, measure=None):
 
     Args:
         size_in_bytes (int): file size in bytes
-        measure (unicode): (optional) key value for the pretty_size_map to force
+        measure (str, utf-8): (optional) key value for the pretty_size_map to force
                            formatting to a specific measurement.
     Returns:
         A human-readable formatted filesize string.
@@ -154,8 +154,8 @@ def pretty_size_diff(src, dst):
     '200 MB smaller'.
 
     Args:
-        src (unicode): path to source file/folder
-        dst (unicode): path to destination file/folder
+        src (str, utf-8): path to source file/folder
+        dst (str, utf-8): path to destination file/folder
     Returns:
         A human-readable formatted comparison string.
     """
@@ -198,9 +198,9 @@ def replace_insensitive(find, repl, s):
     with another string.
 
     Args:
-        find (unicode): substring to find in a string.
-        repl (unicode): string to replace it with.
-        s (unicode): original string to be searched
+        find (str, utf-8): substring to find in a string.
+        repl (str, utf-8): string to replace it with.
+        s (str, utf-8): original string to be searched
     Returns:
         A string with some substrings replaced.
     """
@@ -213,7 +213,7 @@ def strip_the(s):
     `, The` at the end (case insensitive) and remove both.
 
     Args:
-        s (unicode): original string to be cleaned.
+        s (str, utf-8): original string to be cleaned.
     Returns:
         A string without `The` at the beginning or end.
     """
@@ -226,7 +226,7 @@ def strip_illegal_chars(s):
     doesn't attempt to write restricted chars to the filesystem.
 
     Args:
-        s (unicode): original string to be cleaned.
+        s (str, utf-8): original string to be cleaned.
     Returns:
         A string without restricted chars.
     """
@@ -248,7 +248,7 @@ def strip_extra_whitespace(s):
     a single space.
 
     Args:
-        s (unicode): decimal number to convert to percentage.
+        s (str, utf-8): decimal number to convert to percentage.
     Returns:
         A string without repeating whitespace chars.
     """
@@ -263,7 +263,7 @@ def correct_title_case(title, always_lowercase, always_uppercase):
     char in a title will always be uppercase (even articles).
 
     Args:
-        title (unicode): title to be converted to title case.
+        title (str, utf-8): title to be converted to title case.
         always_lowercase: An array of words that should be lowercased.
         always_uppercase: An array of words that should be uppercased.
     Returns:

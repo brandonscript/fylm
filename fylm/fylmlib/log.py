@@ -52,7 +52,7 @@ class log:
         """Disable logging. Cannot be called in debug mode.
         """
         if not config.debug:
-            logging.disable(sys.maxint)
+            logging.disable(sys.maxsize)
 
     @classmethod
     def enable(cls):

@@ -19,6 +19,7 @@ from builtins import *
 import re
 import os
 import time
+
 import pytest
 
 from fylmlib.config import config
@@ -46,7 +47,7 @@ class TestFilm(object):
             #     if f.expected_title == film.title:
             #         print(f.acceptable_names, f.expected_title)
 
-            matching_tests = filter(lambda t: (t.expected_title == film.title and len(t.acceptable_names) > 0), conftest.all_test_films)
+            matching_tests = list(filter(lambda t: (t.expected_title == film.title and len(t.acceptable_names) > 0), conftest.all_test_films))
 
             print("Looking up '%s' (%s)" % (film.title, film.year))
 

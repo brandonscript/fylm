@@ -108,7 +108,7 @@ class Subtitle:
         """Returns a new path that includes the captured language string.
 
         Args:
-            path: (unicode) Path to file to append language.
+            path: (str, utf-8) Path to file to append language.
         Returns:
             A new path with the subtitle language included in the path.
         """
@@ -122,7 +122,7 @@ class Subtitle:
         """Determine if a file is a subtitle file.
 
         Args:
-            file: (unicode) File to determine whether or not it is a subtitle file.
+            file: (str, utf-8) File to determine whether or not it is a subtitle file.
         Returns:
             True if the file is a subtitle file (.srt), else False.
         """

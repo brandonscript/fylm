@@ -18,8 +18,6 @@
 This module handles all the duplicate checking and handling logic for Fylm.
 """
 from __future__ import unicode_literals, print_function
-
-from itertools import ifilter
 from builtins import *
 
 from fylmlib.config import config
@@ -74,10 +72,10 @@ class duplicates:
 
         console.debug('Searching for duplicates of "{}" ({})'.format(film.title, film.year))
         # Filter the existing_films cache array to titles beginning with the first letter of the
-        # current film, then use fast ifilter to check for duplicates. Then we filter out empty folder,
+        # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.
         # TODO: Add tests to ensure this works for 'title-the' naming convention as well.
-        duplicates = list(ifilter(lambda d:
+        duplicates = list(filter(lambda d:
                 # First letter of the the potential duplicate's title must be the same.
                 # Checking this first allows us to have a much smaller list to compare against.
                 d.title[0] == film.title[0]

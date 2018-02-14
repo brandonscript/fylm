@@ -29,6 +29,7 @@ import yaml
 import os
 import sys
 import codecs
+from datetime import timedelta
 from yaml import Loader, SafeLoader
 
 from attrdict import AttrMap
@@ -38,7 +39,7 @@ def construct_yaml_str(self, node):
     """Hijack the yaml module loader to return unicode.
 
     Args:
-        node: (unicode) A constructor string.
+        node: (str, utf-8) A constructor string.
     Returns:
         yaml string constructor
     """
@@ -172,7 +173,7 @@ class _Config:
             action="store",
             default=None,
             dest="source_override",
-            type=unicode,
+            type=str,
             help='Override the configured source dir(s) (comma separate multiple folders)')
 
         # -l, --limit
@@ -228,7 +229,8 @@ class _Config:
 
         # Set up cache.
         if self.config.cache is True:
-            requests_cache.install_cache('fylm')
+            requests_cache.install_cache('fylm_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
+            requests_cache.core.remove_expired_responses()
 
     def reload(self):
         """Reload config from config.yaml.

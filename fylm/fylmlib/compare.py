@@ -34,8 +34,8 @@ def string_similarity(a, b):
     predates it)
 
     Args:
-        a: (unicode) the first string to compare.
-        b: (unicode) the second string to compare.
+        a: (str, utf-8) the first string to compare.
+        b: (str, utf-8) the second string to compare.
     Returns:
         A '% similarity' value, represented as a decimal between 0 and 1.
     """
@@ -64,8 +64,8 @@ def initial_chars_match(a, b, chars):
     insensitive).
 
     Args:
-        a: (unicode) the first string to compare.
-        b: (unicode) the second string to compare.
+        a: (str, utf-8) the first string to compare.
+        b: (str, utf-8) the second string to compare.
         chars: (int) the number of characters to compare
     Returns:
         True if the characters match (case insensitive), else false

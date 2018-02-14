@@ -123,8 +123,8 @@ def main():
         console.exit_early()
     except IOError as e:
         console.red('IOError: %s' % e)
-        if os.environ.get('TRAVIS') is None:
-            exit()
+        import traceback
+        traceback.print_exc()
     finally:
         # Don't leave the cursor hidden
         from fylmlib.cursor import cursor

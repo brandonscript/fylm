@@ -60,8 +60,8 @@ class dirops:
         """Determine if f1 and f2 are on the same partition.
 
         Args:
-            f1: (unicode) path of source file/folder
-            f2: (unicode) path of destination file/folder
+            f1: (str, utf-8) path of source file/folder
+            f2: (str, utf-8) path of destination file/folder
         Returns:
             True, if f1 and f2 are on the same parition, else False.
         """
@@ -125,7 +125,7 @@ class dirops:
         Scan one level deep of the target path to get a list of potential new files/folders.
 
         Args:
-            path: (unicode) path to search for new films.
+            path: (str, utf-8) path to search for new films.
         Returns:
             An array of potential films.
         """
@@ -142,7 +142,7 @@ class dirops:
         limited_files = islice(sorted_files, config.limit if config.limit > 0 else None)
 
         # Map the sorted/filtered list to Film objects.
-        return map(Film, [os.path.join(path, file) for file in limited_files])
+        return list(map(Film, [os.path.join(path, file) for file in limited_files]))
 
     @classmethod
     def get_valid_files(cls, path):
@@ -152,7 +152,7 @@ class dirops:
         determined by the config.video_exts and config.extra_exts properties.
 
         Args:
-            path: (unicode) path to search for valid files.
+            path: (str, utf-8) path to search for valid files.
         Returns:
             An array of valid files.
         """
@@ -192,7 +192,7 @@ class dirops:
         """Determine if a file is an acceptable size.
 
         Args:
-            file: (unicode) path to file.
+            file: (str, utf-8) path to file.
         Returns:
             True, if the file is an acceptable size, else False.
         """
@@ -213,7 +213,7 @@ class dirops:
         don't ever care to count, or otherwise observe, these system files.
 
         Args:
-            files: (unicode) list of files in dir.
+            files: (str, utf-8) list of files in dir.
         Returns:
             A sanitized, unicode-ready array of files.
         """
@@ -230,7 +230,7 @@ class dirops:
         don't want to delete them.
 
         Args:
-            path: (unicode) path to search for invalid files.
+            path: (str, utf-8) path to search for invalid files.
         Returns:
             An array of invalid files.
         """
@@ -253,7 +253,7 @@ class dirops:
         param.
 
         Args:
-            path: (unicode) path to create.
+            path: (str, utf-8) path to create.
         """
 
         # Because this is a destructive action, we will not create the
@@ -278,17 +278,17 @@ class dirops:
         Pass an optional function to filter results.
 
         Args:
-            root_path: (unicode) path to search for files.
+            root_path: (str, utf-8) path to search for files.
             func: (function) user-defined or lambda function to use as a filter.
         Returns:
-            A filtered array of files.
+            A filtered list of files.
         """
 
         # Use os.walk() to recursively search the dir and return full path of each file.
         results = [os.path.join(root, f) for root, dirs, files in os.walk(root_dir) for f in files]
 
         # Sanitize the resulting file list, then call the (optional) filter function that was passed.
-        return filter(func, cls.sanitize_dir_list(results))
+        return list(filter(func, cls.sanitize_dir_list(results)))
 
     @classmethod
     def delete_dir_and_contents(cls, path, max_size=50000):
@@ -298,7 +298,7 @@ class dirops:
         itself if the total dir size is less than max_size (default 50 KB).
 
         Args:
-            path: (unicode) path to be recursively deleted.
+            path: (str, utf-8) path to be recursively deleted.
             max_size: (int) optional max size in Bytes a folder can be to qualify for deletion. Default=50000.
         """
 
@@ -332,7 +332,7 @@ class dirops:
         This could be dangerous, be careful not to accidentally run it on something like... /
 
         Args:
-            path: (unicode) root path where contents will be deleted.
+            path: (str, utf-8) root path where contents will be deleted.
             count: (int) optional current number of deleted files (in case this is called multiple times
         Returns:
             Number of files that were deleted successfully.
@@ -357,7 +357,7 @@ class dirops:
         Recursively count the number of files inside the specified dir.
 
         Args:
-            path: (unicode) path to be recursively searched
+            path: (str, utf-8) path to be recursively searched
         Returns:
             Number of files, recursively, that exist in the specified dir.
         """
@@ -378,7 +378,7 @@ class fileops:
         Check the specified file's extension against config.video_exts and config.extra_exts.
 
         Args:
-            path: (unicode) path of file to check.
+            path: (str, utf-8) path of file to check.
         Returns:
             True if the file has a valid extension, else False.
         """
@@ -393,8 +393,8 @@ class fileops:
         instead of moving them, even if the files exist on the same partition.
         
         Args:
-            src: (unicode) path of file to move.
-            dst: (unicode) destination for file to move to.
+            src: (str, utf-8) path of file to move.
+            dst: (str, utf-8) destination for file to move to.
             expected_size: (int) size in bytes the file is expected to be.
             should_replace: (bool) True if a film is expected to replace a duplicate,
                             else False.
@@ -473,8 +473,8 @@ class fileops:
         symlink will be created instead of copying the file it points to.
 
         Args:
-            src: (unicode) path to source file.
-            dst: (unicode) path to destionation.
+            src: (str, utf-8) path to source file.
+            dst: (str, utf-8) path to destionation.
             follow_symlinks: (bool) follows symbolic links to files and re-creates them.
 
         """
@@ -527,8 +527,8 @@ class fileops:
         to progress bar function.
 
         Args:
-            fsrc: (unicode) path to source file.
-            fdst: (unicode) path to destionation.
+            fsrc: (str, utf-8) path to source file.
+            fdst: (str, utf-8) path to destionation.
             callback: (function) callback function to be called when progress is changed.
             total: (int) total expected size of file in B.
             length: (int) total length of buffer.
@@ -553,8 +553,8 @@ class fileops:
         different partitions.
 
         Args:
-            src: (unicode) full path (including filename) of file to move.
-            new_filename__ext: (unicode) new filename.ext (not including path).
+            src: (str, utf-8) full path (including filename) of file to move.
+            new_filename__ext: (str, utf-8) new filename.ext (not including path).
         """
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
@@ -602,7 +602,7 @@ class fileops:
         files from being moved.
 
         Args:
-            path: (unicode) full path (including filename) of file to check for ignored strings.
+            path: (str, utf-8) full path (including filename) of file to check for ignored strings.
         Returns:
             True if any of the ignored strings are found in the file path, else False.
         """
@@ -616,7 +616,7 @@ class fileops:
         increment a counter if the deletion was successful.
 
         Args:
-            file: (unicode) full path (including filename) of file to check for ignored strings.
+            file: (str, utf-8) full path (including filename) of file to check for ignored strings.
         """
         console.debug("Deleting file {}".format(file))
 
@@ -644,7 +644,7 @@ def size(path, mock_bytes=None):
     a 'mock_bytes' artifact for testing.
 
     Args:
-        path: (unicode) file or folder to determine size.
+        path: (str, utf-8) file or folder to determine size.
     Returns:
         Size of file or folder, in bytes (B), or None if path does not exist.
     """
@@ -677,7 +677,7 @@ def size_of_video(path, mock_bytes=None):
     Also supports passing a 'mock_bytes' artifact for testing.
 
     Args:
-        path: (unicode) file or folder to determine size of video file.
+        path: (str, utf-8) file or folder to determine size of video file.
     Returns:
         Size of largest video file, in bytes (B), or None if path does not exist.
     """
@@ -694,10 +694,10 @@ def size_of_video(path, mock_bytes=None):
         if os.path.isdir(path):
             
             try:
-                video_files = filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path))
+                video_files = list(filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path)))
 
                 # Re-populate list with (filename, size) tuples
-                for i in xrange(len(video_files)):
+                for i in range(len(video_files)):
                     video_files[i] = (video_files[i], os.path.getsize(video_files[i]))
 
                 # Sort list by file size from largest to smallest and return the first file.
@@ -726,7 +726,7 @@ def _size_dir(path):
     the size of each file contained within.
 
     Args:
-        path: (unicode) folder to determine size.
+        path: (str, utf-8) folder to determine size.
     Returns:
         Combined size of folder, in bytes (B), or None if dir does not exist.
     """

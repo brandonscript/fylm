@@ -176,7 +176,7 @@ class console:
         """Print debugging details, if config.debug is enabled.
 
         Args:
-            s: (unicode) String to print/log
+            s: (str, utf-8) String to print/log
         """
         if config.debug is True: 
             print(color(s, fg=ansi.debug))
@@ -186,7 +186,7 @@ class console:
         """Print and log less important text. Prints dark gray.
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         pyfancy().dark_gray('{}{}'.format(INDENT_PREFIX, s)).output()
         log.detail(s)
@@ -196,7 +196,7 @@ class console:
         """Print an error, then call log.error, which raises an Exception. Prints red.
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         log.error(s)
         raise x(s)
@@ -206,7 +206,7 @@ class console:
         """Print film rename details to the console. Prints white first, then a green highlight.
 
         Args:
-            title: (unicode) String to print green and send to log.
+            title: (str, utf-8) String to print green and send to log.
             size: (float) String to print white and send to log.
         """
         pyfancy().white('{}⌥ '.format(INDENT_PREFIX)).raw(color(title, fg=ansi.green)).dark_gray().dim(' ({})'.format(size)).output()
@@ -255,9 +255,9 @@ class console:
         """Print and log replacement text, note, and dim.
 
         Args:
-            s1: (unicode) String 1 to print/log.
-            s2: (unicode) String 2 to print/log.
-            s3: (unicode) String 3 to print/log.
+            s1: (str, utf-8) String 1 to print/log.
+            s2: (str, utf-8) String 2 to print/log.
+            s3: (str, utf-8) String 3 to print/log.
         """
         pyfancy().raw(
             color('%s%s' % (INDENT_PREFIX, s1), fg=ansi.blue)).raw(
@@ -269,7 +269,7 @@ class console:
         """Print and log interesting text. Prints green.
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         pyfancy().raw(color('{}{}'.format(INDENT_PREFIX, s)), fg=ansi.green).output()
         log.detail(s)
@@ -279,7 +279,7 @@ class console:
         """Print and log caution text. Prints yellow.
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         pyfancy().yellow('{}{}'.format(INDENT_PREFIX, s)).output()
         log.detail(s)
@@ -289,7 +289,7 @@ class console:
         """Print and log a warning. Prints red.
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         pyfancy().raw(color('{}{}'.format(INDENT_PREFIX, s), fg=ansi.red)).output()
         log.detail(s)
@@ -299,7 +299,7 @@ class console:
         """Print and log text in red. Prints red.
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         pyfancy().red('{}'.format(s)).output()
         log.detail(s)
@@ -309,7 +309,7 @@ class console:
         """Print and log unimportant text. Prints dim (darker).
 
         Args:
-            s: (unicode) String to print/log.
+            s: (str, utf-8) String to print/log.
         """
         pyfancy().dark_gray().dim('{}{}'.format(INDENT_PREFIX, s)).output()
         log.detail(s)

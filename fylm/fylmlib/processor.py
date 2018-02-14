@@ -134,9 +134,11 @@ class process:
             # Rename the source file to its new filename
             ops.fileops.rename(src, os.path.basename(dst), ops.size(file))
 
+
             # Update source with the newly renamed path, derived from destination name, in 
             # case it was altered by subtitle or duplicate clobber prevention.
             src = os.path.normpath(os.path.join(os.path.dirname(src), os.path.basename(dst)))
+
             if src != dst:
                 console.info(cls._console_move_string(src, dst))
             else:
