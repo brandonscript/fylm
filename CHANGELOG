@@ -2,6 +2,14 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.3-alpha] 2018-02-13
+- Python 3.6 support
+- Add requests caching for faster API responses
+- Add new tests for app, config, film, operations, duplicates/replacing
+- Migrate from AttrDict to AttrMap for deep dot-notated properties
+- Migrate to requirements.txt
+- Reduce TravisCI footprint and ensure 2.7 tests only run with ASCII chars
+
 ## [0.2.2-alpha] 2018-02-08
 - A robust duplicate checking algorithm that allows user-configurable replace/keep settings
 - Overhaul of test system to run via pytest to allow for additional tests to be written

@@ -19,6 +19,11 @@
 from setuptools import setup
 
 import os
+import sys
+
+if sys.version_info[0] < 3:
+    import io
+    open = io.open
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -26,10 +31,17 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'DESCRIPTION.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
+# Get requirements.txt
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
+with open('requirements-test.txt') as f:
+    requirements_test = f.read().splitlines()
+
 setup(
     name='Fylm',
 
-    version='0.2.2-alpha',
+    version='0.2.3-alpha',
 
     description='A automated command line app for organizing your film media.',
     long_description=long_description,
@@ -62,29 +74,20 @@ setup(
         # Pick your license as you wish (should match "license" above)
         'License :: OSI Approved :: Apache Software License',
 
-        # Supported Python versions. Python 3 coming soon.
+        # Supported Python versions.
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.6',
     ],
 
     # List of runtime dependencies. These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[
-        'future', 
-        'pyyaml', 
-        'ansicolors',
-        'attrdict', 
-        'requests-cache',
-        'tmdbsimple', 
-        'plexapi', 
-        'python-pushover'],
+    install_requires=requirements,
 
     # Dev dependencies
     extras_require={
-        'dev': [
-            'pytest'
-        ]
+        'test': requirements_test
     },
 
     # Entry points
