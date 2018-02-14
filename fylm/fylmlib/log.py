@@ -21,6 +21,7 @@ This module handles all the log output for the app.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import sys
 import logging

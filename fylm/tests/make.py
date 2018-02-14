@@ -14,6 +14,7 @@
 # limitations under the License.
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import os
 import io

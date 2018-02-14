@@ -24,6 +24,7 @@ get, move, rename, and delete. Also includes filesize detector methods.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import os
 import shutil

@@ -21,6 +21,7 @@ human-readable information to the console/log.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import re
 import copy

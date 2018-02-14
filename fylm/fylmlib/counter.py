@@ -22,6 +22,7 @@ singleton nature. It is used to keep track of successful moves/renames.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 # Counter property
 count = 0

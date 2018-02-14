@@ -21,6 +21,7 @@ This module generates a progress bar from a percentage and width.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 from colors import color
 

@@ -15,6 +15,7 @@
 """Main entry point."""
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import __init__ as fylm
 

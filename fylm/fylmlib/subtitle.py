@@ -52,6 +52,7 @@ Sample subtitle fileames:
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import re
 import os

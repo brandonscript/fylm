@@ -21,6 +21,7 @@ This module performs searches and handles results from TMDb.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import re
 import copy

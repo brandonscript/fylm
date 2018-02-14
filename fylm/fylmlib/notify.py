@@ -19,6 +19,7 @@ This module is used to send notifications to various external integrations.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 from plexapi.server import PlexServer
 from pushover import init, Client

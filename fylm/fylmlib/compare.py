@@ -20,6 +20,7 @@ during runtime.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import re
 from difflib import SequenceMatcher

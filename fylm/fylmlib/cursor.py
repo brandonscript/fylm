@@ -21,6 +21,7 @@ This module adds show and hide cursor controls for console output.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import sys
 import os

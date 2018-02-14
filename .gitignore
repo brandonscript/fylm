@@ -2,6 +2,7 @@
 *.pyc
 fylm/tests/files
 .pytest_cache
+.cache/*
 *.sqlite
 *.egg
 *.egg-info

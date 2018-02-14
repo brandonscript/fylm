@@ -23,6 +23,7 @@ easily wire it up as a post script for services like SABnzbd.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import os
 import sys

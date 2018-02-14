@@ -21,6 +21,7 @@ This module scans for and processes films.
 """
 
 from __future__ import unicode_literals, print_function
+from builtins import *
 
 import os
 
