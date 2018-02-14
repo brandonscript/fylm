@@ -403,10 +403,11 @@ class fileops:
 
         # Silently abort if the src and dst are the same.
         if src == dst:
+            console.debug('Source and destination are the same, nothing to move')
             return
 
-        console.debug("\nWill move '{}'".format(src))
-        console.debug("       To '{}'\n".format(dst))
+        console.debug("\n  Moving: '{}'".format(src))
+        console.debug("      To: '{}'\n".format(dst))
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
@@ -580,13 +581,16 @@ class fileops:
             console.warn('Unable to rename {} (identical file already exists)'.format(dst))
             return
 
+        console.debug('Renaming: %s' % src)
+        console.debug('      To: %s' % dst)
+
         # Only perform destructive changes if we're in live mode.
         if not config.test:
 
             # Rename the file using shutil.move (instead of os.rename). (os.rename won't work if the
             # src/dst are on different partitions, so we use shutil.move instead). There is also
             # some funky (untested) Windows-related stuff that makes .move the obvious choice.
-            shutil.move(src, dst)
+            os.rename(src, dst)
 
     @classmethod
     def contains_ignored_strings(cls, path):

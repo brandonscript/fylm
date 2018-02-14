@@ -137,7 +137,7 @@ class duplicates:
         # Or, if quality is the same and the size is larger, 
         elif (config.duplicate_replacing.replace_smaller is True
             and film.quality == duplicate.quality 
-            and film.size > duplicate.size):
+            and film.size > (duplicate.size or 0)):
             return True
 
         # Otherwise it should not be replaced.
