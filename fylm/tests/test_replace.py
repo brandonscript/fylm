@@ -82,10 +82,10 @@ class TestReplace(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
 
         # Assert that there are 3 duplicates
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 3)
@@ -126,10 +126,10 @@ class TestReplace(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
         
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
 
         # Assert that there are 3 duplicates
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 3)
@@ -169,10 +169,10 @@ class TestReplace(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
         
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), 12393 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), 12393 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
 
         # Assert that there are 2 duplicates
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 2)
@@ -201,8 +201,8 @@ class TestReplace(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        big_size = 14393 * make.mb
-        sm_size = 8213 * make.mb
+        big_size = 14393 * make.mb_t
+        sm_size = 8213 * make.mb_t
         
         make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), big_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), sm_size)
@@ -231,8 +231,8 @@ class TestReplace(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        big_size = 14393 * make.mb
-        sm_size = 8213 * make.mb
+        big_size = 14393 * make.mb_t
+        sm_size = 8213 * make.mb_t
         
         make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), sm_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), big_size)

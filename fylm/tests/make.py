@@ -27,11 +27,16 @@ kb = 1024
 mb = kb * 1024
 gb = mb * 1024
 
+# Special Travis calculations that reduce file sizes by / 1024
+kb_t = kb
+mb_t = mb
+gb_t = gb
+
 # For tests on Travis, miniaturize filesizes.
 if os.environ.get('TRAVIS') is not None:
-    kb = 1
-    mb = kb * 1
-    gb = mb * 1024
+    kb_t = 1
+    mb_t = kb_t * 1024
+    gb_t = mb_t * 1024
 
 class MockFilm:
     def __init__(self, expected_title, expected_id, acceptable_names):
