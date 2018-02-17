@@ -171,7 +171,7 @@ class process:
         film.source_path = film.destination_dir
 
         # Print results of removing unwanted files.
-        if config.delete_unwanted_files and deleted_files_count > 0:
+        if config.remove_unwanted_files and deleted_files_count > 0:
             console.dim('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
 
         # Remove the original source parent folder, if it is safe to do so (and

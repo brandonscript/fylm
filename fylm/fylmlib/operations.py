@@ -332,7 +332,7 @@ class dirops:
         # Only perform destructive actions if in live mode.
         if not config.test:
             # Only delete unwanted files if enabled in config
-            if config.delete_unwanted_files:
+            if config.remove_unwanted_files:
                 # Search for invalid files, enumerate them, and delete them.
                 for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
                     # Increment count if deletion was successful.
