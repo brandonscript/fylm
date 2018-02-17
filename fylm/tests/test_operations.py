@@ -37,7 +37,7 @@ class TestDirOperations(object):
         else:
             ops.dirops.verify_paths_exist(['/bin'])
 
-    @pytest.mark.xfail(raises=OSError)
+    @pytest.mark.xfail(raises=(OSError, IOError))
     def test_verify_paths_exist_err(self):
 
         if sys.platform == "win32":

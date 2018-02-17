@@ -29,7 +29,6 @@ from builtins import *
 import os
 import shutil
 import sys
-import errno
 import unicodedata
 from itertools import islice
 
@@ -390,8 +389,8 @@ class fileops:
             True if the file move was successful, else False.
         """
 
-        # Abort if src does not exist
-        if not os.path.exists(src):
+        # Abort if src does not exist in live mode
+        if not os.path.exists(src) and config.test is False:
             raise OSError('Path does not exist: %s' % src)
 
         # Silently abort if the src and dst are the same.

@@ -17,7 +17,6 @@ from __future__ import unicode_literals, print_function, absolute_import
 from builtins import *
 
 import os
-import sys
 import time
 from multiprocessing import Process, Pipe
 
@@ -26,7 +25,6 @@ import pytest
 from fylmlib.config import config
 import fylmlib.operations as ops
 import conftest
-import fylm
 import make
 
 src = os.path.join(
