@@ -406,6 +406,8 @@ class fileops:
         if src == dst:
             console.debug('Source and destination are the same, nothing to move')
             return
+        # Try to create destination folders if they do not exist.
+        dirops.create_deep(os.path.dirname(dst))
 
         console.debug("\n  Moving: '{}'".format(src))
         console.debug("      To: '{}'\n".format(dst))

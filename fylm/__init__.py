@@ -100,10 +100,6 @@ def main():
                     
                     duplicates.delete_unwanted(film)
 
-                # Attempt to Create the destination folder (fails silently if it
-                # already exists).
-                ops.dirops.create_deep(film.destination_dir)
-
                 # If it is a file and as a valid extension, process it as a file
                 if film.is_file and film.has_valid_ext:
                     process.file(film)
