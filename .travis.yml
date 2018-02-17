@@ -11,4 +11,4 @@ install:
   - pip install -r requirements-test.txt
 
 script:
-  - cd fylm; pytest
+  - cd fylm; pytest -xq --maxfail=1
