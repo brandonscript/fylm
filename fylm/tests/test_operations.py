@@ -422,8 +422,8 @@ class TestFileOperations(object):
 
         conftest.setup()
 
-        fylm.config.min_filesize = 50 # min filesize in MB
-        assert(fylm.config.min_filesize == 50)
+        config.min_filesize = 5 # min filesize in MB
+        assert(config.min_filesize == 5)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -436,10 +436,10 @@ class TestFileOperations(object):
             'Test.File.nfo'
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),   10 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]),  300 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),    1 * make.mb)
         make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  454 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   54 * make.mb)
         make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb)
 
         assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[0])))
@@ -447,6 +447,9 @@ class TestFileOperations(object):
         assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[2])))
         assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[3])))
         assert(not ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[4])))
+
+        config.min_filesize = 0 # min filesize back to 0
+        assert(config.min_filesize == 0)
 
     def test_contains_ignored_strings(self):
 
