@@ -97,6 +97,10 @@ class dirops:
         if config.duplicate_checking.enabled is False:
             return []
 
+        # Fix paths being a str
+        if isinstance(paths, str):
+            paths = { 'default': paths }
+
         # Enumerate the destination directory and check for duplicates.
         console.debug('Checking for existing films...')
 
@@ -169,7 +173,7 @@ class dirops:
 
             # And it must be at least a certain filesize if it is a film,
             # or not 0 bytes if it's a supplementary file.
-            and cls.is_acceptable_size(x))
+            and fileops.is_acceptable_size(x))
 
         # Remove duplicates in case we've 
 
@@ -187,37 +191,6 @@ class dirops:
                     formatter.pretty_size(size(f)), path))
         return sorted(valid_files, key=os.path.getsize, reverse=True)
 
-    @classmethod
-    def is_acceptable_size(cls, file):
-        """Determine if a file is an acceptable size.
-
-        Args:
-            file: (str, utf-8) path to file.
-        Returns:
-            True, if the file is an acceptable size, else False.
-        """
-        s = size(file)
-        is_video = any([file.endswith(ext) for ext in config.video_exts])
-        is_extra = any([file.endswith(ext) for ext in config.extra_exts])
-        return ((s >= config.min_filesize * 1024 * 1024 and is_video) 
-            or (s >= 0 and is_extra))
-
-    @classmethod
-    def sanitize_dir_list(cls, files):
-        """Sanitize a directory listing using unicode normalization and by
-        omitting system files.
-
-        On macOS, unicode normalization must take place for loading files with
-        unicode chars. This method correctly normalizes these strings.
-        It also will remove .DS_Store and Thumbs.db from the list, since we
-        don't ever care to count, or otherwise observe, these system files.
-
-        Args:
-            files: (str, utf-8) list of files in dir.
-        Returns:
-            A sanitized, unicode-ready array of files.
-        """
-        return filter(lambda f: f != '.DS_Store' and f != 'Thumbs.db', [unicodedata.normalize('NFC', file) for file in files])
 
     @classmethod
     def get_invalid_files(cls, path):
@@ -246,6 +219,25 @@ class dirops:
             or not fileops.has_valid_ext(x))
 
     @classmethod
+    def sanitize_dir_list(cls, files):
+        """Sanitize a directory listing using unicode normalization and by
+        omitting system files.
+
+        On macOS, unicode normalization must take place for loading files with
+        unicode chars. This method correctly normalizes these strings.
+        It also will remove .DS_Store and Thumbs.db from the list, since we
+        don't ever care to count, or otherwise observe, these system files.
+
+        Args:
+            files: (str, utf-8) list of files in dir.
+        Returns:
+            A sanitized, unicode-ready array of files.
+        """
+        return list(filter(lambda f: 
+            not f.endswith('.DS_Store') and not f.endswith('Thumbs.db'), 
+            [unicodedata.normalize('NFC', file) for file in files]))
+
+    @classmethod
     def create_deep(cls, path):
         """Deeply create the specified path and any required parent paths.
 
@@ -267,8 +259,7 @@ class dirops:
                     os.makedirs(path)
                 # If the dir creation fails, raise an Exception.
                 except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        console.error('Unable to create {}'.format(path))
+                    console.error('Unable to create {}'.format(path), OSError)
 
     @classmethod
     def find_deep(cls, root_dir, func=None):
@@ -291,7 +282,7 @@ class dirops:
         return list(filter(func, cls.sanitize_dir_list(results)))
 
     @classmethod
-    def delete_dir_and_contents(cls, path, max_size=50000):
+    def delete_dir_and_contents(cls, path, max_size=50*1024):
         """Recursively delete dir path and all its contents, if less than max_size.
 
         Using recursion, delete all files and folders in the specified dir and
@@ -309,10 +300,10 @@ class dirops:
 
             # An emergency safety check in case there's an attempt to delete / (root!) or one of the source_paths.
             if dir == '/' or dir in config.source_dirs:
-                raise Exception("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(path))
+                raise OSError("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(path))
 
             # Otherwise, only perform destructive actions if we're running in live mode.
-            elif not config.test:
+            elif config.test is False:
                 try:
                     shutil.rmtree(path)
 
@@ -320,8 +311,8 @@ class dirops:
                 except OSError as e:
                     if e.args[0] == 16:
                         console.error('Tried to remove %s but file is in use' % path)
-        else:
-            console.debug("Will not delete %s because it is not empty (or test mode)" % path)
+        elif config.test is False:
+            console.warn('Will not delete %s because it is not empty and is larger than %s' % (path, formatter.pretty_size(max_size)))
 
     @classmethod
     def delete_unwanted_files(cls, path, count=0):
@@ -341,7 +332,7 @@ class dirops:
         # Only perform destructive actions if in live mode.
         if not config.test:
             # Only delete unwanted files if enabled in config
-            if config.remove_unwanted_files:
+            if config.delete_unwanted_files:
                 # Search for invalid files, enumerate them, and delete them.
                 for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
                     # Increment count if deletion was successful.
@@ -349,24 +340,6 @@ class dirops:
                     # no need to check here.
                     count += fileops.delete(f)
         return count
-
-    @classmethod
-    def count_files_deep(cls, path):
-        """Deeply count the number of files in the specified dir.
-
-        Recursively count the number of files inside the specified dir.
-
-        Args:
-            path: (str, utf-8) path to be recursively searched
-        Returns:
-            Number of files, recursively, that exist in the specified dir.
-        """
-        if os.path.exists(path) and os.path.isdir(path):
-            # If it's a directory, we count the files inside, deeply
-            return len(cls.find_deep(path))
-        else:
-            # If it's not a dir or doesn't exist, return False
-            return False
 
 class fileops:
     """File-related class method operations.
@@ -383,6 +356,21 @@ class fileops:
             True if the file has a valid extension, else False.
         """
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
+
+    @classmethod
+    def is_acceptable_size(cls, file):
+        """Determine if a file is an acceptable size.
+
+        Args:
+            file: (str, utf-8) path to file.
+        Returns:
+            True, if the file is an acceptable size, else False.
+        """
+        s = size(file)
+        is_video = any([file.endswith(ext) for ext in config.video_exts])
+        is_extra = any([file.endswith(ext) for ext in config.extra_exts])
+        return ((s >= config.min_filesize * 1024 * 1024 and is_video) 
+            or (s >= 0 and is_extra))
 
     @classmethod
     def safe_move(cls, src, dst, expected_size, should_replace=False):
@@ -402,10 +390,15 @@ class fileops:
             True if the file move was successful, else False.
         """
 
+        # Abort if src does not exist
+        if not os.path.exists(src):
+            raise OSError('Path does not exist: %s' % src)
+
         # Silently abort if the src and dst are the same.
         if src == dst:
             console.debug('Source and destination are the same, nothing to move')
-            return
+            return False
+
         # Try to create destination folders if they do not exist.
         dirops.create_deep(os.path.dirname(dst))
 
@@ -417,17 +410,18 @@ class fileops:
         # and print a warning to the console. If overwrite_existing is enabled, 
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
         if os.path.exists(dst):
-            # If the file is not a duplicate (and shouldn't be replacing), then warn 
-            # console. Generally this point of code won't be reached because duplicate
-            # checking *should* have already removed duplicates at the destination.
-            if should_replace is False:
-                if config.overwrite_existing is False:
-                    console.warn('Unable to move (identical file already exists)')
-                    return
-                else:
-                    # File overwriting is enabled and not marked to replace, so warn, 
-                    # and proceed.
-                    console.warn('Overwriting existing file {}')
+            # If should_replace is true, we don't need to check for the overwrite
+            # setting, because we can assume we're going to move things. Generally 
+            # this point of code won't be reached because duplicate checking
+            # *should* have already removed duplicates at the destination.
+            if should_replace is False and config.overwrite_existing is False:
+                # If we're not overwriting, return false
+                console.warn('Unable to move (identical file already exists)')
+                return False
+                
+            # File overwriting is enabled and not marked to replace, so warn, 
+            # and proceed continue.
+            console.warn('Overwriting %s' % os.path.basename(dst))
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
@@ -435,37 +429,43 @@ class fileops:
             dst = os.path.join(os.path.dirname(dst), os.path.basename(dst).replace(r'/', '-'))
 
         # Only perform destructive changes if running in live mode.
-        if not config.test:
-            try:
-                # If safe_copy is enabled, or if partition is not the same, copy instead.
-                if config.safe_copy or not dirops.is_same_partition(src, dst): 
-                    
-                    # Generate a new filename using .partial~ to indicate the file
-                    # has not be completely copied.
-                    partial_dst = '{}.partial~'.format(dst)
+        if config.test is True:
+            return True
 
-                    # Copy the file using progress bar
-                    cls.copy_with_progress(src, partial_dst)
-
-                    # Verify that the file is the correct size.
-                    if size(partial_dst) == expected_size:
-                        os.rename(partial_dst, partial_dst.rsplit('.partial~', 1)[0])
-                        os.remove(src)
-
-                    # If not, then we print an error.
-                    else:
-                        console.warn("File sizes don't match after copying {} to {}".format(src, dst))
+        try:
+            # If safe_copy is enabled, or if partition is not the same, copy instead.
+            if config.safe_copy or not dirops.is_same_partition(src, dst): 
                 
-                # Otherwise, move the file instead.
-                else: 
-                    shutil.move(src, dst)
+                # Generate a new filename using .partial~ to indicate the file
+                # has not be completely copied.
+                partial_dst = '%s.partial~' % dst
 
-                return True
-            except IOError:
+                # Copy the file using progress bar
+                cls.copy_with_progress(src, partial_dst)
 
-                # Catch exception and soft warn in the console (don't raise Exception).
-                console.warn('Failed to move {} to {}'.format(src, dst))
-                return False
+                # Verify that the file is within one byte of the original.
+                dst_size = size(partial_dst)
+                if abs(dst_size - expected_size) <= 1:
+                    os.rename(partial_dst, partial_dst.rsplit('.partial~', 1)[0])
+                    os.remove(src)
+
+                # If not, then we print an error.
+                else:
+                    console.warn("File size mismatch after copying '%s' (%s should be %s)" % (src, dst_size, expected_size))
+            
+            # Otherwise, move the file instead.
+            else: 
+                shutil.move(src, dst)
+
+            return True
+
+        except (IOError, OSError) as e:
+
+            # Catch exception and soft warn in the console (don't raise Exception).
+            console.warn('Failed to move {} to {}'.format(src, dst))
+            console.debug(e)
+            print(e)
+            return False
 
     @classmethod
     def copy_with_progress(cls, src, dst, follow_symlinks=True):
@@ -546,7 +546,7 @@ class fileops:
             callback(copied, total=total)
 
     @classmethod
-    def rename(cls, src, new_filename__ext, size=0):
+    def rename(cls, src, new_filename__ext):
         """Renames a file using shutil.move.
 
         Renames a file using shutil.move, which under the hood, intelligently determines
@@ -567,9 +567,6 @@ class fileops:
 
         # Generate a destination string based on src's path and the new filename
         dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename__ext))
-
-        # DEPRECATED
-        # console.rename(os.path.basename(dst).replace(r':', '/'), formatter.pretty_size(size))
 
         # Silently abort if the src==dst (we don't need to waste cycles renaming files
         # that are already correctly named). This also allows us to check for identically
@@ -622,28 +619,24 @@ class fileops:
         """
         console.debug("Deleting file {}".format(file))
 
-        # Only perform destructive changes if running in live mode.
-        if not config.test:
-            try:
-                # Try to remove the file
-                os.remove(file)
-                # If successful, return 1, for a successful op.
-                return 1
-            except Exception:
-                # Handle any exceptions gracefully and warn the console.
-                console.warn('Unable to remove {}'.format(file))
-                # Return 0 because we don't want a success counter to increment.
-                return 0
-
         # If we're running in test mode, return a mock success (we assume the deletion
         # would have been successful had it actually run).
-        else: return 1
+        if config.test:
+            return 1
+        # Only perform destructive changes if running in live mode.
+        try:
+            # Try to remove the file
+            os.remove(file)
+            # If successful, return 1, for a successful op.
+            return 1
+        except Exception:
+            # Handle any exceptions gracefully and warn the console.
+            console.warn('Unable to remove {}'.format(file))
+            # Return 0 because we don't want a success counter to increment.
+            return 0
 
-def size(path, mock_bytes=None):
+def size(path):
     """Determine the size of a file or dir.
-
-    Determine the size of a file or dir at the specified path. Also supports passing
-    a 'mock_bytes' artifact for testing.
 
     Args:
         path: (str, utf-8) file or folder to determine size.
@@ -651,13 +644,8 @@ def size(path, mock_bytes=None):
         Size of file or folder, in bytes (B), or None if path does not exist.
     """
 
-    # If the mock_bytes param is set, return it.
-    # This is used only for testing.
-    if mock_bytes:
-        return mock_bytes
-
     # First check that the path actually exists before we try to determine its size.
-    elif os.path.exists(path):
+    if os.path.exists(path):
 
         # If it's a directory, we need to call the _size_dir func to recursively get
         # the size of each file inside.
@@ -672,11 +660,8 @@ def size(path, mock_bytes=None):
     else:
         return None
 
-def size_of_video(path, mock_bytes=None):
+def size_of_largest_video(path):
     """Determine the size of a file or largest video file in dir.
-
-    Determine the size of a file or largest video file in dir at the specified path. 
-    Also supports passing a 'mock_bytes' artifact for testing.
 
     Args:
         path: (str, utf-8) file or folder to determine size of video file.
@@ -684,13 +669,8 @@ def size_of_video(path, mock_bytes=None):
         Size of largest video file, in bytes (B), or None if path does not exist.
     """
 
-    # If the mock_bytes param is set, return it.
-    # This is used only for testing.
-    if mock_bytes:
-        return mock_bytes
-
     # First check that the path actually exists before we try to determine its size.
-    elif os.path.exists(path):
+    if os.path.exists(path):
 
         # If it's a directory, we need to find the largest video file, recursively.
         if os.path.isdir(path):

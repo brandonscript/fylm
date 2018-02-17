@@ -71,10 +71,10 @@ class console:
         """
         # Print original filename and size.
         p = pyfancy().bold('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
-        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
+        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_largest_video)), fg=ansi.gray))
         p.output()
 
-        log.info('{} ({})'.format(film.source_path, formatter.pretty_size(film.size_of_video)))
+        log.info('{} ({})'.format(film.source_path, formatter.pretty_size(film.size_of_largest_video)))
         if film.title is not None:
             console.debug('----------------------------')
             console.debug('Init film object:\n')
@@ -83,7 +83,7 @@ class console:
             console.debug('edition\t{}'.format(film.edition))
             console.debug('media\t{}'.format(film.media))
             console.debug('quality\t{}'.format(film.quality))
-            console.debug('size\t{}'.format(formatter.pretty_size(film.size_of_video)))
+            console.debug('size\t{}'.format(formatter.pretty_size(film.size_of_largest_video)))
 
 
     @classmethod
@@ -94,7 +94,7 @@ class console:
             film: (Film) Film that was skipped.
         """
         p = pyfancy().bold().red('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
-        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_video)), fg=ansi.gray))
+        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_largest_video)), fg=ansi.gray))
         p.output()
         pyfancy().red().dim('{}{}'.format(INDENT_PREFIX, film.ignore_reason)).output()
         log.detail("Skipping (%s)" % film.ignore_reason)

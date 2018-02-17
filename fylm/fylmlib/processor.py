@@ -49,7 +49,7 @@ class process:
         """
 
         # Rename the source file to its new filename
-        ops.fileops.rename(film.source_path, film.new_filename__ext(), film.size)
+        ops.fileops.rename(film.source_path, film.new_filename__ext())
 
         # Update the source path of the film if we're running in live mode
         # to its new name, otherwise the move will fail (because it will 
@@ -132,7 +132,7 @@ class process:
                 dst = '{}.{}{}'.format(new_filename, queued_files.count(dst) - 1, ext)
 
             # Rename the source file to its new filename
-            ops.fileops.rename(src, os.path.basename(dst), ops.size(file))
+            ops.fileops.rename(src, os.path.basename(dst))
 
 
             # Update source with the newly renamed path, derived from destination name, in 
@@ -171,7 +171,7 @@ class process:
         film.source_path = film.destination_dir
 
         # Print results of removing unwanted files.
-        if config.remove_unwanted_files and deleted_files_count > 0:
+        if config.delete_unwanted_files and deleted_files_count > 0:
             console.dim('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
 
         # Remove the original source parent folder, if it is safe to do so (and
@@ -184,7 +184,7 @@ class process:
 
             # Max size a dir can be to qualify for removal
             max_size = 1000
-            if (ops.size(film.original_path) < max_size and ops.dirops.count_files_deep(film.original_path) == 0) or config.test:
+            if (ops.size(film.original_path) < max_size and len(ops.dirops.find_deep(film.original_path)) == 0) or config.test:
 
                 # Check that the file is smaller than max_size, and deep count the number
                 # of files inside. Automatically ignores system files like .DS_Store.
