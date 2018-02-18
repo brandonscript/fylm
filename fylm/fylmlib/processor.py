@@ -62,7 +62,7 @@ class process:
         dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext()))
 
         if film.source_path != dst:
-            console.info(cls._console_move_string(film.source_path, dst))
+            console.move_or_copy(film.source_path, dst)
         else:
             console.dim('Already moved and renamed')
 

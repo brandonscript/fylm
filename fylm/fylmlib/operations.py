@@ -215,7 +215,10 @@ class dirops:
             fileops.contains_ignored_strings(x)
 
             # Or it may not have a valid file extension
-            or not fileops.has_valid_ext(x))
+            or not fileops.has_valid_ext(x)
+
+            # Or if it does, it might not be large enough
+            or not fileops.is_acceptable_size(x))
 
     @classmethod
     def sanitize_dir_list(cls, files):

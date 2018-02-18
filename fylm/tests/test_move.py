@@ -57,7 +57,7 @@ class TestMove(object):
         config.test = False
         assert(config.test is False)
 
-        move = ops.fileops.safe_move(src, dst, expected_size=expected_size)
+        move = ops.fileops.safe_move(src, dst)
 
         assert(move is True)
         assert(os.path.exists(dst))
@@ -75,7 +75,7 @@ class TestMove(object):
         config.test = False
         assert(config.test is False)
 
-        move = ops.fileops.safe_move(src, dst, expected_size=expected_size)
+        move = ops.fileops.safe_move(src, dst)
 
         assert(move is False)
         assert(os.path.exists(src))
@@ -96,7 +96,7 @@ class TestMove(object):
         config.overwrite_existing = False
         assert(config.overwrite_existing is False)
 
-        move = ops.fileops.safe_move(src, dst, expected_size=expected_size, should_replace=False)
+        move = ops.fileops.safe_move(src, dst, should_replace=False)
 
         assert(move is False)
         assert(os.path.exists(src))
@@ -117,7 +117,7 @@ class TestMove(object):
         config.overwrite_existing = True
         assert(config.overwrite_existing is True)
 
-        move = ops.fileops.safe_move(src, dst, expected_size=expected_size, should_replace=False)
+        move = ops.fileops.safe_move(src, dst, should_replace=False)
 
         assert(move is True)
         assert(not os.path.exists(src))
@@ -138,7 +138,7 @@ class TestMove(object):
         config.overwrite_existing = False
         assert(config.overwrite_existing is False)
 
-        move = ops.fileops.safe_move(src, dst, expected_size=expected_size, should_replace=True)
+        move = ops.fileops.safe_move(src, dst, should_replace=True)
 
         assert(move is True)
         assert(not os.path.exists(src))
@@ -158,7 +158,7 @@ class TestMove(object):
         config.test = True
         assert(config.test is True)
 
-        move = ops.fileops.safe_move(src, dst, expected_size=expected_size)
+        move = ops.fileops.safe_move(src, dst)
 
         assert(move is True)
         assert(os.path.exists(src))
@@ -176,7 +176,7 @@ class TestMove(object):
         config.test = False
         assert(config.test is False)
 
-        move = ops.fileops.safe_move(src, src, expected_size=expected_size)
+        move = ops.fileops.safe_move(src, src)
 
         assert(move is False)
         assert(os.path.exists(src))

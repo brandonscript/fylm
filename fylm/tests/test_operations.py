@@ -360,31 +360,46 @@ class TestDirOperations(object):
             'Yates/Gilbert/Holtzmann/Tolan/Patty.mkv'
         ]
 
+        bad_files_mkv = [
+            'Yates/Oh.mkv',
+            'Yates/Gilbert/Danny.mkv',
+            'Yates/Gilbert/Holtzmann/Boy.mkv',
+            'Yates/Gilbert/Holtzmann/Tolan/The.mkv'
+        ]
+
+        config.min_filesize = 5
+        assert(config.min_filesize == 5)
+
         # Create files. Ensure that for this to pass, the total filesize of the test dir
         # does not exceed this method's max_size default (50KB).
-        for f in files_mkv:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7418 * make.mb_t)
         for f in files_nfo:
              make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb)
+        for f in files_mkv:
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7418 * make.mb_t)
+        for f in bad_files_mkv:
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7 * make.mb_t)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(before_contents) == 8)
+        assert(len(before_contents) == 12)
 
-        fylm.config.test = True
-        assert(fylm.config.test is True)
+        config.test = True
+        assert(config.test is True)
 
         ops.dirops.delete_unwanted_files(conftest.films_src_path)
 
         after_contents_t = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(after_contents_t) == 8)
+        assert(len(after_contents_t) == 12)
 
-        fylm.config.test = False
-        assert(fylm.config.test is False)
+        config.test = False
+        assert(config.test is False)
 
         ops.dirops.delete_unwanted_files(conftest.films_src_path)
 
         after_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(after_contents) == 4)
+
+        config.min_filesize = 0
+        assert(config.min_filesize == 0)
 
 # @pytest.mark.skip()
 class TestFileOperations(object):
