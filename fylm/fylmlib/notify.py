@@ -84,7 +84,10 @@ def pushover(film):
 
     # Check if Pushover notifications are enabled, and that we're not running in 
     # quiet or rename modes.
-    if config.pushover.enabled is True and config.quiet is False and config.rename_only is False:
+    if (config.pushover.enabled is True 
+        and config.quiet is False 
+        and config.rename_only is False
+        and config.test is False):
 
         # Application API token/key, which can be found by selecting your app
         # from https://pushover.net/apps and copying the key.
