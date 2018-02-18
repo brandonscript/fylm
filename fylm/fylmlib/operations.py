@@ -233,9 +233,11 @@ class dirops:
             A sanitized, unicode-ready array of files.
         """
         return list(filter(lambda f: 
-            not f.endswith('.DS_Store') and not f.endswith('Thumbs.db'), 
+            not any([f.lower() in map(lambda x: x.lower(), config.ignore_strings)])
+            and not f.endswith('.DS_Store')
+            and not f.endswith('Thumbs.db'),
             [unicodedata.normalize('NFC', file) for file in files]))
-
+        
     @classmethod
     def create_deep(cls, path):
         """Deeply create the specified path and any required parent paths.
@@ -450,7 +452,7 @@ class fileops:
 
                 # If not, then we print an error.
                 else:
-                    console.warn("File size mismatch after copying '%s' (%s should be %s)" % (src, dst_size, expected_size))
+                    console.warn("File size mismatch (%s should be %s):\n   '%s'" % (dst_size, expected_size, dst))
             
             # Otherwise, move the file instead.
             else: 
