@@ -70,7 +70,7 @@ class process:
         # If this film is a duplicate and is set to replace an existing film, suppress
         # the overwrite warning.
         should_replace = film.is_duplicate and duplicates.should_replace(film, dst)
-        if ops.fileops.safe_move(film.source_path, dst, expected_size=film.size, should_replace=should_replace):
+        if ops.fileops.safe_move(film.source_path, dst, should_replace=should_replace):
 
             # If move was successful, update the counter.
             counter.add(1)
@@ -140,7 +140,7 @@ class process:
             src = os.path.normpath(os.path.join(os.path.dirname(src), os.path.basename(dst)))
 
             if src != dst:
-                console.info(cls._console_move_string(src, dst))
+                console.move_or_copy(src, dst)
             else:
                 console.dim('Already moved and renamed')
 
@@ -148,7 +148,7 @@ class process:
             # If this film is a duplicate and is set to replace an existing film, suppress
             # the overwrite warning.
             should_replace = film.is_duplicate and duplicates.should_replace(film, dst)
-            if ops.fileops.safe_move(src, dst, expected_size=film.size, should_replace=should_replace):
+            if ops.fileops.safe_move(src, dst, should_replace=should_replace):
 
                 # If move was successful, update the counter.
                 counter.add(1)
@@ -196,11 +196,5 @@ class process:
 
                 # If the parent folder fails the deletion qualification, print to console.
                 console.warn('Will not remove parent folder because it is not empty')
-
-    @classmethod
-    def _console_move_string(cls, src, dst):
-        return '{} to {}'.format(
-            'Copying' if (config.safe_copy or not ops.dirops.is_same_partition(src, dst)) else 'Moving', 
-            os.path.dirname(dst))
 
 

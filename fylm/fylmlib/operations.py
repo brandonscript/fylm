@@ -374,7 +374,7 @@ class fileops:
             or (s >= 0 and is_extra))
 
     @classmethod
-    def safe_move(cls, src, dst, expected_size, should_replace=False):
+    def safe_move(cls, src, dst, should_replace=False):
         """Performs a 'safe' move operation.
 
         Performs some additional checks before moving files. Optionally supports
@@ -436,6 +436,9 @@ class fileops:
         try:
             # If safe_copy is enabled, or if partition is not the same, copy instead.
             if config.safe_copy or not dirops.is_same_partition(src, dst): 
+
+                # Store the size of the source file to verify the copy was successful.
+                expected_size = size(src)
                 
                 # Generate a new filename using .partial~ to indicate the file
                 # has not be completely copied.
@@ -450,9 +453,10 @@ class fileops:
                     os.rename(partial_dst, partial_dst.rsplit('.partial~', 1)[0])
                     os.remove(src)
 
-                # If not, then we print an error.
+                # If not, then we print an error and return False.
                 else:
-                    console.warn("File size mismatch (%s should be %s):\n   '%s'" % (dst_size, expected_size, dst))
+                    console.warn("Size mismatch: file is {:,} bytes, expected {:,} bytes".format(dst_size, expected_size))
+                    return False
             
             # Otherwise, move the file instead.
             else: 

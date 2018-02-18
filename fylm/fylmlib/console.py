@@ -142,6 +142,15 @@ class console:
             pyfancy().bold().red('{}\nOVERWRITE EXISTING ENABLED\nExisting files will be overwritten\n{}\n'.format(DIVIDER, DIVIDER)).output()
 
     @classmethod
+    def move_or_copy(cls, src, dst):
+        import os
+        from fylmlib.operations import dirops
+        cls.info("%s %s to %s" % (
+            "Copying" if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving', 
+            os.path.basename(src),
+            os.path.dirname(dst)))
+
+    @classmethod
     def copy_progress(cls, copied, total):
         """Print progress bar to terminal.
         """

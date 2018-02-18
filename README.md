@@ -70,7 +70,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --force-lookup, -f
     --no-duplicates, -d
     --overwrite, -o
-    --source
+    --source, -s
     --no-strict
     --no-console
 	
