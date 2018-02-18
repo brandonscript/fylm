@@ -169,6 +169,7 @@ class _Config:
         # --source
         # This option overrides the source dirs configured in config.yaml.
         parser.add_argument(
+            '-s',
             '--source',
             action="store",
             default=None,

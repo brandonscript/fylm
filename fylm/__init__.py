@@ -117,8 +117,8 @@ def main():
     
     except (KeyboardInterrupt, SystemExit):
         console.exit_early()
-    except IOError as e:
-        console.red('IOError: %s' % e)
+    except (IOError, OSError) as e:
+        console.red(e)
         import traceback
         traceback.print_exc()
     finally:
