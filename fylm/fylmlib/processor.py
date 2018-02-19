@@ -100,6 +100,9 @@ class process:
         copied_files = 0
         expected_files = len(film.valid_files)
 
+        # Only print about cleaned dirs once.
+        already_clean = False
+
         # Enumerate valid files.
         for file in film.valid_files:
 
@@ -141,8 +144,9 @@ class process:
 
             if src != dst:
                 console.move_or_copy(src, dst)
-            else:
+            elif already_clean is False:
                 console.dim('Already moved and renamed')
+                already_clean = True
 
             # Move the file. (Only executes in live mode).
             # If this film is a duplicate and is set to replace an existing film, suppress
