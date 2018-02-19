@@ -171,6 +171,4 @@ setup()
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):
-    # setup()
-    pass
-    # cleanup_all()
+    cleanup_all()
