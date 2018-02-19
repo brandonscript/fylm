@@ -56,7 +56,7 @@ clean_files = {
 }
 
 # @pytest.mark.skip()
-class TestReplace(object):
+class TestDuplicates(object):
 
     # @pytest.mark.skip()
     def test_replace_all_with_2160p(self):
@@ -246,5 +246,37 @@ class TestReplace(object):
         assert(    os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
+        # Reset config
+        fylm.config.reload()
+
+    def test_multiple_editions(self):
+
+        new = 'You Only Live Twice (1967) 1080p/You Only Live Twice (1967) 1080p.mkv'
+        existing = 'You Only Live Twice [Extended] (1967) 1080p/You Only Live Twice [Extended] (1967) 1080p.mkv'
+
+        # Set up config
+        fylm.config.test = False
+        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicate_replacing.enabled = True
+        fylm.config.duplicate_replacing.replace_smaller = True
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+
+        new_size = 9393 * make.mb_t
+        existing_size = 8213 * make.mb_t
+        
+        make.make_mock_file(os.path.join(conftest.films_src_path, new), new_size)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], existing), existing_size)
+
+        # Assert that there is 1 duplicate
+        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        # Execute
+        fylm.main()
+        
+        # Assert that both editions exist in the end, with a console warning
+        assert(not os.path.exists(os.path.join(conftest.films_src_path, new)))
+        assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], new)))
+        assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], existing)))
         # Reset config
         fylm.config.reload()

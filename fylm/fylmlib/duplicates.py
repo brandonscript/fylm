@@ -133,6 +133,10 @@ class duplicates:
         if film.quality in config.duplicate_replacing.replace_quality[duplicate.quality or 'SD']:
             return True
 
+        # If the editions do not match, we want to warn, but not replace.
+        if film.edition != duplicate.edition:
+            return False
+
         # Or, if quality is the same and the size is larger, 
         elif (config.duplicate_replacing.replace_smaller is True
             and film.quality == duplicate.quality 
@@ -161,6 +165,10 @@ class duplicates:
         from fylmlib.film import Film
         if not isinstance(duplicate, Film):
             duplicate = Film(duplicate)
+
+        # If the editions are not the same, we want to keep both, but warn.
+        if film.edition != duplicate.edition:
+            return True
 
         # If new and existing films have a different quality, and the new film is larger 
         # (better), if the new film doesn't qualify as a replacement, we can assume that 

@@ -100,5 +100,4 @@ def is_duplicate(film, existing_film):
     # but works well with identifying copies with a different resolution or quality.
 
     return (title == existing_title
-        and film.year == existing_film.year
-        and film.edition == existing_film.edition)
+        and film.year == existing_film.year)

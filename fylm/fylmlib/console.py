@@ -234,7 +234,7 @@ class console:
         from fylmlib.duplicates import duplicates
 
         if len(film.duplicates) > 0:
-            console.info('{} duplicate{} found:'.format(
+            console.blue('{} duplicate{} found:'.format(
                 len(film.duplicates),
                 '' if len(film.duplicates) == 1 else 's'))
             for d in film.duplicates:
@@ -244,15 +244,15 @@ class console:
 
                 # If the film will be replaced, print info:
                 if duplicates.should_replace(film, d):
-                    console.replacing(
+                    console.duplicate(
                         "  Replacing '{}'".format(d.new_filename__ext()),
                         " ({})".format(pretty_size),
                         " [{}]".format(pretty_size_diff))
                 elif duplicates.should_keep_both(film, d):
-                    console.info("  Keeping '{}' ({}) [{}]".format(
-                        d.new_filename__ext(), 
-                        pretty_size,
-                        pretty_size_diff))
+                    console.duplicate(
+                        "  Keeping '{}'".format(d.new_filename__ext()),
+                        " ({})".format(pretty_size),
+                        " [{}]".format(pretty_size_diff))
                 else:
                     console.warn("  Ignoring because '{}' ({}) is {}".format(
                         d.new_filename__ext(), 
@@ -260,7 +260,7 @@ class console:
                         pretty_size_diff))
 
     @classmethod
-    def replacing(cls, s1, s2, s3):
+    def duplicate(cls, s1, s2, s3):
         """Print and log replacement text, note, and dim.
 
         Args:
@@ -311,6 +311,16 @@ class console:
             s: (str, utf-8) String to print/log.
         """
         pyfancy().red('{}'.format(s)).output()
+        log.detail(s)
+
+    @classmethod
+    def blue(cls, s):
+        """Print and log text in red. Prints red.
+
+        Args:
+            s: (str, utf-8) String to print/log.
+        """
+        pyfancy().raw(color('%s%s' % (INDENT_PREFIX, s), fg=ansi.blue)).output()
         log.detail(s)
 
     @classmethod
