@@ -96,11 +96,7 @@ class parser:
         # Add back in . to titles or strings we know need to to keep periods.
         # Looking at you, S.W.A.T and After.Life.
         for keep_period_str in config.keep_period:
-            title = title.lower().replace(keep_period_str.lower().replace('.', ' '), keep_period_str)
-
-        # Set 'always lowercase' words to lowercase and 'always uppercase' words
-        # to uppercase.
-        title = formatter.correct_title_case(title, config.always_lowercase, config.always_uppercase)
+            title = re.sub(re.compile(keep_period_str, re.I), keep_period_str, title)
 
         # Remove extra whitespace from the edges of the title and remove repeating
         # whitespace.

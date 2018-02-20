@@ -188,36 +188,6 @@ pushover:
   # Pushover user key, obtained from https://pushover.net
   user_key: 'YOUR_USER_KEY_HERE'
 
-# An array of words (typically articles) to force lowercase if they're in the middle of a title.
-always_lowercase: 
-  - a
-  - an
-  - of
-  - the
-  - is
-  - 'on'
-  - at
-  - in
-  - and
-  - to
-
-# An array of words (typically roman numerals) to force uppercase if they're in the middle of a title.
-always_uppercase: 
-  - I
-  - II
-  - III
-  - IV
-  - V
-  - VI
-  - VII
-  - VIII
-  - IX
-  - X
-  - XI
-  - XII
-  - XIII
-  - TRON
-
 # An array of tuples containing period-separated words or regular expressions that match special editions.
 # The second element in the tuple is the re-formatted/prettified 'edition' string.
 # Order matters here: the first full match will be used, e.g. "extended.edition" will match before "extended".

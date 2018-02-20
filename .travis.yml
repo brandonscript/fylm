@@ -11,4 +11,9 @@ install:
   - pip install -r requirements-test.txt
 
 script:
-  - cd fylm; pytest -xq --maxfail=1
+  - cd fylm; pytest -xq
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change

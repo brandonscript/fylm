@@ -66,6 +66,7 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = False
+        fylm.config.debug = True
         assert(fylm.config.test is False)
         assert(fylm.config.duplicate_checking.enabled is True)
         assert(fylm.config.duplicate_replacing.enabled is True)
