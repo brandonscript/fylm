@@ -51,11 +51,6 @@ if os.environ.get('TRAVIS') is not None:
     else:
         test_files = 'files_short.json'  
 
-# TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
-# if it is available.
-if os.environ.get('TMDB_KEY') is not None: 
-    config['tmdb']['key'] = os.environ.get('TMDB_KEY')
-
 def full_path(path):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), path).strip()
 
@@ -109,6 +104,14 @@ def setup():
     # Set dirs
     config.source_dirs = [films_src_path]
     config.destination_dirs = films_dst_paths
+
+    # TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
+    # if it is available.
+    if os.environ.get('TMDB_KEY') is not None: 
+        config['tmdb']['key'] = os.environ.get('TMDB_KEY')
+
+    if os.environ.get('DEBUG') is not None: 
+        config.debug = True if os.environ.get('DEBUG') == 'True' else False
 
     fylm.config = config
 
