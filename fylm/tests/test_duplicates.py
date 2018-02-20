@@ -66,6 +66,10 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = False
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is False)
         
         # Do not replace 2160p films with any other quality
         fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
@@ -113,6 +117,10 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = False
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is False)
         
         # Do not replace 2160p films with any other quality
         fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
@@ -159,6 +167,10 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = False
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is False)
         
         # Do not replace 2160p films with any other quality
         fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
@@ -206,6 +218,10 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is True)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -239,6 +255,10 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is True)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -274,6 +294,10 @@ class TestDuplicates(object):
         fylm.config.duplicate_checking.enabled = True
         fylm.config.duplicate_replacing.enabled = True
         fylm.config.duplicate_replacing.replace_smaller = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is True)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
