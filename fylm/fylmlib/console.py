@@ -55,13 +55,11 @@ class console:
         """Print and log the initial welcome header.
         """
         log.info('{}{}{}'.format(('-'*40), NOW, ('-'*40)))
-        log.info('Scanning {}'.format(', '.join(config.source_dirs)))
-        print("Fylm is scanning " + ', '.join(config.source_dirs))
-        if config.duplicate_checking.enabled is True:
-            print("Loading existing films, please wait...\n")
         console._notify_test()
         console._notify_force_lookup()
         console._notify_overwrite_existing()
+        log.info('Scanning {}'.format(', '.join(config.source_dirs)))
+        print("Fylm is scanning " + ', '.join(config.source_dirs))
 
     @classmethod
     def film_loaded(cls, film):
