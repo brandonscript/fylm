@@ -31,6 +31,7 @@ import shutil
 import sys
 import unicodedata
 from itertools import islice
+from multiprocessing import Pool
 
 from fylmlib.config import config
 from fylmlib.console import console
@@ -117,10 +118,12 @@ class dirops:
         # over paths for 720p, 1080p, 4K, and SD qualities.
         for path in list(set(os.path.normpath(path) for _, path in paths.items())):
             if os.path.normpath(path) not in config.source_dirs:
-                cls._existing_films += map(
-                    Film,
-                    [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
-                )
+                with Pool(processes=20) as pool:
+                    cls._existing_films += pool.map(
+                        Film,
+                        [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
+                    )
+
         console.debug('Loaded %s existing films' % len(cls._existing_films))
 
         # Uncomment for verbose debugging. This can get quite long.
@@ -246,8 +249,7 @@ class dirops:
         """
         return list(filter(lambda f: 
             not any([f.lower() in map(lambda x: x.lower(), config.ignore_strings)])
-            and not f.endswith('.DS_Store')
-            and not f.endswith('Thumbs.db'),
+            and not f.endswith('.DS_Store') and not f.endswith('Thumbs.db'),
             [unicodedata.normalize('NFC', file) for file in files]))
         
     @classmethod
