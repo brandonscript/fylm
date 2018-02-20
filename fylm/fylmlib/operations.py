@@ -40,6 +40,9 @@ import fylmlib.formatter as formatter
 class dirops:
     """Directory-related class method operations.
     """
+
+    _existing_films = None
+
     @classmethod
     def verify_paths_exist(cls, paths):
         """Verifies that the specified paths (array) exist.
@@ -88,6 +91,11 @@ class dirops:
             A list of existing Film objects.
         """
 
+        # If existing films has already been loaded and the list has
+        # more than one film:
+        if cls._existing_films is not None and len(cls._existing_films) > 0:
+            return cls._existing_films
+
         # Import Film here to avoid circular import conflicts.
         from fylmlib.film import Film
 
@@ -101,25 +109,26 @@ class dirops:
             paths = { 'default': paths }
 
         # Enumerate the destination directory and check for duplicates.
-        console.debug('Checking for existing films...')
+        console.debug('Loading existing films from disk...')
 
-        existing_films = []
+        cls._existing_films = []
 
         # Map a list of valid and sanitized files to Film objects by iterating
         # over paths for 720p, 1080p, 4K, and SD qualities.
         for path in list(set(os.path.normpath(path) for _, path in paths.items())):
             if os.path.normpath(path) not in config.source_dirs:
-                existing_films += map(
+                cls._existing_films += map(
                     Film,
                     [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
                 )
-        console.debug('Found {} duplicates'.format(len(existing_films)))
+        console.debug('Loaded %s existing films' % len(cls._existing_films))
 
-        for f in sorted(existing_films, key=lambda s: s.title.lower()):
-            console.debug(' - %s' % f.source_path)
+        # Uncomment for verbose debugging. This can get quite long.
+        # for f in sorted(_existing_films, key=lambda s: s.title.lower()):
+        #     console.debug(' - %s' % f.source_path)
         
         # Sort the existing films alphabetically, case-insensitive, and return.
-        return sorted(existing_films, key=lambda s: s.title.lower())
+        return sorted(cls._existing_films, key=lambda s: s.title.lower())
 
     @classmethod
     def get_new_films(cls, path):

@@ -55,6 +55,9 @@ def main():
         # Verify that destination paths exist.
         ops.dirops.verify_paths_exist(list(config.destination_dirs.values()))
 
+        # Load duplicates before film processing begins.
+        ops.dirops.get_existing_films(config.destination_dirs)
+
         # TODO: add interactive option to skip, confirm, and correct matches
         # TODO: add recursive searching inside poorly named folders
 

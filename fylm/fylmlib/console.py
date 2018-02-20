@@ -57,7 +57,8 @@ class console:
         log.info('{}{}{}'.format(('-'*40), NOW, ('-'*40)))
         log.info('Scanning {}'.format(', '.join(config.source_dirs)))
         print("Fylm is scanning " + ', '.join(config.source_dirs))
-        print("Please wait...\n")
+        if config.duplicate_checking.enabled is True:
+            print("Loading existing films, please wait...\n")
         console._notify_test()
         console._notify_force_lookup()
         console._notify_overwrite_existing()

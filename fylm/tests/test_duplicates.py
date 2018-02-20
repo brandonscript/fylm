@@ -87,6 +87,9 @@ class TestDuplicates(object):
         make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
 
+        # Reset existing films
+        ops.dirops._existing_films = None
+
         # Assert that there are 3 duplicates
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 3)
 
@@ -131,6 +134,9 @@ class TestDuplicates(object):
         make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
 
+        # Reset existing films
+        ops.dirops._existing_films = None
+
         # Assert that there are 3 duplicates
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 3)
         # Execute
@@ -174,6 +180,9 @@ class TestDuplicates(object):
         make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
 
+        # Reset existing films
+        ops.dirops._existing_films = None
+
         # Assert that there are 2 duplicates
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 2)
         # Execute
@@ -207,6 +216,9 @@ class TestDuplicates(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), big_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), sm_size)
 
+        # Reset existing films
+        ops.dirops._existing_films = None
+
         # Assert that there is 1 duplicate
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
         # Execute
@@ -236,6 +248,9 @@ class TestDuplicates(object):
         
         make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), sm_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), big_size)
+
+        # Reset existing films
+        ops.dirops._existing_films = None
 
         # Assert that there is 1 duplicate
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
@@ -268,6 +283,9 @@ class TestDuplicates(object):
         
         make.make_mock_file(os.path.join(conftest.films_src_path, new), new_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], existing), existing_size)
+
+        # Reset existing films
+        ops.dirops._existing_films = None
 
         # Assert that there is 1 duplicate
         assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)

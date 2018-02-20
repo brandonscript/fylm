@@ -25,23 +25,6 @@ from fylmlib.console import console
 import fylmlib.compare as compare
 import fylmlib.operations as ops
 
-class _ExistingFilms:
-    """Main class for handling app options.
-    """
-    def __init__(self):
-        """Load existing films from the destination dir.
-        """
-        if self.existing_films is None:
-            self._existing_films = ops.dirops.get_existing_films(config.destination_dirs)
-
-    @property
-    def existing_films(self):
-        """Run-once getter for existing_films to ensure it only loads once.
-        """
-        if not hasattr(self, '_existing_films'):
-            self._existing_films = ops.dirops.get_existing_films(config.destination_dirs)
-        return self._existing_films
-
 class duplicates:
     """Class for handling duplicate checking and governance.
 
@@ -61,7 +44,7 @@ class duplicates:
         Args:
             film (Film): Film object to check for duplicates.
         """
-        existing_films = _ExistingFilms().existing_films
+        existing_films = ops.dirops.get_existing_films(config.destination_dirs)
 
         # If check for duplicates is disabled, return an empty array (because we don't care if they exist).
         # DANGER ZONE: With check_for_duplicates disabled and overwrite_existing enabled, any files
@@ -70,7 +53,7 @@ class duplicates:
             console.debug('Duplicate checking is disabled, skipping.')
             return []
 
-        console.debug('Searching for duplicates of "{}" ({})'.format(film.title, film.year))
+        console.debug('Checking list of duplicates for "{}" ({})'.format(film.title, film.year))
         # Filter the existing_films cache array to titles beginning with the first letter of the
         # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.

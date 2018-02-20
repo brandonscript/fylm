@@ -51,7 +51,6 @@ class TestDirOperations(object):
 
     def test_get_existing_films(self):
 
-
         fylm.config.duplicate_checking.enabled = True
         assert(fylm.config.duplicate_checking.enabled is True)
 
@@ -70,7 +69,12 @@ class TestDirOperations(object):
         make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], files['720p']), 6590 * make.mb_t)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], files['SD']), 723 * make.mb_t)
 
+        # Reset existing films
+        ops.dirops._existing_films = None
+
+        assert(ops.dirops._existing_films is None)
         assert(len(ops.dirops.get_existing_films(conftest.films_dst_paths)) == 4)
+        assert(ops.dirops._existing_films is not None and len(ops.dirops._existing_films) == 4)
 
     def test_get_new_films(self):
 
