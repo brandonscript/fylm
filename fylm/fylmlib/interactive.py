@@ -38,7 +38,7 @@ MESSAGE_PREFIX = '      '
 class interactive:
 
     @classmethod
-    def start(cls, film):
+    def process(cls, film):
         """Main router for handling a known or unknown film.
 
         Determines whether the user should be prompted to verify a
@@ -51,10 +51,13 @@ class interactive:
             disabled, else False
         """
         if config.interactive is False:
-            return True
-        elif film.should_ignore and film.ignore_reason.startswith('Unknown'):
+            raise Exception('Interactive mode is not enabled')
+
+        if film.should_ignore:
             return cls.handle_unknown_film(film)
         else:
+            # Search TMDb for film details (if enabled).
+            film.search_tmdb()
             return cls.verify_film(film)
 
     @classmethod
@@ -103,7 +106,7 @@ class interactive:
         Returns:
             True if the film should be processed, else False
         """ 
-        console.ask("Unknown title or year [N]")
+        console.ask("%s [N]" % film.ignore_reason)
 
         # Continuously loop this if an invalid choice is entered.
         while True:

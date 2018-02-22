@@ -73,28 +73,34 @@ def main():
             # Iterate each film.
             for film in films:
 
-                # If the film should be ignored, print the reason why, and skip.
-                if film.should_ignore is True and config.interactive is False:
+                # If the film should be definitively ignored, print the reason why, and skip.
+                if (film.should_ignore is True 
+                    and (config.interactive is False or not film.ignore_reason.startswith('Unknown'))):
                     console.skip(film)
                     continue
 
-                # Print film header to console.
-                console.film_loaded(film)
-
-                # Search TMDb for film details (if enabled).
-                film.search_tmdb()
-
-                if film.should_ignore is None and config.interactive is False:
-                    console.skip(film)
-                    continue
-
-                # Print the film details to the console.
                 if config.interactive is True:
-                    if interactive.start(film) is False:
+                    # Print film header to console.
+                    console.film_loaded(film)
+
+                    # If the film is rejected via the interactive flow, skip.
+                    if interactive.process(film) is False:
                         continue
+
                 else:
-                    # If the lookup was successful, print the results to the console.
-                    console.search_result(film)
+
+                    # Print film header to console.
+                    console.film_loaded(film)
+
+                    # Search TMDb for film details (if enabled).
+                    film.search_tmdb()
+
+                    if film.should_ignore is True:
+                        console.skip(film)
+                        continue
+                    else:
+                        # If the lookup was successful, print the results to the console.
+                        console.search_result(film)
 
                 # If duplicate checking is enabled and the film is a duplicate, abort,
                 # *unless* overwriting is enabled. `is_duplicate` will always return
