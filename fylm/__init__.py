@@ -75,17 +75,17 @@ def main():
 
                 # If the film should be ignored, print the reason why, and skip.
                 if film.should_ignore is True and config.interactive is False:
-                    console.skip(film, film.ignore_reason)
+                    console.skip(film)
                     continue
 
                 # Print film header to console.
                 console.film_loaded(film)
 
                 # Search TMDb for film details (if enabled).
-                search = film.search_tmdb()
+                film.search_tmdb()
 
-                if search is False and config.interactive is False:
-                    console.skip(film, film.ignore_reason)
+                if film.should_ignore is None and config.interactive is False:
+                    console.skip(film)
                     continue
 
                 # Print the film details to the console.

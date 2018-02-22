@@ -313,14 +313,11 @@ class Film:
         Calls the tmdb.search() method, passing the current film
         as params. If a result is found, the current film's properties
         are updated with the values from TMDb.
-
-        Returns:
-            True if a suitable match was found, else False
         """
 
         # Only perform lookups if TMDb searching is enabled.
         if config.tmdb.enabled is False:
-            return False
+            return
 
         # Perform the search and save the first 10 results to the matches list. 
         # If ID is not None, search by ID.
@@ -330,11 +327,9 @@ class Film:
         if best_match is not None:
             # If we find a result, update title, tmdb_id, year, and the title_similarity.
             self.update_with_match(best_match)
-            return True
         else:
             # If not, we update the ignore_reason
             self.ignore_reason = 'No results found'
-            return False
 
 
     def update_with_match(self, match):
