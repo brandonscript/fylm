@@ -74,27 +74,27 @@ def main():
             for film in films:
 
                 # If the film should be ignored, print the reason why, and skip.
-                if film.should_ignore is True:
-                    console.skip(film)
-                    continue
-
-                # Print the film details to the console.
-                console.film_loaded(film)
-
-                # Search TMDb for film details (if enabled).
-                film.search_tmdb()
-
-                # If the search failed, or TMDb is disabled, print why, and skip.
-                if film.tmdb_id is None and config.tmdb.enabled is True and config.interactive is False:
+                if film.should_ignore is True and config.interactive is False:
                     console.skip(film, film.ignore_reason)
                     continue
 
-                # If the lookup was successful, print the results to the console.
-                console.search_result(film)
+                # Print film header to console.
+                console.film_loaded(film)
 
+                # Search TMDb for film details (if enabled).
+                search = film.search_tmdb()
+
+                if search is False and config.interactive is False:
+                    console.skip(film, film.ignore_reason)
+                    continue
+
+                # Print the film details to the console.
                 if config.interactive is True:
-                    if not interactive.verify_film(film):
+                    if interactive.start(film) is False:
                         continue
+                else:
+                    # If the lookup was successful, print the results to the console.
+                    console.search_result(film)
 
                 # If duplicate checking is enabled and the film is a duplicate, abort,
                 # *unless* overwriting is enabled. `is_duplicate` will always return

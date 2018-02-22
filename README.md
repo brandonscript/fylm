@@ -101,7 +101,7 @@ Tests are run using `pytest`. To install:
 To run tests:
 
     cd fylm/
-    pytest (--no-print-logs)
+    python3 -m pytest -xq (--no-print-logs)
 
 #### Contributing
 

@@ -313,22 +313,28 @@ class Film:
         Calls the tmdb.search() method, passing the current film
         as params. If a result is found, the current film's properties
         are updated with the values from TMDb.
+
+        Returns:
+            True if a suitable match was found, else False
         """
 
         # Only perform lookups if TMDb searching is enabled.
-        if config.tmdb.enabled is True:
+        if config.tmdb.enabled is False:
+            return False
 
-            # Perform the search and save the first 10 results to the matches list. 
-            # If ID is not None, search by ID.
-            self.matches = (tmdb.search(self.tmdb_id) if (self.tmdb_id is not None) else tmdb.search(self.title, self.year))[:10]
-            best_match = next(iter(self.matches or []), None)
-            
-            if best_match is not None:
-                # If we find a result, update title, tmdb_id, year, and the title_similarity.
-                self.update_with_match(best_match)
-            else:
-                # If not, we update the ignore_reason
-                self.ignore_reason = 'No results found'
+        # Perform the search and save the first 10 results to the matches list. 
+        # If ID is not None, search by ID.
+        self.matches = (tmdb.search(self.tmdb_id) if (self.tmdb_id is not None) else tmdb.search(self.title, self.year))[:10]
+        best_match = next(iter(self.matches or []), None)
+        
+        if best_match is not None:
+            # If we find a result, update title, tmdb_id, year, and the title_similarity.
+            self.update_with_match(best_match)
+            return True
+        else:
+            # If not, we update the ignore_reason
+            self.ignore_reason = 'No results found'
+            return False
 
 
     def update_with_match(self, match):
