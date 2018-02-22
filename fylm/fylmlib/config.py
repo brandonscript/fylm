@@ -123,6 +123,16 @@ class _Config:
             dest="rename_only",
             help='Rename films in place without moving or copying them')
 
+        # -i, --interactive
+        # This option enables prompts to confirm or correct TMDb matches.
+        parser.add_argument(
+            '-i',
+            '--interactive',
+            action="store_true",
+            default=False,
+            dest="interactive",
+            help='Prompt to confirm or correct TMDb matches')
+
         # --no-strict
         # This option disables the intelligent string comparison algorithm that verifies titles
         # (and years) are a match. Use with caution; likely will result in false-positives.
@@ -209,6 +219,7 @@ class _Config:
         if args.debug is True: self.config.debug = True
         if args.no_console is True: self.config.no_console = True
         if args.rename_only is True: self.config.rename_only = True
+        if args.interactive is True: self.config.interactive = True
         if args.strict is False: self.config.strict = False
         if args.force_lookup is True: self.config.force_lookup = True
         if args.no_duplicates is False: self.config.duplicate_checking.enabled = False
@@ -230,7 +241,7 @@ class _Config:
 
         # Set up cache.
         if self.config.cache is True:
-            requests_cache.install_cache('fylm_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
+            requests_cache.install_cache('.cache.fylm_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
             requests_cache.core.remove_expired_responses()
 
     def reload(self):

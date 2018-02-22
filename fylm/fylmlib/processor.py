@@ -39,7 +39,6 @@ class process:
     All methods are class methods, thus this class should never be instantiated.
     """
 
-    # TODO: (Possible) handle multiple editions stored in the same folder.
     @classmethod
     def file(cls, film):
         """Process a single file film object.

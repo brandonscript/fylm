@@ -9,7 +9,6 @@ source_dirs:
 # set the value for `default` and remove the rest. Value quality sort properties are:
 # "720p", "1080p", "4K", "SD", and "default".
 # Fylm works best if the source and destination are on the same partition, otherwise files end up being copied, which can take a long time.
-#   TODO: Build a workflow that allows looking up all films and verifying the results before actually performing the move/copy.
 destination_dirs:
   720p: /Volumes/Films/HD
   1080p: /Volumes/Films/HD
@@ -38,6 +37,10 @@ min_filesize: 10
 
 # Path Where history.log will be written.
 log_path: ./
+
+# --interactive
+# Prompt to confirm or correct TMDb matches.
+interactive: false
 
 # --test 
 # Write to the console as if moving/renaming/removing files but does not actually make changes.
@@ -89,14 +92,6 @@ duplicate_checking:
   # Check the destionation dir for duplicate files before copying. Adds some processing time, 
   # but allows you to replace existing files with newer/better ones.
   enabled: true
-
-  # TODO: Not implemented
-  # Duplicate matching criteria. By default, if a title, year, and edition match, a film is considered
-  # a duplicate.
-  # criteria: 
-  #  - title
-  #  - year
-  #  - edition
 
 duplicate_replacing:
 

@@ -32,6 +32,7 @@ from fylmlib.config import config
 from fylmlib.console import console
 from fylmlib.processor import process
 from fylmlib.duplicates import duplicates
+from fylmlib.interactive import interactive
 import fylmlib.operations as ops
 import fylmlib.notify as notify
 import fylmlib.counter as counter
@@ -58,7 +59,6 @@ def main():
         # Load duplicates before film processing begins.
         ops.dirops.get_existing_films(config.destination_dirs)
 
-        # TODO: add interactive option to skip, confirm, and correct matches
         # TODO: add recursive searching inside poorly named folders
 
         # Iterate each path in the config.source_dirs array. 
@@ -85,12 +85,16 @@ def main():
                 film.search_tmdb()
 
                 # If the search failed, or TMDb is disabled, print why, and skip.
-                if film.tmdb_id is None and config.tmdb.enabled is True:
+                if film.tmdb_id is None and config.tmdb.enabled is True and config.interactive is False:
                     console.skip(film, film.ignore_reason)
                     continue
 
                 # If the lookup was successful, print the results to the console.
-                console.lookup_result(film)
+                console.search_result(film)
+
+                if config.interactive is True:
+                    if not interactive.verify_film(film):
+                        continue
 
                 # If duplicate checking is enabled and the film is a duplicate, abort,
                 # *unless* overwriting is enabled. `is_duplicate` will always return
@@ -122,8 +126,9 @@ def main():
         console.exit_early()
     except (IOError, OSError) as e:
         console.red(e)
-        import traceback
-        traceback.print_exc()
+        if config.debug:
+            import traceback
+            traceback.print_exc()
     finally:
         # Don't leave the cursor hidden
         from fylmlib.cursor import cursor

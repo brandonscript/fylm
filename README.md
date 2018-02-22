@@ -65,6 +65,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --test, -t
     --debug, -d
     --rename, -r
+    --interactive, -i
     --limit=n, -l
     --pop=n, -p
     --force-lookup, -f
@@ -78,6 +79,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `test` will run the app in sandbox mode, which means no changes will actually be performed on the filesystem. A good rule of thumb is to always test first before you run the app on a long list of files.
 - `debug` will run the app with some extra details (ok, verbose word porridge) in the console.
 - `rename` will just rename files and folders and leave them in the source folder.
+- `interactive` prompt to confirm or correct TMDb matches.
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.
 - `force-lookup` will look everything in your source folder(s) up on TMDb, even if something doesn't appear to be a film. Helpful for finding files with missing years, but can take a lot longer to run.

@@ -42,14 +42,15 @@ import fylmlib.progress as progress
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 DIVIDER = '======================================'
-MAIN_PREFIX = ' '
-INDENT_PREFIX = '    → '
 
 class console:
     """Main class for console output methods.
 
     All methods are class methods, thus this class should never be instantiated.
     """
+    MAIN_PREFIX = ' '
+    INDENT_PREFIX = '    → '
+
     @classmethod
     def start(cls):
         """Print and log the initial welcome header.
@@ -59,7 +60,8 @@ class console:
         console._notify_force_lookup()
         console._notify_overwrite_existing()
         log.info('Scanning {}'.format(', '.join(config.source_dirs)))
-        print("Fylm is scanning " + ', '.join(config.source_dirs))
+        print(color("Fylm is scanning " + ', '.join(config.source_dirs), fg=ansi.pink))
+        print('')
 
     @classmethod
     def film_loaded(cls, film):
@@ -69,7 +71,7 @@ class console:
             film: (Film) film to pass to debug calls.
         """
         # Print original filename and size.
-        p = pyfancy().bold('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
+        p = pyfancy().bold('{}{}{}'.format(cls.MAIN_PREFIX, film.original_filename, film.ext or ''))
         p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_largest_video)), fg=ansi.gray))
         p.output()
 
@@ -92,15 +94,37 @@ class console:
         Args:
             film: (Film) Film that was skipped.
         """
-        p = pyfancy().bold().red('{}{}{}'.format(MAIN_PREFIX, film.original_filename, film.ext or ''))
+        p = pyfancy().bold().red('{}{}{}'.format(cls.MAIN_PREFIX, film.original_filename, film.ext or ''))
         p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_largest_video)), fg=ansi.gray))
         p.output()
-        pyfancy().red().dim('{}{}'.format(INDENT_PREFIX, film.ignore_reason)).output()
+        pyfancy().red().dim('{}{}'.format(cls.INDENT_PREFIX, film.ignore_reason)).output()
         log.detail("Skipping (%s)" % film.ignore_reason)
 
     @classmethod
-    def lookup_result(cls, film):
-        """Print and log film details.
+    def ask(cls, s):
+        """Print an interactive question.
+
+        Args:
+            s: (str, utf-8) String to print/log.
+        """
+        pyfancy().raw(color('%s%s' % (cls.INDENT_PREFIX, s), fg=ansi.pink)).output()
+
+    @classmethod
+    def choice(cls, s):
+        """Print a question choice.
+
+        Args:
+            s: (str, utf-8) String to print/log.
+        """
+        p = pyfancy().raw(color('      %s' % s.split('[')[0], fg=ansi.gray))
+        if '[' in s:
+            p.dark_gray().dim('[%s' % s.split('[')[1]).output()
+        else:
+            p.output()
+
+    @classmethod
+    def search_result(cls, film):
+        """Print and log film search result details.
 
         Args:
             film: (Film) Film to print/log.
@@ -109,11 +133,11 @@ class console:
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
             if film.tmdb_id is not None:
-                p = pyfancy().white(INDENT_PREFIX).raw(color('✓ {} ({})'.format(film.title, film.year), fg=ansi.green)).dark_gray()
+                p = pyfancy().white(cls.INDENT_PREFIX).raw(color('✓ {} ({})'.format(film.title, film.year), fg=ansi.green)).dark_gray()
                 p.add(' [{}] {} match'.format(film.tmdb_id, formatter.percent(film.title_similarity))).output()
                 log.detail('✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
             else:
-                pyfancy().white(INDENT_PREFIX).red('× {} ({})'.format(film.title, film.year)).output()
+                pyfancy().white(cls.INDENT_PREFIX).red('× {} ({})'.format(film.title, film.year)).output()
                 log.detail('× Not found')
 
     @classmethod
@@ -196,7 +220,7 @@ class console:
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().dark_gray('{}{}'.format(INDENT_PREFIX, s)).output()
+        pyfancy().dark_gray('{}{}'.format(cls.INDENT_PREFIX, s)).output()
         log.detail(s)
 
     @classmethod
@@ -217,7 +241,7 @@ class console:
             title: (str, utf-8) String to print green and send to log.
             size: (float) String to print white and send to log.
         """
-        pyfancy().white('{}⌥ '.format(INDENT_PREFIX)).raw(color(title, fg=ansi.green)).dark_gray().dim(' ({})'.format(size)).output()
+        pyfancy().white('{}⌥ '.format(cls.INDENT_PREFIX)).raw(color(title, fg=ansi.green)).dark_gray().dim(' ({})'.format(size)).output()
         log.detail('⌥ {} {}'.format(title, size))
 
     @classmethod
@@ -268,7 +292,7 @@ class console:
             s3: (str, utf-8) String 3 to print/log.
         """
         pyfancy().raw(
-            color('%s%s' % (INDENT_PREFIX, s1), fg=ansi.blue)).raw(
+            color('%s%s' % (cls.INDENT_PREFIX, s1), fg=ansi.blue)).raw(
             color(s2, fg=ansi.blue)).dark_gray().dim(s3).output()
         log.detail('{}{}{}'.format(s1, s2, s3))
 
@@ -279,7 +303,17 @@ class console:
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().raw(color('{}{}'.format(INDENT_PREFIX, s)), fg=ansi.green).output()
+        pyfancy().raw(color('{}{}'.format(cls.INDENT_PREFIX, s)), fg=ansi.green).output()
+        log.detail(s)
+
+    @classmethod
+    def colored(cls, s, ansicolor):
+        """Print and log colored text.
+
+        Args:
+            s: (str, utf-8) String to print/log.
+        """
+        pyfancy().raw(color(s, fg=ansicolor)).output()
         log.detail(s)
 
     @classmethod
@@ -289,7 +323,7 @@ class console:
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().yellow('{}{}'.format(INDENT_PREFIX, s)).output()
+        pyfancy().yellow('{}{}'.format(cls.INDENT_PREFIX, s)).output()
         log.detail(s)
 
     @classmethod
@@ -299,7 +333,7 @@ class console:
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().raw(color('{}{}'.format(INDENT_PREFIX, s), fg=ansi.red)).output()
+        pyfancy().raw(color('{}{}'.format(cls.INDENT_PREFIX, s), fg=ansi.red)).output()
         log.detail(s)
 
     @classmethod
@@ -319,7 +353,17 @@ class console:
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().raw(color('%s%s' % (INDENT_PREFIX, s), fg=ansi.blue)).output()
+        pyfancy().raw(color('%s%s' % (cls.INDENT_PREFIX, s), fg=ansi.blue)).output()
+        log.detail(s)
+
+    @classmethod
+    def white(cls, s):
+        """Print and log text in white. Prints white.
+
+        Args:
+            s: (str, utf-8) String to print/log.
+        """
+        pyfancy().white('{}'.format(s)).output()
         log.detail(s)
 
     @classmethod
@@ -329,5 +373,5 @@ class console:
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().dark_gray().dim('{}{}'.format(INDENT_PREFIX, s)).output()
+        pyfancy().dark_gray().dim('{}{}'.format(cls.INDENT_PREFIX, s)).output()
         log.detail(s)

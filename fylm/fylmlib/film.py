@@ -46,6 +46,12 @@ class Film:
 
         tmdb_id:            TMDb ID for film.
 
+        tmdb_verified:      Is set to True once a TMDb result is verified in
+                            interactive mode.
+
+        matches:            A list of possible TmdbResults, ordered most to
+                            least likely to match.
+
         year:               Primary release year.
 
         overview:           A short description of the film.
@@ -126,6 +132,8 @@ class Film:
         self.media = parser.get_media(source_path)
         self.quality = parser.get_quality(source_path)
         self.tmdb_id = None
+        self.tmdb_verified = False
+        self.matches = []
         self.title_similarity = 0
         self.ignore_reason = None
 
@@ -299,7 +307,6 @@ class Film:
         """
         return len(self.duplicates) > 0
 
-    # Perform TMDb lookup based on known title and year
     def search_tmdb(self):
         """Performs a TMDb search on the existing film.
 
@@ -311,16 +318,30 @@ class Film:
         # Only perform lookups if TMDb searching is enabled.
         if config.tmdb.enabled is True:
 
-            # Perform the search and save the result
-            result = tmdb.search(self.title, self.year)
-
-            if result is not None:
+            # Perform the search and save the first 10 results to the matches list. 
+            # If ID is not None, search by ID.
+            self.matches = (tmdb.search(self.tmdb_id) if (self.tmdb_id is not None) else tmdb.search(self.title, self.year))[:10]
+            best_match = next(iter(self.matches or []), None)
+            
+            if best_match is not None:
                 # If we find a result, update title, tmdb_id, year, and the title_similarity.
-                self.title = result.proposed_title
-                self.overview = result.overview
-                self.tmdb_id = result.tmdb_id
-                self.year = result.proposed_year
-                self.title_similarity = result.title_similarity
+                self.update_with_match(best_match)
             else:
                 # If not, we update the ignore_reason
-                self.ignore_reason = '(no results found)'
+                self.ignore_reason = 'No results found'
+
+
+    def update_with_match(self, match):
+        """Updates existing properties from a TmdbResult match
+
+        Updates all of a film's properties from a TmdbResult
+        match object.
+
+        Args:
+            match: (TmdbResult) Search result as a TmdbResult object.
+        """
+        self.title = match.proposed_title
+        self.overview = match.overview
+        self.tmdb_id = match.tmdb_id
+        self.year = match.proposed_year
+        self.title_similarity = match.title_similarity
