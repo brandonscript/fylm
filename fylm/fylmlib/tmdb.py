@@ -505,7 +505,7 @@ def _recursive_rstrip_search(query, year=None):
     console.debug('Searching: "{}" / {} - recursively remove the last word of title'.format(query, year))
 
     # Iterate over each word in the search string.
-    for i, word in enumerate(query.split()):
+    for i, _ in enumerate(query.split()):
 
         # Each time the iterator (i) increases in value, we strip a word
         # from the end of the search string. Then we forward a new

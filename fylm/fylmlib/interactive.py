@@ -91,9 +91,9 @@ class interactive:
                     film.search_tmdb()
                     console.search_result(film)
                     return cls.verify_film(film)
-                except:
+                except Exception:
                     console.colored("%sHrm, that ID doesn't exist" % MESSAGE_PREFIX, ansi.pink)
-            except:
+            except Exception:
                 console.colored("%sA TMDb ID must be a number" % MESSAGE_PREFIX, ansi.pink) 
 
     @classmethod
