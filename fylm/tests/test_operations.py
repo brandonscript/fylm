@@ -381,7 +381,7 @@ class TestDirOperations(object):
         for f in files_mkv:
              make.make_mock_file(os.path.join(conftest.films_src_path, f), 7418 * make.mb_t)
         for f in bad_files_mkv:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7 * make.mb_t)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7 * make.kb)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(before_contents) == 12)
