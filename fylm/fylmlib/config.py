@@ -240,7 +240,7 @@ class _Config:
         self.config.source_dirs = list(set([os.path.normpath(d) for d in self.config.source_dirs]))
 
         # Create placeholder var for mock inputs in interactive mode.
-        self.mock_input = None
+        self.config.mock_input = None
 
         # Set up cache.
         if self.config.cache is True:

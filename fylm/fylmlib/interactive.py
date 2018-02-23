@@ -353,11 +353,11 @@ class interactive:
 def _shift(l):
     try:
         l.pop(0)
-    except:
+    except Exception:
         pass
 
 def _first(l):
     try:
         return l[0]
-    except:
+    except Exception:
         return l

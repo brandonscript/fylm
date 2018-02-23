@@ -17,7 +17,6 @@ from __future__ import unicode_literals, print_function, absolute_import
 from builtins import *
 
 import os
-import sys
 
 import pytest
 
