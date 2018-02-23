@@ -84,7 +84,7 @@ def main():
                     console.film_loaded(film)
 
                     # If the film is rejected via the interactive flow, skip.
-                    if interactive.process(film) is False:
+                    if interactive.process(film, config.mock_input) is False:
                         continue
 
                 else:
