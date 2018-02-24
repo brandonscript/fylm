@@ -125,7 +125,7 @@ class TmdbResult:
         for key, value in {
             "tmdb_id": raw_result['id'],
             "overview": raw_result['overview'],
-            "poster_path": raw_result['poster_path'].strip("/"),
+            "poster_path": raw_result['poster_path'].strip("/") if raw_result['poster_path'] else None,
             "popularity": raw_result['popularity'],
             "proposed_title": raw_result['title'],
             "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0
