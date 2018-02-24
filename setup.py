@@ -85,6 +85,10 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=requirements,
 
+    dependency_links=[
+        "git+ssh://git@github.com/Thibauth/python-pushover.git@8522972#egg=python-pushover"
+    ],
+
     # Dev dependencies
     extras_require={
         'test': requirements_test

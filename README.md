@@ -29,10 +29,8 @@ Fylm is tested on Python 2.7 and 3.6. At some point in the future, Python 2 supp
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
-    (sudo) pip install -r requirements.txt
-    # or
-    (sudo) python2 -m pip install -r requirements.txt
-    (sudo) python3 -m pip install -r requirements.txt
+    (sudo) python2 setup.py install
+    (sudo) python3 setup.py install
 
 If you don't use `pip`, then you will need to install these manually, or download them and include them inside your copy of Fylm. Or shake a magic stick and hope it works (hint: it won't).
 
