@@ -56,6 +56,8 @@ class Film:
 
         overview:           A short description of the film.
 
+        poster_path:         URL for the film poster.
+
         edition:            Special edition.
 
         media:              Original release media, e.g. BluRay.
@@ -128,6 +130,7 @@ class Film:
         self.title = parser.get_title(source_path)
         self.year = parser.get_year(source_path)
         self.overview = ''
+        self.poster_path = None
         self.edition = parser.get_edition(source_path)
         self.media = parser.get_media(source_path)
         self.quality = parser.get_quality(source_path)
@@ -343,6 +346,7 @@ class Film:
         """
         self.title = match.proposed_title
         self.overview = match.overview
+        self.poster_path = match.poster_path
         self.tmdb_id = match.tmdb_id
         self.year = match.proposed_year
         self.title_similarity = match.title_similarity

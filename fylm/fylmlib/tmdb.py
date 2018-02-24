@@ -79,19 +79,28 @@ class TmdbResult:
         is_potential_match: Performs a checking algorithm to determine if the search
                             result qualifies as a potential match.
     """
-    def __init__(self, query='', search_year=None, year=None, overview=None, title=None, proposed_title=None, proposed_year=None, raw_result=None):
+    def __init__(self, 
+        query='', 
+        search_year=None, 
+        year=None, 
+        title=None, 
+        proposed_title=None, 
+        proposed_year=None, 
+        raw_result=None):
+
         self.query = query
         self.title = query
         self.proposed_title = proposed_title
         self.search_year = search_year
         self.year = search_year or year
-        self.overview = None
         self.proposed_year = proposed_year
-        self.tmdb_id = None
         self.popularity = 0
+        self.overview = None
+        self.poster_path = None
+        self.tmdb_id = None
 
         if raw_result is not None:
-            self._map_raw_result(raw_result)
+            self._merge(raw_result)
 
     def __eq__(self, other):
         """Use __eq__ method to define duplicate search results"""
@@ -104,7 +113,7 @@ class TmdbResult:
             'proposed_year', self.proposed_year,
             'tmdb_id', self.tmdb_id))
 
-    def _map_raw_result(self, raw_result):
+    def _merge(self, raw_result):
         """Map properties to this object from a raw JSON result.
 
         Maps all the properties in the TMDb API JSON result onto
@@ -116,6 +125,7 @@ class TmdbResult:
         for key, value in {
             "tmdb_id": raw_result['id'],
             "overview": raw_result['overview'],
+            "poster_path": raw_result['poster_path'].strip("/"),
             "popularity": raw_result['popularity'],
             "proposed_title": raw_result['title'],
             "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0
@@ -327,7 +337,7 @@ def search(query, year=None):
             # Create a copy of the origin TmdbResult object, and map the raw
             # search result JSON to it.
             result = copy.deepcopy(tmdb_result)
-            result._map_raw_result(raw_result)
+            result._merge(raw_result)
 
             # Check for an instant match first.
             if result.is_instant_match(count):

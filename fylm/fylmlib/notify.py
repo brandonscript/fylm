@@ -20,10 +20,17 @@ This module is used to send notifications to various external integrations.
 
 from __future__ import unicode_literals, print_function
 from builtins import *
+try:
+    from urllib.parse import urljoin
+except ImportError:
+    from urlparse import urljoin
+import os
+import shutil
 
 from plexapi.server import PlexServer
 from pushover import init, Client
 from colors import color
+import requests
 
 from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
@@ -86,8 +93,20 @@ def pushover(film):
     # quiet or rename modes.
     if (config.pushover.enabled is True 
         and config.quiet is False 
-        and config.rename_only is False
-        and config.test is False):
+        and config.rename_only is False):
+
+        attachment = None
+        images_path = os.path.join(os.getcwd(), 'fylm/__images__')
+        if not os.path.exists(images_path):
+            os.makedirs(images_path)
+
+        if film.poster_path:
+            url = urljoin('https://image.tmdb.org/t/p/w185/', film.poster_path)
+            img = os.path.join(images_path, film.poster_path)
+            response = requests.get(url, stream=True)
+            with open(img, 'wb') as f:
+                shutil.copyfileobj(response.raw, f)
+            attachment = ("image.jpg", open(img, "rb"), "image/jpeg")
 
         # Application API token/key, which can be found by selecting your app
         # from https://pushover.net/apps and copying the key.
@@ -99,4 +118,9 @@ def pushover(film):
 
         message = ('. '.join(film.overview.split('.  ')[:2]) + '.'[:200] + '...') if len(film.overview) > 200 else film.overview
 
-        pushover.send_message("{} ({})\n{}".format(film.title, film.year, message), title='Fylm Added')
+        pushover.send_message(
+            message="{} ({})\n{}".format(film.title, film.year, message), 
+            attachment=attachment,
+            title='Fylm Added')
+
+        os.remove(img)
