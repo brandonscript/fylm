@@ -260,6 +260,8 @@ class Config(object):
             requests_cache.install_cache('.cache.fylm_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
             requests_cache.core.remove_expired_responses()
 
+        self.config.reload = self.reload
+
     def reload(self):
         """Reload config from config.yaml.
         """
@@ -268,4 +270,3 @@ class Config(object):
 
 # Apply attributes to globals() so this can be imported using `import config`
 sys.modules[__name__] = Config().config
-sys.modules[__name__]['reload'] = Config().reload
