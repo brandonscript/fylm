@@ -25,6 +25,7 @@ from __future__ import unicode_literals, print_function
 from builtins import *
 
 import datetime
+import os
 import sys
 
 from colors import color
@@ -260,27 +261,27 @@ class console:
             console.blue('{} duplicate{} found:'.format(
                 len(film.duplicates),
                 '' if len(film.duplicates) == 1 else 's'))
-            for d in film.duplicates:
-
-                pretty_size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
-                pretty_size = formatter.pretty_size(d.size)
-
-                # If the film will be replaced, print info:
-                if duplicates.should_replace(film, d):
-                    console.duplicate(
-                        "  Replacing '{}'".format(d.new_filename__ext()),
-                        " ({})".format(pretty_size),
-                        " [{}]".format(pretty_size_diff))
-                elif duplicates.should_keep_both(film, d):
-                    console.duplicate(
-                        "  Keeping '{}'".format(d.new_filename__ext()),
-                        " ({})".format(pretty_size),
-                        " [{}]".format(pretty_size_diff))
-                else:
-                    console.warn("  Ignoring because '{}' ({}) is {}".format(
-                        d.new_filename__ext(), 
-                        pretty_size,
-                        pretty_size_diff))
+            if config.interactive is False:
+                for d in film.duplicates:
+                
+                    pretty_size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
+                    pretty_size = formatter.pretty_size(d.size)
+                
+                    if duplicates.should_replace(film, d):
+                        console.duplicate(
+                            "  Replacing '{}'".format(os.path.basename(d.source_path)),
+                            " ({})".format(pretty_size),
+                            " [{}]".format(pretty_size_diff))
+                    elif duplicates.should_keep_both(film, d):
+                        console.duplicate(
+                            "  Keeping '{}'".format(os.path.basename(d.source_path)),
+                            " ({})".format(pretty_size),
+                            " [{}]".format(pretty_size_diff))
+                    else:
+                        console.warn("  Ignoring because '{}' ({}) is {}".format(
+                            os.path.basename(d.source_path), 
+                            pretty_size,
+                            pretty_size_diff))
 
     @classmethod
     def duplicate(cls, s1, s2, s3):

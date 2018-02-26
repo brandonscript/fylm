@@ -79,19 +79,14 @@ def main():
                     console.skip(film)
                     continue
 
+                # Print film header to console.
+                console.film_loaded(film)
+
                 if config.interactive is True:
-                    # Print film header to console.
-                    console.film_loaded(film)
-
                     # If the film is rejected via the interactive flow, skip.
-                    if interactive.process(film, config.mock_input) is False:
+                    if interactive.lookup(film) is False:
                         continue
-
                 else:
-
-                    # Print film header to console.
-                    console.film_loaded(film)
-
                     # Search TMDb for film details (if enabled).
                     film.search_tmdb()
 
@@ -104,14 +99,19 @@ def main():
 
                 # If duplicate checking is enabled and the film is a duplicate, abort,
                 # *unless* overwriting is enabled. `is_duplicate` will always return
-                # false if duplicate checking is disabled.
+                # false if duplicate checking is disabled. In interactive mode, user
+                # determines this outcome.
                 if film.is_duplicate:
+
                     console.duplicates(film)
 
-                    if not duplicates.should_keep(film):
-                        continue
-                    
-                    duplicates.delete_unwanted(film)
+                    if config.interactive is True:
+                        if not interactive.duplicates(film):
+                            continue
+                    else:
+                        if not duplicates.should_keep(film):
+                            continue
+                        duplicates.delete_unwanted(film)
 
                 # If it is a file and as a valid extension, process it as a file
                 if film.is_file and film.has_valid_ext:
