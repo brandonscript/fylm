@@ -28,7 +28,7 @@ from builtins import *
 import os
 import re
 
-from fylmlib.config import config
+import fylmlib.config as config
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 

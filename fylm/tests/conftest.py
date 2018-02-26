@@ -32,7 +32,7 @@ sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
 import fylm
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.operations as ops
 from make import make_mock_files

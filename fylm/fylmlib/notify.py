@@ -35,7 +35,7 @@ import requests
 from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
 from fylmlib.log import log
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.console import console
 
 """Notification handler for Fylm.
@@ -93,7 +93,8 @@ def pushover(film):
     # quiet or rename modes.
     if (config.pushover.enabled is True 
         and config.quiet is False 
-        and config.rename_only is False):
+        and config.rename_only is False
+        and config.test is False):
 
         attachment = None
         images_path = os.path.join(os.getcwd(), 'fylm/__images__')

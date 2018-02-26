@@ -20,7 +20,7 @@ This module handles all the duplicate checking and handling logic for Fylm.
 from __future__ import unicode_literals, print_function
 from builtins import *
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.console import console
 import fylmlib.compare as compare
 import fylmlib.operations as ops

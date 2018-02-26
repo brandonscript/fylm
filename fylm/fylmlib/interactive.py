@@ -27,7 +27,7 @@ import readline
 
 from colors import color, bold
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.parser import parser
 from fylmlib.console import console
 from fylmlib.ansi import ansi

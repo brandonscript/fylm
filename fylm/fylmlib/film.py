@@ -24,7 +24,7 @@ from builtins import *
 import os
 import re
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.formatter as formatter
 import fylmlib.tmdb as tmdb

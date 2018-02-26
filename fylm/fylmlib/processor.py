@@ -25,7 +25,7 @@ from builtins import *
 
 import os
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
 from fylmlib.duplicates import duplicates

@@ -21,7 +21,7 @@ import os
 
 import pytest
 
-from fylmlib.config import config
+import fylmlib.config as config
 import fylm
 import conftest
 

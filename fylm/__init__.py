@@ -28,7 +28,7 @@ from builtins import *
 import os
 import sys
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.console import console
 from fylmlib.processor import process
 from fylmlib.duplicates import duplicates

@@ -18,7 +18,7 @@
 This module loads configuration options from config.yaml, and optionally
 CLI argumants.
 
-    config: an instance of the main class (_Config) exported by this module.
+    config: an instance of the main class (Config) exported by this module.
 """
 
 from __future__ import unicode_literals, print_function
@@ -52,12 +52,25 @@ def construct_yaml_str(self, node):
 Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
-class _Config:
+class Config(object):
     """Main class for handling app options.
     """
+
+    __instance = None
+
+    def __new__(cls):
+        if cls.__instance is None:
+            cls.__instance = super(Config, cls).__new__(cls)
+            cls.__instance.__initialized = False
+        return cls.__instance
+
     def __init__(self):
         """Load config.yaml and map CLI arguments, if applicable.
         """
+
+        if self.__initialized: 
+            return
+        self.__initialized = True
 
         # Generate a working dir path to config. (This is required for running tests from a
         # different working dir).
@@ -250,8 +263,8 @@ class _Config:
     def reload(self):
         """Reload config from config.yaml.
         """
+        self.__instance = None
         self.__init__()
 
-# Create a referenceable singleton for _Config()
-config = _Config().config
-config.reload = _Config().reload
+# Apply attributes to globals() so this can be imported using `import config`
+sys.modules[__name__] = Config().config

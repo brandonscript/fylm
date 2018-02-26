@@ -26,7 +26,7 @@ from builtins import *
 import re
 import copy
 
-from fylmlib.config import config
+import fylmlib.config as config
 import fylmlib.patterns as patterns
 
 def build_new_filename(film):

@@ -28,7 +28,7 @@ import logging
 import datetime
 
 from fylmlib.pyfancy import *
-from fylmlib.config import config
+import fylmlib.config as config
 
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

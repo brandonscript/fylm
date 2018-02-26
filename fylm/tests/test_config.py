@@ -18,7 +18,7 @@ from builtins import *
 
 import pytest
 
-from fylmlib.config import config
+import fylmlib.config as config
 import fylmlib.operations as ops
 import fylm
 import conftest

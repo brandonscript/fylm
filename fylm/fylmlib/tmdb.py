@@ -30,7 +30,7 @@ import time
 
 import tmdbsimple as tmdb
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.console import console
 from fylmlib.log import log
 import fylmlib.compare as compare

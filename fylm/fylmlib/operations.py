@@ -33,7 +33,7 @@ import unicodedata
 from itertools import islice
 from multiprocessing import Pool
 
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.console import console
 from fylmlib.cursor import cursor
 import fylmlib.formatter as formatter

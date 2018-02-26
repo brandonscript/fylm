@@ -30,7 +30,7 @@ import sys
 from colors import color
 
 from fylmlib.pyfancy import *
-from fylmlib.config import config
+import fylmlib.config as config
 from fylmlib.log import log
 from fylmlib.ansi import ansi
 import fylmlib.formatter as formatter
