@@ -167,7 +167,6 @@ class console:
 
     @classmethod
     def move_or_copy(cls, src, dst):
-        import os
         from fylmlib.operations import dirops
         cls.info("%s %s to %s" % (
             "Copying" if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving', 
