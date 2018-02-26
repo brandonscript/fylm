@@ -268,3 +268,4 @@ class Config(object):
 
 # Apply attributes to globals() so this can be imported using `import config`
 sys.modules[__name__] = Config().config
+sys.modules[__name__]['reload'] = Config().reload
