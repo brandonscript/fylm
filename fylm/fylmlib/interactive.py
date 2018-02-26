@@ -31,7 +31,6 @@ from colors import color, bold
 import fylmlib.config as config
 from fylmlib.parser import parser
 from fylmlib.console import console
-from fylmlib.duplicates import duplicates
 from fylmlib.ansi import ansi
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
