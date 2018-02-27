@@ -17,7 +17,7 @@
 
 This module scans for and processes films.
 
-    process: the main class exported by this module.
+    processor: the main class exported by this module.
 """
 
 from __future__ import unicode_literals, print_function
@@ -29,18 +29,76 @@ import fylmlib.config as config
 from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
 from fylmlib.duplicates import duplicates
+from fylmlib.interactive import interactive
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
 
-class process:
+class processor:
     """Main class for scanning for and processing films.
 
     All methods are class methods, thus this class should never be instantiated.
     """
 
     @classmethod
-    def file(cls, film):
+    def process(cls, film):
+        """Main entry point for processor.
+
+        Args:
+            film: (Film) film object to process.
+        """
+
+        # If the film should be definitively ignored, print the reason why, and skip.
+        if (film.should_ignore is True 
+            and (config.interactive is False or not film.ignore_reason.startswith('Unknown'))):
+            console.skip(film)
+            return
+
+        # Print film header to console.
+        console.film_loaded(film)
+
+        if config.interactive is True:
+            # If the film is rejected via the interactive flow, skip.
+            if interactive.lookup(film) is False:
+                return
+        else:
+            # Search TMDb for film details (if enabled).
+            film.search_tmdb()
+
+            if film.should_ignore is True:
+                console.skip(film)
+                return
+            else:
+                # If the lookup was successful, print the results to the console.
+                console.search_result(film)
+
+        # If duplicate checking is enabled and the film is a duplicate, abort,
+        # *unless* overwriting is enabled. `is_duplicate` will always return
+        # false if duplicate checking is disabled. In interactive mode, user
+        # determines this outcome.
+        if film.is_duplicate:
+
+            console.duplicates(film)
+
+            if config.interactive is True:
+                if not interactive.duplicates(film):
+                    return
+            else:
+                if not duplicates.should_keep(film):
+                    return
+                duplicates.delete_unwanted(film)
+
+        # If it is a file and as a valid extension, process it as a file
+        if film.is_file and film.has_valid_ext:
+            cls.handle_file(film)
+
+        # Otherwise if it's a folder, process it as a folder containing
+        # potentially multiple related files.
+        elif film.is_dir:
+            cls.handle_dir(film)
+
+    @classmethod
+    def handle_file(cls, film):
         """Process a single file film object.
 
         Args:
@@ -81,7 +139,7 @@ class process:
         film.source_path = dst
 
     @classmethod
-    def dir(cls, film):
+    def handle_dir(cls, film):
         """Process a directory film object.
 
         Args:

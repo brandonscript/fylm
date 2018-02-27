@@ -30,9 +30,7 @@ import sys
 
 import fylmlib.config as config
 from fylmlib.console import console
-from fylmlib.processor import process
-from fylmlib.duplicates import duplicates
-from fylmlib.interactive import interactive
+from fylmlib.processor import processor
 import fylmlib.operations as ops
 import fylmlib.notify as notify
 import fylmlib.counter as counter
@@ -73,54 +71,8 @@ def main():
             # Iterate each film.
             for film in films:
 
-                # If the film should be definitively ignored, print the reason why, and skip.
-                if (film.should_ignore is True 
-                    and (config.interactive is False or not film.ignore_reason.startswith('Unknown'))):
-                    console.skip(film)
-                    continue
-
-                # Print film header to console.
-                console.film_loaded(film)
-
-                if config.interactive is True:
-                    # If the film is rejected via the interactive flow, skip.
-                    if interactive.lookup(film) is False:
-                        continue
-                else:
-                    # Search TMDb for film details (if enabled).
-                    film.search_tmdb()
-
-                    if film.should_ignore is True:
-                        console.skip(film)
-                        continue
-                    else:
-                        # If the lookup was successful, print the results to the console.
-                        console.search_result(film)
-
-                # If duplicate checking is enabled and the film is a duplicate, abort,
-                # *unless* overwriting is enabled. `is_duplicate` will always return
-                # false if duplicate checking is disabled. In interactive mode, user
-                # determines this outcome.
-                if film.is_duplicate:
-
-                    console.duplicates(film)
-
-                    if config.interactive is True:
-                        if not interactive.duplicates(film):
-                            continue
-                    else:
-                        if not duplicates.should_keep(film):
-                            continue
-                        duplicates.delete_unwanted(film)
-
-                # If it is a file and as a valid extension, process it as a file
-                if film.is_file and film.has_valid_ext:
-                    process.file(film)
-
-                # Otherwise if it's a folder, process it as a folder containing
-                # potentially multiple related files.
-                elif film.is_dir:
-                    process.dir(film)
+                # Process each film
+                processor.process(film)
 
         # When all films have been processed, notify Plex (if enabled).
         notify.plex()
