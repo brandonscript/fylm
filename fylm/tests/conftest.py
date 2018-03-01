@@ -24,7 +24,7 @@ import itertools
 # Use requests-cache to reduce remote API requests. 
 from datetime import timedelta
 import requests_cache
-requests_cache.install_cache('.cache.fylm_test_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
+requests_cache.install_cache('.cache.fylm_test_py%s' % sys.version_info[0], expire_after=timedelta(hours=12))
 requests_cache.core.remove_expired_responses()
 
 # Add the cwd to the path so we can load fylmlib modules and fylm app.

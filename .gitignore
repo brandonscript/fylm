@@ -6,3 +6,6 @@ fylm/tests/files
 *.sqlite
 *.egg
 *.egg-info
+.coverage
+
+coverage.xml
