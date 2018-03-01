@@ -46,6 +46,7 @@ def async_safe_copy(conn, *args):
 class TestMove(object):
 
     def test_basic_move(self):
+        
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -63,6 +64,7 @@ class TestMove(object):
         assert(os.path.exists(dst))
 
     def test_dst_exists_no_replace(self):
+
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -82,6 +84,7 @@ class TestMove(object):
         assert(os.path.exists(dst))
 
     def test_dst_exists_no_overwrite_no_replace(self):
+
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -103,6 +106,7 @@ class TestMove(object):
         assert(os.path.exists(dst))
 
     def test_dst_exists_overwrite(self):
+
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -124,6 +128,7 @@ class TestMove(object):
         assert(os.path.exists(dst))
 
     def test_dst_exists_replace(self):
+
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -145,6 +150,7 @@ class TestMove(object):
         assert(os.path.exists(dst))
 
     def test_test_enabled(self):
+
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -165,6 +171,7 @@ class TestMove(object):
         assert(not os.path.exists(dst))
 
     def test_src_eq_dst(self):
+
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 

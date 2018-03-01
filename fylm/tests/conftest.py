@@ -20,9 +20,9 @@ import os
 import sys
 import shutil
 import itertools
-
-# Use requests-cache to reduce remote API requests. 
 from datetime import timedelta
+
+import pytest
 import requests_cache
 requests_cache.install_cache('.cache.fylm_test_py%s' % sys.version_info[0], expire_after=timedelta(hours=12))
 requests_cache.core.remove_expired_responses()
@@ -31,30 +31,21 @@ requests_cache.core.remove_expired_responses()
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
+
 import fylm
 import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.operations as ops
 from make import make_mock_files
 
-# Set config to quiet so that TravisCI doesn't fail attempting to send
-# notifications to 127.0.0.1.
-config.quiet = True
-
 # Set the filename that contains test files
 test_files = 'files_short.json'
-
 # Travis doesn't do well with Unicode, so we give up.
 if os.environ.get('TRAVIS') is not None:
     if sys.version_info[0] < 3:
         test_files = 'files_no_unicode.json'
     else:
         test_files = 'files_short.json'  
-
-# TravisCI uses environment variables to keep keys secure. Map the TMDB_KEY
-# if it is available.
-if os.environ.get('TMDB_KEY') is not None: 
-    config['tmdb']['key'] = os.environ.get('TMDB_KEY')
 
 def full_path(path):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), path).strip()
@@ -79,6 +70,7 @@ ignored = []
 films = []
 valid_films = []
 
+@pytest.fixture(scope="session", autouse=True)
 def setup():
     global all_test_films
     global expected
@@ -87,6 +79,8 @@ def setup():
     global valid_films
     global films_src_path
     global films_dst_paths
+
+    config.reload()
 
     cleanup_all()
 
@@ -103,15 +97,15 @@ def setup():
     films = ops.dirops.get_new_films(films_src_path)
     valid_films = list(filter(lambda film: not film.should_ignore, films))
 
-    # [print(v.title, v.ignore_reason) for v in films]
-    # exit()
-
     if os.environ.get('DEBUG') is not None: 
         config.debug = True if os.environ.get('DEBUG') == 'True' else False
 
     # Set dirs
     config.source_dirs = [films_src_path]
     config.destination_dirs = films_dst_paths
+
+    # Set quiet
+    config.quiet = True
 
     fylm.config = config
 
@@ -168,9 +162,6 @@ def moved_films():
 def expected_path(expected, folder=True):
     quality = parser.get_quality(expected)
     return os.path.join(config.destination_dirs[quality or 'SD'], os.path.splitext(expected)[0] if folder is True else '', expected)
-
-# Set up on first load
-setup()
 
 # Skip cleanup to manually inspect test results
 # def pytest_sessionfinish(session, exitstatus):

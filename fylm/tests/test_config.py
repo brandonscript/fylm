@@ -30,10 +30,20 @@ fylm.config = config
 class TestConfig(object):
     """Tests operation impacting config options"""
 
-    def test_config_test_mode_enabled(self):
-        
+    def test_reload(self):
+
         conftest.setup()
 
+        assert(config.tmdb.enabled is True)
+        config.tmdb.enabled = False
+        assert(config.tmdb.enabled is False)
+        config.reload()
+        assert(config.tmdb.enabled is True)
+
+    def test_config_test_mode_enabled(self):
+
+        conftest.setup()
+        
         # Set test mode to true
         fylm.config.test = True
         assert(fylm.config.test is True)
@@ -54,9 +64,6 @@ class TestConfig(object):
         # Assert that no destructive changes are made in src or dst
         assert(len(moved_films) == 0)
         assert(existing_files_before == existing_files_after)
-
-        # Reset config to defaults
-        fylm.config.reload()
 
     def test_config_test_mode_disabled(self):
         
@@ -88,6 +95,3 @@ class TestConfig(object):
 
         # print("\n".join(non_duplicate_films), "\n\n", "\n".join(non_duplicate_valid_films), "\n\n", "\n".join(non_duplicate_remaining_films))
         # assert(len(non_duplicate_remaining_films) == len(non_duplicate_films) - len(non_duplicate_valid_films))
-
-        # Reset config to defaults
-        fylm.config.reload()

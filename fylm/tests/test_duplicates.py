@@ -37,7 +37,6 @@ import make
 # config.test = True
 
 # Overwrite the app's pre-loaded config
-config.reload()
 fylm.config = config
 
 # An array of potential duplicate files
@@ -60,6 +59,8 @@ class TestDuplicates(object):
 
     # @pytest.mark.skip()
     def test_replace_all_with_2160p(self):
+
+        conftest.setup()
 
         # Set up config
         fylm.config.test = False
@@ -107,11 +108,11 @@ class TestDuplicates(object):
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p'])))
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD'])))
-        # Reset config
-        fylm.config.reload()
 
     # @pytest.mark.skip()
     def test_keep_all_2160p(self):
+
+        conftest.setup()
 
         # Set up config
         fylm.config.test = False
@@ -157,11 +158,11 @@ class TestDuplicates(object):
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD'])))
-        # Reset config
-        fylm.config.reload()
 
     # @pytest.mark.skip()
     def test_keep_2160p_and_1080p(self):
+
+        conftest.setup()
 
         # Set up config
         fylm.config.test = False
@@ -208,11 +209,11 @@ class TestDuplicates(object):
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p'])))
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD'])))
-        # Reset config
-        fylm.config.reload()
 
     # @pytest.mark.skip()
     def test_replace_smaller(self):
+
+        conftest.setup()
 
         # Set up config
         fylm.config.test = False
@@ -245,11 +246,11 @@ class TestDuplicates(object):
         assert(not os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
-        # Reset config
-        fylm.config.reload()
 
     # @pytest.mark.skip()
     def test_do_not_replace_larger(self):
+
+        conftest.setup()
 
         # Set up config
         fylm.config.test = False
@@ -282,10 +283,10 @@ class TestDuplicates(object):
         assert(    os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
-        # Reset config
-        fylm.config.reload()
 
     def test_multiple_editions(self):
+
+        conftest.setup()
 
         new = 'You Only Live Twice (1967) 1080p/You Only Live Twice (1967) 1080p.mkv'
         existing = 'You Only Live Twice [Extended] (1967) 1080p/You Only Live Twice [Extended] (1967) 1080p.mkv'
@@ -321,5 +322,3 @@ class TestDuplicates(object):
         assert(not os.path.exists(os.path.join(conftest.films_src_path, new)))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], new)))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], existing)))
-        # Reset config
-        fylm.config.reload()

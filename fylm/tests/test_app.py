@@ -33,10 +33,12 @@ class TestApp(object):
 
         conftest.setup()
 
-        fylm.config.quiet = True
         fylm.config.test = False
         fylm.config.use_folders = True
         fylm.config.tmdb.enabled = False
+        assert(fylm.config.test is False)
+        assert(fylm.config.use_folders is True)
+        assert(fylm.config.tmdb.enabled is False)
 
         # Execute
         fylm.main()
@@ -49,7 +51,6 @@ class TestApp(object):
             expected_path = conftest.expected_path(expected, folder=True).lower()
             assert(expected_path in [m.lower() for m in moved_films])
 
-        config.reload()
         fylm.config = config
 
     # @pytest.mark.skip(reason="Slow")
@@ -58,10 +59,12 @@ class TestApp(object):
 
         conftest.setup()
 
-        fylm.config.quiet = True
         fylm.config.test = False
         fylm.config.use_folders = True
         fylm.config.tmdb.enabled = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.use_folders is True)
+        assert(fylm.config.tmdb.enabled is True)
 
         # Execute
         fylm.main()
@@ -79,10 +82,12 @@ class TestApp(object):
 
         conftest.setup()
         
-        fylm.config.quiet = True
         fylm.config.test = False
         fylm.config.use_folders = False
         fylm.config.tmdb.enabled = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.use_folders is False)
+        assert(fylm.config.tmdb.enabled is True)
 
         # Execute
         fylm.main()

@@ -22,7 +22,6 @@ CLI argumants.
 """
 
 from __future__ import unicode_literals, print_function
-from builtins import *
 
 import argparse
 import yaml
@@ -79,7 +78,7 @@ class Config(object):
 
         # Load the config file and map it to a 'AttrMap', a dot-notated dictionary.
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
-            self.config = AttrMap(yaml.load(yaml_config_file.read()), sequence_type=list)
+            self._defaults = AttrMap(yaml.load(yaml_config_file.read()), sequence_type=list)
 
         # Initialize the CLI argument parser.
         parser = argparse.ArgumentParser(description = 'A delightful filing and renaming app for film lovers.')
@@ -227,46 +226,52 @@ class Config(object):
         args, _ = parser.parse_known_args()
 
         # Re-map arg values onto known options already loaded from config.yaml.
-        if args.quiet is True: self.config.quiet = True
-        if args.test is True: self.config.test = True
-        if args.debug is True: self.config.debug = True
-        if args.no_console is True: self.config.no_console = True
-        if args.rename_only is True: self.config.rename_only = True
-        if args.interactive is True: self.config.interactive = True
-        if args.strict is False: self.config.strict = False
-        if args.force_lookup is True: self.config.force_lookup = True
-        if args.no_duplicates is False: self.config.duplicate_checking.enabled = False
-        if args.overwrite_existing is True: self.config.overwrite_existing = True
-        if args.source_override: self.config.source_dirs = args.source_override.split(",")
-        if args.limit: self.config.limit = args.limit
-        if args.min_popularity is not None: self.config.min_popularity = args.min_popularity
+        if args.quiet is True: self._defaults.quiet = True
+        if args.test is True: self._defaults.test = True
+        if args.debug is True: self._defaults.debug = True
+        if args.no_console is True: self._defaults.no_console = True
+        if args.rename_only is True: self._defaults.rename_only = True
+        if args.interactive is True: self._defaults.interactive = True
+        if args.strict is False: self._defaults.strict = False
+        if args.force_lookup is True: self._defaults.force_lookup = True
+        if args.no_duplicates is False: self._defaults.duplicate_checking.enabled = False
+        if args.overwrite_existing is True: self._defaults.overwrite_existing = True
+        if args.source_override: self._defaults.source_dirs = args.source_override.split(",")
+        if args.limit: self._defaults.limit = args.limit
+        if args.min_popularity is not None: self._defaults.min_popularity = args.min_popularity
 
         # Supress console if no_console is true.        
-        if self.config.no_console is True:
+        if self._defaults.no_console is True:
             sys.stdout = None
 
         # For tests on Travis, set min_filesize to 0
         if os.environ.get('TRAVIS') is not None:
-            self.config.min_filesize = 0
+            self._defaults.min_filesize = 0
+            self._defaults.tmdb.key = os.environ.get('TMDB_KEY')
 
         # Normalize the paths in source_dirs and remove duplicates.
-        self.config.source_dirs = list(set([os.path.normpath(d) for d in self.config.source_dirs]))
+        self._defaults.source_dirs = list(set([os.path.normpath(d) for d in self._defaults.source_dirs]))
 
         # Create placeholder var for mock inputs in interactive mode.
-        self.config.mock_input = None
+        self._defaults.mock_input = None
 
         # Set up cache.
-        if self.config.cache is True:
+        if self._defaults.cache is True:
             requests_cache.install_cache('.cache.fylm_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
             requests_cache.core.remove_expired_responses()
 
-        self.config.reload = self.reload
-
+        for k, v in self._defaults.items():
+            setattr(self, k, AttrMap(v) if isinstance(v, dict) else v)
+    
     def reload(self):
         """Reload config from config.yaml.
         """
-        self.__instance = None
+
+        __instance = None
+        self.__initialized = False
         self.__init__()
 
+        sys.modules[__name__] = self
+
 # Apply attributes to globals() so this can be imported using `import config`
-sys.modules[__name__] = Config().config
+sys.modules[__name__] = Config()

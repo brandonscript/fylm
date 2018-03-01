@@ -66,6 +66,9 @@ class TestFilm(object):
             assert(not_a_film.tmdb_id is None)
 
     def test_title_the(self):
+
+        conftest.setup()
+
         # Check that films beginning with 'The' have it moved to the end, ', The'
         for film in conftest.films:
             if not film.should_ignore and ', the' in film.title_the.lower():
@@ -73,6 +76,9 @@ class TestFilm(object):
                 assert(film.title_the.lower().endswith(', the'))
 
     def test_year(self):
+
+        conftest.setup()
+
         # Check that year is detected correctly
         for film in conftest.films:
             if film.year is not None:
@@ -83,12 +89,18 @@ class TestFilm(object):
                 assert(film.year != 720)
 
     def test_quality(self):
+
+        conftest.setup()
+
         # Check that quality is detected correctly
         for film in conftest.films:
             if film.quality is not None:
                 assert(film.quality in ['720p', '1080p', '2160p'])
 
     def test_edition(self):
+
+        conftest.setup()
+
         # Check that editions, when detected, are set correctly and cleaned from original string
         for film in conftest.films:
             for key, value in config.edition_map:
@@ -99,6 +111,9 @@ class TestFilm(object):
                     break
 
     def test_is_file_or_dir(self):
+
+        conftest.setup()
+
         # Check file extensions to verify whether source is a file or a dir
         for film in conftest.films:
             if film.is_file:
@@ -107,6 +122,9 @@ class TestFilm(object):
                 assert(film.ext == None)
 
     def test_should_ignore(self):
+
+        conftest.setup()
+        
         # Check that ignored films will be ignored
         for ignored in conftest.ignored:
             assert(ignored not in [os.path.basename(f.source_path) for f in conftest.valid_films])
