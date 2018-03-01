@@ -96,7 +96,7 @@ class parser:
         # Add back in . to titles or strings we know need to to keep periods.
         # Looking at you, S.W.A.T and After.Life.
         for keep_period_str in config.keep_period:
-            title = re.sub(re.compile(keep_period_str, re.I), keep_period_str, title)
+            title = re.sub(re.compile(r'\b' + keep_period_str + r'\b', re.I), keep_period_str, title)
 
         # Remove extra whitespace from the edges of the title and remove repeating
         # whitespace.
