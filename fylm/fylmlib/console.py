@@ -42,7 +42,6 @@ import fylmlib.progress as progress
 
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-DIVIDER = '======================================'
 
 class console:
     """Main class for console output methods.
@@ -57,11 +56,11 @@ class console:
         """Print and log the initial welcome header.
         """
         log.info('{}{}{}'.format(('-'*40), NOW, ('-'*40)))
-        console._notify_test()
-        console._notify_force_lookup()
-        console._notify_overwrite_existing()
+
+        console._notify()
+
         log.info('Scanning {}'.format(', '.join(config.source_dirs)))
-        print(color("Fylm is scanning " + ', '.join(config.source_dirs), fg=ansi.pink))
+        cls.pink("Fylm is scanning " + ', '.join(config.source_dirs))
         print('')
 
     @classmethod
@@ -142,28 +141,21 @@ class console:
                 log.detail('× Not found')
 
     @classmethod
-    def _notify_test(cls):
-        """Print and log a warning header to indicate that Fylm is running in test mode.
+    def _notify(cls):
+        """Print and log a warning header to indicate that Fylm is running in a warn mode.
         """
+
+        p = pyfancy()
+        if config.test or config.force_lookup or config.overwrite_existing:
+            p.add('\n')
         if config.test:
-            log.info(' *** TEST MODE *** ')
-            pyfancy().bold().dim('{}\nTEST MODE\nNo changes will be made\n{}\n'.format(DIVIDER, DIVIDER)).output()
-
-    @classmethod
-    def _notify_force_lookup(cls):
-        """Print and log a warning header to indicate that Fylm is running in force mode.
-        """
+            p.bold(color('Test mode enabled (no changes will be made)\n', fg=ansi.purple))
         if config.force_lookup:
-            log.info(' *** FORCE MODE *** ')
-            pyfancy().bold().light_yellow('{}\nFORCE MODE\nSmart folder checking will be disabled\nAssuming all folders are films\n{}\n'.format(DIVIDER, DIVIDER)).output()
-
-    @classmethod
-    def _notify_overwrite_existing(cls):
-        """Print and log a warning header to indicate that Fylm will overwrite duplicates.
-        """
+            p.bold(color('Force mode enabled (smart folder checking disabled, assuming all folders are films)\n', fg=ansi.yellow))
         if config.overwrite_existing:
-            log.info(' *** OVERWRITE MODE *** ')
-            pyfancy().bold().red('{}\nOVERWRITE EXISTING ENABLED\nExisting files will be overwritten\n{}\n'.format(DIVIDER, DIVIDER)).output()
+            p.bold(color('Overwrite mode enabled (identically named existing files will be silently overwritten)\n', fg=ansi.yellow))
+        if config.test or config.force_lookup or config.overwrite_existing:
+            p.output()
 
     @classmethod
     def move_or_copy(cls, src, dst):
@@ -195,8 +187,8 @@ class console:
         Args:
             count: (int) Count of successful moves/renames, from counter module.
         """
-        s = "Successfully {} {} film{}".format('renamed' if config.rename_only else 'moved', count, '' if count == 1 else 's')
-        print(s)
+        s = "\nSuccessfully {} {} film{}".format('renamed' if config.rename_only else 'moved', count, '' if count == 1 else 's')
+        cls.pink(s)
         log.info(s)
 
     @classmethod
@@ -355,6 +347,15 @@ class console:
         """
         pyfancy().raw(color('%s%s' % (cls.INDENT_PREFIX, s), fg=ansi.blue)).output()
         log.detail(s)
+
+    @classmethod
+    def pink(cls, s):
+        """Print and log text in pink. Prints pink.
+
+        Args:
+            s: (str, utf-8) String to print/log.
+        """
+        pyfancy().raw(color(s, fg=ansi.pink)).output()
 
     @classmethod
     def white(cls, s):
