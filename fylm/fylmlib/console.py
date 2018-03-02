@@ -158,7 +158,12 @@ class console:
             p.output()
 
     @classmethod
-    def move_or_copy(cls, src, dst):
+    def move_or_copy(cls, src, dst_path, dst):
+
+        # Do not print if source and destination root path are the same.
+        if src == dst_path:
+            return
+
         from fylmlib.operations import dirops
         cls.info("%s %s to %s" % (
             "Copying" if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving', 

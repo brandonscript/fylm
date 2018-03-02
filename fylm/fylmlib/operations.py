@@ -309,8 +309,11 @@ class dirops:
             max_size: (int) optional max size in Bytes a folder can be to qualify for deletion. Default=50000.
         """
 
+        # Get count of files
+        files_count = len(cls.find_deep(path))
+
         # First we ensure the dir is less than the max_size threshold, otherwise abort.
-        if _size_dir(path) < max_size or max_size == -1:
+        if _size_dir(path) < max_size or max_size == -1 or files_count == 0:
 
             console.debug("Recursively deleting {}".format(path))
 
@@ -328,10 +331,10 @@ class dirops:
                     if e.args[0] == 16:
                         console.error('Tried to remove %s but file is in use' % path)
         elif config.test is False:
-            console.warn('Will not delete %s because it is not empty and is larger than %s' % (path, formatter.pretty_size(max_size)))
+            console.warn('Will not delete %s (%s)' % (path, 'not empty' if files_count > 0 else formatter.pretty_size(max_size)))
 
     @classmethod
-    def delete_unwanted_files(cls, path, count=0):
+    def delete_unwanted_files(cls, path):
         """Delete all unwanted files in the specified dir.
 
         Using recursion, delete all invalid (unwanted) files and folders in the specified dir,
@@ -345,17 +348,19 @@ class dirops:
             Number of files that were deleted successfully.
         """
 
+        deleted_files = 0
+
         # Only perform destructive actions if in live mode.
         if not config.test:
             # Only delete unwanted files if enabled in config
             if config.remove_unwanted_files:
                 # Search for invalid files, enumerate them, and delete them.
                 for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
-                    # Increment count if deletion was successful.
+                    # Increment deleted_files if deletion was successful.
                     # `fileops.delete` has test check built in, so
                     # no need to check here.
-                    count += fileops.delete(f)
-        return count
+                    deleted_files += fileops.delete(f)
+        return deleted_files
 
 class fileops:
     """File-related class method operations.
@@ -450,7 +455,7 @@ class fileops:
 
         try:
             # If safe_copy is enabled, or if partition is not the same, copy instead.
-            if config.safe_copy or not dirops.is_same_partition(src, dst): 
+            if config.safe_copy is True or not dirops.is_same_partition(src, dst): 
 
                 # Store the size of the source file to verify the copy was successful.
                 expected_size = size(src)
