@@ -35,7 +35,7 @@ import fylmlib.operations as ops
 import fylmlib.notify as notify
 import fylmlib.counter as counter
 
-__version__ = '0.2.3-alpha'
+__version__ = '0.2.4-alpha'
 
 def main():
     """Main program."""

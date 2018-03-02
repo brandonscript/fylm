@@ -2,6 +2,13 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.4-alpha] 2018-02-28
+- New interactive mode (-i) to verify/fix matches, and handle duplicates
+- Move/copy operations are performed after all films are verified in interactive mode
+- Pushover notifications now include film poster (if available)
+- Duplicate searching is now multithreaded and dramatically faster
+- Deprecate support for Python 2.7, include Python 3.5 in TravisCI
+
 ## [0.2.3-alpha] 2018-02-13
 - Python 3.6 support
 - Add requests caching for faster API responses

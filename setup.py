@@ -41,7 +41,7 @@ with open('requirements-test.txt') as f:
 setup(
     name='Fylm',
 
-    version='0.2.3-alpha',
+    version='0.2.4-alpha',
 
     description='A automated command line app for organizing your film media.',
     long_description=long_description,
@@ -75,7 +75,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
 
         # Supported Python versions.
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
 
