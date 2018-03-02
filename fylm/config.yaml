@@ -109,8 +109,9 @@ duplicate_replacing:
     720p: ['1080p'] # Replace 720p films with 1080p
     SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) with 1080p or 720p
       
-# Copy files to the destination, verify, and delete originals, instead of move.
-# This is the default behavior when source and destination are on different partitions (or network)
+# Copy files to the destination, verify, and delete originals, instead of move, even if source and
+# destination are on the same partition. This is the default behavior when source and destination 
+# are on different partitions (or network).
 safe_copy: false
 
 # --quiet
