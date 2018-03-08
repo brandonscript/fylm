@@ -25,7 +25,7 @@ Fylm can:
 
 ### Installing
 
-Fylm is tested on Python 2.7 and 3.6. At some point in the future, Python 2 support will likely go the way of the dodo.
+Fylm is tested on Python 3.5 and 3.6. At some point in the future, Python 2 support will likely go the way of the dodo, but most of it is written with Python 2.7 compatibility in mind.
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
@@ -62,6 +62,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --test, -t
     --debug, -d
     --rename, -r
+    --copy, -c
     --interactive, -i
     --limit=n, -l
     --pop=n, -p
@@ -76,6 +77,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `test` will run the app in sandbox mode, which means no changes will actually be performed on the filesystem. A good rule of thumb is to always test first before you run the app on a long list of files.
 - `debug` will run the app with some extra details (ok, verbose word porridge) in the console.
 - `rename` will just rename files and folders and leave them in the source folder.
+- `copy` will force files on the same partition to be copied and verified instead of moved.
 - `interactive` prompt to confirm or correct TMDb matches.
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.
@@ -91,8 +93,6 @@ However, since we're putting a lot of faith in machines and automation, there ar
 Tests are run using `pytest`. To install:
 
     (sudo) pip install -r requirements-dev.txt
-    # or
-    (sudo) pip3 install -r requirements-dev.txt
 
 To run tests:
 
@@ -106,3 +106,5 @@ Contributions are welcome! Please send in a PR with a clear explanation of what 
 #### Credits
 
 Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/)
+Special thanks to [Pyfancy()](https://github.com/ilovecode1/Pyfancy-2) and [colors](https://github.com/jonathaneunice/colors/)
+

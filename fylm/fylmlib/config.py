@@ -89,7 +89,7 @@ class Config(object):
             '-q',
             '--quiet',
             action="store_true",
-            default=False,
+            default=self._defaults.quiet,
             dest="quiet",
             help='Do not send notifications or update Plex')
 
@@ -101,7 +101,7 @@ class Config(object):
             '-t',
             '--test',
             action="store_true",
-            default=False,
+            default=self._defaults.test,
             dest="test",
             help='Run in non-destructive test mode only (nothing is renamed, moved, or deleted)')
 
@@ -112,7 +112,7 @@ class Config(object):
             '-d',
             '--debug',
             action="store_true",
-            default=False,
+            default=self._defaults.debug,
             dest="debug",
             help='Display extra debugging information in the console output')
 
@@ -121,7 +121,7 @@ class Config(object):
         parser.add_argument(
             '--no-console',
             action="store_true",
-            default=False,
+            default=self._defaults.no_console,
             dest="no_console",
             help='Disable console output and stdout')
 
@@ -131,9 +131,19 @@ class Config(object):
             '-r',
             '--rename',
             action="store_true",
-            default=False,
+            default=self._defaults.rename_only,
             dest="rename_only",
             help='Rename films in place without moving or copying them')
+
+        # -c, --copy
+        # This option will force safe-copy behavior even when src and dst are on the same partition.
+        parser.add_argument(
+            '-c',
+            '--copy',
+            action="store_true",
+            default=self._defaults.safe_copy,
+            dest="safe_copy",
+            help='Force files on the same partition to be copied and verified')
 
         # -i, --interactive
         # This option enables prompts to confirm or correct TMDb matches.
@@ -141,7 +151,7 @@ class Config(object):
             '-i',
             '--interactive',
             action="store_true",
-            default=False,
+            default=self._defaults.interactive,
             dest="interactive",
             help='Prompt to confirm or correct TMDb matches')
 
@@ -151,7 +161,7 @@ class Config(object):
         parser.add_argument(
             '--no-strict',
             action="store_false",
-            default=True,
+            default=self._defaults.strict,
             dest="strict",
             help='Disable intelligent string comparison algorithm which ensure titles are a match')
 
@@ -163,7 +173,7 @@ class Config(object):
             '-f',
             '--force-lookup',
             action="store_true",
-            default=False,
+            default=self._defaults.force_lookup,
             dest="force_lookup",
             help='Assume that all files/folders (except TV shows) in source dir(s) are films, and look them all up')
 
@@ -172,7 +182,7 @@ class Config(object):
         parser.add_argument(
             '--no-duplicates',
             action="store_false",
-            default=True,
+            default=self._defaults.duplicate_checking.enabled,
             dest="no_duplicates",
             help='Disable duplicate checking')
 
@@ -183,7 +193,7 @@ class Config(object):
             '-o',
             '--overwrite',
             action="store_true",
-            default=False,
+            default=self._defaults.overwrite_existing,
             dest="overwrite_existing",
             help=('Forcibly overwrite any file (or matching files inside a film folder) with the same name, '
                   'regardless of size difference) # Forcibly overwrite duplicate files regardless of size diff'))
@@ -193,9 +203,10 @@ class Config(object):
         parser.add_argument(
             '-s',
             '--source',
-            action="store",
-            default=None,
-            dest="source_override",
+            action='store',
+            nargs='*',
+            default=self._defaults.source_dirs,
+            dest="source_dirs",
             type=str,
             help='Override the configured source dir(s) (comma separate multiple folders)')
 
@@ -205,7 +216,7 @@ class Config(object):
             '-l',
             '--limit',
             action="store",
-            default=0,
+            default=self._defaults.limit,
             dest="limit",
             type=int,
             help='Limit the number of files to rename and move in a single pass')
@@ -217,28 +228,19 @@ class Config(object):
             '-p',
             '--pop',
             action="store",
-            default=None,
-            dest="min_popularity",
+            default=self._defaults.tmdb.min_popularity,
+            dest="tmdb__min_popularity",
             type=float,
             help='Minimum popularity ranking on TMDb to consider a valid match')
 
         # Parse known args and discard any we don't know about.
         args, _ = parser.parse_known_args()
 
+        # Re-map any deeply nested arguments
+        args.tmdb = AttrMap({'min_popularity': args.tmdb__min_popularity})
+
         # Re-map arg values onto known options already loaded from config.yaml.
-        if args.quiet is True: self._defaults.quiet = True
-        if args.test is True: self._defaults.test = True
-        if args.debug is True: self._defaults.debug = True
-        if args.no_console is True: self._defaults.no_console = True
-        if args.rename_only is True: self._defaults.rename_only = True
-        if args.interactive is True: self._defaults.interactive = True
-        if args.strict is False: self._defaults.strict = False
-        if args.force_lookup is True: self._defaults.force_lookup = True
-        if args.no_duplicates is False: self._defaults.duplicate_checking.enabled = False
-        if args.overwrite_existing is True: self._defaults.overwrite_existing = True
-        if args.source_override: self._defaults.source_dirs = args.source_override.split(",")
-        if args.limit: self._defaults.limit = args.limit
-        if args.min_popularity is not None: self._defaults.min_popularity = args.min_popularity
+        self._defaults = self._defaults + AttrMap(vars(args))
 
         # Supress console if no_console is true.        
         if self._defaults.no_console is True:
