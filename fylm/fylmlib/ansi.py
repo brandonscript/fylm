@@ -38,9 +38,11 @@ class _AnsiColors:
         self.purple = 18
         self.pink = 197
         self.gray = 243
-        self.dark_gray = 238
+        self.dark_gray = 235
         self.light_gray = 248
+        self.black = 0
         self.white = 255
+        self.error = 1
         self.debug = 24
 
 ansi = _AnsiColors()

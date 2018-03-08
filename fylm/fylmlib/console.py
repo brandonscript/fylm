@@ -37,93 +37,141 @@ from fylmlib.ansi import ansi
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
 
-# TODO: Overhaul console to support a set of common patterns, 
-# colors, and a more flexible API.
-
-# Define some pretty console output constants
-NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-class console:
+class console(object):
     """Main class for console output methods.
 
-    All methods are class methods, thus this class should never be instantiated.
-    """
-    MAIN_PREFIX = ' '
-    INDENT_PREFIX = '    → '
+    All public methods should chain together to form a builder pattern, e.g.:
 
-    @classmethod
-    def start(cls):
+    console()
+        .white('white')
+        .blue(' blue')
+        .red(' red')
+        .bold().red(' bold red')
+        .dark_gray()
+        .dim(' dim').print()
+
+    """
+    def __init__(self, s=''):
+
+        # Formatted string
+        self._fmtxt = pyfancy(s)
+
+        # Plaintext string
+        self._pltxt = pyfancy(s)
+
+        # Color
+        self._color = None
+
+        # Style
+        self._style = []
+
+        # Inject ANSI helper functions
+        for c in vars(ansi):
+            self._colorizer(c)
+
+    def _colorizer(self, c):
+        def add(s=''):
+            if c is not None:
+                self._color = c
+            self.add(s)
+            return self
+        self.__setattr__(c, add)
+
+    def add(self, s=''):
+        style = '+'.join(list(set(self._style))) if self._style else None
+        self._fmtxt.add(color(s, fg=getattr(ansi, self._color or 'white'), style=style))
+        self._pltxt.add(s)
+        return self
+
+    def get(self):
+        return self._fmtxt.get()
+
+    def bold(self, s=''):
+        self._style.append('bold')
+        self.add(s)
+        return self
+
+    def dim(self, s=''):
+        self._style.append('faint')
+        self.add(s)
+        return self
+
+    def reset(self, s=''):
+        self._color = None
+        self._style = []
+        self.add(s)
+        return self
+
+    def indent(self, s=''):
+        self.add('    → %s' % s)
+        return self
+
+    def print(self, should_log=True):
+        if should_log:
+            log.info(self._pltxt.get())
+        self._fmtxt.output()
+
+class console(console):
+
+    def print_welcome(self):
         """Print and log the initial welcome header.
         """
-        log.info('{}{}{}'.format(('-'*40), NOW, ('-'*40)))
 
-        console._notify()
+        # Start log section header
+        log.info('%s %s %s' % (('-'*40), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ('-'*40)))
+        
+        c = console().pink("\nFylm is scanning %s\n" % ', '.join(config.source_dirs))
 
-        log.info('Scanning {}'.format(', '.join(config.source_dirs)))
-        cls.pink("Fylm is scanning " + ', '.join(config.source_dirs))
-        print('')
+        if config.test:
+            c.bold().purple('\n★ Test mode (no changes will be made)')
+        if config.force_lookup:
+            c.bold().yellow('\n★ Force lookup mode (smart folder checking is disabled, assuming all folders are films)')
+        if config.overwrite_existing:
+            c.bold().yellow('\n★ Overwrite mode enabled (identically named existing files will be silently overwritten)')
+        if config.test or config.force_lookup or config.overwrite_existing:
+            c.add('\n').print()
 
-    @classmethod
-    def film_loaded(cls, film):
-        """When a film is loaded, print and log the file (or dir) name and size.
+    def print_exit(self, count):
+        """Print and log the closing summary prior to exit.
+
+        Args:
+            count: (int) Count of successful moves/renames, from counter module.
+        """
+        s = "%sSuccessfully %s %s film%s" % (
+            '(Test) ' if config.test else '', 
+            'renamed' if config.rename_only else 'moved', 
+            count, 
+            '' if count == 1 else 's')
+        
+        c = console()
+        if config.test is True:
+            c.purple(s)
+        else:
+            c.pink(s)
+        c.print()
+
+    def print_exit_early(self):
+        """Print the early exit message.
+        """
+        console().pink('\n\nBye, Fylicia.').print()
+
+    def print_film_header(self, film):
+        """When a film is loaded, print a title header.
 
         Args:
             film: (Film) film to pass to debug calls.
+            ignore: (bool) True if the film should be ignored, else False
         """
+
         # Print original filename and size.
-        p = pyfancy().bold('{}{}{}'.format(cls.MAIN_PREFIX, film.original_filename, film.ext or ''))
-        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_largest_video)), fg=ansi.gray))
-        p.output()
+        c = console().bold(' ')
+        if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
+            c.red()
+        c.add(film.original_filename).add(film.ext or '')
+        c.reset().dark_gray(' (%s)' % formatter.pretty_size(film.size_of_largest_video))
+        c.print()
 
-        log.info('{} ({})'.format(film.source_path, formatter.pretty_size(film.size_of_largest_video)))
-        if film.title is not None:
-            console.debug('----------------------------')
-            console.debug('Init film object:\n')
-            console.debug('title\t{}'.format(film.title))
-            console.debug('year\t{}'.format(film.year))
-            console.debug('edition\t{}'.format(film.edition))
-            console.debug('media\t{}'.format(film.media))
-            console.debug('quality\t{}'.format(film.quality))
-            console.debug('size\t{}'.format(formatter.pretty_size(film.size_of_largest_video)))
-
-
-    @classmethod
-    def skip(cls, film):
-        """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
-
-        Args:
-            film: (Film) Film that was skipped.
-        """
-        p = pyfancy().bold().red('{}{}{}'.format(cls.MAIN_PREFIX, film.original_filename, film.ext or ''))
-        p.raw().dim(color(' ({})'.format(formatter.pretty_size(film.size_of_largest_video)), fg=ansi.gray))
-        p.output()
-        pyfancy().red().dim('{}{}'.format(cls.INDENT_PREFIX, film.ignore_reason)).output()
-        log.detail("Skipping (%s)" % film.ignore_reason)
-
-    @classmethod
-    def ask(cls, s):
-        """Print an interactive question.
-
-        Args:
-            s: (str, utf-8) String to print/log.
-        """
-        pyfancy().raw(color('%s%s' % (cls.INDENT_PREFIX, s), fg=ansi.pink)).output()
-
-    @classmethod
-    def choice(cls, s):
-        """Print a question choice.
-
-        Args:
-            s: (str, utf-8) String to print/log.
-        """
-        p = pyfancy().raw(color('      %s' % s.split('[')[0], fg=ansi.gray))
-        if '[' in s:
-            p.dark_gray().dim('[%s' % s.split('[')[1]).output()
-        else:
-            p.output()
-
-    @classmethod
-    def search_result(cls, film):
+    def print_search_result(self, film):
         """Print and log film search result details.
 
         Args:
@@ -133,116 +181,22 @@ class console:
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
             if film.tmdb_id is not None:
-                p = pyfancy().white(cls.INDENT_PREFIX).raw(color('✓ {} ({})'.format(film.title, film.year), fg=ansi.green)).dark_gray()
-                p.add(' [{}] {} match'.format(film.tmdb_id, formatter.percent(film.title_similarity))).output()
-                log.detail('✓ {} ({}) [{}] {} match'.format(film.title, film.year, film.tmdb_id, formatter.percent(film.title_similarity)))
+                c = console().indent()
+                c.green('✓ %s (%s)' % (film.title, film.year))
+                c.dark_gray(' [%s] %s match' % (film.tmdb_id, formatter.percent(film.title_similarity)))
+                c.print()
             else:
-                pyfancy().white(cls.INDENT_PREFIX).red('× {} ({})'.format(film.title, film.year)).output()
-                log.detail('× Not found')
-
-    @classmethod
-    def _notify(cls):
-        """Print and log a warning header to indicate that Fylm is running in a warn mode.
-        """
-
-        p = pyfancy()
-        if config.test or config.force_lookup or config.overwrite_existing:
-            p.add('\n')
-        if config.test:
-            p.bold(color('Test mode enabled (no changes will be made)\n', fg=ansi.purple))
-        if config.force_lookup:
-            p.bold(color('Force mode enabled (smart folder checking disabled, assuming all folders are films)\n', fg=ansi.yellow))
-        if config.overwrite_existing:
-            p.bold(color('Overwrite mode enabled (identically named existing files will be silently overwritten)\n', fg=ansi.yellow))
-        if config.test or config.force_lookup or config.overwrite_existing:
-            p.output()
-
-    @classmethod
-    def move_or_copy(cls, src, dst_path, dst):
-
-        # Do not print if source and destination root path are the same.
-        if src == dst_path:
-            return
-
-        from fylmlib.operations import dirops
-        cls.info("%s %s to %s" % (
-            "Copying" if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving', 
-            os.path.basename(src),
-            os.path.dirname(dst)))
-
-    @classmethod
-    def copy_progress(cls, copied, total):
-        """Print progress bar to terminal.
-        """
-        print('      ' + progress.progress_bar(100 * copied / total), end='\r')
-        sys.stdout.flush()
-
-    @classmethod
-    def clearline(cls):
-        """Clears the current printed line.
-        """
-
-        # Clear line.
-        sys.stdout.write("\033[K") 
-
-    @classmethod
-    def end(cls, count):
-        """Print and log the closing summary prior to exit.
+                c.red().indent('× %s (%s)' % (film.title, film.year)).print()
+   
+    def print_skip(self, film):
+        """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
 
         Args:
-            count: (int) Count of successful moves/renames, from counter module.
+            film: (Film) Film that was skipped.
         """
-        s = "\nSuccessfully {} {} film{}".format('renamed' if config.rename_only else 'moved', count, '' if count == 1 else 's')
-        cls.pink(s)
-        log.info(s)
+        console().red().dim().indent().red().dim(film.ignore_reason).print()
 
-    @classmethod
-    def exit_early(cls):
-        print(color('\nBye, Fylicia.', fg=ansi.pink))
-
-    @classmethod
-    def debug(cls, s):
-        """Print debugging details, if config.debug is enabled.
-
-        Args:
-            s: (str, utf-8) String to print/log
-        """
-        if config.debug is True: 
-            print(color(s, fg=ansi.debug))
-
-    @classmethod
-    def info(cls, s):
-        """Print and log less important text. Prints dark gray.
-
-        Args:
-            s: (str, utf-8) String to print/log.
-        """
-        pyfancy().dark_gray('{}{}'.format(cls.INDENT_PREFIX, s)).output()
-        log.detail(s)
-
-    @classmethod
-    def error(cls, s, x=Exception):
-        """Print an error, then call log.error, which raises an Exception. Prints red.
-
-        Args:
-            s: (str, utf-8) String to print/log.
-        """
-        log.error(s)
-        raise x(s)
-
-    @classmethod
-    def rename(cls, title='', size=''):
-        """Print film rename details to the console. Prints white first, then a green highlight.
-
-        Args:
-            title: (str, utf-8) String to print green and send to log.
-            size: (float) String to print white and send to log.
-        """
-        pyfancy().white('{}⌥ '.format(cls.INDENT_PREFIX)).raw(color(title, fg=ansi.green)).dark_gray().dim(' ({})'.format(size)).output()
-        log.detail('⌥ {} {}'.format(title, size))
-
-    @classmethod
-    def duplicates(cls, film):
+    def print_duplicates(self, film):
         """Print any duplicates found to the console.
 
         Args:
@@ -254,130 +208,127 @@ class console:
         from fylmlib.duplicates import duplicates
 
         if len(film.duplicates) > 0:
-            console.blue('{} duplicate{} found:'.format(
-                len(film.duplicates),
-                '' if len(film.duplicates) == 1 else 's'))
+            
+            console().blue().indent().add('%s duplicate%s found:' % (
+                len(film.duplicates), 
+                '' if len(film.duplicates) == 1 else 's')).print()
+
             if config.interactive is False:
+
                 for d in film.duplicates:
-                
-                    pretty_size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
+    
+                    size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
                     pretty_size = formatter.pretty_size(d.size)
-                
-                    if duplicates.should_replace(film, d):
-                        console.duplicate(
-                            "  Replacing '{}'".format(os.path.basename(d.source_path)),
-                            " ({})".format(pretty_size),
-                            " [{}]".format(pretty_size_diff))
-                    elif duplicates.should_keep_both(film, d):
-                        console.duplicate(
-                            "  Keeping '{}'".format(os.path.basename(d.source_path)),
-                            " ({})".format(pretty_size),
-                            " [{}]".format(pretty_size_diff))
-                    else:
-                        console.warn("  Ignoring because '{}' ({}) is {}".format(
+                    should_replace = duplicates.should_replace(film, d)
+                    should_keep_both = duplicates.should_keep_both(film, d)
+
+                    c = console().blue().indent()
+
+                    if should_replace or should_keep_both:
+                        c.add('  %s' % 'Replacing ' if should_replace else 'Keeping ')
+                        c.add("'%s'" % os.path.basename(d.source_path))
+                        c.add(' (%s)' % pretty_size)
+                        c.dark_gray(' [%s]' % size_diff)
+                    else:   
+                        c.red('  Ignoring because ')
+                        c.add("'%s'" % os.path.basename(d.source_path))
+                        c.red("'%s' (%s) is %s" % (
                             os.path.basename(d.source_path), 
                             pretty_size,
-                            pretty_size_diff))
+                            size_diff))
 
-    @classmethod
-    def duplicate(cls, s1, s2, s3):
-        """Print and log replacement text, note, and dim.
+                    c.print()
 
-        Args:
-            s1: (str, utf-8) String 1 to print/log.
-            s2: (str, utf-8) String 2 to print/log.
-            s3: (str, utf-8) String 3 to print/log.
-        """
-        pyfancy().raw(
-            color('%s%s' % (cls.INDENT_PREFIX, s1), fg=ansi.blue)).raw(
-            color(s2, fg=ansi.blue)).dark_gray().dim(s3).output()
-        log.detail('{}{}{}'.format(s1, s2, s3))
-
-    @classmethod
-    def interesting(cls, s):
-        """Print and log interesting text. Prints green.
+    def print_ask(self, s):
+        """Print an interactive question.
 
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().raw(color('{}{}'.format(cls.INDENT_PREFIX, s)), fg=ansi.green).output()
-        log.detail(s)
+        console().yellow().indent().add(s).print()
 
-    @classmethod
-    def colored(cls, s, ansicolor):
-        """Print and log colored text.
+    def print_interactive_error(self, s):
+        """Print an interactive error.
 
         Args:
             s: (str, utf-8) String to print/log.
         """
-        pyfancy().raw(color(s, fg=ansicolor)).output()
-        log.detail(s)
+        console().red('      %s' % s).print()
 
-    @classmethod
-    def caution(cls, s):
-        """Print and log caution text. Prints yellow.
+    def print_interactive_skipped(self):
+        """Print an interactive skip message.
+        """
+        console().dark_gray('      Skipped').print()
+
+    def print_choice(self, idx, choice):
+        """Print a question choice.
 
         Args:
-            s: (str, utf-8) String to print/log.
+            idx: (int or str) Index of choice (first letter or number)
+            choice: (str, utf-8) Choice to print/log.
         """
-        pyfancy().yellow('{}{}'.format(cls.INDENT_PREFIX, s)).output()
-        log.detail(s)
+
+        c = console().gray('      %s)' % idx)
+        if choice.startswith('['):
+            c.dark_gray(' %s' % choice)
+        else:
+            c.gray(' %s' % choice)
+        c.print()
+
+    def print_move_or_copy(self, src, dst_path, dst):
+
+        # Do not print if source and destination root path are the same.
+        if src == dst_path:
+            return
+
+        from fylmlib.operations import dirops
+        console().gray().indent("%s %s to %s" % (
+            "Copying" if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving', 
+            os.path.basename(src),
+            os.path.dirname(dst))).print()
+
+    def print_copy_progress_bar(self, copied, total):
+        """Print progress bar to terminal.
+        """
+        print('      ' + progress.progress_bar(100 * copied / total), end='\r')
+        sys.stdout.flush()
 
     @classmethod
-    def warn(cls, s):
-        """Print and log a warning. Prints red.
+    def get_input(cls, prompt):
+        """Prompt the user for input
 
         Args:
-            s: (str, utf-8) String to print/log.
+            prompt: (str, utf-8) Query to prompt.
         """
-        pyfancy().raw(color('{}{}'.format(cls.INDENT_PREFIX, s), fg=ansi.red)).output()
-        log.detail(s)
+        return input(color('    » ', fg=ansi.white) + color(prompt, fg=ansi.pink))
 
     @classmethod
-    def red(cls, s):
-        """Print and log text in red. Prints red.
-
-        Args:
-            s: (str, utf-8) String to print/log.
+    def clearline(cls):
+        """Clears the current printed line.
         """
-        pyfancy().red('{}'.format(s)).output()
-        log.detail(s)
+
+        # Clear line.
+        sys.stdout.write("\033[K")
 
     @classmethod
-    def blue(cls, s):
-        """Print and log text in red. Prints red.
+    def debug(cls, s):
+        """Print debugging details, if config.debug is enabled.
 
         Args:
-            s: (str, utf-8) String to print/log.
+            s: (str, utf-8) String to print
         """
-        pyfancy().raw(color('%s%s' % (cls.INDENT_PREFIX, s), fg=ansi.blue)).output()
-        log.detail(s)
+        if config.debug is True:
+            log.debug(s)
+            print(color(s, fg=ansi.debug, style='bold'))
 
     @classmethod
-    def pink(cls, s):
-        """Print and log text in pink. Prints pink.
+    def error(cls, s, x=Exception):
+        """Print error details.
 
         Args:
-            s: (str, utf-8) String to print/log.
+            s: (str, utf-8) String to print
         """
-        pyfancy().raw(color(s, fg=ansi.pink)).output()
-
-    @classmethod
-    def white(cls, s):
-        """Print and log text in white. Prints white.
-
-        Args:
-            s: (str, utf-8) String to print/log.
-        """
-        pyfancy().white('{}'.format(s)).output()
-        log.detail(s)
-
-    @classmethod
-    def dim(cls, s):
-        """Print and log unimportant text. Prints dim (darker).
-
-        Args:
-            s: (str, utf-8) String to print/log.
-        """
-        pyfancy().dark_gray().dim('{}{}'.format(cls.INDENT_PREFIX, s)).output()
-        log.detail(s)
+        log.error(s)
+        print(color(s, fg=ansi.error, style='bold'))
+        if x:
+            x(s)

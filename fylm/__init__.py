@@ -45,7 +45,7 @@ def main():
         counter.count = 0
 
         # Print the welcome message to the console.
-        console.start()
+        console().print_welcome()
 
         # Attempt to create the destination dirs if they does not exist.
         for _, dr in config.destination_dirs.items():
@@ -66,18 +66,23 @@ def main():
             ops.dirops.verify_paths_exist([source_dir])
 
             # Retrieve a list of films from the current source dir and process them.
-            processor.route(ops.dirops.get_new_films(source_dir))
+            processor.iterate(ops.dirops.get_new_films(source_dir))
 
         # When all films have been processed, notify Plex (if enabled).
         notify.plex()
 
         # Print the summary.
-        console.end(counter.count)
+        console().print_exit(counter.count)
     
     except (KeyboardInterrupt, SystemExit):
-        console.exit_early()
+        console().print_exit_early()
     except (IOError, OSError) as e:
-        console.red(e)
+        if config.debug:
+            console.error(e)
+            import traceback
+            traceback.print_exc()
+    except Exception as e:
+        console.error(e, type(e))
         if config.debug:
             import traceback
             traceback.print_exc()

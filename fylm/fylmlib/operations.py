@@ -56,7 +56,7 @@ class dirops:
             paths: (list) paths to verify existence.
         """
         for d in (d for d in paths if not os.path.exists(d)):
-            console.error("'{}' does not exist; check folder path in config.yaml".format(d), IOError)
+            console.error("'%s' does not exist; check source path in config.yaml" % d)
 
     @classmethod
     def is_same_partition(cls, f1, f2):
@@ -194,11 +194,9 @@ class dirops:
             
             # Get caller of this method
             import inspect
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
             for f in list(set(valid_files)):
                 console.debug('\n`{}` found "{}" ({})\nin {}'.format(
-                    calframe[1][3],
+                    inspect.stack()[0][3],
                     os.path.basename(f),
                     formatter.pretty_size(size(f)), path))
         return sorted(valid_files, key=os.path.getsize, reverse=True)
@@ -331,7 +329,7 @@ class dirops:
                     if e.args[0] == 16:
                         console.error('Tried to remove %s but file is in use' % path)
         elif config.test is False:
-            console.warn('Will not delete %s (%s)' % (path, 'not empty' if files_count > 0 else formatter.pretty_size(max_size)))
+            console().red().indent('Will not delete %s (%s)' % (path, 'not empty' if files_count > 0 else formatter.pretty_size(max_size)))
 
     @classmethod
     def delete_unwanted_files(cls, path):
@@ -437,12 +435,12 @@ class fileops:
             # *should* have already removed duplicates at the destination.
             if should_replace is False and config.overwrite_existing is False:
                 # If we're not overwriting, return false
-                console.warn('Unable to move (identical file already exists)')
+                console().red().indent('Unable to move (identical file already exists)')
                 return False
                 
             # File overwriting is enabled and not marked to replace, so warn, 
             # and proceed continue.
-            console.warn('Overwriting %s' % os.path.basename(dst))
+            console().red().indent('Overwriting %s' % os.path.basename(dst))
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
@@ -475,7 +473,7 @@ class fileops:
 
                 # If not, then we print an error and return False.
                 else:
-                    console.warn("Size mismatch: file is {:,} bytes, expected {:,} bytes".format(dst_size, expected_size))
+                    console().red().indent("Size mismatch: file is {:,} bytes, expected {:,} bytes".format(dst_size, expected_size))
                     return False
             
             # Otherwise, move the file instead.
@@ -487,7 +485,7 @@ class fileops:
         except (IOError, OSError) as e:
 
             # Catch exception and soft warn in the console (don't raise Exception).
-            console.warn('Failed to move {} to {}'.format(src, dst))
+            console().red().indent('Failed to move {} to {}'.format(src, dst))
             console.debug(e)
             print(e)
             return False
@@ -535,7 +533,7 @@ class fileops:
             size = os.stat(src).st_size
             with open(src, 'rb') as fsrc:
                 with open(dst, 'wb') as fdst:
-                    cls._copyfileobj(fsrc, fdst, callback=console.copy_progress, total=size)
+                    cls._copyfileobj(fsrc, fdst, callback=console().print_copy_progress_bar, total=size)
         
         # Perform a low-level copy.
         shutil.copymode(src, dst)
@@ -603,7 +601,7 @@ class fileops:
         # one we're renaming. If it does, abort (otherwise shutil.move would
         # silently overwrite it) and print a warning to the console.
         if os.path.exists(dst) and os.path.basename(src) == os.path.basename(dst):
-            console.warn('Unable to rename {} (identical file already exists)'.format(dst))
+            console().red().indent('Unable to rename {} (identical file already exists)'.format(dst))
             return
 
         console.debug('Renaming: %s' % src)
@@ -656,7 +654,7 @@ class fileops:
             return 1
         except Exception:
             # Handle any exceptions gracefully and warn the console.
-            console.warn('Unable to remove {}'.format(file))
+            console().red().indent('Unable to remove {}'.format(file))
             # Return 0 because we don't want a success counter to increment.
             return 0
 

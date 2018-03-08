@@ -43,67 +43,20 @@ class processor:
     """
 
     @classmethod
-    def route(cls, films):
-        """Main entry point for processor, which routes processing to the correct handler.
+    def iterate(cls, films):
+        """Main entry point for processor, iterates a list of films.
 
         Args:
             films: (list(Film)) film objects to process.
         """
 
         for film in films:
-            # If the film should be definitively ignored, print the reason why, and skip.
-            if (film.should_ignore is True 
-                and (config.interactive is False or not film.ignore_reason.startswith('Unknown'))):
-                console.skip(film)
-                continue
+            
+            # Route film to correct handler.
+            cls.route(film)
 
-            # Print film header to console.
-            console.film_loaded(film)
-
-            if config.interactive is True:
-                # If the film is rejected via the interactive flow, skip.
-                if interactive.lookup(film) is False:
-                    continue
-            else:
-                # Search TMDb for film details (if enabled).
-                film.search_tmdb()
-
-                if film.should_ignore is True:
-                    console.skip(film)
-                    continue
-                else:
-                    # If the lookup was successful, print the results to the console.
-                    console.search_result(film)
-
-            # If duplicate checking is enabled and the film is a duplicate, abort,
-            # *unless* overwriting is enabled. `is_duplicate` will always return
-            # false if duplicate checking is disabled. In interactive mode, user
-            # determines this outcome.
-            if film.is_duplicate:
-
-                console.duplicates(film)
-
-                if config.interactive is True:
-                    if not interactive.duplicates(film):
-                        continue
-                else:
-                    if not duplicates.should_keep(film):
-                        continue
-                    duplicates.delete_unwanted(film)
-
-            # If it is a file and as a valid extension, process it as a file
-            if film.is_file and film.has_valid_ext:
-                cls.prepare_file(film)
-
-            # Otherwise if it's a folder, process it as a folder containing
-            # potentially multiple related files.
-            elif film.is_dir:
-                cls.prepare_dir(film)
-
-            # If we're not running in interactive mode, do all the moving 
-            # on a first-in-first out basis.
-            if config.interactive is False:
-                cls.process_move_queue()
+            # Print blank line to separate next film
+            console().print()
 
         # If we are running in interactive mode, we need to handle the moves
         # after all the lookups are completed in case we have long-running copy
@@ -112,9 +65,72 @@ class processor:
 
             # If we're moving more than one film, print the move header.
             queue_count = len(_move_queue)
-            console.pink('\nCopying %s file%s...' % (queue_count, '' if queue_count == 1 else 's'))
+            console().pink('Moving %s file%s...\n' % (queue_count, '' if queue_count == 1 else 's')).print()
 
             # Process the entire queue
+            cls.process_move_queue()
+
+    @classmethod
+    def route(cls, film):
+        """Route film processing to the correct handler.
+
+        Args:
+            films: (Film) film object to route.
+        """
+
+        # Print film header to console.
+        console().print_film_header(film)
+            
+        if config.interactive is True and (not film.ignore_reason or film.ignore_reason.startswith('Unknown')):
+            # If the film is rejected via the interactive flow, skip.
+            if interactive.lookup(film) is False:
+                return
+        else:
+
+            # If the film should be ignored, skip.
+            if film.should_ignore is True:
+                console().print_skip(film)
+                return
+
+            # Search TMDb for film details (if enabled).
+            film.search_tmdb()
+
+            # If the film still should be ignored after looking up, skip.
+            if film.should_ignore is True:
+                console().print_skip(film)
+                return
+            else:
+                # If the lookup was successful, print the results to the console.
+                console().print_search_result(film)
+
+        # If duplicate checking is enabled and the film is a duplicate, abort,
+        # *unless* overwriting is enabled. `is_duplicate` will always return
+        # false if duplicate checking is disabled. In interactive mode, user
+        # determines this outcome.
+        if film.is_duplicate:
+
+            console().print_duplicates(film)
+
+            if config.interactive is True:
+                if not interactive.duplicates(film):
+                    return
+            else:
+                if not duplicates.should_keep(film):
+                    return
+                duplicates.delete_unwanted(film)
+
+        # If it is a file and as a valid extension, process it as a file
+        if film.is_file and film.has_valid_ext:
+            cls.prepare_file(film)
+
+        # Otherwise if it's a folder, process it as a folder containing
+        # potentially multiple related files.
+        elif film.is_dir:
+            cls.prepare_dir(film)
+
+        # If we're not running in interactive mode, do all the moving 
+        # on a first-in-first out basis.
+        if config.interactive is False:
             cls.process_move_queue()
 
     @classmethod
@@ -125,18 +141,21 @@ class processor:
         # Enumerate the move/copy queue and execute
         for film, queued_ops in _move_queue:
 
+            if config.interactive is True:
+                console().print_film_header(film)
+
             copied_files = 0
 
             # Determine the root destionation path for the film
             dst_path = film.destination_dir if film.is_dir else queued_ops[0].dst
 
             if film.source_path == dst_path:
-                console.dim('Already moved and renamed')
+                console().indent().dark_gray('Already renamed').print()
 
             for move in queued_ops:
 
                 # Execute the move/copy and print details
-                console.move_or_copy(film.source_path, dst_path, move.dst)
+                console().print_move_or_copy(move.src, dst_path, move.dst)
                 copied_files += move.do()
 
             # If the move is successful...
@@ -153,6 +172,10 @@ class processor:
 
                 # Update the film's source_path its new location once all files have been moved.
                 film.source_path = dst_path
+
+            if config.interactive is True:
+                # Print blank line to separate next film
+                console().print()
 
         # When move/copy operations are complete, empty the queue.
         _move_queue = []
@@ -270,7 +293,7 @@ class processor:
         # don't want to try and remove the source folder if the original source
         # is the same as the destination.
         if config.remove_source and film.original_path != film.destination_dir:
-            console.dim('Removing parent folder')
+            console().indent().dark_gray('Removing parent folder').print()
             console.debug('Deleting %s' % film.original_path)
 
             # Delete the source dir and its contents

@@ -26,17 +26,11 @@ from builtins import *
 import readline
 import os
 
-from colors import color, bold
-
 import fylmlib.config as config
 from fylmlib.parser import parser
 from fylmlib.console import console
-from fylmlib.ansi import ansi
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
-
-INPUT_PROMPT = '»'
-MESSAGE_PREFIX = '      '
 
 class interactive:
 
@@ -83,13 +77,16 @@ class interactive:
             return True
 
         for d in film.duplicates:
-            pretty_size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
+
+            size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
             pretty_size = formatter.pretty_size(d.size)
 
-            console.duplicate(
-                "'{}'".format(os.path.basename(d.source_path)),
-                " ({})".format(pretty_size),
-                " [{}]".format(pretty_size_diff))
+            c = console().blue().indent()
+
+            c.add("'%s'" % os.path.basename(d.source_path))
+            c.add(' (%s)' % pretty_size)
+            c.dark_gray(' [%s]' % size_diff)
+            c.print()
 
             choices = []
             if film.new_filename__ext() == d.new_filename__ext():
@@ -132,8 +129,8 @@ class interactive:
             True if the film passes verification, else False
         """
 
-        console.search_result(film)
-        console.ask('Is this correct? [Y]')
+        console().print_search_result(film)
+        console().print_ask('Is this correct? [Y]')
         choice = cls._choice_input(
             prompt='', 
             choices=[
@@ -154,7 +151,7 @@ class interactive:
             return cls.lookup_by_id(film)
         elif choice == 3:
             film.ignore_reason = 'Skipped'
-            console.dim("Skipped")
+            console().print_interactive_skipped()
             return False
         else:
             return film.tmdb_verified  
@@ -170,7 +167,7 @@ class interactive:
             True if the film should be processed, else False
         """      
 
-        console.ask("%s [N]" % film.ignore_reason)
+        console().print_ask("%s [N]" % film.ignore_reason)
 
         # Continuously loop this if an invalid choice is entered.
         while True:
@@ -191,7 +188,7 @@ class interactive:
                 return cls.lookup_by_id(film)
             elif choice == 2:
                 film.ignore_reason = 'Skipped'
-                console.dim("Skipped")
+                console().print_interactive_skipped()
                 return False           
 
     @classmethod
@@ -222,11 +219,11 @@ class interactive:
                     # Verify the search result.
                     return cls.verify_film(film)
                 except Exception as e:
-                    console.colored("%sHrm, that ID doesn't exist" % MESSAGE_PREFIX, ansi.pink)
-                    console.debug(e)
+                    console().print_interactive_error("Hrm, that ID doesn't exist")
+                    console().debug(e)
             except Exception as e:
-                console.colored("%sA TMDb ID must be a number" % MESSAGE_PREFIX, ansi.pink) 
-                console.debug(e)
+                console().print_interactive_error("A TMDb ID must be a number")
+                console().debug(e)
 
     @classmethod
     def search_by_name(cls, film):
@@ -242,7 +239,7 @@ class interactive:
         """
 
         film.tmdb_id = None
-        search = cls._simple_input('Search TMDb ', '%s %s' % (film.title, film.year or ''), mock_input=_first(config.mock_input))
+        search = cls._simple_input('Search TMDb: ', '%s %s' % (film.title, film.year or ''), mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
         film.title = parser.get_title(search)
         film.year = parser.get_year(search)
@@ -266,20 +263,20 @@ class interactive:
         # If no matches are found, continually prompt user to find a correct match.
 
         while len(film.matches) == 0:
-            console.colored("%sNo matches found" % MESSAGE_PREFIX, ansi.pink)
+            console().print_interactive_error("No results found")
             return cls.search_by_name(film)
 
-        console.white(bold('%sSearch results:' % console.INDENT_PREFIX))
+        console().indent().bold().white('Search results:').print()
 
         # Generate a list of choices based on search results and save the input
         # to `choice`.
         choice = cls._choice_input(
-            prompt="Select ", 
+            prompt="", 
             choices=['%s (%s) [%s]' % (
                 m.proposed_title, 
                 m.proposed_year, 
                 m.tmdb_id) for m in film.matches] + 
-            ['[ Edit search ]', '[ Search by ID ]', '[ Skip ]'],
+            ['[ New search ]', '[ Search by ID ]', '[ Skip ]'],
             enumeration='number',
             mock_input=_first(config.mock_input))
 
@@ -299,7 +296,7 @@ class interactive:
         elif choice == len(film.matches) + 2:
             film.tmdb_id = None
             film.ignore_reason = 'Skipped'
-            console.dim("Skipped")
+            console().print_interactive_skipped()
             return False
 
         # If we haven't returned yet, update the film with the selected match 
@@ -307,7 +304,7 @@ class interactive:
         film.update_with_match(film.matches[choice])
         film.tmdb_verified = True
 
-        console.search_result(film)
+        console().print_search_result(film)
         return True
 
     @classmethod
@@ -328,7 +325,7 @@ class interactive:
 
         readline.set_startup_hook(lambda: readline.insert_text(prefill))
         try:
-            return input('%s%s ' % (color(console.INDENT_PREFIX + prompt, fg=ansi.pink), INPUT_PROMPT))
+            return console.get_input(prompt)
         finally:
             readline.set_startup_hook()
 
@@ -389,11 +386,12 @@ class interactive:
         elif enumeration == 'char':
             assert len(choices) < 27, "Choices can't be represented by single chars"
             chars = [x[0].title() if isinstance(choices[0], tuple) else x[:1].title() for x in choices]
+            choices = [x[1] if isinstance(choices[0], tuple) else x for x in choices]
         else:
             raise ValueError("enumeration is not 'number' or 'char'")
 
-        for c, choice in zip(chars, choices):
-            console.choice("{}) {}".format(c, choice[1] if isinstance(choice, tuple) else choice))
+        for idx, choice in zip(chars, choices):
+            console().print_choice(idx, choice)
 
         answer = cls._condition_input(
             prompt, 

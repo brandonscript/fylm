@@ -63,23 +63,30 @@ class log:
             logging.disable(logging.NOTSET)
 
     @classmethod
-    def detail(cls, text):
+    def indent(cls, text):
         """Convenience method to write info to log with an indent and prefix.
         """
-        log.info('\t→ {}'.format(text))
+        log.info('\t{}'.format(text))
 
     @classmethod
     def info(cls, text):
         """Write info to log.
         """
-        logging.info('{} ... {}'.format(NOW, text))
+        logging.info('{}::{}'.format(NOW, text))
 
     @classmethod
     def error(cls, text):
-        """Write an error to the log and raise an Exception.
+        """Write an error to the log.
         """
         text = '{} - Error: {}'.format(NOW, text)
         logging.error(text)
+
+    @classmethod
+    def debug(cls, text):
+        """Write debug text to the log.
+        """
+        text = '{} - Debug: {}'.format(NOW, text)
+        logging.debug(text)
 
 # Configure the logger when this module is loaded.
 log.config()
