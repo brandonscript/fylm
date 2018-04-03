@@ -105,6 +105,7 @@ Contributions are welcome! Please send in a PR with a clear explanation of what 
 
 #### Credits
 
-Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/)
-Special thanks to [Pyfancy()](https://github.com/ilovecode1/Pyfancy-2) and [colors](https://github.com/jonathaneunice/colors/)
+Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/).
+
+Special thanks to [Pyfancy()](https://github.com/ilovecode1/Pyfancy-2) and [colors](https://github.com/jonathaneunice/colors/).
 

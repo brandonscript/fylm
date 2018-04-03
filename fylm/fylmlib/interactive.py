@@ -129,9 +129,14 @@ class interactive:
             True if the film passes verification, else False
         """
 
+        # TODO: Handle endless loop when no matches are found
+        # TODO: When a bad lookup is found (Mars Quest for Life 1080p (2009).mkv), if fixed by a good match, should be green in interactive rename, not red
+
         console().print_search_result(film)
-        console().print_ask('Is this correct? [Y]')
-        choice = cls._choice_input(
+        
+        if len(film.matches) > 0:        
+            console().print_ask('Is this correct? [Y]')
+            choice = cls._choice_input(
             prompt='', 
             choices=[
                 ('Y', 'Yes'), 
@@ -141,20 +146,41 @@ class interactive:
             default='Y',
             mock_input=_first(config.mock_input))
 
-        config.mock_input = _shift(config.mock_input)
+            config.mock_input = _shift(config.mock_input)
 
-        film.tmdb_verified = (choice == 0)
+            film.tmdb_verified = (choice == 0)
 
-        if choice == 1:
-            return cls.search_by_name(film)
-        elif choice == 2:
-            return cls.lookup_by_id(film)
-        elif choice == 3:
-            film.ignore_reason = 'Skipped'
-            console().print_interactive_skipped()
-            return False
+            if choice == 1:
+                return cls.search_by_name(film)
+            elif choice == 2:
+                return cls.lookup_by_id(film)
+            elif choice == 3:
+                film.ignore_reason = 'Skipped'
+                console().print_interactive_skipped()
+                return False
+            else:
+                return film.tmdb_verified  
+
         else:
-            return film.tmdb_verified  
+            console().print_ask('No matches found')
+            choice = cls._choice_input(
+            prompt='', 
+            choices=[
+                ('N', 'Search by name'),
+                ('I', 'Lookup by ID'),
+                ('S', '[ Skip ]')],
+            mock_input=_first(config.mock_input))
+
+            config.mock_input = _shift(config.mock_input)
+
+            if choice == 0:
+                return cls.search_by_name(film)
+            elif choice == 1:
+                return cls.lookup_by_id(film)
+            elif choice == 2:
+                film.ignore_reason = 'Skipped'
+                console().print_interactive_skipped()
+                return False
 
     @classmethod
     def handle_unknown_film(cls, film):
@@ -220,10 +246,10 @@ class interactive:
                     return cls.verify_film(film)
                 except Exception as e:
                     console().print_interactive_error("Hrm, that ID doesn't exist")
-                    console().debug(e)
+                    console.debug(e)
             except Exception as e:
                 console().print_interactive_error("A TMDb ID must be a number")
-                console().debug(e)
+                console.debug(e)
 
     @classmethod
     def search_by_name(cls, film):

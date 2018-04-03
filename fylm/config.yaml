@@ -189,7 +189,7 @@ pushover:
 # Order matters here: the first full match will be used, e.g. "extended.edition" will match before "extended".
 # Always separate with '.' because these will be compiled into regular expressions.
 edition_map: [
-  ["disney.classics.timeless.collection", "Disney Classics Timeless Collection"],
+  ["(disney.)?classics.timeless.collection", "Classics Timeless Collection"],
   ["extended.director.?s.cut", "Extended Director's Cut"],
   ["extended.remastered", "Extended Remastered"],
   ["extended.edition", "Extended Edition"],
@@ -208,8 +208,9 @@ edition_map: [
   ["unrated.extended.cut", "Unrated Extended Cut"],
   ["(uce|ultimate.collectors.edition)", "Ultimate Collector's Edition"],
   ["ultimate.expanded.edition", "Ultimate Expanded Edition"],
-  ["ultimate.edition", "Ultimate Edition"],
-  ["expanded.edition", "Expanded Edition"],
+  ["ultimate.ed(ition)?", "Ultimate Edition"],
+  ["signature.ed(ition)?", "Signature Edition"],
+  ["expanded.ed(ition)?", "Expanded Edition"],
   ["unrated.extended", "Unrated Extended"],
   ["unrated.remastered", "Unrated Remastered"],
   ["theatrical.remastered", "Theatrical Remastered"],

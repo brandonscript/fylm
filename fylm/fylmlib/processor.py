@@ -285,7 +285,7 @@ class processor:
 
         # Print results of removing unwanted files.
         if config.remove_unwanted_files and deleted_files_count > 0:
-            console.dim('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
+            console().dim('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
 
         # Remove the original source parent folder, if it is safe to do so (and
         # the feature is enabled in config). First check that the source folder is

@@ -186,7 +186,7 @@ class console(console):
                 c.dark_gray(' [%s] %s match' % (film.tmdb_id, formatter.percent(film.title_similarity)))
                 c.print()
             else:
-                c.red().indent('× %s (%s)' % (film.title, film.year)).print()
+                console().red().indent('× %s (%s)' % (film.title, film.year)).print()
    
     def print_skip(self, film):
         """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
