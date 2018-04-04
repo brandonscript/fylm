@@ -111,7 +111,8 @@ class console(object):
             log.info(self._pltxt.get())
         self._fmtxt.output()
 
-class console(console):
+    """Helper methods for console class.
+    """
 
     def print_welcome(self):
         """Print and log the initial welcome header.

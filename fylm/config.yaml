@@ -114,6 +114,9 @@ duplicate_replacing:
 # are on different partitions (or network).
 safe_copy: false
 
+# Force move behavior for folders that appear to be (but are not) on different partitions.
+force_move: false
+
 # --quiet
 # Do not send notifications or update Plex
 quiet: false

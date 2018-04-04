@@ -99,7 +99,8 @@ class Request:
     a :class:`RequestError` exception when the request is rejected.
     """
 
-    def __init__(self, request_type, url, payload, files={}):
+    def __init__(self, request_type, url, payload, files=None):
+        files = files or {}
         if not TOKEN:
             raise InitError
 
