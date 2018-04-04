@@ -145,6 +145,16 @@ class Config(object):
             dest="safe_copy",
             help='Force files on the same partition to be copied and verified')
 
+        # -m, --move
+        # This option will attempt to force move behavior for folders that appear to be (but are not) on different partitions.
+        parser.add_argument(
+            '-m',
+            '--move',
+            action="store_true",
+            default=self._defaults.force_move,
+            dest="force_move",
+            help='Force move behavior for folders that appear to be (but are not) on different partitions')
+
         # -i, --interactive
         # This option enables prompts to confirm or correct TMDb matches.
         parser.add_argument(

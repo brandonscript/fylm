@@ -63,6 +63,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --debug, -d
     --rename, -r
     --copy, -c
+    --move, -m
     --interactive, -i
     --limit=n, -l
     --pop=n, -p
@@ -78,6 +79,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `debug` will run the app with some extra details (ok, verbose word porridge) in the console.
 - `rename` will just rename files and folders and leave them in the source folder.
 - `copy` will force files on the same partition to be copied and verified instead of moved.
+- `move` will force the behavior of move even if source and destination are on different partitions.
 - `interactive` prompt to confirm or correct TMDb matches.
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.

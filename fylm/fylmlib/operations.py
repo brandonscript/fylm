@@ -66,8 +66,11 @@ class dirops:
             f1: (str, utf-8) path of source file/folder
             f2: (str, utf-8) path of destination file/folder
         Returns:
-            True, if f1 and f2 are on the same parition, else False.
+            True, if f1 and f2 are on the same parition, or force_move is True, else False.
         """
+
+        if config.force_move is True:
+            return True
 
         while not os.path.exists(f1):
             f1 = os.path.dirname(f1)
