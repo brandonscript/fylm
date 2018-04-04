@@ -28,7 +28,7 @@ import os
 import shutil
 
 from plexapi.server import PlexServer
-from pushover import init, Client
+from fylmlib.pushover import init, Client
 from colors import color
 import requests
 
