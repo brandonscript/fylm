@@ -209,7 +209,7 @@ class Film:
     @property
     def size_of_largest_video(self):
         if not self._size_of_largest_video:
-            self._size_of_largest_video = ops.size_of_largest_video(self.source_path)
+            self._size_of_largest_video = ops.size(self.largest_video)
         return self._size_of_largest_video
 
     @property

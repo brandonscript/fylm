@@ -712,7 +712,7 @@ def size(path):
     """
 
     # First check that the path actually exists before we try to determine its size.
-    if os.path.exists(path):
+    if path is not None and os.path.exists(path):
 
         # If it's a directory, we need to call the _size_dir func to recursively get
         # the size of each file inside.
@@ -726,22 +726,6 @@ def size(path):
     # If the path doesn't exist, we return None
     else:
         return None
-
-def size_of_largest_video(path):
-    """Determine the size of a file or largest video file in dir.
-
-    Args:
-        path: (str, utf-8) file or folder to determine size of video file.
-    Returns:
-        Size of largest video file, in bytes (B), or None if path does not exist.
-    """
-
-    # If the path is valid, call getsize()
-    if os.path.exists(path):
-        return os.path.getsize(largest_video(path))
-    else:
-        return None
-
 
 def _size_dir(path):
     """Determine the total size of a directory.

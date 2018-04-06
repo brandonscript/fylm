@@ -83,12 +83,15 @@ class processor:
 
         # Update quality from the film's metadata if it is missing
         if film.quality is None:
-            if film.metadata.width == 1920:
-                film.quality = '1080p'
-            elif film.metadata.width == 1280:
-                film.quality == '720p'
-            elif film.metadata.width == 3840:
-                film.quality == '2160p'
+            try:
+                if film.metadata.width == 1920:
+                    film.quality = '1080p'
+                elif film.metadata.width == 1280:
+                    film.quality == '720p'
+                elif film.metadata.width == 3840:
+                    film.quality == '2160p'
+            except Exception as e:
+                pass
 
     @classmethod
     def route(cls, film):

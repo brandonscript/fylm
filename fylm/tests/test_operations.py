@@ -558,4 +558,4 @@ class TestSizeOperations(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    4 * make.kb)
 
         # Test multiple files to diff of 1 byte
-        assert(abs(ops.size_of_largest_video(os.path.dirname('Test.File')) - (2354 * make.mb_t)) <= 1)
+        assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * make.mb_t)) <= 1)
