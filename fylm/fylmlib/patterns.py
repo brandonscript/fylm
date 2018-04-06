@@ -55,3 +55,6 @@ strip_articles_search = re.compile(r'(^(the|a)\s|, the$)', re.I)
 # ', the' from the end of a string. Used for comparing local titles to potential
 # TMDb matches.
 strip_when_comparing = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
+
+# Retrieves tmdb_id in [XXXX] format from a string
+tmdb_id = re.compile(r'(?P<tmdb_id>\[\d+\])$')

@@ -26,6 +26,7 @@ from builtins import *
 
 import datetime
 import os
+import re
 import sys
 
 from colors import color
@@ -34,6 +35,7 @@ from fylmlib.pyfancy import *
 import fylmlib.config as config
 from fylmlib.log import log
 from fylmlib.ansi import ansi
+import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
 
@@ -273,7 +275,10 @@ class console(object):
         if choice.startswith('['):
             c.dark_gray(' %s' % choice)
         else:
-            c.gray(' %s' % choice)
+            match = re.search(patterns.tmdb_id, choice)
+            tmdb_id = match.group('tmdb_id') if match else ''
+            c.gray(' %s' % re.sub(patterns.tmdb_id, '', choice))
+            c.dark_gray(tmdb_id)
         c.print()
 
     def print_move_or_copy(self, src, dst_path, dst):
