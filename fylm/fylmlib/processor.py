@@ -87,10 +87,10 @@ class processor:
                 if film.metadata.width == 1920:
                     film.quality = '1080p'
                 elif film.metadata.width == 1280:
-                    film.quality == '720p'
+                    film.quality = '720p'
                 elif film.metadata.width == 3840:
-                    film.quality == '2160p'
-            except Exception as e:
+                    film.quality = '2160p'
+            except Exception:
                 pass
 
     @classmethod
