@@ -301,7 +301,7 @@ class console(object):
         Args:
             prompt: (str, utf-8) Query to prompt.
         """
-        return input(color('    » ', fg=ansi.white) + color(prompt, fg=ansi.pink))
+        return input(color('    » ', fg=ansi.white) + color(prompt, fg=ansi.yellow))
 
     @classmethod
     def clearline(cls):
