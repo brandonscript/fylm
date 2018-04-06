@@ -51,8 +51,11 @@ class processor:
         """
 
         for film in films:
+
+            # For certain file types, we want to verify the quality of the film.
+            cls.verify_quality(film)
             
-            # Route film to correct handler.
+            # Route film to correct handler
             cls.route(film)
 
             # Print blank line to separate next film
@@ -69,6 +72,23 @@ class processor:
 
             # Process the entire queue
             cls.process_move_queue()
+
+    @classmethod
+    def verify_quality(cls, film):
+        """Verify quality of film using mediainfo.
+
+        Args:
+            films: (Film) film object to route.
+        """
+
+        # Update quality from the film's metadata if it is missing
+        if film.quality is None:
+            if film.metadata.width == 1920:
+                film.quality = '1080p'
+            elif film.metadata.width == 1280:
+                film.quality == '720p'
+            elif film.metadata.width == 3840:
+                film.quality == '2160p'
 
     @classmethod
     def route(cls, film):

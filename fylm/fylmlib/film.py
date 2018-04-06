@@ -24,6 +24,8 @@ from builtins import *
 import os
 import re
 
+from pymediainfo import MediaInfo
+
 import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.formatter as formatter
@@ -64,6 +66,8 @@ class Film:
 
         quality:            Original quality of media: 720p, 1080p,
                             or 2160p.
+
+        metadata:           Media metadata.
 
         title_similarity:   Similarity between parsed title and TMDb
                             title.
@@ -147,6 +151,12 @@ class Film:
         # We use this because at times `source_path` is overwritten.
         self._ext = None
 
+        # Internal setter for `metadata`.
+        self._metadata = None
+
+        # Internal setter for `largest_video`.
+        self._largest_video = None
+
         # Internal setter for `size`.
         self._size = None
 
@@ -173,6 +183,22 @@ class Film:
         if not self._ext:
             self._ext = os.path.splitext(self.source_path)[1] if os.path.isfile(self.source_path) else None
         return self._ext
+
+    @property
+    def metadata(self):
+        if not self._metadata:
+            media_info = MediaInfo.parse(self.largest_video, 
+                library_file=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'libmediainfo.0.dylib'))
+            for track in media_info.tracks:
+                if track.track_type == 'Video':
+                    self._metadata = track
+        return self._metadata
+
+    @property
+    def largest_video(self):
+        if not self._largest_video:
+            self._largest_video = ops.largest_video(self.source_path)
+        return self._largest_video
 
     @property
     def size(self):

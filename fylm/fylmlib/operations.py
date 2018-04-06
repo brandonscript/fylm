@@ -661,6 +661,47 @@ class fileops:
             # Return 0 because we don't want a success counter to increment.
             return 0
 
+def largest_video(path):
+    """Determine the largest video file in dir.
+
+    Args:
+        path: (str, utf-8) file or folder to determine size of video file.
+    Returns:
+        Path of largest video file, or None if path does not exist.
+    """
+
+    # First check that the path actually exists before we try to determine its size.
+    if os.path.exists(path):
+
+        # If it's a directory, we need to find the largest video file, recursively.
+        if os.path.isdir(path):
+            
+            try:
+                video_files = list(filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path)))
+
+                # Re-populate list with (filename, size) tuples
+                for i, file in enumerate(video_files):
+                    video_files[i] = (file, os.path.getsize(file))
+
+                # Sort list by file size from largest to smallest and return the first file.
+                video_files.sort(key=lambda v: v[1], reverse=True)
+
+                # Return path (first value -- second value is size) of first file in sorted array.
+                return video_files[0][0]
+
+            # If an out of range error is encountered, something went wrong and the file
+            # probably doesn't exist.
+            except IndexError:
+                return None
+
+        # If it's a file, return the path.
+        else:
+            return path
+
+    # If the path doesn't exist, we return None
+    else:
+        return None
+
 def size(path):
     """Determine the size of a file or dir.
 
@@ -695,37 +736,12 @@ def size_of_largest_video(path):
         Size of largest video file, in bytes (B), or None if path does not exist.
     """
 
-    # First check that the path actually exists before we try to determine its size.
+    # If the path is valid, call getsize()
     if os.path.exists(path):
-
-        # If it's a directory, we need to find the largest video file, recursively.
-        if os.path.isdir(path):
-            
-            try:
-                video_files = list(filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path)))
-
-                # Re-populate list with (filename, size) tuples
-                for i, file in enumerate(video_files):
-                    video_files[i] = (file, os.path.getsize(file))
-
-                # Sort list by file size from largest to smallest and return the first file.
-                video_files.sort(key=lambda v: v[1], reverse=True)
-
-                # Return second value (size) of first file in sorted array.
-                return video_files[0][1]
-            # If an out of range error is encountered, something went wrong and the file
-            # probably doesn't exist.
-            except IndexError:
-                return 0
-
-
-        # If it's a file, we simply call getsize().
-        else:
-            return os.path.getsize(path)
-
-    # If the path doesn't exist, we return None
+        return os.path.getsize(largest_video(path))
     else:
         return None
+
 
 def _size_dir(path):
     """Determine the total size of a directory.
