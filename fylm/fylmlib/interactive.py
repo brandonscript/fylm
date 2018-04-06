@@ -129,7 +129,6 @@ class interactive:
             True if the film passes verification, else False
         """
 
-        # TODO: Handle endless loop when no matches are found
         # TODO: When a bad lookup is found (Mars Quest for Life 1080p (2009).mkv), if fixed by a good match, should be green in interactive rename, not red
 
         console().print_search_result(film)
@@ -265,16 +264,15 @@ class interactive:
         """
 
         film.tmdb_id = None
-        search = cls._simple_input('Search TMDb: ', '%s %s' % (film.title, film.year or ''), mock_input=_first(config.mock_input))
+        search = cls._simple_input('Search TMDb: ', '%s%s%s' % (film.title or '', ' ' if film.title else '', film.year or ''), mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
         film.title = parser.get_title(search)
         film.year = parser.get_year(search)
-        film.search_tmdb()
-        return cls.choose_from_matches(film)
+        return cls.choose_from_matches(film, search)
 
 
     @classmethod
-    def choose_from_matches(cls, film):
+    def choose_from_matches(cls, film, search):
         """Choose the correct film from a set of matches.
 
         Ask the user for input, then map the selected film to the
@@ -289,8 +287,15 @@ class interactive:
         # If no matches are found, continually prompt user to find a correct match.
 
         while len(film.matches) == 0:
-            console().print_interactive_error("No results found")
-            return cls.search_by_name(film)
+            if search.strip() == '':
+                film.tmdb_id = None
+                film.ignore_reason = 'Skipped'
+                console().print_interactive_skipped()
+                return False
+            else:
+                console().print_interactive_error("No results found")                
+                film.search_tmdb()
+                return cls.search_by_name(film)
 
         console().indent().bold().white('Search results:').print()
 
