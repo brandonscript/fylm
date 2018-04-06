@@ -51,7 +51,11 @@ class parser:
             A clean and well-formed film title.
         """
 
+        # Ensure source_path is a str
+        source_path = str(source_path)
+
         # Create a title object based on the name of the file or active folder.
+
         title = os.path.basename(source_path)
 
         # If the film is a file, remove the extension.
@@ -118,6 +122,9 @@ class parser:
             A 4-digit integer representing the release year, or None if
             no year could be determined.
         """
+
+        # Ensure source_path is a str
+        source_path = str(source_path)
 
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and

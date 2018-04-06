@@ -263,16 +263,22 @@ class interactive:
             True or False, passing the return value from choose_from_matches
         """
 
+        # Delete the existing ID in case it is a mismatch.
         film.tmdb_id = None
-        search = cls._simple_input('Search TMDb: ', '%s%s%s' % (film.title or '', ' ' if film.title else '', film.year or ''), mock_input=_first(config.mock_input))
+        query = cls._simple_input('Search TMDb: ', '%s%s%s' % (
+            film.title or '', 
+            ' ' if film.title else '', 
+            film.year or ''), 
+            mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
-        film.title = parser.get_title(search)
-        film.year = parser.get_year(search)
-        return cls.choose_from_matches(film, search)
+        film.title = parser.get_title(query)
+        film.year = parser.get_year(query)
+        film.search_tmdb()
+        return cls.choose_from_matches(film, query)
 
 
     @classmethod
-    def choose_from_matches(cls, film, search):
+    def choose_from_matches(cls, film, query):
         """Choose the correct film from a set of matches.
 
         Ask the user for input, then map the selected film to the
@@ -287,15 +293,7 @@ class interactive:
         # If no matches are found, continually prompt user to find a correct match.
 
         while len(film.matches) == 0:
-            if search.strip() == '':
-                film.tmdb_id = None
-                film.ignore_reason = 'Skipped'
-                console().print_interactive_skipped()
-                return False
-            else:
-                console().print_interactive_error("No results found")                
-                film.search_tmdb()
-                return cls.search_by_name(film)
+            return cls.handle_unknown_film(film)
 
         console().indent().bold().white('Search results:').print()
 
