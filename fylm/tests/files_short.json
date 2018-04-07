@@ -34,8 +34,8 @@
         {
             "files": [
                 {
-                    "expect_no_lookup": "Slumdog Millionaire (2009) 720p.mkv",
                     "expect": "Slumdog Millionaire (2008) 720p.mkv",
+                    "expect_no_lookup": "Slumdog Millionaire (2009) 720p.mkv",
                     "filename": "Slumdog Millionaire 720p (2009).mkv"
                 }
             ],
@@ -56,8 +56,8 @@
         {
             "files": [
                 {
-                    "expect_no_lookup": "WALL E (2008) 1080p.mkv",
                     "expect": "WALL·E (2008) 1080p.mkv",
+                    "expect_no_lookup": "WALL E (2008) 1080p.mkv",
                     "filename": "WALL·E (2008) 1080p.mkv"
                 }
             ],
@@ -122,8 +122,8 @@
             "dir": "Million Dollar Duck (1971)",
             "files": [
                 {
-                    "expect_no_lookup": "Million Dollar Duck (1971).avi",
                     "expect": "The Million Dollar Duck (1971).avi",
+                    "expect_no_lookup": "Million Dollar Duck (1971).avi",
                     "filename": "million.dollar.duck.1971.avi"
                 }
             ],
@@ -134,8 +134,8 @@
             "dir": "Face:Off 1080p (1997)",
             "files": [
                 {
-                    "expect_no_lookup": "Face-Off (1997) 1080p.mkv",
                     "expect": "Face-Off (1997) 1080p.mkv",
+                    "expect_no_lookup": "Face-Off (1997) 1080p.mkv",
                     "filename": "Face:Off 1080p (1997).mkv"
                 }
             ],
