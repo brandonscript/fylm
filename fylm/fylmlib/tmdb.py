@@ -180,14 +180,15 @@ class TmdbResult:
         """
 
         # Uncomment for verbose match debugging
-        # console.debug('   Comparing match {}: {}=={} / {}=={} ({} match, {} year diff)'.format(
+        # console.debug('   Comparing match {}: {}=={} / {}=={} / match({}), yeardiff({}), popularity({})'.format(
         #     i,
         #     self.query,
         #     self.proposed_title,
         #     self.year,
         #     self.proposed_year,
         #     formatter.percent(self.title_similarity),
-        #     self.year_deviation))
+        #     self.year_deviation,
+        #     self.popularity))
 
         # Check that the year deviation is acceptable and check that the
         # popularity is acceptable.
@@ -208,7 +209,13 @@ class TmdbResult:
             # If strict mode is enabled, we we need to validate that the title
             # similarity is acceptable and that the initial chars match.
             if (config.strict is True
-                and self.title_similarity >= config.tmdb.min_title_similarity
+                and (
+                    self.title_similarity >= config.tmdb.min_title_similarity 
+                    or (
+                        self.title_similarity >= (config.tmdb.min_title_similarity * 0.5) 
+                        and self.popularity > 20
+                    )
+                )
                 and initial_chars_match):
                 console.debug("   - Found a potential match in strict mode {}".format(debug_quality_string))
                 return True
@@ -216,7 +223,7 @@ class TmdbResult:
             # Otherwise, if strict mode is disabled, we don't need to validate
             # the title, and we return True anyway.
             elif config.strict is False:
-                console.debug("   - Found a potential match in no-strict mode {}".format(debug_quality_string))
+                console.debug("   - Found a potential match (strict mode off) {}".format(debug_quality_string))
                 return True
 
         # If result does not match any other criteria, return False.
@@ -316,7 +323,7 @@ def search(query, year=None):
     # Credit: https://stackoverflow.com/a/34504896/1214800
     query = query.replace(r':', '-')
 
-    console.debug('\nInit search set for "{}" {}'.format(query, year))
+    console.debug('\Initializing search for "{}" / {}'.format(query, year))
 
     # Initialize a array to store potential matches.
     potential_matches = []
