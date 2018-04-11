@@ -180,7 +180,7 @@ class TmdbResult:
         """
 
         # Uncomment for verbose match debugging
-        # console.debug('   Comparing match {}: {}=={} / {}=={} / match({}), yeardiff({}), popularity({})'.format(
+        # console.debug('   Checking match {}: {}=={} / {}=={} / match({}), yeardiff({}), popularity({})'.format(
         #     i,
         #     self.query,
         #     self.proposed_title,
@@ -196,7 +196,10 @@ class TmdbResult:
             and self.popularity >= config.tmdb.min_popularity):
 
             # Construct a string for outputting debug details.
-            debug_quality_string = "({} / {} year diff)".format(formatter.percent(self.title_similarity), self.year_deviation)
+            debug_quality_string = "(match({}), yeardiff({}), popularity({}))".format(
+                formatter.percent(self.title_similarity), 
+                self.year_deviation,
+                self.popularity)
 
             # Check to see if the first letter of both titles match, otherwise we
             # might get some false positives when searching for shorter titles. E.g.
@@ -212,18 +215,23 @@ class TmdbResult:
                 and (
                     self.title_similarity >= config.tmdb.min_title_similarity 
                     or (
-                        self.title_similarity >= (config.tmdb.min_title_similarity * 0.5) 
+                        self.title_similarity >= config.tmdb.min_title_similarity * 0.5 
                         and self.popularity > 20
                     )
                 )
-                and initial_chars_match):
-                console.debug("   - Found a potential match in strict mode {}".format(debug_quality_string))
+                and (initial_chars_match 
+                    or (
+                        self.title_similarity >= 0.6 
+                        and self.popularity > 20
+                    )
+                )):
+                console.debug("   - Potential match in strict mode {}".format(debug_quality_string))
                 return True
 
             # Otherwise, if strict mode is disabled, we don't need to validate
             # the title, and we return True anyway.
             elif config.strict is False:
-                console.debug("   - Found a potential match (strict mode off) {}".format(debug_quality_string))
+                console.debug("   - Potential match (strict mode off) {}".format(debug_quality_string))
                 return True
 
         # If result does not match any other criteria, return False.

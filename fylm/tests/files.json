@@ -1286,5 +1286,41 @@
             "title": "Planet Terror",
             "tmdb_id": 1992
         }
+        {
+            "dir": "Star.Wars.Episode.IV.A.New.Hope.1977.PROPER.1080p.BluRay.DTS.x264-DON",
+            "files": [
+                {
+                    "expect": "Star Wars (1977) 1080p.mkv",
+                    "expect_no_lookup": "Star Wars Episode IV A New Hope (1977) 1080p.mkv",
+                    "filename": "Star.Wars.Episode.IV.A.New.Hope.1977.PROPER.1080p.BluRay.DTS.x264-DON.mkv"
+                }
+            ],
+            "title": "Star Wars",
+            "tmdb_id": 11
+        },
+        {
+            "dir": "Star.Wars.Episode.V.The.Empire.Strikes.Back.1980.1080p.BluRay.DTS.x264-DON-Obfuscated",
+            "files": [
+                {
+                    "expect": "The Empire Strikes Back (1980) 1080p.mkv",
+                    "expect_no_lookup": "Star Wars Episode V The Empire Strikes Back (1980) 1080p.mkv",
+                    "filename": "Star.Wars.Episode.V.The.Empire.Strikes.Back.1980.1080p.BluRay.DTS.x264-DON-Obfuscated.mkv"
+                }
+            ],
+            "title": "The Empire Strikes Back",
+            "tmdb_id": 1891
+        },
+        {
+            "dir": "Star.Wars.Episode.VI.Return.of.the.Jedi.1983.1080p.BluRay.DTS.x264-DON",
+            "files": [
+                {
+                    "expect": "Return of the Jedi (1983) 1080p.mkv",
+                    "expect_no_lookup": "Star Wars Episode VI Return of the Jedi (1983) 1080p.mkv",
+                    "filename": "Star.Wars.Episode.VI.Return.of.the.Jedi.1983.1080p.BluRay.DTS.x264-DON.mkv"
+                }
+            ],
+            "title": "Return of the Jedi",
+            "tmdb_id": 1892
+        }
     ]
 }
