@@ -252,6 +252,7 @@ strip_prefixes:
 ignore_strings:
   - sample
   - '@eaDir'
+  - '_UNPACK_'
 
 # keep_period: Array of strings that should retain the period in the name when searching, e.g. L.A. or S.W.A.T.
 keep_period:
