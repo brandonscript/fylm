@@ -74,7 +74,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --no-strict
     --no-console
     --plaintext
-	
+    
 - `quiet` will suppress notifications or updates to services like Plex.
 - `test` will run the app in sandbox mode, which means no changes will actually be performed on the filesystem. A good rule of thumb is to always test first before you run the app on a long list of files.
 - `debug` will run the app with some extra details (ok, verbose word porridge) in the console.
@@ -90,7 +90,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `source` overrides your usual `source_dir` setting with new source folder(s). Comma separate multiple folders.
 - `no-strict` will dramatically reduce the criteria that is is used to validate TMDb matches. Expect red herrings. Lots. So, `--test` first.
 - `no-console` will completely suppress console output. If you wanted that, for some reason.
-- `plaintext` will output to the console in plaintext (colorless and omit Unicode chars).
+- `plaintext` will output to the console without pretty formatting.
 
 #### Testing
 

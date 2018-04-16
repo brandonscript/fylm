@@ -114,7 +114,7 @@ class console(object):
         if should_log:
             log.info(self._pltxt.get())
         if config.plaintext:
-            print(re.sub(r'[^\x00-\x7f]', r'', self._pltxt.get()))
+            print(re.sub(r'^\s+', r'', self._pltxt.get()))
         else:
             self._fmtxt.output()
 
