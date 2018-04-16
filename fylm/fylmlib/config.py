@@ -125,6 +125,15 @@ class Config(object):
             dest="no_console",
             help='Disable console output and stdout')
 
+        # --plaintext
+        # This will output to the console in plaintext (colorless and omit Unicode chars).
+        parser.add_argument(
+            '--plaintext',
+            action="store_true",
+            default=self._defaults.plaintext,
+            dest="plaintext",
+            help='Only output ASCII-safe chars in the default console output color')
+
         # -r, --rename
         # This option will rename films in place without moving or copying them.
         parser.add_argument(

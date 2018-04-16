@@ -54,6 +54,10 @@ debug: false
 # Do not write any information to console or stdout.
 no_console: false
 
+# --plaintext
+# Output to the console in plaintext (colorless and omit Unicode chars).
+plaintext: false
+
 # --rename
 # Rename files and folders in place without moving or copying them.
 rename_only: false
