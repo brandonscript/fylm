@@ -65,12 +65,11 @@ def plex():
         except Exception as e:
             # If the connection fails, log the error and print a response to the console.
             log.enable()
-            console.red('Could not connect to Plex server on {}'.format(config.plex.baseurl))
+            console().red('Could not connect to Plex server on {}'.format(config.plex.baseurl)).print()
             console.error(e)
             return
 
-        # TODO: Move these outputs to console class
-        p = pyfancy().white('\nUpdating plex...')
+        console().white('\nUpdating plex...').print()
 
         # If the connection was successful, tell Plex to update specified sections if running
         # in live mode. No need to notify in test mode since there won't be any changes.
@@ -78,7 +77,7 @@ def plex():
             for section in (plex.library.section(section) for section in config.plex.sections):
                 section.update()
 
-        p.raw(color(' Done ✓', fg=ansi.green)).output()
+        console().green(' Done ✓').print()
 
         # Re-enable logging when done.
         log.enable()
