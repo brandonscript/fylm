@@ -55,7 +55,7 @@ debug: false
 no_console: false
 
 # --plaintext
-# Output to the console in plaintext (colorless and omit Unicode chars).
+# Output to the console without pretty formatting.
 plaintext: false
 
 # --rename
