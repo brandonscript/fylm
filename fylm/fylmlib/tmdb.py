@@ -216,13 +216,13 @@ class TmdbResult:
                     self.title_similarity >= config.tmdb.min_title_similarity 
                     or (
                         self.title_similarity >= config.tmdb.min_title_similarity * 0.5 
-                        and self.popularity > 20
+                        and self.popularity >= config.tmdb.popular_threshold
                     )
                 )
                 and (initial_chars_match 
                     or (
                         self.title_similarity >= 0.6 
-                        and self.popularity > 20
+                        and self.popularity >= config.tmdb.popular_threshold
                     )
                 )):
                 console.debug("   - Potential match in strict mode {}".format(debug_quality_string))

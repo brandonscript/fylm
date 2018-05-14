@@ -155,6 +155,8 @@ tmdb:
   # Popular titles generally rank above 10, though some obscure ones rank between 1 and 2
   min_popularity: 1.5
 
+  popular_threshold: 15
+
 plex:
 
   # If you run a Plex server, you may want to notify it when new files are added. Configure your Plex
