@@ -60,4 +60,4 @@ strip_when_comparing = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
 tmdb_id = re.compile(r'(?P<tmdb_id>\[\d+\])$')
 
 # ANSI character escaping
- ansi_escape = re.compile(r'(^\s+|(\x9B|\x1B\[)[0-?]*[ -/]*[@-~])', re.I)
+ansi_escape = re.compile(r'(^\s+|(\x9B|\x1B\[)[0-?]*[ -/]*[@-~])', re.I)
