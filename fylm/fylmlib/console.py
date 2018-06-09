@@ -39,8 +39,6 @@ import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
 
-# TODO: Add rich console suppressant option
-
 class console(object):
     """Main class for console output methods.
 
@@ -114,7 +112,7 @@ class console(object):
         if should_log:
             log.info(self._pltxt.get())
         if config.plaintext:
-            print(re.sub(r'^\s+', r'', self._pltxt.get()))
+            print(patterns.ansi_escape.sub('', self._pltxt.get()))
         else:
             self._fmtxt.output()
 

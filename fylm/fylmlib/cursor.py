@@ -26,6 +26,8 @@ from builtins import *
 import sys
 import os
 
+import fylmlib.config as config
+
 if os.name == 'nt':
     import ctypes
 
@@ -43,32 +45,34 @@ class cursor:
     def hide(cls):
         """Hides the cursor in the console.
         """
-        try:
-            if os.name == 'nt':
-                ci = _CursorInfo()
-                handle = ctypes.windll.kernel32.GetStdHandle(-11)
-                ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
-                ci.visible = False
-                ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
-            elif os.name == 'posix':
-                sys.stdout.write("\033[?25l")
-                sys.stdout.flush()
-        except Exception:
-            pass
+        if not config.plaintext:
+            try:
+                if os.name == 'nt':
+                    ci = _CursorInfo()
+                    handle = ctypes.windll.kernel32.GetStdHandle(-11)
+                    ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+                    ci.visible = False
+                    ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+                elif os.name == 'posix':
+                    sys.stdout.write("\033[?25l")
+                    sys.stdout.flush()
+            except Exception:
+                pass
 
     @classmethod            
     def show(cls):
         """Shows the cursor in the console.
         """
-        try:
-            if os.name == 'nt':
-                ci = _CursorInfo()
-                handle = ctypes.windll.kernel32.GetStdHandle(-11)
-                ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
-                ci.visible = True
-                ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
-            elif os.name == 'posix':
-                sys.stdout.write("\033[?25h")
-                sys.stdout.flush()
-        except Exception:
-            pass
+        if not config.plaintext:
+            try:
+                if os.name == 'nt':
+                    ci = _CursorInfo()
+                    handle = ctypes.windll.kernel32.GetStdHandle(-11)
+                    ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
+                    ci.visible = True
+                    ctypes.windll.kernel32.SetConsoleCursorInfo(handle, ctypes.byref(ci))
+                elif os.name == 'posix':
+                    sys.stdout.write("\033[?25h")
+                    sys.stdout.flush()
+            except Exception:
+                pass
