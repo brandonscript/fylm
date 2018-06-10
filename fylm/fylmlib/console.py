@@ -227,7 +227,7 @@ class console(object):
                     pretty_size = formatter.pretty_size(d.size)
                     should_replace = duplicates.should_replace(film, d)
                     should_keep_both = duplicates.should_keep_both(film, d)
-
+                    
                     c = console().blue().indent()
 
                     if should_replace or should_keep_both:
@@ -237,7 +237,6 @@ class console(object):
                         c.dark_gray(' [%s]' % size_diff)
                     else:   
                         c.red('  Ignoring because ')
-                        c.add("'%s'" % os.path.basename(d.source_path))
                         c.red("'%s' (%s) is %s" % (
                             os.path.basename(d.source_path), 
                             pretty_size,

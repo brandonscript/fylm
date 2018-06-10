@@ -283,7 +283,10 @@ class Film:
 
     @property
     def should_ignore(self):
-        if ops.fileops.contains_ignored_strings(self.original_filename):
+        if re.search('^_UNPACK_', self.original_filename):
+            self.ignore_reason = 'Unpacking'
+
+        elif ops.fileops.contains_ignored_strings(self.original_filename):
             self.ignore_reason = 'Ignored string'
 
         elif self.is_file and not self.has_valid_ext:
