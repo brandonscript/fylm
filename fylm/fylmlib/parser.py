@@ -205,6 +205,26 @@ class parser:
         return quality
 
     @classmethod
+    def get_part(cls, source_path):
+        """Get part # from full path of file or folder.
+
+        Use regular expressions to identity the part # of the file.
+
+        Args:
+            source_path: (str, utf-8) full path of file or folder.
+
+        Returns:
+            A string representing the part # of the title, or None, if no
+            match is found.
+        """
+
+        # Search for a matching part condition
+        match = re.search(patterns.part, os.path.basename(source_path))
+        
+        # If a match exists, convert it to lowercase.
+        return match.group('part').upper() if match else None
+
+    @classmethod
     def _edition_map(cls, source_path):
         """Internal method to search for special edition strings in a source_path.
 

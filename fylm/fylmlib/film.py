@@ -67,6 +67,9 @@ class Film:
         quality:            Original quality of media: 720p, 1080p,
                             or 2160p.
 
+        part:               Part number of the original film, either
+                            either a number or roman numeral
+
         metadata:           Media metadata.
 
         title_similarity:   Similarity between parsed title and TMDb
@@ -138,6 +141,7 @@ class Film:
         self.edition = parser.get_edition(source_path)
         self.media = parser.get_media(source_path)
         self.quality = parser.get_quality(source_path)
+        self.part = parser.get_part(source_path)
         self.tmdb_id = None
         self.tmdb_verified = False
         self.matches = []
@@ -373,9 +377,16 @@ class Film:
         Args:
             match: (TmdbResult) Search result as a TmdbResult object.
         """
+
         self.title = match.proposed_title
         self.overview = match.overview
         self.poster_path = match.poster_path
         self.tmdb_id = match.tmdb_id
         self.year = match.proposed_year
         self.title_similarity = match.title_similarity
+
+        # Add part at the end of title if part exists in the filename, but not the found 
+        # title. Used for rate cases where a film is broken into two parts (looking at
+        # you, Dragon Tattoo)
+        if not parser.get_part(self.title) and self.part:
+            self.title += ', Part ' + self.part

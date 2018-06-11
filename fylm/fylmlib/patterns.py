@@ -38,6 +38,9 @@ quality = re.compile(r'(?P<quality>(?:72|108|216)0p?)', re.I)
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
 media = re.compile(r'(?:(?P<bluray>bluray|bdremux)|(?P<web>web-?dl|webrip)|(?P<hdtv>hdtv))', re.I)
 
+# Compiled pattern that "Part n" where n is a number or roman numeral.
+part = re.compile(r'\bpart\W?(?P<part>(?:(\d+|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))))', re.I)
+
 # Compiled pattern that matches all unwanted characters that should be
 # stripped from a title:
 #   - From entire title: . (period) _ (underscore) - (hyphen) and {}[]() (brackets/braces)
