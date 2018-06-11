@@ -215,7 +215,9 @@ class TmdbResult:
                 and (
                     self.title_similarity >= config.tmdb.min_title_similarity 
                     or (
-                        self.title_similarity >= config.tmdb.min_title_similarity * 0.5 
+                        # Cut the min_title_similarity in half if title is above the 
+                        # popular threshold.
+                        self.title_similarity >= config.tmdb.min_title_similarity * 0.5
                         and self.popularity >= config.tmdb.popular_threshold
                     )
                 )

@@ -178,6 +178,30 @@
             ],
             "title": "Return of the Jedi",
             "tmdb_id": 1892
+        },
+        {
+            "dir": "The Girl Who Kicked the Hornets Nest 2009 Part 2 EXTENDED 1080p BluRay x264-PHOBOS",
+            "files": [
+                {
+                    "expect": "The Girl Who Kicked the Hornet's Nest, Part 2 [Extended] (2009) 1080p.mkv",
+                    "expect_no_lookup": "The Girl Who Kicked the Hornets Nest, Part 2 [Extended] (2009) 1080p.mkv",
+                    "filename": "the.girl.who.kicked.the.hornets.nest.2009.part.2.extended.1080p.bluray.x264-phobos.mkv"
+                }
+            ],
+            "title": "The Girl Who Kicked the Hornet's Nest, Part 2",
+            "tmdb_id": 33613
+        },
+        {
+            "dir": "The.Hangover.Part.III.2013.1080p.BluRay.DTS.x264-SbR",
+            "files": [
+                {
+                    "expect": "The Hangover Part III (2013) 1080p.mkv",
+                    "expect_no_lookup": "The Hangover Part III (2013) 1080p.mkv",
+                    "filename": "The.Hangover.Part.III.2013.1080p.BluRay.DTS.x264-SbR.mkv"
+                }
+            ],
+            "title": "The Hangover Part III",
+            "tmdb_id": 109439
         }
     ]
 }
