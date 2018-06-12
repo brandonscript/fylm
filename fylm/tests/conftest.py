@@ -164,5 +164,5 @@ def expected_path(expected, folder=True):
     return os.path.join(config.destination_dirs[quality or 'SD'], os.path.splitext(expected)[0] if folder is True else '', expected)
 
 # Skip cleanup to manually inspect test results
-# def pytest_sessionfinish(session, exitstatus):
-#     cleanup_all()
+def pytest_sessionfinish(session, exitstatus):
+    cleanup_all()
