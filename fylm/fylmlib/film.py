@@ -308,7 +308,7 @@ class Film:
         elif self.year is None and (config.force_lookup is False or config.tmdb.enabled is False):
             self.ignore_reason = 'Unknown year'
 
-        elif self.size < config.min_filesize * 1024 * 1024 and self.is_video_file:
+        elif self.size or 0 < config.min_filesize * 1024 * 1024 and self.is_video_file:
             self.ignore_reason = '%s is too small' % formatter.pretty_size(self.size)
 
         return self.ignore_reason is not None
