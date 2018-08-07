@@ -63,7 +63,7 @@ def main():
         ops.dirops.verify_paths_exist(config.source_dirs)
 
         # Retrieve a list of films from the current source dir(s) and process each film.
-        processor.iterate(ops.dirops.get_new_films())
+        processor.iterate(ops.dirops.get_new_films(config.source_dirs))
 
         # When all films have been processed, notify Plex (if enabled).
         notify.plex()

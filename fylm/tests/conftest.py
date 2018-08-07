@@ -93,21 +93,19 @@ def setup():
     expected_no_lookup = make_result.expected_no_lookup
     ignored = make_result.ignored
 
+    # Set dirs
+    config.source_dirs = [films_src_path]
+    config.destination_dirs = films_dst_paths
+
     # Load films and filter them into valid films.
-    films = ops.dirops.get_new_films(films_src_path)
+    films = ops.dirops.get_new_films([films_src_path])
     valid_films = list(filter(lambda film: not film.should_ignore, films))
 
     if os.environ.get('DEBUG') is not None: 
         config.debug = True if os.environ.get('DEBUG') == 'True' else False
 
-    # Set dirs
-    config.source_dirs = [films_src_path]
-    config.destination_dirs = films_dst_paths
-
     # Set quiet
     config.quiet = True
-
-    fylm.config = config
 
 def make_empty_dirs():
     global films_src_path

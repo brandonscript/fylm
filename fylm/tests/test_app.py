@@ -18,8 +18,8 @@ from builtins import *
 
 import pytest
 
-import fylmlib.config as config
 import fylm
+import fylmlib.config as config
 import conftest
 
 # Overwrite the app's pre-loaded config.
@@ -50,8 +50,6 @@ class TestApp(object):
         for expected in conftest.expected_no_lookup:
             expected_path = conftest.expected_path(expected, folder=True).lower()
             assert(expected_path in [m.lower() for m in moved_films])
-
-        fylm.config = config
 
     # @pytest.mark.skip(reason="Slow")
     @pytest.mark.slow

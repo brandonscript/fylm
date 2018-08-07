@@ -25,7 +25,6 @@ from builtins import *
 
 import os
 
-import fylmlib.config as config
 from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
 from fylmlib.duplicates import duplicates
@@ -33,6 +32,7 @@ from fylmlib.interactive import interactive
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
+import fylmlib.config as config
 
 _move_queue = []
 

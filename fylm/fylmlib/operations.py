@@ -138,7 +138,7 @@ class dirops:
         return sorted(cls._existing_films, key=lambda s: s.title.lower())
 
     @classmethod
-    def get_new_films(cls, paths=config.source_dirs):
+    def get_new_films(cls, paths):
         """Get a list of new potenial films we want to tidy up.
 
         Scan one level deep of the target path to get a list of potential new files/folders.

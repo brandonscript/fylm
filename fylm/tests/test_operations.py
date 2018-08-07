@@ -80,7 +80,7 @@ class TestDirOperations(object):
 
         conftest.setup()
 
-        all_films = ops.dirops.get_new_films(conftest.films_src_path)
+        all_films = ops.dirops.get_new_films([conftest.films_src_path])
         valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
         # Assert that we're getting the expected number of films.
@@ -118,7 +118,7 @@ class TestDirOperations(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    7 * make.mb)
         
         # Assert that there is only one test film identified at the source
-        assert(len(ops.dirops.get_new_films(conftest.films_src_path)) == 1)
+        assert(len(ops.dirops.get_new_films([conftest.films_src_path])) == 1)
 
         valid_files = ops.dirops.get_valid_files(
             os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.DTS.x264-group')
