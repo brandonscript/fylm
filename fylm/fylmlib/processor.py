@@ -68,7 +68,7 @@ class processor:
 
             # If we're moving more than one film, print the move header.
             queue_count = len(_move_queue)
-            console().pink('Moving %s file%s...\n' % (queue_count, '' if queue_count == 1 else 's')).print()
+            console().pink('Moving %s file%s...' % (queue_count, '' if queue_count == 1 else 's')).print()
 
             # Process the entire queue
             cls.process_move_queue()

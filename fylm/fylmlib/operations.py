@@ -138,13 +138,13 @@ class dirops:
         return sorted(cls._existing_films, key=lambda s: s.title.lower())
 
     @classmethod
-    def get_new_films(cls, path):
+    def get_new_films(cls, paths=config.source_dirs):
         """Get a list of new potenial films we want to tidy up.
 
         Scan one level deep of the target path to get a list of potential new files/folders.
 
         Args:
-            path: (str, utf-8) path to search for new films.
+            paths: (Array[str, utf-8]) paths to search for new films.
         Returns:
             An array of potential films.
         """
@@ -152,16 +152,21 @@ class dirops:
         # Import Film here to avoid circular import conflicts.
         from fylmlib.film import Film
 
-        # Enumerate the search path for files/subfolders, sanitize them, then finally sort
-        # the resulting list of files alphabetically, case-insensitive.
-        sorted_files = sorted(cls.sanitize_dir_list(os.listdir(path)), key=lambda s: s.lower())
+        films = []
 
-        # If using the `limit` option, create a sliced list to limit the number of
-        # files to be processed.
-        limited_files = islice(sorted_files, config.limit if config.limit > 0 else None)
+        for path in paths:
+            # Enumerate the search path(s) for files/subfolders, sanitize them, then finally sort
+            # the resulting list of files alphabetically, case-insensitive.
+            sorted_files = sorted(cls.sanitize_dir_list(os.listdir(path)), key=lambda s: s.lower())
 
-        # Map the sorted/filtered list to Film objects.
-        return list(map(Film, [os.path.join(path, file) for file in limited_files]))
+            # If using the `limit` option, create a sliced list to limit the number of
+            # files to be processed.
+            limited_files = islice(sorted_files, config.limit if config.limit > 0 else None)
+
+            # Map the sorted/filtered list to Film objects.
+            films.append(list(map(Film, [os.path.join(path, file) for file in limited_files])))
+
+        return sum(films, [])
 
     @classmethod
     def get_valid_files(cls, path):

@@ -59,14 +59,11 @@ def main():
 
         # TODO: add recursive searching inside poorly named folders
 
-        # Iterate each path in the config.source_dirs array. 
-        for source_dir in config.source_dirs:
+        # Verify that source path(s) exist.
+        ops.dirops.verify_paths_exist(config.source_dirs)
 
-            # Verify that source path exists.
-            ops.dirops.verify_paths_exist([source_dir])
-
-            # Retrieve a list of films from the current source dir and process them.
-            processor.iterate(ops.dirops.get_new_films(source_dir))
+        # Retrieve a list of films from the current source dir(s) and process each film.
+        processor.iterate(ops.dirops.get_new_films())
 
         # When all films have been processed, notify Plex (if enabled).
         notify.plex()
