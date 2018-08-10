@@ -293,6 +293,9 @@ class Film:
         elif ops.fileops.contains_ignored_strings(self.original_filename):
             self.ignore_reason = 'Ignored string'
 
+        elif not os.path.exists(self.source_path):
+            self.ignore_reason = 'Path no longer exists'
+
         elif self.is_file and not self.has_valid_ext:
             self.ignore_reason = 'Not a valid file extension'
 
