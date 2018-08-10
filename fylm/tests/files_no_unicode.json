@@ -1,0 +1,1298 @@
+{
+    "test_films": [
+        {
+            "dir": "10.Cloverfield.Lane.2016.1080p.BluRay.x264-SPARKS",
+            "files": [
+                {
+                    "expect": "10 Cloverfield Lane (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "10 Cloverfield Lane",
+            "tmdb_id": 333371
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "2001 A Space Odyssey.BluRay.1080p.DTS.x264-CHD.mkv"
+                }
+            ],
+            "title": "2001: A Space Odyssey",
+            "tmdb_id": 62
+        },
+        {
+            "files": [
+                {
+                    "expect": "2001 A Space Odyssey (1968) 1080p.mkv",
+                    "filename": "2001.A.Space.odyssey.1968.1080p.BluRay.x264.anoXmous.mkv"
+                }
+            ],
+            "title": "2001: A Space Odyssey",
+            "tmdb_id": 62
+        },
+        {
+            "dir": "5.Headed.Shark.Attack.2017.1080p.BluRay.x264-RUSTED",
+            "files": [
+                {
+                    "expect": "5 Headed Shark Attack (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "5 Headed Shark Attack",
+            "tmdb_id": 460218
+        },
+        {
+            "dir": "A Monster Calls-1080p",
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "A Monster Calls",
+            "tmdb_id": null
+        },
+        {
+            "dir": "almost christmas 2016 1080p bluray x264-geckos subs",
+            "files": [
+                {
+                    "expect": "Almost Christmas (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Almost Christmas",
+            "tmdb_id": 340402
+        },
+        {
+            "dir": "American.Made.2017.1080p.BluRay.x264-GECKOS",
+            "files": [
+                {
+                    "expect": "American Made (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "American Made",
+            "tmdb_id": 337170
+        },
+        {
+            "dir": "An.Inconvenient.Sequel.Truth.to.Power.2017.1080p.BluRay.x264-BRMP",
+            "files": [
+                {
+                    "expect": "An Inconvenient Sequel Truth to Power (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "An Inconvenient Sequel: Truth to Power",
+            "tmdb_id": 432602
+        },
+        {
+            "dir": "As.Good.as.It.Gets.1997.Bluray.1080p.DTS-HD.x264-Grym",
+            "files": [
+                {
+                    "expect": "As Good as It Gets (1997) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "As Good as It Gets",
+            "tmdb_id": 2898
+        },
+        {
+            "dir": "Avatar.Extended.Collectors.Edition.2009.BluRay.1080p.DTS.x264-CHD",
+            "files": [
+                {
+                    "expect": "Avatar [Extended Collector's Edition] (2009) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Avatar",
+            "tmdb_id": 19995
+        },
+        {
+            "dir": "Bend.It.Like.Beckham.2002.1080p.BluRay.x264.anoXmous",
+            "files": [
+                {
+                    "expect": "Bend It Like Beckham (2002) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Bend It Like Beckham",
+            "tmdb_id": 455
+        },
+        {
+            "dir": "Bitch.2017.LIMITED.1080p.BluRay.x264-GECKOS",
+            "files": [
+                {
+                    "expect": "Bitch [Limited] (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Bitch",
+            "tmdb_id": 431867
+        },
+        {
+            "files": [
+                {
+                    "expect": "Bitch [Limited] (2017) 1080p.mkv",
+                    "filename": "Bitch.2017.LIMITED.1080p.BluRay.x264-GECKOS.mkv"
+                }
+            ],
+            "title": "Bitch",
+            "tmdb_id": 431867
+        },
+        {
+            "dir": "Black Hawk Down - Extended.Edition (2001) HQ 1080p Blu-Ray x264 DTSHD-MA 5.1 -DDR",
+            "files": [
+                {
+                    "expect": "Black Hawk Down [Extended Edition] (2001) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Black Hawk Down",
+            "tmdb_id": 855
+        },
+        {
+            "dir": "Brawl.in.Cell.Block.99.2017.1080p.BluRay.X264-AMIABLE",
+            "files": [
+                {
+                    "expect": "Brawl in Cell Block 99 (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Brawl in Cell Block 99",
+            "tmdb_id": 398175
+        },
+        {
+            "dir": "Bridesmaids.1080p.Bluray.x264-TWiZTED",
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Bridesmaids",
+            "tmdb_id": null
+        },
+        {
+            "dir": "Bridget.Joness.Baby.2016.1080p.BluRay.x264-SPARKS",
+            "files": [
+                {
+                    "expect": "Bridget Jones's Baby (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Bridget Jones's Baby",
+            "tmdb_id": 95610
+        },
+        {
+            "dir": "Cars.3.2017.1080p.BluRay.x264.DTS-HDC",
+            "files": [
+                {
+                    "expect": "Cars 3 (2017) 1080p.mkv",
+                    "filename": "Cars.3.2017.1080p.BluRay.x264.DTS-HDC.mkv"
+                }
+            ],
+            "title": "Cars 3",
+            "tmdb_id": 260514
+        },
+        {
+            "dir": "Cinderfella.1960.720p.WEB-DL.AAC2.0.H264-FGT",
+            "files": [
+                {
+                    "expect": "Cinderfella (1960) 720p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Cinderfella",
+            "tmdb_id": 18973
+        },
+        {
+            "dir": "Citizen.Kane.1941.1080p.BluRay.x264-AMIABLE",
+            "files": [
+                {
+                    "expect": "Citizen Kane (1941) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Citizen Kane",
+            "tmdb_id": 15
+        },
+        {
+            "dir": "City.of.Angels.1998.1080p.BluRay.X264-AMIABLE[rarbg]",
+            "files": [
+                {
+                    "expect": "City of Angels (1998) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "City of Angels",
+            "tmdb_id": 795
+        },
+        {
+            "dir": "Cruel.Intentions.1999.1080p.BluRay.x264.DTS-FGT",
+            "files": [
+                {
+                    "expect": "Cruel Intentions (1999) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Cruel Intentions",
+            "tmdb_id": 796
+        },
+        {
+            "dir": "Dear.John.2010.1080p.BluRay.x264.DTS-WiKi",
+            "files": [
+                {
+                    "expect": "Dear John (2010) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Dear John",
+            "tmdb_id": 22971
+        },
+        {
+            "dir": "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG",
+            "files": [
+                {
+                    "expect": "Deuce Bigalow Male Gigolo (1999) 1080p.mp4",
+                    "filename": "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG.mp4"
+                },
+                {
+                    "expect": null,
+                    "filename": "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG.Sample.mp4"
+                },
+                {
+                    "expect": null,
+                    "filename": "ETRG.mp4"
+                }
+            ],
+            "title": "Deuce Bigalow: Male Gigolo",
+            "tmdb_id": 10402
+        },
+        {
+            "dir": "Dunkirk.2017.1080p.BluRay.x264-SPARKS",
+            "files": [
+                {
+                    "expect": "Dunkirk (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Dunkirk",
+            "tmdb_id": 374720
+        },
+        {
+            "dir": "Eight Below 2006 BDRemux 1080p",
+            "files": [
+                {
+                    "expect": "Eight Below (2006) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Eight Below",
+            "tmdb_id": 9036
+        },
+        {
+            "dir": "Face:Off 1080p (1997)",
+            "files": [
+                {
+                    "expect": "Face-Off (1997) 1080p.mkv",
+                    "filename": "Face:Off 1080p (1997).mkv"
+                }
+            ],
+            "title": "Face/Off",
+            "tmdb_id": 754
+        },
+        {
+            "dir": "FernGully The Last Rainforest 1992 1080p BluRay x264 HD4U",
+            "files": [
+                {
+                    "expect": "FernGully The Last Rainforest (1992) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "FernGully: The Last Rainforest",
+            "tmdb_id": 13225
+        },
+        {
+            "dir": "Ingrid.Goes.West.2017.1080p.BluRay.x264-GECKOS",
+            "files": [
+                {
+                    "expect": "Ingrid Goes West (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Ingrid Goes West",
+            "tmdb_id": 411741
+        },
+        {
+            "dir": "Hero (2002) 1080p BluRay x264 DTSHD 5.1 -DTOne",
+            "files": [
+                {
+                    "expect": "Hero (2002) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Hero",
+            "tmdb_id": 79
+        },
+        {
+            "dir": "Jingle All The Way 1996 720p BluRay x264-SiNNERS",
+            "files": [
+                {
+                    "expect": "Jingle All the Way (1996) 720p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Jingle All the Way",
+            "tmdb_id": 9279
+        },
+        {
+            "dir": "Journey.To.Space.2015.TrueHD.Atmos.AC3.1080p.BluRay.x264.HQ-TUSAHD",
+            "files": [
+                {
+                    "expect": "Journey to Space (2015) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Journey to Space",
+            "tmdb_id": 325263
+        },
+        {
+            "dir": "Jungle.2017.1080p.BluRay.x264-VETO",
+            "files": [
+                {
+                    "expect": "Jungle (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Jungle",
+            "tmdb_id": 390062
+        },
+        {
+            "dir": "Kingsman.The.Golden.Circle.2017.1080p.BluRay.x264-SPARKS",
+            "files": [
+                {
+                    "expect": "Kingsman The Golden Circle (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Kingsman: The Golden Circle",
+            "tmdb_id": 343668
+        },
+        {
+            "dir": "Logan.Lucky.2017.1080p.BluRay.x264-GECKOS",
+            "files": [
+                {
+                    "expect": "Logan Lucky (2017) 1080p.mkv",
+                    "filename": "WWxkR2NHSnNPVzFoVjNocw.mkv"
+                }
+            ],
+            "title": "Logan Lucky",
+            "tmdb_id": 399170
+        },
+        {
+            "dir": "LOU.2017.1080p.BluRay.x264-FLAME",
+            "files": [
+                {
+                    "expect": "Lou (2017) 1080p.mkv",
+                    "filename": "LOU.2017.1080p.BluRay.x264-FLAME.mkv"
+                }
+            ],
+            "title": "Lou",
+            "tmdb_id": 433471
+        },
+        {
+            "dir": "Mad Max Fury Road 2015 UltraHD BluRay 2160p HEVC BT2020 TrueHD 7 1 Atmos-HDLeader",
+            "files": [
+                {
+                    "expect": "Mad Max Fury Road (2015) 2160p.mkv",
+                    "filename": "byBjaG9vc2UgYSBzZXQgb2YgNjQgY2hhcmFjdGV.mkv"
+                }
+            ],
+            "title": "Mad Max: Fury Road",
+            "tmdb_id": 76341
+        },
+        {
+            "dir": "Masterchef.Canada.S02E01.720p.WEB.h264-spamTV",
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "dir": "Mike.and.Dave.Need.Wedding.Dates.2016.1080p.BluRay.x264-GECKOS",
+            "files": [
+                {
+                    "expect": "Mike and Dave Need Wedding Dates (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Mike and Dave Need Wedding Dates",
+            "tmdb_id": 316023
+        },
+        {
+            "dir": "Million Dollar Duck (1971)",
+            "files": [
+                {
+                    "expect": "The Million Dollar Duck (1971).avi",
+                    "filename": "million.dollar.duck.1971.avi"
+                }
+            ],
+            "title": "The Million Dollar Duck",
+            "tmdb_id": 22777
+        },
+        {
+            "dir": "Nerve.2016.RERiP.1080p.BluRay.x264-DRONES",
+            "files": [
+                {
+                    "expect": "Nerve (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Nerve",
+            "tmdb_id": 328387
+        },
+        {
+            "dir": "Ouija.Summoning.2016.1080p.BluRay.x264-THUGLiNE",
+            "files": [
+                {
+                    "expect": "Ouija Summoning (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Ouija Summoning",
+            "tmdb_id": 413100
+        },
+        {
+            "dir": "Petes.Dragon.2016.1080p.BluRay.x264-BLOW",
+            "files": [
+                {
+                    "expect": "Pete's Dragon (2016) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Pete's Dragon",
+            "tmdb_id": 294272
+        },
+        {
+            "dir": "Planet.Of.The.Apes.1968.1080.BluRay.x264-BLOW",
+            "files": [
+                {
+                    "expect": "Planet of the Apes (1968) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Planet of the Apes",
+            "tmdb_id": 871
+        },
+        {
+            "dir": "S.W.A.T.2003.1080p.BluRay.x264-anoXmous",
+            "files": [
+                {
+                    "expect": "S.W.A.T. (2003) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "S.W.A.T.",
+            "tmdb_id": 9257
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Forbidden Girl (2013).avi",
+                    "filename": "The Forbidden Girl 2013 BRRIP Xvid AC3-BHRG.avi"
+                }
+            ],
+            "title": "The Forbidden Girl",
+            "tmdb_id": 173854
+        },
+        {
+            "dir": "The Last Starfighter 25th Anniversary Ed 1984 1080p BluRay x264 DTS-HD",
+            "files": [
+                {
+                    "expect": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "The Last Starfighter",
+            "tmdb_id": 11884
+        },
+        {
+            "dir": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p",
+            "files": [
+                {
+                    "expect": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv",
+                    "filename": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv"
+                }
+            ],
+            "title": "The Last Starfighter",
+            "tmdb_id": 11884
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Last Starfighter [25th Anniversary Edition] (1984) 1080p.mkv",
+                    "filename": "the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy.mkv"
+                }
+            ],
+            "title": "The Last Starfighter",
+            "tmdb_id": 11884
+        },
+        {
+            "dir": "The Last Word 2017 1080p BluRay DTS x264-TayTO",
+            "files": [
+                {
+                    "expect": "The Last Word (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "The Last Word",
+            "tmdb_id": 396810
+        },
+        {
+            "dir": "The.Assassination.of.Jesse.James.by.the.Coward.Robert.Ford.2007.1080p.BluRay.x264.DD5.1-FGT",
+            "files": [
+                {
+                    "expect": "The Assassination of Jesse James by the Coward Robert Ford (2007) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "The Assassination of Jesse James by the Coward Robert Ford",
+            "tmdb_id": 4512
+        },
+        {
+            "dir": "The.Hitmans.Bodyguard.2017.1080p.BluRay.X264-AMIABLE",
+            "files": [
+                {
+                    "expect": "The Hitman's Bodyguard (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "The Hitman's Bodyguard",
+            "tmdb_id": 390043
+        },
+        {
+            "dir": "The.Killing.S04.1080p.WEBRip.DD5.1.H.264-Abjex",
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "dir": "The.Magicians.S02.1080p.WEB-DL.DD5.1.H264-RARBG",
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "dir": "The.Taking.of.Pelham.123.2009.1080p.BluRay.x264-SPARKS",
+            "files": [
+                {
+                    "expect": "The Taking of Pelham 1 2 3 (2009) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "The Taking of Pelham 1 2 3",
+            "tmdb_id": 18487
+        },
+        {
+            "dir": "TRON.Legacy.2010.Proper.1080p.Blu-ray.DTS.x264-ViSTA",
+            "files": [
+                {
+                    "expect": "TRON Legacy (2010) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "TRON: Legacy",
+            "tmdb_id": 20526
+        },
+        {
+            "dir": "Valerian.and.the.City.of.a.Thousand.Planets.2017.1080p.BluRay.X264-AMIABLE",
+            "files": [
+                {
+                    "expect": "Valerian and the City of a Thousand Planets (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Valerian and the City of a Thousand Planets",
+            "tmdb_id": 339964
+        },
+        {
+            "dir": "War.For.The.Planet.Of.The.Apes.2017.1080p.BluRay.x264-BLOW",
+            "files": [
+                {
+                    "expect": "War for the Planet of the Apes (2017) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "War for the Planet of the Apes",
+            "tmdb_id": 281338
+        },
+        {
+            "files": [
+                {
+                    "expect": "War for the Planet of the Apes (2017) 1080p.mkv",
+                    "filename": "blow-war.for.the.planet.of.the.apes.2017.1080p.bluray.x264.mkv"
+                }
+            ],
+            "title": "War for the Planet of the Apes",
+            "tmdb_id": 281338
+        },
+        {
+            "files": [
+                {
+                    "expect": "A Place at the Table (2012) 720p.mkv",
+                    "filename": "A Place at the Table 720p (2012).mkv"
+                }
+            ],
+            "title": "A Place at the Table",
+            "tmdb_id": 84198
+        },
+        {
+            "files": [
+                {
+                    "expect": "Almost Christmas (2016) 1080p.mkv",
+                    "filename": "Almost.Christmas.2016.1080p.BluRay.x264-GECKOS.mkv"
+                }
+            ],
+            "title": "Almost Christmas",
+            "tmdb_id": 340402
+        },
+        {
+            "files": [
+                {
+                    "expect": "Atlas Shrugged II The Strike (2012) 1080p.mkv",
+                    "filename": "Atlas Shrugged II 1080p (2012).mkv"
+                }
+            ],
+            "title": "Atlas Shrugged II: The Strike",
+            "tmdb_id": 134371
+        },
+        {
+            "files": [
+                {
+                    "expect": "Back to the Future Part II (1989) 1080p.mkv",
+                    "filename": "Back to the Future {2} 1080p (1989).mkv"
+                }
+            ],
+            "title": "Back to the Future Part II",
+            "tmdb_id": 165
+        },
+        {
+            "files": [
+                {
+                    "expect": "Mechanic Resurrection (2016) 1080p.mkv",
+                    "filename": "blow-mechanic.resurrection.2016.1080p.bluray.x264.mkv"
+                }
+            ],
+            "title": "Mechanic: Resurrection",
+            "tmdb_id": 278924
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Comedian (2016) 1080p.mkv",
+                    "filename": "blow-the.comedian.2016.1080p.bluray.x264.mkv"
+                }
+            ],
+            "title": "The Comedian",
+            "tmdb_id": 369524
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Chronicles of Narnia The Lion, the Witch and the Wardrobe (2005) 720p.mkv",
+                    "filename": "Chronicles of Narnia, The {1} The Lion, the Witch and the Wardrobe 720p (2005).mkv"
+                }
+            ],
+            "title": "The Chronicles of Narnia: The Lion, the Witch and the Wardrobe",
+            "tmdb_id": 411
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Crash (2004) 1080p.mkv",
+                    "expect": "Crash (2005) 1080p.mkv",
+                    "filename": "Crash 1080p (2004).mkv"
+                }
+            ],
+            "title": "Crash",
+            "tmdb_id": 1640
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Doctor Who Husbands of River Song (2015) 1080p.mkv",
+                    "expect": "Doctor Who The Husbands of River Song (2015) 1080p.mkv",
+                    "filename": "Doctor Who Husbands of River Song (2015) 1080p.mkv"
+                }
+            ],
+            "title": "Doctor Who: The Husbands of River Song",
+            "tmdb_id": 371759
+        },
+        {
+            "files": [
+                {
+                    "expect": "Eight Below (2006) 1080p.mkv",
+                    "filename": "Eight Below 2006 BDRemux 1080p MPEG2 DD5.1-HighCode.mkv"
+                }
+            ],
+            "title": "Eight Below",
+            "tmdb_id": 9036
+        },
+        {
+            "files": [
+                {
+                    "expect": "Face-Off (1997) 1080p.mkv",
+                    "filename": "Face-Off 1080p (1997).mkv"
+                }
+            ],
+            "title": "Face/Off",
+            "tmdb_id": 754
+        },
+        {
+            "files": [
+                {
+                    "expect": "Face-Off (1997) 1080p.mkv",
+                    "filename": "Face:Off 1080p (1997).mkv"
+                }
+            ],
+            "title": "Face/Off",
+            "tmdb_id": 754
+        },
+        {
+            "files": [
+                {
+                    "expect": "FernGully The Last Rainforest (1992) 1080p.mkv",
+                    "filename": "ferngully.the.last.rainforest.1992.1080-hd4u.mkv"
+                }
+            ],
+            "title": "FernGully: The Last Rainforest",
+            "tmdb_id": 13225
+        },
+        {
+            "files": [
+                {
+                    "expect": "Mower Minions (2016) 1080p.mkv",
+                    "filename": "flame-mower.minions.2016.1080p.bluray.x264.mkv"
+                }
+            ],
+            "title": "Mower Minions",
+            "tmdb_id": 403052
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "geckos-t2-trainspotting-1080p.mkv"
+                }
+            ],
+            "title": "T2 Trainspotting",
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": "Get Santa (2014) 1080p.mkv",
+                    "filename": "Get Santa 1080p (2014).mkv"
+                }
+            ],
+            "title": "Get Santa",
+            "tmdb_id": 250535
+        },
+        {
+            "files": [
+                {
+                    "expect": "Ghost Town (2008).mkv",
+                    "filename": "ghost.town-2008.mkv"
+                }
+            ],
+            "title": "Ghost Town",
+            "tmdb_id": 12797
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "The Good, the Bad, & the Ugly (1966) 720p.mkv",
+                    "expect": "The Good, the Bad and the Ugly (1966) 720p.mkv",
+                    "filename": "Good, the Bad, & the Ugly, The 720p (1966).mkv"
+                }
+            ],
+            "title": "The Good, the Bad and the Ugly",
+            "tmdb_id": 429
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Gran Torino (2009) 720p.mkv",
+                    "expect": "Gran Torino (2008) 720p.mkv",
+                    "filename": "Gran Torino (2009) 720p.mkv"
+                }
+            ],
+            "title": "Gran Torino",
+            "tmdb_id": 13223
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Great Gatsby (2013) 1080p.mkv",
+                    "filename": "Great Gatspy, The 1080p (2013).mkv"
+                }
+            ],
+            "title": "The Great Gatsby",
+            "tmdb_id": 64682
+        },
+        {
+            "files": [
+                {
+                    "expect": "Harry Potter and the Philosopher's Stone (2001) 1080p.mkv",
+                    "filename": "Harry Potter {1} and the Philospher's Stone 1080p (2001).mkv"
+                }
+            ],
+            "title": "Harry Potter and the Philosopher's Stone",
+            "tmdb_id": 671
+        },
+        {
+            "files": [
+                {
+                    "expect": "King Arthur [Extended Director's Cut] (2004) 1080p.mkv",
+                    "filename": "King.Arthur.2004.Extended.Directors.Cut.DTS-HD.DTS.MULTISUBS.1080p.BluRay.x264.HQ-TUSAHD.mkv"
+                }
+            ],
+            "title": "King Arthur",
+            "tmdb_id": 9477
+        },
+        {
+            "dir": "King.Arthur.2004.Extended.Directors.Cut.DTS-HD.DTS.MULTISUBS.1080p.BluRay.x264.HQ-TUSAHD",
+            "files": [
+                {
+                    "expect": "King Arthur [Extended Director's Cut] (2004) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "King Arthur",
+            "tmdb_id": 9477
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Locke (2013) 1080p.mkv",
+                    "expect": "Locke (2014) 1080p.mkv",
+                    "filename": "Locke 1080p (2013).mkv"
+                }
+            ],
+            "title": "Locke",
+            "tmdb_id": 210479
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Manglehorn (2014) 1080p.mkv",
+                    "expect": "Manglehorn (2015) 1080p.mkv",
+                    "filename": "Manglehorn 1080p (2014).mkv"
+                }
+            ],
+            "title": "Manglehorn",
+            "tmdb_id": 254905
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Mud (2012) 1080p.mkv",
+                    "expect": "Mud (2013) 1080p.mkv",
+                    "filename": "Mud 1080p (2012).mkv"
+                }
+            ],
+            "title": "Mud",
+            "tmdb_id": 103731
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "The Music Within (2007).avi",
+                    "expect": "Music Within (2007).avi",
+                    "filename": "Music Within, The (2007).avi"
+                }
+            ],
+            "title": "Music Within",
+            "tmdb_id": 14820
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "nina.1080p.mkv"
+                }
+            ],
+            "title": "Nina",
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Once (2006) 720p.mkv",
+                    "expect": "Once (2007) 720p.mkv",
+                    "filename": "Once 720p (2006).mkv"
+                }
+            ],
+            "title": "Once",
+            "tmdb_id": 5723
+        },
+        {
+            "files": [
+                {
+                    "expect": "Pain & Gain (2013) 720p.mkv",
+                    "filename": "Pain.&.Gain.2013.720p.BluRay.DD5.1.x264-HiDt.mkv"
+                }
+            ],
+            "title": "Pain & Gain",
+            "tmdb_id": 134374
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "pfa-outlaws.and.angels.1080p.mkv"
+                }
+            ],
+            "title": "Outlaws and Angels",
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": "Psycho (1998) 1080p.mkv",
+                    "filename": "Psycho 1080p (1998).mkv"
+                }
+            ],
+            "title": "Psycho",
+            "tmdb_id": 11252
+        },
+        {
+            "files": [
+                {
+                    "expect": "Life (2017) 1080p.mkv",
+                    "filename": "Rep-life 1080p (2017).mkv"
+                }
+            ],
+            "title": "Life",
+            "tmdb_id": 395992
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "rep-sausage.party.1080p.bluray.x264.mkv"
+                }
+            ],
+            "title": "Sausage Party",
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Lego Batman Movie (2017) 1080p.mkv",
+                    "filename": "Rep-the.lego.batman.movie 1080p (2017).mkv"
+                }
+            ],
+            "title": "The Lego Batman Movie",
+            "tmdb_id": 324849
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Ring (2002) 1080p.mkv",
+                    "filename": "Ring, The 1080p (2002).mkv"
+                }
+            ],
+            "title": "The Ring",
+            "tmdb_id": 565
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Road (2009) 1080p.mkv",
+                    "filename": "Road, The 1080p (2009).mkv"
+                }
+            ],
+            "title": "The Road",
+            "tmdb_id": 20766
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "Rogue.One.A.Star.Wars.Story.4K.HDR.10bit.BT2020.Chroma.422.Edition.DTS.HD.MA-VISIONPLUSHDR1000.mp4"
+                }
+            ],
+            "title": "Rogue One: A Star Wars Story",
+            "tmdb_id": 330459
+        },
+        {
+            "files": [
+                {
+                    "expect": "Sand Castle (2017) 1080p.mkv",
+                    "filename": "Sand.Castle.2017.FRENCH.1080.WEBRip.AAC2.0-NEWCiNE-WwW.Zone-Telechargement.Ws.mkv"
+                }
+            ],
+            "title": "Sand Castle",
+            "tmdb_id": 390054
+        },
+        {
+            "files": [
+                {
+                    "expect": "Slumdog Millionaire (2008) 720p.mkv",
+                    "filename": "Slumdog Millionaire 720p (2009).mkv"
+                }
+            ],
+            "title": "Slumdog Millionaire",
+            "tmdb_id": 12405
+        },
+        {
+            "files": [
+                {
+                    "expect": "Teenage Mutant Ninja Turtles II The Secret of the Ooze (1991) 720p.mkv",
+                    "filename": "Teenage Mutant Ninja Turtles Secret of the Ooze 720p (1991).mkv"
+                }
+            ],
+            "title": "Teenage Mutant Ninja Turtles II: The Secret of the Ooze",
+            "tmdb_id": 1497
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 Judgment Day [Director's Cut] (1991) 1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 Judgment Day [Director's Cut Remastered] (1991) 1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Directors.Cut.Remastered.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 Judgment Day [Extended Edition] (1991) 1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Extended.Edition.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 Judgment Day [Unrated] (1991) 1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Unrated.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 Judgment Day [Unrated Director's Cut] (1991) 1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Unrated.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Great Gatsby (2013) 1080p.mkv",
+                    "filename": "The.Great.Gatsby.2013.BluRay.1080p.DTS.x264-CHD.mkv"
+                }
+            ],
+            "title": "The Great Gatsby",
+            "tmdb_id": 64682
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "The.Killing.S04E02.1080p.WEBRip.DD5.1.H.264-Abjex.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "The.Killing.S04E06.Eden.1080p.WEBRip.DD5.1.H.264-Abjex.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "The.Magicians.S01E01.720p.HDTV.x264-KILLERS.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "The.Magicians.US.S01E04.INTERNAL.720p.HDTV.x264-KILLERS.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect": "The Mountain Between Us (2017) 1080p.mkv",
+                    "filename": "The.Mountain.Between.Us.2017.1080p.BluRay.REMUX.AVC.DTS-HD.MA.7.1-EPSiLON.mkv"
+                }
+            ],
+            "title": "The Mountain Between Us",
+            "tmdb_id": 290512
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "The Witch (2015) 1080p.mkv",
+                    "expect": "The Witch (2016) 1080p.mkv",
+                    "filename": "The.Witch.2015.1080p.BluRay.x264-DRONES.mkv"
+                }
+            ],
+            "title": "The Witch",
+            "tmdb_id": 310131
+        },
+        {
+            "files": [
+                {
+                    "expect": null,
+                    "filename": "tl-lk.1080p.mkv"
+                }
+            ],
+            "tmdb_id": null
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "Turks and Caicos (2014) 1080p.mkv",
+                    "expect": "Turks & Caicos (2014) 1080p.mkv",
+                    "filename": "Turks and Caicos 1080p (2014).mkv"
+                }
+            ],
+            "title": "Turks & Caicos",
+            "tmdb_id": 260202
+        },
+        {
+            "files": [
+                {
+                    "expect": "U-571 (2000) 1080p.mkv",
+                    "filename": "U-571 1080p (2000).mkv"
+                }
+            ],
+            "title": "U-571",
+            "tmdb_id": 3536
+        },
+        {
+            "files": [
+                {
+                    "expect_no_lookup": "V for Vendetta (2005) 720p.mkv",
+                    "expect": "V for Vendetta (2006) 720p.mkv",
+                    "filename": "V for Vendetta 720p (2005).mkv"
+                }
+            ],
+            "title": "V for Vendetta",
+            "tmdb_id": 752
+        },
+        {
+            "files": [
+                {
+                    "expect": "WALL·E (2008) 1080p.mkv",
+                    "filename": "WALL·E (2008) 1080p.mkv"
+                }
+            ],
+            "title": "WALL·E",
+            "tmdb_id": 10681
+        },
+        {
+            "files": [
+                {
+                    "expect": "Planet Terror (2007) 1080p.mkv",
+                    "filename": "Planet.Terror.2007.1080p.BluRay.x264-1920.mkv"
+                }
+            ],
+            "title": "Planet Terror",
+            "tmdb_id": 1992
+        },
+        {
+            "dir": "Star.Wars.Episode.IV.A.New.Hope.1977.PROPER.1080p.BluRay.DTS.x264-DON",
+            "files": [
+                {
+                    "expect": "Star Wars (1977) 1080p.mkv",
+                    "expect_no_lookup": "Star Wars Episode IV A New Hope (1977) 1080p.mkv",
+                    "filename": "Star.Wars.Episode.IV.A.New.Hope.1977.PROPER.1080p.BluRay.DTS.x264-DON.mkv"
+                }
+            ],
+            "title": "Star Wars",
+            "tmdb_id": 11
+        },
+        {
+            "dir": "Star.Wars.Episode.V.The.Empire.Strikes.Back.1980.1080p.BluRay.DTS.x264-DON-Obfuscated",
+            "files": [
+                {
+                    "expect": "The Empire Strikes Back (1980) 1080p.mkv",
+                    "expect_no_lookup": "Star Wars Episode V The Empire Strikes Back (1980) 1080p.mkv",
+                    "filename": "Star.Wars.Episode.V.The.Empire.Strikes.Back.1980.1080p.BluRay.DTS.x264-DON-Obfuscated.mkv"
+                }
+            ],
+            "title": "The Empire Strikes Back",
+            "tmdb_id": 1891
+        },
+        {
+            "dir": "Star.Wars.Episode.VI.Return.of.the.Jedi.1983.1080p.BluRay.DTS.x264-DON",
+            "files": [
+                {
+                    "expect": "Return of the Jedi (1983) 1080p.mkv",
+                    "expect_no_lookup": "Star Wars Episode VI Return of the Jedi (1983) 1080p.mkv",
+                    "filename": "Star.Wars.Episode.VI.Return.of.the.Jedi.1983.1080p.BluRay.DTS.x264-DON.mkv"
+                }
+            ],
+            "title": "Return of the Jedi",
+            "tmdb_id": 1892
+        },
+        {
+            "dir": "The Girl Who Kicked the Hornets Nest 2009 Part 2 EXTENDED 1080p BluRay x264-PHOBOS",
+            "files": [
+                {
+                    "expect": "The Girl Who Kicked the Hornet's Nest, Part 2 [Extended] (2009) 1080p.mkv",
+                    "expect_no_lookup": "The Girl Who Kicked the Hornets Nest, Part 2 [Extended] (2009) 1080p.mkv",
+                    "filename": "the.girl.who.kicked.the.hornets.nest.2009.part.2.extended.1080p.bluray.x264-phobos.mkv"
+                }
+            ],
+            "title": "The Girl Who Kicked the Hornet's Nest, Part 2",
+            "tmdb_id": 33613
+        }
+    ]
+}
