@@ -156,7 +156,7 @@ tmdb:
   min_popularity: 1.5
 
   # Films with this popularity value or higher are more likely to be considered a positive match.
-  popular_threshold: 15
+  popular_threshold: 12
 
 plex:
 
