@@ -88,16 +88,12 @@ class interactive:
             c.dark_gray(' [%s]' % size_diff)
             c.print()
 
-            choices = []
-            if film.new_filename__ext() == d.new_filename__ext():
-                choices = [
-                    'Replace (overwrite duplicate)', 
-                    'Skip (keep duplicate)']
-            else:
-                choices = [
-                    'Replace (delete duplicate)', 
-                    'Skip (keep duplicate)',
-                    'Keep both']
+            choices = [
+                'Replace (overwrite) existing film', 
+                'Delete this file (keep existing film)',
+                'Skip']
+            if film.new_filename__ext() != d.new_filename__ext():
+                choices[2:2] = ['Keep both']
 
             choice = cls._choice_input(
                 prompt='', 
@@ -107,13 +103,14 @@ class interactive:
 
             config.mock_input = _shift(config.mock_input)
 
+            # 0 = overwrite existing, 1 = delete this file
             if choice == 0:
-                if d.is_dir:
-                    ops.dirops.delete_dir_and_contents(d.source_path, max_size=-1)
-                else:
-                    ops.fileops.delete(d.source_path)
+                ops.dirops.delete_dir_and_contents(d.source_path, max_size=-1) if d.is_dir else ops.fileops.delete(d.source_path)
+            elif choice == 1:
+                ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1) if film.is_dir else ops.fileops.delete(film.source_path)
 
-            return False if choice == 1 else True
+            # If deleting this or skipping, return false, otherwise true
+            return False if choice == len(choices) - 1 or choice == 1 else True
 
     @classmethod
     def verify_film(cls, film):
