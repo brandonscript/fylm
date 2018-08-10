@@ -24,7 +24,7 @@ from datetime import timedelta
 
 import pytest
 import requests_cache
-requests_cache.install_cache('.cache.fylm_test_py%s' % sys.version_info[0], expire_after=timedelta(hours=12))
+requests_cache.install_cache('.cache.fylm_test_py%s' % sys.version_info[0], expire_after=timedelta(hours=120))
 requests_cache.core.remove_expired_responses()
 
 # Add the cwd to the path so we can load fylmlib modules and fylm app.
@@ -39,13 +39,7 @@ import fylmlib.operations as ops
 from make import make_mock_files
 
 # Set the filename that contains test files
-test_files = 'files_short.json'
-# Travis doesn't do well with Unicode, so we give up.
-if os.environ.get('TRAVIS') is not None:
-    if sys.version_info[0] < 3:
-        test_files = 'files_no_unicode.json'
-    else:
-        test_files = 'files_short.json'  
+test_files = 'files.json'
 
 def full_path(path):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), path).strip()

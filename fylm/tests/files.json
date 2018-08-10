@@ -661,16 +661,6 @@
         {
             "files": [
                 {
-                    "expect": "After.Life (2010) 720p.mkv",
-                    "filename": "After.Life 2010 720p.mkv"
-                }
-            ],
-            "title": "After.Life",
-            "tmdb_id": 36419
-        },
-        {
-            "files": [
-                {
                     "expect": "Almost Christmas (2016) 1080p.mkv",
                     "filename": "Almost.Christmas.2016.1080p.BluRay.x264-GECKOS.mkv"
                 }
@@ -692,7 +682,7 @@
             "files": [
                 {
                     "expect": "Atlas Shrugged II The Strike (2012) 1080p.mkv",
-                    "filename": "Atlas Shrugged, Part II 1080p (2012).mkv"
+                    "filename": "Atlas Shrugged II 1080p (2012).mkv"
                 }
             ],
             "title": "Atlas Shrugged II: The Strike",
@@ -1285,7 +1275,7 @@
             ],
             "title": "Planet Terror",
             "tmdb_id": 1992
-        }
+        },
         {
             "dir": "Star.Wars.Episode.IV.A.New.Hope.1977.PROPER.1080p.BluRay.DTS.x264-DON",
             "files": [
