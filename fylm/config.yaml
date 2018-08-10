@@ -231,6 +231,7 @@ edition_map: [
   ["extended.cut", "Extended Cut"],
   ["remastered", "Remastered"],
   ["extended", "Extended"],
+  ["the super duper cut", "The Super Duper Cut"],
   # Uncut, as long as it isn't preceded "Longer & "
   ["(?<!(longer\\W{3}))uncut", "Uncut"],
   ["unrated", "Unrated"],
