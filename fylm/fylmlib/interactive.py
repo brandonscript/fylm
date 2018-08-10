@@ -231,7 +231,7 @@ class interactive:
 
             # Delete the existing ID in case it is a mismatch.
             film.tmdb_id = None
-            search = cls._simple_input('TMDb ID ', mock_input=_first(config.mock_input))
+            search = cls._simple_input('TMDb ID: ', mock_input=_first(config.mock_input))
             config.mock_input = _shift(config.mock_input)
             try:
                 # Attempt to convert the search query to an int and update
