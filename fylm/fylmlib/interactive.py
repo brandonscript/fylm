@@ -105,9 +105,15 @@ class interactive:
 
             # 0 = overwrite existing, 1 = delete this file
             if choice == 0:
-                ops.dirops.delete_dir_and_contents(d.source_path, max_size=-1) if d.is_dir else ops.fileops.delete(d.source_path)
+                if d.is_dir:
+                    ops.dirops.delete_dir_and_contents(d.source_path, max_size=-1) 
+                else:
+                    ops.fileops.delete(d.source_path)
             elif choice == 1:
-                ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1) if film.is_dir else ops.fileops.delete(film.source_path)
+                if film.is_dir:
+                    ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1)
+                else:
+                    ops.fileops.delete(film.source_path)
 
             # If deleting this or skipping, return false, otherwise true
             return False if choice == len(choices) - 1 or choice == 1 else True
