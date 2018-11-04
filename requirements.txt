@@ -5,5 +5,5 @@ attrdict==2.0.0
 requests-cache==0.4.13
 tmdbsimple==2.1.0
 plexapi==3.0.5
-requests==2.18.4
+requests==2.20.0
 pymediainfo==2.2.1
