@@ -89,6 +89,11 @@ def make_mock_files(json_path, files_path):
     with io.open(json_path, mode="r", encoding="utf-8") as json_data:
         test_films = json.load(json_data)['test_films']
         for test_film in test_films:
+
+            # Skip this test film if the skip property is set
+            if 'skip' in test_film and test_film['skip'] is True:
+                continue
+                
             if 'dir' in test_film:
                 os.makedirs(os.path.join(search_dir, test_film['dir']))
             
