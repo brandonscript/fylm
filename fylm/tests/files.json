@@ -1287,7 +1287,7 @@
             ],
             "title": "Star Wars",
             "tmdb_id": 11,
-            "skip": true
+            "skip": false
         },
         {
             "dir": "Star.Wars.Episode.V.The.Empire.Strikes.Back.1980.1080p.BluRay.DTS.x264-DON-Obfuscated",
