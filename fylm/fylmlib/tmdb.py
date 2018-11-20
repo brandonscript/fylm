@@ -20,6 +20,8 @@ This module performs searches and handles results from TMDb.
     search: the main method exported by this module.
 """
 
+# TODO: Add "TV Show" results to search
+
 from __future__ import unicode_literals, print_function
 from builtins import *
 

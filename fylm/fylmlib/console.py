@@ -143,11 +143,15 @@ class console(object):
         Args:
             count: (int) Count of successful moves/renames, from counter module.
         """
-        s = "%sSuccessfully %s %s film%s" % (
-            '(Test) ' if config.test else '', 
-            'renamed' if config.rename_only else 'moved', 
-            count, 
-            '' if count == 1 else 's')
+        t = '(Test) ' if config.test else ''
+        s = "%sNo films moved" % (t)
+
+        if count > 0:
+            s = "%sSuccessfully %s %s film%s" % (
+                t,
+                'renamed' if config.rename_only else 'moved', 
+                count, 
+                '' if count == 1 else 's')
         
         c = console()
         if config.test is True:
