@@ -278,7 +278,8 @@ class Config(object):
 
         # Set up cache.
         if self._defaults.cache is True:
-            requests_cache.install_cache('.cache.fylm_py%s' % sys.version_info[0], expire_after=timedelta(hours=1))
+            cache_ttl = self._defaults.cache_ttl or 1
+            requests_cache.install_cache(f'.cache.fylm_py{sys.version_info[0]}', expire_after=timedelta(hours=cache_ttl))
             requests_cache.core.remove_expired_responses()
 
         for k, v in self._defaults.items():
