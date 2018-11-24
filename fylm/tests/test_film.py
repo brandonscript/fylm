@@ -48,7 +48,7 @@ class TestFilm(object):
 
             matching_tests = list(filter(lambda t: (t.expected_title == film.title and len(t.acceptable_names) > 0), conftest.all_test_films))
 
-            print("Looking up '%s' (%s)" % (film.title, film.year))
+            print(f"Looking up '{film.title}' ({film.year})")
 
             # Ensure that at least one matching test is found for the film
             assert(len(matching_tests) > 0)

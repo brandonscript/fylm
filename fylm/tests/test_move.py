@@ -208,7 +208,7 @@ class TestMove(object):
         # to check that the partial exists before the thread finishes, but it also can't start
         # too soon, so we sleep for 0.1s.
         time.sleep(0.1)
-        assert(os.path.exists('%s.partial~' % dst))
+        assert(os.path.exists(f'{dst}.partial~'))
         copy = parent_conn.recv()
         p.join()
 
