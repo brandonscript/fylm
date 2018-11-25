@@ -248,8 +248,24 @@ def strip_extra_whitespace(s):
     a single space.
 
     Args:
-        s (str, utf-8): decimal number to convert to percentage.
+        s (str, utf-8): original string to be stripped of whitespace.
     Returns:
         A string without repeating whitespace chars.
     """
     return ' '.join(s.split()).strip()
+
+def pluralize(s, c):
+    """Pluralizes a string if count <> 1.
+
+    Take a singular form of a string, and append an s to pluralize the word
+    if the count is <> 1.
+
+    TODO: Ensure this function accomodates English language exceptions.
+
+    Args:
+        s (str, utf-8): Singular form of a string to be pluralized.
+        c (int): Count of item(s) to determine whether s should be pluralized.
+    Returns:
+        s, or {s}s if c <> 1
+    """
+    return s if c == 1 else f"{s}s"
