@@ -56,7 +56,7 @@ class dirops:
             paths: (list) paths to verify existence.
         """
         for d in (d for d in paths if not os.path.exists(d)):
-            console.error("'%s' does not exist; check source path in config.yaml" % d)
+            console.error(f"'{d}' does not exist; check source path in config.yaml")
 
     @classmethod
     def is_same_partition(cls, f1, f2):
@@ -128,11 +128,11 @@ class dirops:
                     with Pool(processes=20) as pool:
                         cls._existing_films += pool.map(Film, xfs)
 
-        console.debug('Loaded %s existing films' % len(cls._existing_films))
+        console.debug(f'Loaded {len(cls._existing_films)} existing films')
 
         # Uncomment for verbose debugging. This can get quite long.
         # for f in sorted(_existing_films, key=lambda s: s.title.lower()):
-        #     console.debug(' - %s' % f.source_path)
+        #     console.debug(f' - {f.source_path}')
         
         # Sort the existing films alphabetically, case-insensitive, and return.
         return sorted(cls._existing_films, key=lambda s: s.title.lower())
@@ -203,10 +203,11 @@ class dirops:
             # Get caller of this method
             import inspect
             for f in list(set(valid_files)):
-                console.debug('\n`{}` found "{}" ({})\nin {}'.format(
-                    inspect.stack()[0][3],
-                    os.path.basename(f),
-                    formatter.pretty_size(size(f)), path))
+                console.debug(f'\n`{inspect.stack()[0][3]}`' \
+                              f' found "{os.path.basename(f)}"' \
+                              f' ({formatter.pretty_size(size(f))})' \
+                              f' \nin {path}')
+
         return sorted(valid_files, key=os.path.getsize, reverse=True)
 
 
@@ -277,11 +278,11 @@ class dirops:
             # If the path exists, there's no point in trying to create it.
             if not os.path.exists(path):
                 try:
-                    console.debug("Creating destination {}".format(path))
+                    console.debug(f'Creating destination {path}')
                     os.makedirs(path)
                 # If the dir creation fails, raise an Exception.
                 except OSError as e:
-                    console.error('Unable to create {}'.format(path), OSError)
+                    console.error(f'Unable to create {path}', OSError)
 
     @classmethod
     def find_deep(cls, root_dir, func=None):
@@ -321,11 +322,11 @@ class dirops:
         # First we ensure the dir is less than the max_size threshold, otherwise abort.
         if _size_dir(path) < max_size or max_size == -1 or files_count == 0:
 
-            console.debug("Recursively deleting {}".format(path))
+            console.debug(f'Recursively deleting {path}')
 
             # An emergency safety check in case there's an attempt to delete / (root!) or one of the source_paths.
             if dir == '/' or dir in config.source_dirs:
-                raise OSError("Somehow you tried to delete '{}' by calling delete.dir_recursive()... Don't do that!".format(path))
+                raise OSError(f"Somehow you tried to delete '{path}' by calling delete.dir_recursive()... Don't do that!")
 
             # Otherwise, only perform destructive actions if we're running in live mode.
             elif config.test is False:
@@ -335,9 +336,11 @@ class dirops:
                 # Catch resource busy error
                 except OSError as e:
                     if e.args[0] == 16:
-                        console.error('Tried to remove %s but file is in use' % path)
+                        console.error(f'Tried to remove "{path}" but file is in use')
         elif config.test is False:
-            console().red().indent('Will not delete %s (%s)' % (path, 'not empty' if files_count > 0 else formatter.pretty_size(max_size)))
+            console().red().indent(
+                f"Will not delete {path} ({'not empty' if files_count > 0 else formatter.pretty_size(max_size)})"
+            )
 
     @classmethod
     def delete_unwanted_files(cls, path):
@@ -419,7 +422,7 @@ class fileops:
 
         # Abort if src does not exist in live mode
         if not os.path.exists(src) and config.test is False:
-            raise OSError('Path does not exist: %s' % src)
+            raise OSError(f'Path does not exist: {src}')
 
         # Silently abort if the src and dst are the same.
         if src == dst:
@@ -429,8 +432,8 @@ class fileops:
         # Try to create destination folders if they do not exist.
         dirops.create_deep(os.path.dirname(dst))
 
-        console.debug("\n  Moving: '{}'".format(src))
-        console.debug("      To: '{}'\n".format(dst))
+        console.debug(f"\n  Moving: '{src}'")
+        console.debug(f"      To: '{dst}'\n")
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
@@ -448,7 +451,7 @@ class fileops:
                 
             # File overwriting is enabled and not marked to replace, so warn, 
             # and proceed continue.
-            console().red().indent('Overwriting %s' % os.path.basename(dst))
+            console().red().indent(f'Overwriting {os.path.basename(dst)}')
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
@@ -468,7 +471,7 @@ class fileops:
                 
                 # Generate a new filename using .partial~ to indicate the file
                 # has not be completely copied.
-                partial_dst = '%s.partial~' % dst
+                partial_dst = f'{dst}.partial~'
 
                 # Copy the file using progress bar
                 cls.copy_with_progress(src, partial_dst)
@@ -481,7 +484,7 @@ class fileops:
 
                 # If not, then we print an error and return False.
                 else:
-                    console().red().indent("Size mismatch: file is {:,} bytes, expected {:,} bytes".format(dst_size, expected_size))
+                    console().red().indent(f"Size mismatch: file is {dst_size:,} bytes, expected {expected_size:,} bytes")
                     return False
             
             # Otherwise, move the file instead.
@@ -493,7 +496,7 @@ class fileops:
         except (IOError, OSError) as e:
 
             # Catch exception and soft warn in the console (don't raise Exception).
-            console().red().indent('Failed to move {} to {}'.format(src, dst))
+            console().red().indent(f'Failed to move {src} to {dst}')
             console.debug(e)
             print(e)
             return False
@@ -532,7 +535,7 @@ class fileops:
                 pass
             else:
                 if shutil.stat.S_ISFIFO(st.st_mode):
-                    raise shutil.SpecialFileError("`%s` is a named pipe" % fn)
+                    raise shutil.SpecialFileError(f"`{fn}` is a named pipe")
 
         # Handle symlinks.
         if not follow_symlinks and os.path.islink(src):
@@ -609,11 +612,11 @@ class fileops:
         # one we're renaming. If it does, abort (otherwise shutil.move would
         # silently overwrite it) and print a warning to the console.
         if os.path.exists(dst) and os.path.basename(src) == os.path.basename(dst):
-            console().red().indent('Unable to rename {} (identical file already exists)'.format(dst))
+            console().red().indent(f'Unable to rename {dst} (identical file already exists)')
             return
 
-        console.debug('Renaming: %s' % src)
-        console.debug('      To: %s' % dst)
+        console.debug(f'Renaming: {src}')
+        console.debug(f'      To: {dst}')
 
         # Only perform destructive changes if we're in live mode.
         if not config.test:
@@ -648,7 +651,7 @@ class fileops:
         Args:
             file: (str, utf-8) full path (including filename) of file to check for ignored strings.
         """
-        console.debug("Deleting file {}".format(file))
+        console.debug(f"Deleting file {file}")
 
         # If we're running in test mode, return a mock success (we assume the deletion
         # would have been successful had it actually run).
@@ -662,7 +665,7 @@ class fileops:
             return 1
         except Exception:
             # Handle any exceptions gracefully and warn the console.
-            console().red().indent('Unable to remove {}'.format(file))
+            console().red().indent(f'Unable to remove {file}')
             # Return 0 because we don't want a success counter to increment.
             return 0
 

@@ -160,7 +160,7 @@ class pyfancy:
     # Simply apply the attribute with the given name
     def attr(self,name):
         if name in self.codes:
-            self.out += "\033[%dm" % self.codes[name]
+            self.out += f"\033[{self.codes[name]}m"
 
     # Parses text and automatically assigns attributes
     # Attributes are specified through brackets
@@ -225,7 +225,7 @@ class pyfancy:
 # This shouldn't be exported
 def _add(name,number):
     def inner(self, addition = ""):
-        self.out += "\033[%dm%s" % (number, addition)
+        self.out += f"\033[{number}m{addition}"
         return self
     setattr(pyfancy,name,inner)
 

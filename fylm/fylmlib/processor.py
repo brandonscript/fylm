@@ -29,6 +29,7 @@ from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
 from fylmlib.duplicates import duplicates
 from fylmlib.interactive import interactive
+import fylmlib.formatter as formatter
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
@@ -68,7 +69,7 @@ class processor:
 
             # If we're moving more than one film, print the move header.
             queue_count = len(_move_queue)
-            console().pink('Moving %s file%s...' % (queue_count, '' if queue_count == 1 else 's')).print()
+            console().pink(f"Moving {queue_count} {formatter.pluralize('file', queue_count)}...").print()
 
             # Process the entire queue
             cls.process_move_queue()
@@ -273,8 +274,8 @@ class processor:
                 new_filename, ext = os.path.splitext(dst)
 
                 # If there's a duplicate filename, we need to rename each file
-                # sequentially to prevent clobbering.
-                dst = '{}.{}{}'.format(new_filename, uniqueness_map.count(dst) - 1, ext)
+                # sequentially to prevent clobbering.   
+                dst = f'{new_filename}.{uniqueness_map.count(dst) - 1}{ext}'
 
             # Rename the source file to its new filename
             ops.fileops.rename(src, os.path.basename(dst))
@@ -308,7 +309,7 @@ class processor:
 
         # Print results of removing unwanted files.
         if config.remove_unwanted_files and deleted_files_count > 0:
-            console().dim('Cleaned {} unwanted file{}'.format(deleted_files_count, '' if deleted_files_count == 1 else 's'))
+            console().dim(f"Cleaned {deleted_files_count} unwanted {formatter.pluralize('file', deleted_files_count)}")
 
         # Remove the original source parent folder, if it is safe to do so (and
         # the feature is enabled in config). First check that the source folder is
@@ -317,7 +318,7 @@ class processor:
         # is the same as the destination.
         if config.remove_source and film.original_path != film.destination_dir:
             console().indent().dark_gray('Removing parent folder').print()
-            console.debug('Deleting %s' % film.original_path)
+            console.debug(f'Deleting {film.original_path}')
 
             # Delete the source dir and its contents
             ops.dirops.delete_dir_and_contents(film.original_path, max_size=1000)

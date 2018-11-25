@@ -53,7 +53,7 @@ class duplicates:
             console.debug('Duplicate checking is disabled, skipping.')
             return []
 
-        console.debug('Checking list of duplicates for "{}" ({})'.format(film.title, film.year))
+        console.debug(f'Checking list of duplicates for "{film.title}" ({film.year})')
         # Filter the existing_films cache array to titles beginning with the first letter of the
         # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.
@@ -78,7 +78,7 @@ class duplicates:
             # Perform the filter against the existing films cache.
            existing_films))
 
-        console.debug('Total duplicate(s) found: %s' % len(duplicates))
+        console.debug(f'Total duplicate(s) found: {len(duplicates)}')
         return duplicates
 
     @classmethod

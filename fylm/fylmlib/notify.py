@@ -65,7 +65,7 @@ def plex():
         except Exception as e:
             # If the connection fails, log the error and print a response to the console.
             log.enable()
-            console().red('Could not connect to Plex server on {}'.format(config.plex.baseurl)).print()
+            console().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
             console.error(e)
             return
 
@@ -119,7 +119,7 @@ def pushover(film):
         message = ('. '.join(film.overview.split('.  ')[:2]) + '.'[:200] + '...') if len(film.overview) > 200 else film.overview
 
         pushover.send_message(
-            message="{} ({})\n{}".format(film.title, film.year, message), 
+            message=f"{film.title} ({film.year})\n{message}", 
             attachment=attachment,
             title='Fylm Added')
 

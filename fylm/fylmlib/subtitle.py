@@ -67,9 +67,16 @@ class Subtitle:
     """
     def __init__(self, path):
 
+        # Path to original subtitle file.
         self.path = path
+
+        # The 2-character language identifier code of the subtitle.
         self.code = None
+
+        # The full-length language of the subtitle.
         self.language = None
+
+        # The language string captured from the original filename, e.g. 'english' or 'en'.
         self.captured = None
         
         # First we loop through languages to determine if the path contains
@@ -115,7 +122,7 @@ class Subtitle:
         filename, ext = os.path.splitext(path)
 
         # if self.language is None:
-        return '%s.%s%s' % (filename, self.captured, ext) if self.captured else None
+        return f'{filename}.{self.captured}{ext}' if self.captured else None
 
     @classmethod
     def is_subtitle(cls, file):

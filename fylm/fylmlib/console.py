@@ -105,7 +105,7 @@ class console(object):
         return self
 
     def indent(self, s=''):
-        self.add('    → %s' % s)
+        self.add(f'    → {s}')
         return self
 
     def print(self, should_log=True):
@@ -124,9 +124,9 @@ class console(object):
         """
 
         # Start log section header
-        log.info('%s %s %s' % (('-'*40), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), ('-'*40)))
+        log.info(f'{("-"*40)} {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {("-"*40)}')
         
-        c = console().pink("\nFylm is scanning %s\n" % ', '.join(config.source_dirs))
+        c = console().pink(f"\nFylm is scanning {', '.join(config.source_dirs)}\n")
 
         if config.test:
             c.bold().purple('\n★ Test mode (no changes will be made)')
@@ -143,15 +143,11 @@ class console(object):
         Args:
             count: (int) Count of successful moves/renames, from counter module.
         """
-        t = '(Test) ' if config.test else ''
-        s = "%sNo films moved" % (t)
-
+        s = f"{'(Test) ' if config.test else ''}No films moved"
         if count > 0:
-            s = "%sSuccessfully %s %s film%s" % (
-                t,
-                'renamed' if config.rename_only else 'moved', 
-                count, 
-                '' if count == 1 else 's')
+            s = f"{'(Test) ' if config.test else ''}" \
+                f"Successfully {'renamed' if config.rename_only else 'moved'}" \
+                f" {count} {formatter.pluralize('film', count)}"
         
         c = console()
         if config.test is True:
@@ -178,7 +174,7 @@ class console(object):
         if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
             c.red()
         c.add(film.original_filename).add(film.ext or '')
-        c.reset().dark_gray(' (%s)' % formatter.pretty_size(film.size_of_largest_video))
+        c.reset().dark_gray(f' ({formatter.pretty_size(film.size_of_largest_video)})')
         c.print()
 
     def print_search_result(self, film):
@@ -192,11 +188,11 @@ class console(object):
         if config.tmdb.enabled is True:
             if film.tmdb_id is not None:
                 c = console().indent()
-                c.green('✓ %s (%s)' % (film.title, film.year))
-                c.dark_gray(' [%s] %s match' % (film.tmdb_id, formatter.percent(film.title_similarity)))
+                c.green(f'✓ {film.title} ({film.year})')
+                c.dark_gray(f' [{film.tmdb_id}] {formatter.percent(film.title_similarity)} match')
                 c.print()
             else:
-                console().red().indent('× %s (%s)' % (film.title, film.year)).print()
+                console().red().indent(f'× {film.title} ({film.year})').print()
    
     def print_skip(self, film):
         """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
@@ -217,11 +213,11 @@ class console(object):
         # Import duplicates' should_replace function here to prevent circular imports.
         from fylmlib.duplicates import duplicates
 
-        if len(film.duplicates) > 0:
+        duplicate_count = len(film.duplicates)
+
+        if duplicate_count > 0:
             
-            console().blue().indent().add('%s duplicate%s found:' % (
-                len(film.duplicates), 
-                '' if len(film.duplicates) == 1 else 's')).print()
+            console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found:").print()
 
             if config.interactive is False:
 
@@ -232,19 +228,15 @@ class console(object):
                     should_replace = duplicates.should_replace(film, d)
                     should_keep_both = duplicates.should_keep_both(film, d)
                     
-                    c = console().blue().indent()
+                    c = console()
 
                     if should_replace or should_keep_both:
-                        c.add('  %s' % 'Replacing ' if should_replace else 'Keeping ')
-                        c.add("'%s'" % os.path.basename(d.source_path))
-                        c.add(' (%s)' % pretty_size)
-                        c.dark_gray(' [%s]' % size_diff)
+                        c.blue().indent(f"  {'Replacing' if should_replace else 'Keeping'} ")
+                        c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
+                        c.dark_gray(f' [{size_diff}]')
                     else:   
-                        c.red('  Ignoring because ')
-                        c.red("'%s' (%s) is %s" % (
-                            os.path.basename(d.source_path), 
-                            pretty_size,
-                            size_diff))
+                        c.red().indent(f"  Ignoring because '{os.path.basename(d.source_path)}'" \
+                              f" ({pretty_size}) is {size_diff}")
 
                     c.print()
 
@@ -262,7 +254,7 @@ class console(object):
         Args:
             s: (str, utf-8) String to print/log.
         """
-        console().red('      %s' % s).print()
+        console().red(f'      {s}').print()
 
     def print_interactive_skipped(self):
         """Print an interactive skip message.
@@ -277,13 +269,13 @@ class console(object):
             choice: (str, utf-8) Choice to print/log.
         """
 
-        c = console().gray('      %s)' % idx)
+        c = console().gray(f'      {idx})')
         if choice.startswith('['):
-            c.dark_gray(' %s' % choice)
+            c.dark_gray(f' {choice}')
         else:
             match = re.search(patterns.tmdb_id, choice)
             tmdb_id = match.group('tmdb_id') if match else ''
-            c.gray(' %s' % re.sub(patterns.tmdb_id, '', choice))
+            c.gray(f" {re.sub(patterns.tmdb_id, '', choice)}")
             c.dark_gray(tmdb_id)
         c.print()
 
@@ -294,10 +286,10 @@ class console(object):
             return
 
         from fylmlib.operations import dirops
-        console().gray().indent("%s %s to %s" % (
-            "Copying" if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving', 
-            os.path.basename(src),
-            os.path.dirname(dst))).print()
+        console().gray().indent(
+            f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
+            f" {os.path.basename(src)} to {os.path.dirname(dst)}"
+        ).print()
 
     def print_copy_progress_bar(self, copied, total):
         """Print progress bar to terminal.

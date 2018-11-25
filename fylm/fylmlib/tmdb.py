@@ -182,15 +182,12 @@ class TmdbResult:
         """
 
         # Uncomment for verbose match debugging
-        # console.debug('   Checking match {}: {}=={} / {}=={} / match({}), yeardiff({}), popularity({})'.format(
-        #     i,
-        #     self.query,
-        #     self.proposed_title,
-        #     self.year,
-        #     self.proposed_year,
-        #     formatter.percent(self.title_similarity),
-        #     self.year_deviation,
-        #     self.popularity))
+        # console.debug(f'   Checking match {i}:' \
+        #               f' {self.query}=={self.proposed_title} /' \
+        #               f' {self.year}=={self.proposed_year} /' \
+        #               f' match({formatter.percent(self.title_similarity)}),' \
+        #               f' yeardiff({self.year_deviation}),' \
+        #               f' popularity({self.popularity})')
 
         # Check that the year deviation is acceptable and check that the
         # popularity is acceptable.
@@ -198,10 +195,9 @@ class TmdbResult:
             and self.popularity >= config.tmdb.min_popularity):
 
             # Construct a string for outputting debug details.
-            debug_quality_string = "(match({}), yeardiff({}), popularity({}))".format(
-                formatter.percent(self.title_similarity), 
-                self.year_deviation,
-                self.popularity)
+            debug_quality_string = f'(match({formatter.percent(self.title_similarity)}),' \
+                                   f' yeardiff({self.year_deviation}),' \
+                                   f' popularity({self.popularity}))'
 
             # Check to see if the first letter of both titles match, otherwise we
             # might get some false positives when searching for shorter titles. E.g.
@@ -229,13 +225,13 @@ class TmdbResult:
                         and self.popularity >= config.tmdb.popular_threshold
                     )
                 )):
-                console.debug("   - Potential match in strict mode {}".format(debug_quality_string))
+                console.debug(f"   - Potential match in strict mode {debug_quality_string}")
                 return True
 
             # Otherwise, if strict mode is disabled, we don't need to validate
             # the title, and we return True anyway.
             elif config.strict is False:
-                console.debug("   - Potential match (strict mode off) {}".format(debug_quality_string))
+                console.debug(f"   - Potential match (strict mode off) {debug_quality_string}")
                 return True
 
         # If result does not match any other criteria, return False.
@@ -262,7 +258,7 @@ class TmdbResult:
         if (self.title_similarity >= ideal_title_similarity
             and self.year == self.proposed_year
             and i < 3):
-            console.debug('Instant match: {} ({})'.format(self.proposed_title, self.proposed_year))
+            console.debug(f'Instant match: {self.proposed_title} ({self.proposed_year})')
             return True
         else:
             return False
@@ -335,7 +331,7 @@ def search(query, year=None):
     # Credit: https://stackoverflow.com/a/34504896/1214800
     query = query.replace(r':', '-')
 
-    console.debug('\Initializing search for "{}" / {}'.format(query, year))
+    console.debug(f'\Initializing search for "{query}" / {year}')
 
     # Initialize a array to store potential matches.
     potential_matches = []
@@ -383,9 +379,13 @@ def search(query, year=None):
 
     # If debugging, print the possible matches in the correct sort order to the
     # console.
-    console.debug('{} possible matches, sorted:'.format(len(sorted_results)))
+    console.debug(f'{len(sorted_results)} possible matches, sorted:')
     for r in sorted_results:
-        console.debug("   - '{}', '{}', {}, {} {}".format(r.proposed_title, r.proposed_year, r.title, r.title_similarity, r.year_deviation))
+        console.debug(f"   - '{r.proposed_title}'," \
+                      f" '{r.proposed_year}'," \
+                      f" {r.title}," \
+                      f" {r.title_similarity}" \
+                      f" {r.year_deviation}")
 
     # Return the sorted list
     return sorted_results
@@ -406,7 +406,7 @@ def _id_search(tmdb_id):
     # Example API call:
     #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
 
-    console.debug('Searching by ID: %s' % tmdb_id)
+    console.debug(f'Searching by ID: {tmdb_id}')
 
     # Build the search query and execute the search in the rate limit handler.
     return _search_handler(tmdb_id=tmdb_id)
@@ -428,7 +428,7 @@ def _primary_year_search(query, year=None):
     # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY&include_adult=true
 
-    console.debug('Searching: "{}" / {} - primary release year'.format(query, year))
+    console.debug(f'Searching: "{query}" / {year} - primary release year')
 
     # Build the search query and execute the search in the rate limit handler.
     return _search_handler(
@@ -454,7 +454,7 @@ def _basic_search(query, year=None):
     # Example API call:
     #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY&include_adult=true
 
-    console.debug('Searching: "{}" / {} - basic year'.format(query, year))
+    console.debug(f'Searching: "{query}" / {year} - basic year')
 
     # Build the search query and execute the search in the rate limit handler.
     return _search_handler(
@@ -482,7 +482,7 @@ def _strip_articles_search(query, year=None):
     # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY&include_adult=true
 
-    console.debug('Searching: "{}" / {} - strip articles, primary release year'.format(query, year))
+    console.debug(f'Searching: "{query}" / {year} - strip articles, primary release year')
 
     # Build the search query and execute the search in the rate limit handler.
     return _search_handler(
@@ -531,7 +531,7 @@ def _recursive_rstrip_search(query, year=None):
     # Strip articles here, so that by the end, we aren't searching for 'The'.
     query = re.sub(patterns.strip_articles_search, '', query)
 
-    console.debug('Searching: "{}" / {} - recursively remove the last word of title'.format(query, year))
+    console.debug(f'Searching: "{query}" / {year} - recursively remove the last word of title')
 
     # Iterate over each word in the search string.
     for i, _ in enumerate(query.split()):

@@ -72,7 +72,7 @@ class parser:
         # original state both for lookup validation, and so that we don't
         # end up with multiple ', the' suffixes.
         if re.search(r', the', title, re.I):
-            title = '{}{}'.format('The ', re.sub(r', the', '', title, flags=re.I))
+            title = f"The {re.sub(r', the', '', title, flags=re.I)}"
 
         # Use the 'strip_from_title' regular expression to replace unwanted
         # characters in a title with a space.

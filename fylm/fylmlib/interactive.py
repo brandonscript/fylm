@@ -83,9 +83,8 @@ class interactive:
 
             c = console().blue().indent()
 
-            c.add("'%s'" % os.path.basename(d.source_path))
-            c.add(' (%s)' % pretty_size)
-            c.dark_gray(' [%s]' % size_diff)
+            c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
+            c.dark_gray(f' [{size_diff}]')
             c.print()
 
             choices = [
@@ -195,7 +194,7 @@ class interactive:
             True if the film should be processed, else False
         """      
 
-        console().print_ask("%s [N]" % film.ignore_reason)
+        console().print_ask(f"{film.ignore_reason} [N]")
 
         # Continuously loop this if an invalid choice is entered.
         while True:
@@ -268,10 +267,8 @@ class interactive:
 
         # Delete the existing ID in case it is a mismatch.
         film.tmdb_id = None
-        query = cls._simple_input('Search TMDb: ', '%s%s%s' % (
-            film.title or '', 
-            ' ' if film.title else '', 
-            film.year or ''), 
+        query = cls._simple_input("Search TMDb: ", 
+            f"{film.title or ''}{' ' if film.title else ''}{film.year or ''}", 
             mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
         film.title = parser.get_title(query)
@@ -304,10 +301,7 @@ class interactive:
         # to `choice`.
         choice = cls._choice_input(
             prompt="", 
-            choices=['%s (%s) [%s]' % (
-                m.proposed_title, 
-                m.proposed_year, 
-                m.tmdb_id) for m in film.matches] + 
+            choices=[f"{m.proposed_title} ({m.proposed_year}) [{m.tmdb_id}]" for m in film.matches] + 
             ['[ New search ]', '[ Search by ID ]', '[ Skip ]'],
             enumeration='number',
             mock_input=_first(config.mock_input))

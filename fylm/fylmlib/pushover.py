@@ -259,7 +259,7 @@ class Client:
 
         for key, value in kwords.items():
             if key not in valid_keywords:
-                raise ValueError("{0}: invalid message parameter".format(key))
+                raise ValueError(f"{key}: invalid message parameter")
 
             if key == "timestamp" and value is True:
                 payload[key] = int(time.time())
@@ -267,7 +267,7 @@ class Client:
                 if not SOUNDS:
                     get_sounds()
                 if value not in SOUNDS:
-                    raise ValueError("{0}: invalid sound".format(value))
+                    raise ValueError(f"{value}: invalid sound")
                 else:
                     payload[key] = value
             elif value:
@@ -295,7 +295,7 @@ class Client:
 
         for key, value in kwords.items():
             if key not in valid_keywords:
-                raise ValueError("{0}: invalid message parameter".format(key))
+                raise ValueError(f"{key}: invalid message parameter")
             payload[key] = value
 
         return GlanceRequest(payload)

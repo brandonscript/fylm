@@ -219,7 +219,7 @@ class Film:
     @property
     def title_the(self):
         if re.search(r'(^the\b|, the)', self.title, re.I):
-            return '{}{}'.format(formatter.strip_the(self.title), ', The')
+            return f'{formatter.strip_the(self.title)}, The'
         else:
             return self.title
 
@@ -268,7 +268,7 @@ class Film:
         return formatter.build_new_filename(self)
 
     def new_filename__ext(self, ext=''):
-        return '{}{}'.format(self.new_filename, self.ext or ext)
+        return f'{self.new_filename}{self.ext or ext}'
 
     @property
     def destination_dir(self):
@@ -312,7 +312,7 @@ class Film:
             self.ignore_reason = 'Unknown year'
 
         elif self.size < config.min_filesize * 1024 * 1024 and self.is_video_file:
-            self.ignore_reason = '%s is too small' % formatter.pretty_size(self.size)
+            self.ignore_reason = f'{formatter.pretty_size(self.size)} is too small'
 
         return self.ignore_reason is not None
 

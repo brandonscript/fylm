@@ -73,13 +73,13 @@ def progress_bar(percentage, width=50):
         blocks_widget[full_blocks] = INCOMPLETE_BLOCK_GRAD[grad_index]
 
     # Build percentage widget
-    str_perc = '%.0f' % percentage
+    str_perc = f'{percentage}.0f'
 
     # Subtract 1 because the percentage sign is not included.
-    perc_widget = '%s%%' % str_perc.ljust(len(max_perc_widget) - 3)
+    perc_widget = f'{str_perc.ljust(len(max_perc_widget) - 3)}%%'
 
     # Generate progress bar
-    progress_bar = '%s%s%s' % (''.join(blocks_widget), separator, perc_widget)
+    progress_bar = f"{''.join(blocks_widget)}{separator}{perc_widget}"
 
     # Return the progress bar as string.
     return ''.join(progress_bar)

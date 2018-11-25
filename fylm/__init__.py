@@ -75,11 +75,11 @@ def main():
         console().print_exit_early()
     except (IOError, OSError) as e:
         # if config.debug:
-        console.error('%s: %s' % (type(e).__name__, e))
+        console.error(f'{type(e).__name__}: {e}')
         import traceback
         traceback.print_exc()
     except Exception as e:
-        console.error('%s: %s' % (type(e).__name__, e), type(e))
+        console.error(f'{(type(e).__name__, e)}: {type(e)}')
         # if config.debug:
         import traceback
         traceback.print_exc()

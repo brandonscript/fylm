@@ -74,7 +74,7 @@ def build_new_filename(film):
         # in the original match. This allows for conditional chars to be added to
         # the template string, so that `{ - edition}` will be replaced with
         # ` - Director's Cut` *only* if film.edition isn't blank.
-        replacement = '{}{}{}'.format(match.groups()[0], value, match.groups()[1]) if match and match.groups() is not None else value
+        replacement = f'{match.groups()[0]}{value}{match.groups()[1]}' if match and match.groups() is not None else value
 
         # Update the template by replacing the original template match (e.g. `{title}`)
         # with the replacement (e.g. `Furngully The Last Rainforest`).
@@ -136,7 +136,7 @@ def pretty_size(size_in_bytes=0, measure=None):
     # If measure was specified, format and return. This is usually used when calling
     # this function recursively, but can be called manually.
     if measure:
-        return '{} {}'.format(pretty_size_map[measure], measure)
+        return f'{pretty_size_map[measure]} {measure}'
     elif pretty_size_map['GiB'] > 1:
         return pretty_size(size_in_bytes, 'GiB')
     elif pretty_size_map['MiB'] > 1:
@@ -144,7 +144,7 @@ def pretty_size(size_in_bytes=0, measure=None):
     elif pretty_size_map['KiB'] > 1:
         return pretty_size(size_in_bytes, 'KiB')
     else:
-        return '{} {}'.format(size_in_bytes, 'B')
+        return f'{size_in_bytes:,.0f} B'
 
 def pretty_size_diff(src, dst):
     """Pretty format filesize comparison.
@@ -169,11 +169,11 @@ def pretty_size_diff(src, dst):
 
     # If the difference is negative, the destination is smaller than the source.
     if size_diff < 0:
-        return '{}{}'.format(pretty_size(abs(size_diff)), ' smaller')
+        return f'{pretty_size(abs(size_diff))} smaller'
 
     # If the difference is positive, the destination is larger than the source.
     elif size_diff > 0:
-        return '{}{}'.format(pretty_size(abs(size_diff)), ' bigger')
+        return f'{pretty_size(abs(size_diff))} bigger'
 
     # Otherwise they must be the same size.
     else:
@@ -189,7 +189,7 @@ def percent(d):
     Returns:
         A human-readable formatted percentage.
     """
-    return "{0:.0f}%".format(d * 100)
+    return f"{d * 100:.0f}"
 
 def replace_insensitive(find, repl, s):
     """Search and replace (case insensitive) within a string.
