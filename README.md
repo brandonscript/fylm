@@ -1,4 +1,4 @@
-![version](https://img.shields.io/badge/version-0.2.4--alpha-orange.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8fcfaf45a6494aedb4b0340461c2b79b)](https://www.codacy.com/app/brandonscript/fylm) [![Build Status](https://travis-ci.org/brandonscript/fylm.svg?branch=master)](https://travis-ci.org/brandonscript/fylm)
+![version](https://img.shields.io/badge/version-0.2.5--alpha-orange.svg) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8fcfaf45a6494aedb4b0340461c2b79b)](https://www.codacy.com/app/brandonscript/fylm) [![Build Status](https://travis-ci.org/brandonscript/fylm.svg?branch=master)](https://travis-ci.org/brandonscript/fylm)
 
 <img src="https://i.imgur.com/X53grFH.png" width="200">
 
@@ -25,7 +25,7 @@ Fylm can:
 
 ### Installing
 
-Fylm is tested on Python 3.5 and 3.6. At some point in the future, Python 2 support will likely go the way of the dodo, but most of it is written with Python 2.7 compatibility in mind.
+Fylm is tested on 3.6, and will attempt to adapt as the Python language does.
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 

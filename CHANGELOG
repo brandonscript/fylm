@@ -2,6 +2,16 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.5-alpha] 2018-11-24
+- Support for only Python 3.6, dropping support for 3.5 and 2.7
+- Ability to delete duplicates in interactive mode
+- Improved matching algorithm
+- Fixed endless loop for blank searches/0 results in interactive mode
+- Detect multi-part files
+- 'Unpacking' directories are now ignored
+- New --move and --copy switches to force move or copy behavior
+- Complete rewrite of console output module using builder pattern and new f-string formatting
+
 ## [0.2.4-alpha] 2018-02-28
 - New interactive mode (-i) to verify/fix matches, and handle duplicates
 - Move/copy operations are performed after all films are verified in interactive mode
