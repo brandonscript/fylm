@@ -1,5 +1,5 @@
 future==0.16.0
-pyyaml==3.12
+pyyaml>=4.2b1
 ansicolors==1.1.8
 attrdict==2.0.0
 requests-cache==0.4.13
