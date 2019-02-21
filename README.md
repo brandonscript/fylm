@@ -96,7 +96,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 
 Tests are run using `pytest`. To install:
 
-    (sudo) pip install -r requirements-dev.txt
+    (sudo) pip install -r requirements-test.txt
 
 To run tests:
 
