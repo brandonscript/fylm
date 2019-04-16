@@ -17,7 +17,7 @@ Fylm can:
   `high.noon.1952.1080p.this.OTHER-JUNK` » `High Noon (1952) 1080p`
 - Look film details up on TMDb so you don't have to, ensuring things are named correctly.
 - Notify your Plex Media Server when it adds something new.
-- Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd.
+- Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd. (You'll want to use the `--plaintext` switch).
 - Delete extra files you don't want, moving only the important bits you care about.
 - Run in test mode so you can verify search results before committing.
 - Log what it does, so if (not saying they will, but if) things go sideways, you can see why.
@@ -90,7 +90,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `source` overrides your usual `source_dir` setting with new source folder(s). Comma separate multiple folders.
 - `no-strict` will dramatically reduce the criteria that is is used to validate TMDb matches. Expect red herrings. Lots. So, `--test` first.
 - `no-console` will completely suppress console output. If you wanted that, for some reason.
-- `plaintext` will output to the console without pretty formatting.
+- `plaintext` will output to the console without pretty formatting. You'll want to use this option with SABnzbd.
 
 #### Testing
 
