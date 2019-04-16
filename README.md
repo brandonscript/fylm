@@ -90,7 +90,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `source` overrides your usual `source_dir` setting with new source folder(s). Comma separate multiple folders.
 - `no-strict` will dramatically reduce the criteria that is is used to validate TMDb matches. Expect red herrings. Lots. So, `--test` first.
 - `no-console` will completely suppress console output. If you wanted that, for some reason.
-- `plaintext` will output to the console without pretty formatting.
+- `plaintext` will output to the console without pretty formatting. You'll want to use this option with SABnzbd.
 
 #### Testing
 
