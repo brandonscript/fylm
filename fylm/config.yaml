@@ -1,7 +1,7 @@
 # --source={/single/folder/path, overwrites the default configured here}
 # This is an array of folders to search for files you want to rename.
 # For Windows paths, make sure you escape the path with a \, for example: "D:\\Downloads".
-# For *nix, use standard path, for example: "/path/to/folde".
+# For *nix, use standard path, for example: "/path/to/folder".
 source_dirs:
   - '/Volumes/Films/#new'
 
