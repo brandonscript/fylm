@@ -721,9 +721,9 @@
         {
             "files": [
                 {
-                    "expect_no_lookup": "Crash (2004) 1080p.mkv",
-                    "expect": "Crash (2005) 1080p.mkv",
-                    "filename": "Crash 1080p (2004).mkv"
+                    "expect_no_lookup": "Crash (2003) 1080p.mkv",
+                    "expect": "Crash (2004) 1080p.mkv",
+                    "filename": "Crash 1080p (2003).mkv"
                 }
             ],
             "title": "Crash",
@@ -834,9 +834,9 @@
         {
             "files": [
                 {
-                    "expect_no_lookup": "Gran Torino (2009) 720p.mkv",
+                    "expect_no_lookup": "Gran Torino (2008) 720p.mkv",
                     "expect": "Gran Torino (2008) 720p.mkv",
-                    "filename": "Gran Torino (2009) 720p.mkv"
+                    "filename": "Gran Torino (2008) 720p.mkv"
                 }
             ],
             "title": "Gran Torino",
