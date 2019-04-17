@@ -854,9 +854,9 @@
         {
             "files": [
                 {
-                    "expect_no_lookup": "Gran Torino (2009) 720p.mkv",
+                    "expect_no_lookup": "Gran Torino (2008) 720p.mkv",
                     "expect": "Gran Torino (2008) 720p.mkv",
-                    "filename": "Gran Torino (2009) 720p.mkv"
+                    "filename": "Gran Torino (2008) 720p.mkv"
                 }
             ],
             "title": "Gran Torino",
