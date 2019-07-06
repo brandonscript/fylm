@@ -27,7 +27,7 @@ fylm.config = config
 
 # @pytest.mark.skip()
 class TestApp(object):
-    """Tests E2E application functionality"""
+    """Integration tests for application functionality"""
 
     def test_app_tmdb_disabled(self):
 
