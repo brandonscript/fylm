@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: future_fstrings -*-
 # MIT License
 
 # Copyright (c) 2017 Cosmic Open Source Projects

@@ -1,3 +1,4 @@
+# -*- coding: future_fstrings -*-
 # pushover 0.3
 #
 # Copyright (C) 2013-2016  Thibaut Horel <thibaut.horel@gmail.com>

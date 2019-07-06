@@ -1,4 +1,4 @@
-# -*- coding = utf-8 -*-
+# -*- coding: future_fstrings -*-
 # Copyright 2018 Brandon Shelley. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
