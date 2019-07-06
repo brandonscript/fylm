@@ -29,7 +29,9 @@ Fylm is tested on 3.5, 3.6, and 3.7, and will attempt to adapt as the Python lan
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
-    (sudo) python setup.py install
+    (sudo) pip install -r requirements.txt
+    // or
+    pip3 install -r requirements.txt
 
 If you don't use `pip`, then you will need to install these manually, or download them and include them inside your copy of Fylm. Or shake a magic stick and hope it works (hint: it won't).
 
