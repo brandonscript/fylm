@@ -41,7 +41,7 @@ with open('requirements-test.txt') as f:
 setup(
     name='Fylm',
 
-    version='0.2.5-alpha',
+    version='0.2.6-alpha',
 
     description='A automated command line app for organizing your film media.',
     long_description=long_description,

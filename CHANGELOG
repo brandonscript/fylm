@@ -2,6 +2,10 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.6-alpha] 2019-07-05
+- Add support for Python 3.5 and 3.7 (3.6 already supported)
+- Clean up and future-proofing for later versions of dependencies
+
 ## [0.2.5-alpha] 2018-11-24
 - Support for only Python 3.6, dropping support for 3.5 and 2.7
 - Ability to delete duplicates in interactive mode
