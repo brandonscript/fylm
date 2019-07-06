@@ -331,7 +331,7 @@ def search(query, year=None):
     # Credit: https://stackoverflow.com/a/34504896/1214800
     query = query.replace(r':', '-')
 
-    console.debug(f'\Initializing search for "{query}" / {year}')
+    console.debug(f'\\Initializing search for "{query}" / {year}')
 
     # Initialize a array to store potential matches.
     potential_matches = []

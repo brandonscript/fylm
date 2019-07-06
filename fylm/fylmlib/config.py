@@ -78,7 +78,7 @@ class Config(object):
 
         # Load the config file and map it to a 'AttrMap', a dot-notated dictionary.
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
-            self._defaults = AttrMap(yaml.load(yaml_config_file.read()), sequence_type=list)
+            self._defaults = AttrMap(yaml.safe_load(yaml_config_file.read()), sequence_type=list)
 
         # Initialize the CLI argument parser.
         parser = argparse.ArgumentParser(description = 'A delightful filing and renaming app for film lovers.')

@@ -60,7 +60,7 @@ class TestDuplicates(object):
     # @pytest.mark.skip()
     def test_replace_all_with_2160p(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -112,7 +112,7 @@ class TestDuplicates(object):
     # @pytest.mark.skip()
     def test_keep_all_2160p(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -162,7 +162,7 @@ class TestDuplicates(object):
     # @pytest.mark.skip()
     def test_keep_2160p_and_1080p(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -213,7 +213,7 @@ class TestDuplicates(object):
     # @pytest.mark.skip()
     def test_replace_smaller(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -250,7 +250,7 @@ class TestDuplicates(object):
     # @pytest.mark.skip()
     def test_do_not_replace_larger(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -286,7 +286,7 @@ class TestDuplicates(object):
 
     def test_multiple_editions(self):
 
-        conftest.setup()
+        conftest._setup()
 
         new = 'You Only Live Twice (1967) 1080p/You Only Live Twice (1967) 1080p.mkv'
         existing = 'You Only Live Twice [Extended] (1967) 1080p/You Only Live Twice [Extended] (1967) 1080p.mkv'

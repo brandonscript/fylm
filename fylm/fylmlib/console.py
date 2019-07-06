@@ -323,7 +323,7 @@ class console(object):
         """
         if config.debug is True:
             log.debug(s)
-            print(color(s, fg=ansi.debug, style='bold'))
+            console().bold().debug(s).print()
 
     @classmethod
     def error(cls, s, x=Exception):
@@ -331,8 +331,9 @@ class console(object):
 
         Args:
             s: (str, utf-8) String to print
+            x: (Exception)
         """
         log.error(s)
-        print(color(s, fg=ansi.error, style='bold'))
+        console().bold().error(s).print()
         if x:
             x(s)

@@ -68,6 +68,9 @@ valid_films = []
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
+    _setup()
+
+def _setup():
     global all_test_films
     global expected
     global ignored

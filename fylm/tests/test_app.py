@@ -31,7 +31,7 @@ class TestApp(object):
 
     def test_app_tmdb_disabled(self):
 
-        conftest.setup()
+        conftest._setup()
 
         fylm.config.test = False
         fylm.config.use_folders = True
@@ -52,10 +52,9 @@ class TestApp(object):
             assert(expected_path in [m.lower() for m in moved_films])
 
     # @pytest.mark.skip(reason="Slow")
-    @pytest.mark.slow
     def test_app_use_folders_true(self):
 
-        conftest.setup()
+        conftest._setup()
 
         fylm.config.test = False
         fylm.config.use_folders = True
@@ -75,10 +74,9 @@ class TestApp(object):
             assert(expected_path in moved_films)
 
     # @pytest.mark.skip(reason="Slow")
-    @pytest.mark.slow
     def test_app_use_folders_false(self):
 
-        conftest.setup()
+        conftest._setup()
         
         fylm.config.test = False
         fylm.config.use_folders = False

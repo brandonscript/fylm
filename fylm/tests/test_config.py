@@ -32,7 +32,7 @@ class TestConfig(object):
 
     def test_reload(self):
 
-        conftest.setup()
+        conftest._setup()
 
         assert(config.tmdb.enabled is True)
         config.tmdb.enabled = False
@@ -42,7 +42,7 @@ class TestConfig(object):
 
     def test_config_test_mode_enabled(self):
 
-        conftest.setup()
+        conftest._setup()
         
         # Set test mode to true
         fylm.config.test = True
@@ -67,7 +67,7 @@ class TestConfig(object):
 
     def test_config_test_mode_disabled(self):
         
-        conftest.setup()
+        conftest._setup()
 
         # Set test mode to true
         fylm.config.test = False

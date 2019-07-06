@@ -38,7 +38,7 @@ class TestInteractive(object):
 
     def test_lookup_success(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -65,7 +65,7 @@ class TestInteractive(object):
 
     def test_handle_duplicates_replace_same_quality_folder(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -103,7 +103,7 @@ class TestInteractive(object):
 
     def test_handle_duplicates_replace_same_quality_file(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.use_folders = False
@@ -143,7 +143,7 @@ class TestInteractive(object):
 
     def test_handle_duplicates_replace_lower_quality(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -187,7 +187,7 @@ class TestInteractive(object):
 
     def test_handle_duplicates_skip(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -224,7 +224,7 @@ class TestInteractive(object):
 
     def test_handle_duplicates_keep_both(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False
@@ -266,7 +266,7 @@ class TestInteractive(object):
 
     def test_handle_duplicates_delete_new(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Set up config
         fylm.config.test = False

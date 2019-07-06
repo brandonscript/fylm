@@ -9,3 +9,4 @@ fylm/tests/files
 .coverage*
 
 coverage.xml
+.vscode/settings.json

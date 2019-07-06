@@ -29,10 +29,9 @@ import conftest
 class TestFilm(object):
 
     # @pytest.mark.skip(reason="Slow")
-    @pytest.mark.slow
     def test_search_tmdb(self):
 
-        conftest.setup()
+        conftest._setup()
 
         fylm.config.tmdb.enabled = True
         assert(fylm.config.tmdb.enabled is True)
@@ -67,7 +66,7 @@ class TestFilm(object):
 
     def test_title_the(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Check that films beginning with 'The' have it moved to the end, ', The'
         for film in conftest.films:
@@ -77,7 +76,7 @@ class TestFilm(object):
 
     def test_year(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Check that year is detected correctly
         for film in conftest.films:
@@ -90,7 +89,7 @@ class TestFilm(object):
 
     def test_quality(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Check that quality is detected correctly
         for film in conftest.films:
@@ -99,7 +98,7 @@ class TestFilm(object):
 
     def test_edition(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Check that editions, when detected, are set correctly and cleaned from original string
         for film in conftest.films:
@@ -112,7 +111,7 @@ class TestFilm(object):
 
     def test_is_file_or_dir(self):
 
-        conftest.setup()
+        conftest._setup()
 
         # Check file extensions to verify whether source is a file or a dir
         for film in conftest.films:
@@ -123,7 +122,7 @@ class TestFilm(object):
 
     def test_should_ignore(self):
 
-        conftest.setup()
+        conftest._setup()
         
         # Check that ignored films will be ignored
         for ignored in conftest.ignored:

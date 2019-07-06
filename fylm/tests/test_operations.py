@@ -78,7 +78,7 @@ class TestDirOperations(object):
 
     def test_get_new_films(self):
 
-        conftest.setup()
+        conftest._setup()
 
         all_films = ops.dirops.get_new_films([conftest.films_src_path])
         valid_films = list(filter(lambda film: not film.should_ignore, all_films))
@@ -91,7 +91,7 @@ class TestDirOperations(object):
 
     def test_get_valid_files(self):
 
-        conftest.setup()
+        conftest._setup()
 
         fylm.config.min_filesize = 50 # min filesize in MB
         assert(fylm.config.min_filesize == 50)
@@ -132,7 +132,7 @@ class TestDirOperations(object):
 
     def get_invaild_files(self):
 
-        conftest.setup()
+        conftest._setup()
 
         fylm.config.min_filesize = 50 # min filesize in MB
         assert(fylm.config.min_filesize == 50)
@@ -197,7 +197,7 @@ class TestDirOperations(object):
 
     def test_create_deep(self):
 
-        conftest.setup()
+        conftest._setup()
         fylm.config.test = False
         assert(fylm.config.test is False)
         conftest.cleanup_all()
@@ -212,7 +212,7 @@ class TestDirOperations(object):
         assert(os.path.exists(conftest.films_src_path))
         assert(os.path.exists(create_path))
 
-        conftest.setup()
+        conftest._setup()
         fylm.config.test = True
         assert(fylm.config.test is True)
         conftest.cleanup_all()
@@ -410,7 +410,7 @@ class TestFileOperations(object):
 
     def test_has_valid_ext(self):
 
-        conftest.setup()
+        conftest._setup()
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
@@ -439,7 +439,7 @@ class TestFileOperations(object):
 
     def test_is_acceptable_size(self):
 
-        conftest.setup()
+        conftest._setup()
 
         config.min_filesize = 5 # min filesize in MB
         assert(config.min_filesize == 5)
@@ -477,7 +477,7 @@ class TestFileOperations(object):
 
     def test_delete(self):
 
-        conftest.setup()
+        conftest._setup()
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -503,7 +503,7 @@ class TestFileOperations(object):
 class TestSizeOperations(object):
     def test_size(self):
 
-        conftest.setup()
+        conftest._setup()
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -534,7 +534,7 @@ class TestSizeOperations(object):
 
     def size_of_largest_video(self):
 
-        conftest.setup()
+        conftest._setup()
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()

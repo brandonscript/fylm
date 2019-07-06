@@ -26,6 +26,7 @@ from builtins import *
 from colors import color
 
 from fylmlib.ansi import ansi
+import fylmlib.config as config
 
 def progress_bar(percentage, width=50):
     """Generates a progress bar for writing to console.
@@ -37,8 +38,12 @@ def progress_bar(percentage, width=50):
         A compiled progress bar for outputting to console.
     """
 
-    FULL_BLOCK = color('█', fg=ansi.pink)
-    INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), color('▒', fg=ansi.dark_gray), color('▓', fg=ansi.dark_gray)]
+    if config.plaintext:
+        FULL_BLOCK = color('X', fg=ansi.pink)
+        INCOMPLETE_BLOCK_GRAD = [color('-', fg=ansi.dark_gray), color('-', fg=ansi.dark_gray), color('=', fg=ansi.dark_gray)]
+    else:
+        FULL_BLOCK = color('█', fg=ansi.pink)
+        INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), color('▒', fg=ansi.dark_gray), color('▓', fg=ansi.dark_gray)]
 
     assert(isinstance(percentage, float) or isinstance(percentage, int))
     assert(0. <= percentage <= 100.)

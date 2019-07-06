@@ -671,16 +671,6 @@
         {
             "files": [
                 {
-                    "expect": "Atlas Shrugged II The Strike (2012) 1080p.mkv",
-                    "filename": "Atlas Shrugged II 1080p (2012).mkv"
-                }
-            ],
-            "title": "Atlas Shrugged II: The Strike",
-            "tmdb_id": 134371
-        },
-        {
-            "files": [
-                {
                     "expect": "Back to the Future Part II (1989) 1080p.mkv",
                     "filename": "Back to the Future {2} 1080p (1989).mkv"
                 }
