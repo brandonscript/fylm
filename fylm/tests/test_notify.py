@@ -48,7 +48,7 @@ class TestPlex(object):
         plex = PlexServer(baseurl=config.plex.baseurl, token=config.plex.token, timeout=10)
 
         for section in (plex.library.section(section) for section in config.plex.sections):
-            section.update()
+            section.refresh()
 
     @pytest.mark.xfail(raises=(OSError, IOError))
     def test_plex_fail(self):

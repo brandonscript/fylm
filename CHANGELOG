@@ -2,6 +2,11 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.2.7-beta] 2019-07-07
+- Fix Plex not updating on completion
+- Fix progress bar not formatting correctly
+- Hide progress bar updating in plaintext mode
+
 ## [0.2.6-beta] 2019-07-05
 - Add support for Python 3.5 and 3.7 (3.6 already supported)
 - Clean up and future-proofing for later versions of dependencies

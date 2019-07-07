@@ -39,8 +39,8 @@ def progress_bar(percentage, width=50):
     """
 
     if config.plaintext:
-        FULL_BLOCK = color('X', fg=ansi.pink)
-        INCOMPLETE_BLOCK_GRAD = [color('-', fg=ansi.dark_gray), color('-', fg=ansi.dark_gray), color('=', fg=ansi.dark_gray)]
+        FULL_BLOCK = "X"
+        INCOMPLETE_BLOCK_GRAD = ["-", "-", "="]
     else:
         FULL_BLOCK = color('█', fg=ansi.pink)
         INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), color('▒', fg=ansi.dark_gray), color('▓', fg=ansi.dark_gray)]
@@ -78,10 +78,10 @@ def progress_bar(percentage, width=50):
         blocks_widget[full_blocks] = INCOMPLETE_BLOCK_GRAD[grad_index]
 
     # Build percentage widget
-    str_perc = f'{percentage}.0f'
+    str_perc = f'{percentage:.1f}'
 
     # Subtract 1 because the percentage sign is not included.
-    perc_widget = f'{str_perc.ljust(len(max_perc_widget) - 3)}%%'
+    perc_widget = f'{str_perc.ljust(len(max_perc_widget) - 3)}%'
 
     # Generate progress bar
     progress_bar = f"{''.join(blocks_widget)}{separator}{perc_widget}"

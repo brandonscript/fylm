@@ -189,7 +189,7 @@ class console(object):
             if film.tmdb_id is not None:
                 c = console().indent()
                 c.green(f'✓ {film.title} ({film.year})')
-                c.dark_gray(f' [{film.tmdb_id}] {formatter.percent(film.title_similarity)} match')
+                c.dark_gray(f' [{film.tmdb_id}] {formatter.percent(film.title_similarity)}% match')
                 c.print()
             else:
                 console().red().indent(f'× {film.title} ({film.year})').print()
@@ -294,8 +294,9 @@ class console(object):
     def print_copy_progress_bar(self, copied, total):
         """Print progress bar to terminal.
         """
-        print('      ' + progress.progress_bar(100 * copied / total), end='\r')
-        sys.stdout.flush()
+        if not config.plaintext:
+            print('      ' + progress.progress_bar(100 * copied / total), end='\r')
+            sys.stdout.flush()
 
     @classmethod
     def get_input(cls, prompt):
