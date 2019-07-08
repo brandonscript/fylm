@@ -210,6 +210,51 @@ class TestDuplicates(object):
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p'])))
         assert(not os.path.exists(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD'])))
 
+    def test_keep_2160p_with_existing_1080p(self):
+
+        conftest._setup()
+
+        # Set up config
+        fylm.config.test = False
+        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicate_replacing.enabled = True
+        fylm.config.duplicate_replacing.replace_smaller = False
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is False)
+        
+        # Do not replace 2160p films with any other quality
+        fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
+        
+        # Do not replace 1080p films with any other quality
+        fylm.config.duplicate_replacing.replace_quality['1080p'] = [] 
+        
+        # Replace 720p films with 1080p
+        fylm.config.duplicate_replacing.replace_quality['720p'] = ['1080p'] 
+
+        # Replace SD with any higher quality except 2160p.
+        fylm.config.duplicate_replacing.replace_quality['SD'] = ['1080p', '720p'] 
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+        
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 14234 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 19393 * make.mb_t)
+
+        # Reset existing films
+        ops.dirops._existing_films = None
+
+        # Assert that there is 1 duplicate
+        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        # Execute
+        fylm.main()
+        
+        # Assert that the 4K and 1080p files replaced all others of lesser quality and were correctly processed
+        assert(not os.path.exists(os.path.join(conftest.films_src_path, raw_files['2160p'])))
+        assert(    os.path.exists(os.path.join(conftest.films_dst_paths['2160p'], clean_files['2160p'])))
+        assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
+
     # @pytest.mark.skip()
     def test_replace_smaller(self):
 

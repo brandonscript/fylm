@@ -143,6 +143,8 @@ class duplicates:
             True if `film` and `duplicate` should both be kept, else False.
         """
 
+        # TODO: Why do we have this method if we already have should_replace?
+
         # If the duplicate is a path and not a film, we need to load it.
         # TODO: Don't really want to have to do this here.
         from fylmlib.film import Film
@@ -157,8 +159,7 @@ class duplicates:
         # (better), if the new film doesn't qualify as a replacement, we can assume that 
         # we want to keep both the current film and the duplicate.
         return (film.quality != duplicate.quality 
-            and not cls.should_replace(film, duplicate)
-            and film.size > duplicate.size)
+            and not cls.should_replace(film, duplicate))
 
     @classmethod
     def should_keep(cls, film):
