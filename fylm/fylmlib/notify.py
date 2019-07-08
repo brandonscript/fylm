@@ -75,7 +75,7 @@ def plex():
         # in live mode. No need to notify in test mode since there won't be any changes.
         if not config.test:
             for section in (plex.library.section(section) for section in config.plex.sections):
-                section.refresh()
+                section.update()
 
         console().green(' Done ✓\n').print()
 
