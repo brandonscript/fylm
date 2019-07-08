@@ -104,8 +104,9 @@ class TestFilm(object):
         for film in conftest.films:
             for key, value in config.edition_map:
                 rx = re.compile(r'\b' + key + r'\b', re.I)
-                if re.search(rx, film.original_filename):
-                    assert(film.edition == value)
+                result = re.search(rx, film.original_filename)
+                if result:
+                    assert(film.edition == rx.sub(value, result.group()))
                     assert(not re.search(rx, film.title))
                     break
 

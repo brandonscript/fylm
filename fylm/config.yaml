@@ -72,7 +72,7 @@ strict: true
 cache: true
 
 # Cache time-to-live, in hours.
-cache_ttl: 6
+cache_ttl: 120
 
 # --limit={int, 0 = no limit}
 # Limits the number of files that are checked/renamed in a single run. Useful for doing large rename jobs, 
@@ -207,11 +207,8 @@ edition_map: [
   ["extended.remastered", "Extended Remastered"],
   ["extended.edition", "Extended Edition"],
   ["(dc|director.?s.cut).remastered", "Director's Cut Remastered"],
-  ["30th.a(nniversary)?.e(dition)?", "30th Anniversary Edition"],
-  ["25th.anniversary.ed(ition)?", "25th Anniversary Edition"],
-  ["25th.anniversary", "25th Anniversary"],
-  ["20th.anniversary", "20th Anniversary"],
-  ["10th.anniversary.+?edition", "10th Anniversary Edition"],
+  ["(\\d+)th.a(nniversary)?.e(dition)?", "\\1th Anniversary Edition"],
+  ["(\\d+)th.anniversary", "\\1th Anniversary"],
   ["extended.collector.?s.edition", "Extended Collector's Edition"],
   ["collector.?s.edition", "Collector's Edition"],
   ["se.remastered", "Special Edition Remastered"],

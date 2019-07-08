@@ -240,18 +240,22 @@ class parser:
             corrected counterpart, or (None, None).
         """
 
+        filename = os.path.basename(source_path)
+
         # Iterate over the edition map.
         for key, value in config.edition_map:
             # Generate a regular expression that searches for the search key, separated
             # by word boundaries.
             rx = re.compile(r'\b' + key + r'\b', re.I)
-
+            
             # Because this map is in a specific order, of we find a suitable match, we
             # want to return it right away.
-            if re.search(rx, os.path.basename(source_path)):
-                # Return a tuple containing the matching compiled expression, and its
-                # corrected value and break the loop.
-                return (rx, value)
+            result = re.search(rx, filename)
+            if result:
+                # Return a tuple containing the matching compiled expression and its
+                # corrected value after performing a capture group replace, then break 
+                # the loop.
+                return (rx, rx.sub(value, result.group()))
 
         # If no matches are found, return (None, None)
         return (None, None)

@@ -510,6 +510,17 @@
             "tmdb_id": 173854
         },
         {
+            "dir": "Mary.Poppins.50th.Anniversary.Edition.1964.1080p.BluRay.x264.DTS-HD",
+            "files": [
+                {
+                    "expect": "Mary Poppins [50th Anniversary Edition] (1964) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Mary Poppins",
+            "tmdb_id": 433
+        },
+        {
             "dir": "The Last Starfighter 25th Anniversary Ed 1984 1080p BluRay x264 DTS-HD",
             "files": [
                 {
@@ -877,6 +888,16 @@
                 {
                     "expect": "King Arthur [Extended Director's Cut] (2004) 1080p.mkv",
                     "filename": "King.Arthur.2004.Extended.Directors.Cut.DTS-HD.DTS.MULTISUBS.1080p.BluRay.x264.HQ-TUSAHD.mkv"
+                }
+            ],
+            "title": "King Arthur",
+            "tmdb_id": 9477
+        },
+        {
+            "files": [
+                {
+                    "expect": "King Arthur [Extended Director's Cut] (2004) 1080p.mkv",
+                    "filename": "King.Arthur.DC.2004.1080p.x264.DTS-HD.mkv"
                 }
             ],
             "title": "King Arthur",
