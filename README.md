@@ -16,8 +16,10 @@ Fylm can:
 
   `high.noon.1952.1080p.this.OTHER-JUNK` » `High Noon (1952) 1080p`
 - Look film details up on TMDb so you don't have to, ensuring things are named correctly.
+- Check your library for duplicates and allows films with different qualities to be replaced or ignored.
 - Notify your Plex Media Server when it adds something new.
-- Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd. (You'll want to use the `--plaintext` switch).
+- Run completely autonomously, so it can be wired up as a post-script for apps like SABnzbd. (You'll want 
+  to use the `--plaintext` switch).
 - Delete extra files you don't want, moving only the important bits you care about.
 - Run in test mode so you can verify search results before committing.
 - Log what it does, so if (not saying they will, but if) things go sideways, you can see why.
