@@ -251,12 +251,13 @@ class TmdbResult:
         # is used to determine an instant match.
         ideal_title_similarity = 0.85
 
-        # Check for an instant match: high title similarity, identical years,
-        # and is at most the second result. This limitation is imposed
-        # based on the theory that if by the second result is no good result is
-        # found, we should check for all potential results and find the best.
+        # Check for an instant match: high title similarity, year match within
+        # max_year_diff (default 1 year off), and is at most the second result. 
+        # This limitation is imposed based on the theory that if by the second 
+        # result is no good result is found, we should check for all potential 
+        # results and find the best.
         if (self.title_similarity >= ideal_title_similarity
-            and self.year == self.proposed_year
+            and self.year_deviation <= config.tmdb.max_year_diff
             and i < 3):
             console.debug(f'Instant match: {self.proposed_title} ({self.proposed_year})')
             return True
