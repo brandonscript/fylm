@@ -467,6 +467,17 @@
             "tmdb_id": 328387
         },
         {
+            "dir": "Liar.Liar.1997.1080p.BluRay.x264.DD5.1-FGT",
+            "files": [
+                {
+                    "expect": "Liar Liar (1997) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Liar Liar",
+            "tmdb_id": 1624
+        },
+        {
             "dir": "Ouija.Summoning.2016.1080p.BluRay.x264-THUGLiNE",
             "files": [
                 {
