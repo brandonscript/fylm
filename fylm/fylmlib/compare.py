@@ -23,23 +23,32 @@ from __future__ import unicode_literals, print_function
 from builtins import *
 
 import re
-from difflib import SequenceMatcher
+import warnings
+warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
+
+from fuzzywuzzy import fuzz
 
 import fylmlib.formatter as formatter
 import fylmlib.patterns as patterns
 
-def string_similarity(a, b):
-    """Use SequenceMatcher to determine how similar one string is to another,
-    loosely based on the Ratcliff and Obershelp algorithm (although it actually
-    predates it)
+def title_similarity(a, b):
+    """Compare parsed title to TMDb title.
 
-    Args:
-        a: (str, utf-8) the first string to compare.
-        b: (str, utf-8) the second string to compare.
+    Performs an intelligent string comparison between the original parsed
+    title and the TMDb result.
+
     Returns:
-        A '% similarity' value, represented as a decimal between 0 and 1.
+        A decimal value between 0 and 1 representing the similarity between
+        the two titles.
     """
-    return SequenceMatcher(None, a, b).ratio()
+
+    # Because we can't guarantee how similar parsed titles will be to search results,
+    # (mixed case, missing symbols, or illegal OS chars), we strip unwanted chars from
+    # both the original and TMDb title, and convert both to lowercase so we can get
+    # a more accurate string comparison.
+    a = ' '.join(re.sub(patterns.strip_when_comparing, ' ', a).lower().split())
+    b = ' '.join(re.sub(patterns.strip_when_comparing, ' ', b or '').lower().split())    
+    return fuzz.token_sort_ratio(a, b) / 100
 
 def year_deviation(year, proposed_year):
     """Calculate the difference between the expected year of a film to a
@@ -72,7 +81,7 @@ def initial_chars_match(a, b, chars):
     """
     return a.lower()[:chars] == b.lower()[:chars]
 
-# Algorithm to determine if one film is a duplicate of another
+# Heuristic to determine if one film is a duplicate of another
 def is_duplicate(film, existing_film):
     """Determine if a film is a duplicate of another.
 

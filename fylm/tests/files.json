@@ -43,6 +43,17 @@
             "tmdb_id": 460218
         },
         {
+            "dir": "Jurassic.Park.II.The.Lost.World.1997.1080p.mkv",
+            "files": [
+                {
+                    "expect": "The Lost World Jurassic Park (1997) 1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "The Lost World: Jurassic Park",
+            "tmdb_id": 330
+        },
+        {
             "dir": "A Monster Calls-1080p",
             "files": [
                 {
@@ -459,7 +470,7 @@
             "dir": "Ouija.Summoning.2016.1080p.BluRay.x264-THUGLiNE",
             "files": [
                 {
-                    "expect": "Ouija Summoning (2016) 1080p.mkv",
+                    "expect": "Ouija Summoning (2015) 1080p.mkv",
                     "filename": "main_file.mkv"
                 }
             ],

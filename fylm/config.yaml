@@ -147,7 +147,7 @@ tmdb:
   # Percentage similarity (from 0.0 - 1.0) that a title retrieved from TMDb should be to the original.
   # Adjust this value as needed to find correct matches, but test first to check for incorrect matches.
   # Can be disabled on the fly by setting strict-mode to false or using --strict=no.
-  min_title_similarity: 0.5
+  min_title_similarity: 0.4
 
   # Difference in years between lookup year and TMDb results to still consider a valid match, as 
   # long as the titles match.
@@ -156,7 +156,7 @@ tmdb:
   # --pop={float}
   # Minimum popularity ranking on TMDb to consider a valid match.
   # Popular titles generally rank above 10, though some obscure ones rank between 1 and 2
-  min_popularity: 1.5
+  min_popularity: 0.8
 
   # Films with this popularity value or higher are more likely to be considered a positive match.
   popular_threshold: 10
@@ -218,6 +218,7 @@ edition_map: [
   ["unrated.extended.cut", "Unrated Extended Cut"],
   ["(uce|ultimate.collectors.edition)", "Ultimate Collector's Edition"],
   ["ultimate.expanded.edition", "Ultimate Expanded Edition"],
+  ["mind.bending.ed(ition)?", "Mind Bending Edition"],
   ["ultimate.ed(ition)?", "Ultimate Edition"],
   ["signature.ed(ition)?", "Signature Edition"],
   ["expanded.ed(ition)?", "Expanded Edition"],
@@ -232,6 +233,7 @@ edition_map: [
   ["extended.cut", "Extended Cut"],
   ["remastered", "Remastered"],
   ["extended", "Extended"],
+  ["the.richard.donner.cut", "The Richard Donner Cut"],
   ["the super duper cut", "The Super Duper Cut"],
   # Uncut, as long as it isn't preceded "Longer & "
   ["(?<!(longer\\W{3}))uncut", "Uncut"],

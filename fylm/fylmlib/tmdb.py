@@ -29,8 +29,11 @@ import os
 import re
 import copy
 import time
+import warnings
+warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
 import tmdbsimple as tmdb
+from fuzzywuzzy import fuzz
 
 import fylmlib.config as config
 from fylmlib.console import console
@@ -72,13 +75,15 @@ class TmdbResult:
 
         popularity:         The TMDb popularity ranking of the search result.
 
+        vote_count:         The TMDb vote count ranking of the search result.
+
         title_similarity:   Returns a decimal value between 0 and 1 representing
                             the similarity between parsed title and proposed title.
 
         year_deviation:     Absolute difference in years between the parsed year and
                             the proposed release year.
 
-        is_potential_match: Performs a checking algorithm to determine if the search
+        is_potential_match: Performs a checking heuristic to determine if the search
                             result qualifies as a potential match.
     """
     def __init__(self, 
@@ -97,6 +102,7 @@ class TmdbResult:
         self.year = search_year or year
         self.proposed_year = proposed_year
         self.popularity = 0
+        self.vote_count = 0
         self.overview = None
         self.poster_path = None
         self.tmdb_id = None
@@ -129,6 +135,7 @@ class TmdbResult:
             "overview": raw_result['overview'],
             "poster_path": raw_result['poster_path'].strip("/") if raw_result['poster_path'] else None,
             "popularity": raw_result['popularity'],
+            "vote_count": raw_result['vote_count'],
             "proposed_title": raw_result['title'],
             "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0
         }.items():
@@ -138,23 +145,13 @@ class TmdbResult:
     def title_similarity(self):
         """Compare parsed title to TMDb title.
 
-        Performs an intelligent string comparison between the original parsed
-        title and the TMDb result.
+        Performs a comparison between parsed title and proposed title.
 
         Returns:
             A decimal value between 0 and 1 representing the similarity between
             the two titles.
         """
-
-        # Because we can't guarantee how similar parsed titles will be to search results,
-        # (mixed case, missing symbols, or illegal OS chars), we strip unwanted chars from
-        # both the original and TMDb title, and convert both to lowercase so we can get
-        # a more accurate string comparison.
-        title_stripped = re.sub(patterns.strip_when_comparing, '', self.title).lower()
-        proposed_title_stripped = re.sub(patterns.strip_when_comparing, '', self.proposed_title or '').lower()
-
-        # Compare the strings and return the float value.
-        return compare.string_similarity(title_stripped, proposed_title_stripped)
+        return compare.title_similarity(self.title, self.proposed_title)
 
     @property
     def year_deviation(self):
@@ -165,77 +162,6 @@ class TmdbResult:
             the parsed year and the TMDb result's release year.
         """
         return compare.year_deviation(self.year, self.proposed_year)
-
-    def is_potential_match(self, i):
-        """Determine if a search result is a viable match candidate.
-
-        config.yaml contains several options that govern search results.
-        This method checks the result against these expectations to
-        determine if the result is a potential match.
-
-        Args:
-            i: (int) count of the number of results that have been checked.
-               For debugging purposes only.
-
-        Returns:
-            True if the TMDb result is a viable match candidate, else False.
-        """
-
-        # Uncomment for verbose match debugging
-        # console.debug(f'   Checking match {i}:' \
-        #               f' {self.query}=={self.proposed_title} /' \
-        #               f' {self.year}=={self.proposed_year} /' \
-        #               f' match({formatter.percent(self.title_similarity)}),' \
-        #               f' yeardiff({self.year_deviation}),' \
-        #               f' popularity({self.popularity})')
-
-        # Check that the year deviation is acceptable and check that the
-        # popularity is acceptable.
-        if (self.year_deviation <= config.tmdb.max_year_diff
-            and self.popularity >= config.tmdb.min_popularity):
-
-            # Construct a string for outputting debug details.
-            debug_quality_string = f'(match({formatter.percent(self.title_similarity)}),' \
-                                   f' yeardiff({self.year_deviation}),' \
-                                   f' popularity({self.popularity}))'
-
-            # Check to see if the first letter of both titles match, otherwise we
-            # might get some false positives when searching for shorter titles. E.g.
-            # "Once" would still match "At Once" if title_similarity is set to 0.5,
-            # but we can rule it out because the first chars don't match.
-            initial_chars_match = compare.initial_chars_match(
-                formatter.strip_the(self.title),
-                formatter.strip_the(self.proposed_title), 1)
-
-            # If strict mode is enabled, we we need to validate that the title
-            # similarity is acceptable and that the initial chars match.
-            if (config.strict is True
-                and (
-                    self.title_similarity >= config.tmdb.min_title_similarity 
-                    or (
-                        # Cut the min_title_similarity in half if title is above the 
-                        # popular threshold.
-                        self.title_similarity >= config.tmdb.min_title_similarity * 0.5
-                        and self.popularity >= config.tmdb.popular_threshold
-                    )
-                )
-                and (initial_chars_match 
-                    or (
-                        self.title_similarity >= 0.6 
-                        and self.popularity >= config.tmdb.popular_threshold
-                    )
-                )):
-                console.debug(f"   - Potential match in strict mode {debug_quality_string}")
-                return True
-
-            # Otherwise, if strict mode is disabled, we don't need to validate
-            # the title, and we return True anyway.
-            elif config.strict is False:
-                console.debug(f"   - Potential match (strict mode off) {debug_quality_string}")
-                return True
-
-        # If result does not match any other criteria, return False.
-        return False
 
     def is_instant_match(self, i):
         """Determine if a search result is an instant match.
@@ -251,6 +177,14 @@ class TmdbResult:
         # is used to determine an instant match.
         ideal_title_similarity = 0.85
 
+        # Check to see if the first letter of both titles match, otherwise we
+        # might get some false positives when searching for shorter titles. E.g.
+        # "Once" would still match "At Once" if title_similarity is set to 0.5,
+        # but we can rule it out because the first chars don't match.
+        initial_chars_match = compare.initial_chars_match(
+            formatter.strip_the(self.title),
+            formatter.strip_the(self.proposed_title), 1)
+
         # Check for an instant match: high title similarity, year match within
         # max_year_diff (default 1 year off), and is at most the second result. 
         # This limitation is imposed based on the theory that if by the second 
@@ -258,6 +192,7 @@ class TmdbResult:
         # results and find the best.
         if (self.title_similarity >= ideal_title_similarity
             and self.year_deviation <= config.tmdb.max_year_diff
+            and initial_chars_match
             and i < 3):
             console.debug(f'Instant match: {self.proposed_title} ({self.proposed_year})')
             return True
@@ -297,8 +232,8 @@ class _TmdbSearchConstructor:
             (lambda: _primary_year_search(title, year), TmdbResult(title, year)),
             (lambda: _basic_search(title, year), TmdbResult(title, year)),
             (lambda: _strip_articles_search(title, year), TmdbResult(title, year)),
-            (lambda: _recursive_rstrip_search(title, year), TmdbResult(title, year)),
             (lambda: _basic_search(title, None), TmdbResult(title, None, year)),
+            (lambda: _recursive_rstrip_search(title, year), TmdbResult(title, year)),
             (lambda: _recursive_rstrip_search(title, None), TmdbResult(title, None, year))
         ]
 
@@ -332,7 +267,7 @@ def search(query, year=None):
     # Credit: https://stackoverflow.com/a/34504896/1214800
     query = query.replace(r':', '-')
 
-    console.debug(f'\\Initializing search for "{query}" / {year}')
+    console.debug(f'\nInitializing search for "{query}" / {year}\n')
 
     # Initialize a array to store potential matches.
     potential_matches = []
@@ -364,19 +299,27 @@ def search(query, year=None):
 
             # Otherwise, check for a potential match, and append it to the results
             # array.
-            elif result.is_potential_match(count):
-
-                # If a potential match is found, we save try the next search method.
+            else: 
                 potential_matches.append(result)
 
-    # Strip duplicate results from potential matches
-    potential_matches = list(set(potential_matches))
+    # Strip duplicate results and remove results that don't match the configured
+    # match threshold:
+    potential_matches = filter(
+        lambda x: 
+            x.year_deviation <= config.tmdb.max_year_diff
+            and x.popularity >= config.tmdb.min_popularity
+            and x.title_similarity >= config.tmdb.min_title_similarity, 
+        list(set(potential_matches)
+    ))
 
     # If no instant match was found, sort the results so we can return the most
     # likely match. Sort criteria:
-    #   - prefer lowest year deviation first (0 is better than 1), then
     #   - prefer highest title similarity second (a 0.7 is better than a 0.4)
-    sorted_results = sorted(potential_matches, key=lambda r: (r.year_deviation, -r.title_similarity))
+    #   - then prefer lowest year deviation first (0 is better than 1)
+    sorted_results = sorted(potential_matches, 
+        key=lambda x: (-(x.vote_count * x.popularity), -x.title_similarity, x.year_deviation)
+    )
+    print([(x.title_similarity, (x.vote_count * x.popularity), x.title_similarity, x.year_deviation) for x in sorted_results])
 
     # If debugging, print the possible matches in the correct sort order to the
     # console.
