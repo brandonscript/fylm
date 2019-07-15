@@ -319,7 +319,6 @@ def search(query, year=None):
     sorted_results = sorted(potential_matches, 
         key=lambda x: (-(x.vote_count * x.popularity), -x.title_similarity, x.year_deviation)
     )
-    print([(x.title_similarity, (x.vote_count * x.popularity), x.title_similarity, x.year_deviation) for x in sorted_results])
 
     # If debugging, print the possible matches in the correct sort order to the
     # console.
