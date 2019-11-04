@@ -87,14 +87,34 @@ class TestFilm(object):
                 assert(film.year != 1080)
                 assert(film.year != 720)
 
-    def test_quality(self):
+    def test_resolution(self):
 
         conftest._setup()
 
-        # Check that quality is detected correctly
+        # Check that resolution is detected correctly
         for film in conftest.films:
-            if film.quality is not None:
-                assert(film.quality in ['720p', '1080p', '2160p'])
+            for file in film.video_files:
+                if file.resolution is not None:
+                    assert(file.resolution in ['720p', '1080p', '2160p'])
+
+    def test_media(self):
+
+        conftest._setup()
+
+        # Check that media is detected correctly
+        for film in conftest.films:
+            for file in film.video_files:
+                if file.media is not None:
+                    assert(file.media in ['Bluray', 'WEBDL', 'HDTV', 'SDTV'])
+
+    def test_proper(self):
+
+        conftest._setup()
+
+        # Check that proper is detected correctly
+        for film in conftest.films:
+            for file in film.video_files:
+                assert(file.is_proper is True or file.is_proper is False)
 
     def test_edition(self):
 
@@ -102,13 +122,14 @@ class TestFilm(object):
 
         # Check that editions, when detected, are set correctly and cleaned from original string
         for film in conftest.films:
-            for key, value in config.edition_map:
-                rx = re.compile(r'\b' + key + r'\b', re.I)
-                result = re.search(rx, film.original_filename)
-                if result:
-                    assert(film.edition == rx.sub(value, result.group()))
-                    assert(not re.search(rx, film.title))
-                    break
+            for file in film.video_files:
+                for key, value in config.edition_map:
+                    rx = re.compile(r'\b' + key + r'\b', re.I)
+                    result = re.search(rx, file.original_basename)
+                    if result:
+                        assert(file.edition == rx.sub(value, result.group()))
+                        assert(not re.search(rx, file.title))
+                        break
 
     def test_is_file_or_dir(self):
 
@@ -118,7 +139,7 @@ class TestFilm(object):
         for film in conftest.films:
             if film.is_file:
                 assert(film.ext is not None and [film.ext in config.video_exts + config.extra_exts])
-            elif film.is_dir:
+            elif film.is_file:
                 assert(film.ext == None)
 
     def test_should_ignore(self):

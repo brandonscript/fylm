@@ -83,7 +83,9 @@ def initial_chars_match(a, b, chars):
 
 # Heuristic to determine if one film is a duplicate of another
 def is_duplicate(film, existing_film):
-    """Determine if a film is a duplicate of another.
+    """Determine if a film is a duplicate of another. To qualify as
+    a duplicate, it must match in title and year. Edition, quality,
+    and media are ignored.
 
     Args:
         film: (Film) the first film to compare.
@@ -108,5 +110,32 @@ def is_duplicate(film, existing_film):
     # This assumes that you may want to keep two different editions of the same film,
     # but works well with identifying copies with a different resolution or quality.
 
-    return (title == existing_title
-        and film.year == existing_film.year)
+    return (title == existing_title and film.year == existing_film.year)
+
+# Heuristic to determine if a file is higher or lower quality than another
+def is_higher_quality(file, existing_file):
+    """Determine if a file is a higher or lower quality than another
+    for matching resolutions. Compare media and proper status.
+
+    Args:
+        file: (Film.File) the first film to compare.
+        existing_file: (Film.File) the second file to compare.
+    Returns:
+        True if the files are identical, else False
+    """
+
+    media_hierarchy = ["bluray", "webdl", "hdtv", "dvd", "sdtv"]
+    # resolution_hierarchy = ["2160p", "1080p", "720p", "576p", "480p"]
+
+    # Because this method is primarily used to determine if one file should replace another, 
+    # we throw an error if the resolution is not the same - this protects false positives
+    # from being discarded when config asks to keep multiple qualities.
+    if file.resolution != existing_file.resolution:
+        raise Exception(f'Unable to accurately determine the quality delta between \'{file.source_path}\' and \'{existing_file.source_path}\'')
+
+    # Media is different, determine which one is better
+    if file.media != existing_file.media:
+        return media_hierarchy.index(file.media.lower()) < media_hierarchy.index(existing_file.media.lower())
+    # One is a proper, one is not
+    elif file.is_proper is True and existing_file.is_proper is False:
+        return True

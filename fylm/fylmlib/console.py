@@ -28,8 +28,10 @@ import datetime
 import os
 import re
 import sys
+import itertools
 
 from colors import color
+from typing import TYPE_CHECKING
 
 from fylmlib.pyfancy import *
 import fylmlib.config as config
@@ -38,6 +40,9 @@ from fylmlib.ansi import ansi
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
+
+if TYPE_CHECKING:
+    from fylmlib.film import Film
 
 class console(object):
     """Main class for console output methods.
@@ -173,8 +178,8 @@ class console(object):
         c = console().bold(' ')
         if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
             c.red()
-        c.add(film.original_filename).add(film.ext or '')
-        c.reset().dark_gray(f' ({formatter.pretty_size(film.size_of_largest_video)})')
+        c.add(film.original_basename)
+        c.reset().dark_gray(f' ({formatter.pretty_size(film.size)})')
         c.print()
 
     def print_search_result(self, film):
@@ -202,18 +207,17 @@ class console(object):
         """
         console().red().dim().indent().red().dim(film.ignore_reason).print()
 
-    def print_duplicates(self, film):
+    def print_duplicates(self, film: 'Film'):
         """Print any duplicates found to the console.
 
         Args:
             film: (Film) Inbound film that has been marked as duplicate.
-            size: ([Film]) Array of duplicate Film objects.
         """
 
         # Import duplicates' should_replace function here to prevent circular imports.
         from fylmlib.duplicates import duplicates
 
-        duplicate_count = len(film.duplicates)
+        duplicate_count = len(film.existing_duplicate_files)
 
         if duplicate_count > 0:
             
@@ -221,24 +225,27 @@ class console(object):
 
             if config.interactive is False:
 
-                for d in film.duplicates:
-    
-                    size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
-                    pretty_size = formatter.pretty_size(d.size)
-                    should_replace = duplicates.should_replace(film, d)
-                    should_keep_both = duplicates.should_keep_both(film, d)
-                    
-                    c = console()
+                v: Film.File
+                for v in film.video_files:
+                    d: Film.File
+                    for d in film.existing_duplicate_files:
+        
+                        size_diff = formatter.pretty_size_diff(v.source_path, d.source_path)
+                        pretty_size = formatter.pretty_size(d.size)
+                        should_replace = duplicates.should_replace(v, d)
+                        
+                        c = console()
 
-                    if should_replace or should_keep_both:
-                        c.blue().indent(f"  {'Replacing' if should_replace else 'Keeping'} ")
-                        c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
-                        c.dark_gray(f' [{size_diff}]')
-                    else:   
-                        c.red().indent(f"  Ignoring because '{os.path.basename(d.source_path)}'" \
-                              f" ({pretty_size}) is {size_diff}")
-
-                    c.print()
+                        if should_replace:
+                            c.blue().indent(f"  {'Replacing' if should_replace else 'Keeping'} ")
+                            c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
+                            c.dark_gray(f' [{size_diff}]')
+                        elif v.edition == d.edition:
+                            c.red().indent(f"  Ignoring because '{os.path.basename(d.source_path)}'" \
+                                f" ({pretty_size}) is {size_diff}")
+                        else:
+                            c.blue().indent("  Keeping both because they aren't the same edition")
+                        c.print()
 
     def print_ask(self, s):
         """Print an interactive question.

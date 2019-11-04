@@ -25,12 +25,16 @@ from builtins import *
 
 import re
 import copy
+from typing import TYPE_CHECKING
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 
-def build_new_filename(film):
-    """Build a new file name from the specified renaming pattern.
+if TYPE_CHECKING:
+    from fylmlib.film import Film
+
+def build_new_basename(file: 'Film.File', type="file"):
+    """Build a new file or folder name from the specified renaming pattern.
 
     Using regular expressions and a { } templating syntax, construct
     a new filename by mapping available properties to config.rename_pattern.
@@ -39,22 +43,30 @@ def build_new_filename(film):
     # For using other characters with pattern objects, place them inside {} e.g. { - edition}.
     # For escaping templating characters, use \{ \}, e.g. {|{edition\}}.
 
+    Args:
+        A Film.File object to build a path from.
+
     Returns:
-        A new filename based on config.rename_pattern.
+        A new filename/foldername based on config.rename_pattern.(file|folder).
     """
 
     # Create a mutable copy of the original renaming pattern
-    template = copy.copy(config.rename_pattern)
+    template = copy.copy(config.rename_pattern.file if type == 'file' else config.rename_pattern.folder)
 
     # Generate a key-value map of available template properties,
-    # each mapped to its associated film property.
+    # each mapped to its associated film property. These need to
+    # be ordered such that the most restrictive comes before the
+    # most flexible match.
+    
+    quality = '-'.join(filter(None, [file.media or None, file.resolution or None]))
+
     pattern_map = [
-        ["title", film.title],
-        ["title-the", film.title_the],
-        ["edition", film.edition],
-        ["year", film.year],
-        ["quality", film.quality],
-        ["media", film.media]
+        ["title-the", file.parent_film.title_the],
+        ["title", file.parent_film.title],
+        ["edition", file.edition],
+        ["year", file.parent_film.year],
+        ["quality-full", f'{quality}{" Proper" if file.is_proper else ""}'],
+        ["quality", f'{quality}']
     ]
 
     # Enumerate the pattern map
@@ -78,7 +90,7 @@ def build_new_filename(film):
 
         # Update the template by replacing the original template match (e.g. `{title}`)
         # with the replacement (e.g. `Furngully The Last Rainforest`).
-        template = re.sub(rx, replacement if value is not None else '', template)
+        template = re.sub(rx, str(replacement) if value is not None else '', template)
 
     # Convert escaped template characters to un-escaped plain { }.
     template = template.replace('\{', '{')
@@ -94,6 +106,7 @@ def build_new_filename(film):
 
     # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
     # `Dude Where's My Car`).
+
     return strip_extra_whitespace(template)
 
 def pretty_size(size_in_bytes=0, measure=None):
@@ -146,7 +159,7 @@ def pretty_size(size_in_bytes=0, measure=None):
     else:
         return f'{size_in_bytes:,.0f} B'
 
-def pretty_size_diff(src, dst):
+def pretty_size_diff(left: str, right: str):
     """Pretty format filesize comparison.
 
     Compares two files/folders and prints the destination's difference in size in a
@@ -154,8 +167,8 @@ def pretty_size_diff(src, dst):
     '200 MB smaller'.
 
     Args:
-        src (str, utf-8): path to source file/folder
-        dst (str, utf-8): path to destination file/folder
+        left (str, utf-8): path to source file/folder
+        right (str, utf-8): path to destination file/folder
     Returns:
         A human-readable formatted comparison string.
     """
@@ -165,7 +178,7 @@ def pretty_size_diff(src, dst):
 
     # Get the size of both source and destionation, then subtract the size of the
     # destination from the size of the source.
-    size_diff = size(dst) - size(src)
+    size_diff = size(right) - size(left)
 
     # If the difference is negative, the destination is smaller than the source.
     if size_diff < 0:

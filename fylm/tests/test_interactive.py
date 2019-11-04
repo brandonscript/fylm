@@ -48,8 +48,8 @@ class TestInteractive(object):
 
         fylm.config.mock_input = ['N', 'Bridget Jones The Edge of Reason', 1]
 
-        f = os.path.join(conftest.films_src_path, 'Bridget Jones The Edge of Reason 1080p/Bridget Jones The Edge of Reason 1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Bridget Jones The Edge of Reason (2004) 1080p/Bridget Jones The Edge of Reason (2004) 1080p.mkv')
+        f = os.path.join(conftest.films_src_path, 'Bridget Jones The Edge of Reason 1080p/Bridget Jones The Edge of Reason Bluray-1080p.mkv')
+        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Bridget Jones The Edge of Reason (2004)/Bridget Jones The Edge of Reason (2004) Bluray-1080p.mkv')
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -75,10 +75,10 @@ class TestInteractive(object):
         assert(fylm.config.interactive is True)
         assert(fylm.config.duplicate_checking.enabled is True)
 
-        fylm.config.mock_input = ['Y', 'R']
+        fylm.config.mock_input = ['Y', 'U']
 
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv')
+        f = os.path.join(conftest.films_src_path, 'Die.Hard.1988.BluRay.1080p.x264-CYaNID3/Die.Hard.1988.BluRay.1080p.x264-CYaNID3.mkv')
+        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -115,10 +115,10 @@ class TestInteractive(object):
         assert(fylm.config.interactive is True)
         assert(fylm.config.duplicate_checking.enabled is True)
 
-        fylm.config.mock_input = ['Y', 'R']
+        fylm.config.mock_input = ['Y', 'U']
 
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988) 1080p.mkv')
+        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p BluRay.mkv')
+        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988) Bluray-1080p.mkv')
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -154,12 +154,12 @@ class TestInteractive(object):
         assert(fylm.config.interactive is True)
         assert(fylm.config.duplicate_checking.enabled is True)
 
-        fylm.config.mock_input = ['Y', 'R']
+        fylm.config.mock_input = ['Y', 'U']
 
-        n = 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv'
+        n = 'Die.Hard.1988.BluRay.1080p.x264-CYaNID3.mkv/Die.Hard.1988.BluRay.1080p.x264-CYaNID3.mkv.mkv'
         f = os.path.join(conftest.films_src_path, n)
-        xf = os.path.join(conftest.films_dst_paths['720p'], 'Die Hard (1988) 720p/Die Hard (1988) 720p.mkv')
-        nf = os.path.join(conftest.films_dst_paths['1080p'], n)
+        xf = os.path.join(conftest.films_dst_paths['720p'], 'Die Hard (1988)/Die Hard (1988) WEBDL-720p.mkv')
+        nf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -236,9 +236,9 @@ class TestInteractive(object):
 
         fylm.config.mock_input = ['Y', 'K']
 
-        n = 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv'
+        n = 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv'
         f = os.path.join(conftest.films_src_path, n)
-        xf = os.path.join(conftest.films_dst_paths['720p'], 'Die Hard (1988) 720p/Die Hard (1988) 720p.mkv')
+        xf = os.path.join(conftest.films_dst_paths['720p'], 'Die Hard (1988)/Die Hard (1988) HDTV-720p.mkv')
         nf = os.path.join(conftest.films_dst_paths['1080p'], n)
 
         conftest.cleanup_all()
@@ -278,8 +278,8 @@ class TestInteractive(object):
 
         fylm.config.mock_input = ['Y', 'D']
 
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv')
+        f = os.path.join(conftest.films_src_path, 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
+        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()

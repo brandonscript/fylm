@@ -28,12 +28,12 @@ import conftest
 import make
 
 src = os.path.join(
-    conftest.films_src_path, 
-    'Rogue One A Star Wars Story (2016) 1080p/Rogue One A Star Wars Story (2016) 1080p.mkv')
+    conftest.films_src_path,
+    'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON/Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON.mkv')
 
 dst = os.path.join(
     conftest.films_dst_paths['1080p'], 
-    'Rogue One A Star Wars Story (2016) 1080p/Rogue One A Star Wars Story (2016) 1080p.mkv')
+    'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
 expected_size = 7354 * make.mb_t
 
@@ -99,7 +99,7 @@ class TestMove(object):
         config.overwrite_existing = False
         assert(config.overwrite_existing is False)
 
-        move = ops.fileops.safe_move(src, dst, should_replace=False)
+        move = ops.fileops.safe_move(src, dst)
 
         assert(move is False)
         assert(os.path.exists(src))
@@ -121,7 +121,7 @@ class TestMove(object):
         config.overwrite_existing = True
         assert(config.overwrite_existing is True)
 
-        move = ops.fileops.safe_move(src, dst, should_replace=False)
+        move = ops.fileops.safe_move(src, dst)
 
         assert(move is True)
         assert(not os.path.exists(src))
@@ -143,10 +143,10 @@ class TestMove(object):
         config.overwrite_existing = False
         assert(config.overwrite_existing is False)
 
-        move = ops.fileops.safe_move(src, dst, should_replace=True)
+        move = ops.fileops.safe_move(src, dst)
 
-        assert(move is True)
-        assert(not os.path.exists(src))
+        assert(move is False)
+        assert(os.path.exists(src))
         assert(os.path.exists(dst))
 
     def test_test_enabled(self):
@@ -202,7 +202,7 @@ class TestMove(object):
         assert(config.safe_copy is True)
 
         parent_conn, child_conn = Pipe()
-        p = Process(target=async_safe_copy, args=(child_conn, src, dst, expected_size,))
+        p = Process(target=async_safe_copy, args=(child_conn, src, dst,))
         p.start()
         # This is a bit of a hack, but this test requires the file to sufficiently large enough
         # to check that the partial exists before the thread finishes, but it also can't start
@@ -227,8 +227,7 @@ class TestMove(object):
 
         src = '_DOES_NOT_EXIST_'
         dst = '_DOES_NOT_MATTER_'
-        expected_size = 7354 * make.mb_t
 
-        move = ops.fileops.safe_move(src, dst, expected_size)
+        move = ops.fileops.safe_move(src, dst)
 
         assert(move is False)

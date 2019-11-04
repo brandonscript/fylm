@@ -29,6 +29,7 @@ import os
 import fylmlib.config as config
 from fylmlib.parser import parser
 from fylmlib.console import console
+from fylmlib.duplicates import duplicates
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
 
@@ -58,7 +59,7 @@ class interactive:
             return cls.verify_film(film)
 
     @classmethod
-    def duplicates(cls, film):
+    def handle_duplicates(cls, film):
         """Prompt the user to handle duplicates of a film.
 
         Determines how to handle duplicates of the inbound film, either
@@ -73,10 +74,10 @@ class interactive:
             raise Exception('Interactive mode is not enabled')
 
         # Return immediately if the film is not a duplicate
-        if not film.is_duplicate:
+        if len(film.duplicate_files) == 0:
             return True
 
-        for d in film.duplicates:
+        for d in film.duplicate_files:
 
             size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
             pretty_size = formatter.pretty_size(d.size)
@@ -88,11 +89,11 @@ class interactive:
             c.print()
 
             choices = [
-                'Replace (overwrite) existing film', 
+                'Upgrade (replace) existing film', 
                 'Delete this file (keep existing film)',
                 'Skip']
-            if film.new_filename__ext() != d.new_filename__ext():
-                choices[2:2] = ['Keep both']
+            if d.new_filename_and_ext not in film.video_files:
+                choices[2:2] = ['Keep both copies']
 
             choice = cls._choice_input(
                 prompt='', 
@@ -102,14 +103,12 @@ class interactive:
 
             config.mock_input = _shift(config.mock_input)
 
-            # 0 = overwrite existing, 1 = delete this file
+            # 0 = upgrade existing, 1 = delete this file
             if choice == 0:
-                if d.is_dir:
-                    ops.dirops.delete_dir_and_contents(d.source_path, max_size=-1) 
-                else:
-                    ops.fileops.delete(d.source_path)
+                ops.fileops.delete(d.source_path)
+                duplicates.delete_leftover_folders(film)
             elif choice == 1:
-                if film.is_dir:
+                if film.is_folder:
                     ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1)
                 else:
                     ops.fileops.delete(film.source_path)

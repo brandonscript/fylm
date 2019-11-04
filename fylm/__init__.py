@@ -52,7 +52,7 @@ def main():
             ops.dirops.create_deep(dr)
 
         # Verify that destination paths exist.
-        ops.dirops.verify_paths_exist(list(config.destination_dirs.values()))
+        ops.dirops.verify_root_paths_exist(list(config.destination_dirs.values()))
 
         # Load duplicates before film processing begins.
         ops.dirops.get_existing_films(config.destination_dirs)
@@ -60,7 +60,7 @@ def main():
         # TODO: add recursive searching inside poorly named folders
 
         # Verify that source path(s) exist.
-        ops.dirops.verify_paths_exist(config.source_dirs)
+        ops.dirops.verify_root_paths_exist(config.source_dirs)
 
         # Retrieve a list of films from the current source dir(s) and process each film.
         processor.iterate(ops.dirops.get_new_films(config.source_dirs))
@@ -74,14 +74,13 @@ def main():
     except (KeyboardInterrupt, SystemExit):
         console().print_exit_early()
     except (IOError, OSError) as e:
-        
         console().error(f'{type(e).__name__}: {e}')
-        if config.debug:
+        if config.debug or config.errors:
             import traceback
             traceback.print_exc()
     except Exception as e:
         console().error(f'{(type(e).__name__, e)}: {type(e)}')
-        if config.debug:
+        if config.debug or config.errors:
             import traceback
             traceback.print_exc()
     finally:

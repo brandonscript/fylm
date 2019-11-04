@@ -20,8 +20,12 @@ This module handles all the duplicate checking and handling logic for Fylm.
 from __future__ import unicode_literals, print_function
 from builtins import *
 
+import os
+import itertools
+
 import fylmlib.config as config
 from fylmlib.console import console
+from fylmlib.film import Film
 import fylmlib.compare as compare
 import fylmlib.operations as ops
 
@@ -32,19 +36,19 @@ class duplicates:
     """
 
     @classmethod
-    def find(cls, film):
-        """Get a list of duplicates from a list of existing films.
+    def find(cls, film: Film) -> [Film.File]:
+        """From a list of existing films, return those that contain
+        one or more duplicate files.
 
         Compare the film objects to an array of exsiting films in
         order to determine if any duplicates exist at the destination.
-        Criteria for a duplicate: title, year, and edition must match (case insensitive).
+        Criteria for a duplicate: title and year must match.
 
         Returns:
-            A an array of duplicate films.
+            An array of duplicate films objects for the specified file.
         Args:
-            film (Film): Film object to check for duplicates.
+            film (Film): Film to check for duplicates.
         """
-        existing_films = ops.dirops.get_existing_films(config.destination_dirs)
 
         # If check for duplicates is disabled, return an empty array (because we don't care if they exist).
         # DANGER ZONE: With check_for_duplicates disabled and overwrite_existing enabled, any files
@@ -53,47 +57,49 @@ class duplicates:
             console.debug('Duplicate checking is disabled, skipping.')
             return []
 
-        console.debug(f'Checking list of duplicates for "{film.title}" ({film.year})')
+        existing_films: [Film] = ops.dirops.get_existing_films(config.destination_dirs)
+
+        console.debug(f'Checking list of duplicates for "{film.new_basename}"')
         # Filter the existing_films cache array to titles beginning with the first letter of the
         # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.
-        # TODO: Add tests to ensure this works for 'title-the' naming convention as well.
-        duplicates = list(filter(lambda d:
+        duplicates: [Film] = list(filter(lambda x:
                 # First letter of the the potential duplicate's title must be the same.
                 # Checking this first allows us to have a much smaller list to compare against.
-                d.title[0] == film.title[0]
+                film.title[0] == x.title[0]
 
-                # Check that the film is actually a duplicate in name/year/edition
-                and compare.is_duplicate(film, d)
+                # Check that the film is a legitimate duplicate
+                and compare.is_duplicate(film, x)
 
                 and ((
-                    d.is_dir
-                    # If the potential duplicate is a dir, check that it contains at least
+                    # If the potential duplicate is a folder, check that it contains at least
                     # one valid file.
-                    and len(ops.dirops.get_valid_files(d.source_path)) > 0)
+                    x.is_folder and len(x.video_files) > 0)
 
                     # Or if it is a file, it is definitely a duplicate.
-                    or d.is_file),
+                    or x.is_file),
 
             # Perform the filter against the existing films cache.
            existing_films))
 
-        console.debug(f'Total duplicate(s) found: {len(duplicates)}')
-        return duplicates
+        duplicate_files = list(itertools.chain(*[d.video_files for d in duplicates]))
+        console.debug(f'Total duplicate files(s) found: {len(duplicate_files)}')
+        return duplicate_files
 
     @classmethod
-    def should_replace(cls, film, duplicate):
-        """Determines if a duplicate should be replaced.
+    def should_replace(cls, src: Film.File, duplicate: Film.File):
+        """Determines if a duplicate file should be replaced.
 
         Config settings govern whether a duplicate can be replaced if it is of
         a specific quality, e.g. a 1080p can be allowed replace a 720p, but a
-        2160p cannot.
+        2160p cannot. This method will be eventually expanded to handle quality
+        upgrading and multiple media sources.
         
         Args:
-            film (Film): Film object to determine if it should replace a duplicate.
-            duplicate (Film or path): Verified duplicate object to check `film` against.
+            src (Film.File): Film object to determine if it should replace a duplicate.
+            duplicate (Film.File): Verified duplicate file to check src against.
         Returns:
-            True if `film` should replace `duplicate`.
+            True if `src` should replace `duplicate`.
         """
 
         # If duplicate replacing is disabled, don't replace.
@@ -101,9 +107,9 @@ class duplicates:
             return False
 
         # If the duplicate is a path and not a film, we need to load it.
-        from fylmlib.film import Film
-        if not isinstance(duplicate, Film):
-            duplicate = Film(duplicate)
+        # from fylmlib.film import Film
+        # if not isinstance(duplicate, Film):
+        #     duplicate = Film(duplicate)
 
         # Replace quality takes a dict of arrays for each quality, which governs whether
         # a specific quality has the ability to replace another. By default, this map
@@ -113,24 +119,28 @@ class duplicates:
         #   720p: ['1080p'] # Replace 720p films with 1080p
         #   SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) 
         #       with 1080p or 720p
-        if film.quality in config.duplicate_replacing.replace_quality[duplicate.quality or 'SD']:
+        if src.resolution in config.duplicate_replacing.replace_quality[duplicate.resolution or 'SD']:
             return True
 
         # If the editions do not match, we want to warn, but not replace.
-        if film.edition != duplicate.edition:
+        if src.edition != duplicate.edition:
             return False
+
+        # If the src is a better quality or proper, replace the same resolutions
+        elif src.resolution == duplicate.resolution and compare.is_higher_quality(src, duplicate):
+            return True
 
         # Or, if quality is the same and the size is larger, 
         elif (config.duplicate_replacing.replace_smaller is True
-            and film.quality == duplicate.quality 
-            and film.size > (duplicate.size or 0)):
+            and src.resolution == duplicate.resolution
+            and src.size > (duplicate.size or 0)):
             return True
 
         # Otherwise it should not be replaced.
         else:
             return False
 
-    @classmethod
+    @classmethod # deprecatd
     def should_keep_both(cls, film, duplicate):
         """Determines if both a film and a duplicate should be kept.
 
@@ -158,10 +168,10 @@ class duplicates:
         # If new and existing films have a different quality, and the new film is larger 
         # (better), if the new film doesn't qualify as a replacement, we can assume that 
         # we want to keep both the current film and the duplicate.
-        return (film.quality != duplicate.quality 
+        return (film.resolution != duplicate.resolution 
             and not cls.should_replace(film, duplicate))
 
-    @classmethod
+    @classmethod # deprecated
     def should_keep(cls, film):
         """Determines if a film should be kept, if there are duplicates.
 
@@ -182,25 +192,61 @@ class duplicates:
             for d in film.duplicates)
 
     @classmethod
-    def delete_unwanted(cls, film):
+    def rename_unwanted(cls, film: Film):
+        """Rename unwanted duplicates on the destination dirs.
+
+        If duplicates are found and the inbound film should replace them,
+        we want to prepare them for deletion by renaming them. If a move/copy
+        is successful, we'll delete the dupes.
+        
+        Args:
+            film (Film): Film object to determine which duplicates to rename.
+        """
+
+        # Loop through each duplicate that should be replaced.
+        for file in film.video_files:
+            for d in filter(lambda d: cls.should_replace(file, d), film.duplicate_files):
+                ops.fileops.rename(d.source_path, f'{os.path.basename(d.source_path)}.dup')
+
+    @classmethod
+    def delete_unwanted(cls, film: Film):
         """Delete unwanted duplicates on the destination dirs.
 
         If duplicates are found and the inbound film should replace them,
         we want to delete the copies on the destination dir that we don't
-        want.
+        want, and their parent folder, if it's empty.
         
         Args:
             film (Film): Film object to determine which duplicates to delete.
         """
 
         # Loop through each duplicate that should be replaced.
-        for d in filter(lambda d: cls.should_replace(film, d), film.duplicates):
+        for file in film.video_files:
+            for d in filter(lambda d: cls.should_replace(file, d), film.duplicate_files):
+                ops.fileops.delete(f'{d.source_path}.dup')
 
-            # Delete the duplicate's source dir if it's a folder. Override
-            # max_size param to force deletion of large files.
-            if d.is_dir:
-                ops.dirops.delete_dir_and_contents(d.source_path, max_size=-1)
+        # Delete empty duplicate container folders
+        cls.delete_leftover_folders(film)
 
-            # Or if it's a single file, delete the file.
-            else:
-                ops.fileops.delete(d.source_path)
+        # Remove deleted duplicates from the film object
+        for file in film.video_files:
+            for d in filter(lambda d: cls.should_replace(file, d), film.duplicate_files):
+                film._duplicate_files = list(filter(lambda d: os.path.exists(d.source_path) or os.path.exists(f'{d.source_path}.dup'), film._duplicate_files))
+
+    @classmethod
+    def delete_leftover_folders(cls, film: Film):
+        """Delete empty duplicate folders on the destination dirs.
+
+        If duplicates are found and the inbound film should replace them,
+        we want to delete all the empty folders they leave behind.
+        
+        Args:
+            film (Film): Film object to determine which duplicate deletions
+                        might have left behind empty folders.
+        """
+
+        # Delete empty duplicate container folders
+        for dup_film in [f.parent_film for f in film.duplicate_files]:
+            if dup_film.is_folder and len(ops.dirops.find_deep(dup_film.source_path)) == 0:
+                # Delete the parent film dir and any hidden contents if it is less than 1 KB.
+                ops.dirops.delete_dir_and_contents(dup_film.source_path, max_size=1000)

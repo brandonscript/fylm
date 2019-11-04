@@ -302,13 +302,20 @@ def search(query, year=None):
             else: 
                 potential_matches.append(result)
 
+    # Debug helper:
+    # print([m.proposed_title for m in potential_matches])
+
     # Strip duplicate results and remove results that don't match the configured
     # match threshold:
+
     potential_matches = filter(
         lambda x: 
-            x.year_deviation <= config.tmdb.max_year_diff
+            (x.year_deviation <= config.tmdb.max_year_diff
             and x.popularity >= config.tmdb.min_popularity
-            and x.title_similarity >= config.tmdb.min_title_similarity, 
+            and x.title_similarity >= config.tmdb.min_title_similarity) or
+            (x.year_deviation == 0
+            and x.popularity >= config.tmdb.min_popularity / 1.5
+            and x.title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
         list(set(potential_matches)
     ))
 

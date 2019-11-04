@@ -25,6 +25,7 @@ from builtins import *
 
 import os
 
+from fylmlib.film import Film
 from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
 from fylmlib.duplicates import duplicates
@@ -44,7 +45,7 @@ class processor:
     """
 
     @classmethod
-    def iterate(cls, films):
+    def iterate(cls, films: [Film]):
         """Main entry point for processor, iterates a list of films.
 
         Args:
@@ -52,9 +53,6 @@ class processor:
         """
 
         for film in films:
-
-            # For certain file types, we want to verify the quality of the film.
-            cls.verify_quality(film)
             
             # Route film to correct handler
             cls.route(film)
@@ -75,27 +73,7 @@ class processor:
             cls.process_move_queue()
 
     @classmethod
-    def verify_quality(cls, film):
-        """Verify quality of film using mediainfo.
-
-        Args:
-            films: (Film) film object to route.
-        """
-
-        # Update quality from the film's metadata if it is missing
-        if film.quality is None:
-            try:
-                if film.metadata.width == 1920:
-                    film.quality = '1080p'
-                elif film.metadata.width == 1280:
-                    film.quality = '720p'
-                elif film.metadata.width == 3840:
-                    film.quality = '2160p'
-            except Exception:
-                pass
-
-    @classmethod
-    def route(cls, film):
+    def route(cls, film: Film):
         """Route film processing to the correct handler.
 
         Args:
@@ -127,30 +105,30 @@ class processor:
                 # If the lookup was successful, print the results to the console.
                 console().print_search_result(film)
 
-        # If duplicate checking is enabled and the film is a duplicate, abort,
-        # *unless* overwriting is enabled. `is_duplicate` will always return
-        # false if duplicate checking is disabled. In interactive mode, user
-        # determines this outcome.
-        if film.is_duplicate:
+        # If duplicate checking is enabled and the film is a duplicate, rename
+        # all the duplicates we do not want to keep so they can be deleted later.
+        if len(film.existing_duplicate_files) > 0:
 
             console().print_duplicates(film)
 
             if config.interactive is True:
-                if not interactive.duplicates(film):
+
+                # If interactive mode is enabled, a False return here
+                # indicates we no longer want to keep this file, so
+                # return.
+                if not interactive.handle_duplicates(film):
                     return
             else:
-                if not duplicates.should_keep(film):
-                    return
-                duplicates.delete_unwanted(film)
+                duplicates.rename_unwanted(film)
 
         # If it is a file and as a valid extension, process it as a file
-        if film.is_file and film.has_valid_ext:
+        if film.is_file and film.all_valid_files[0].has_valid_ext:
             cls.prepare_file(film)
 
         # Otherwise if it's a folder, process it as a folder containing
         # potentially multiple related files.
-        elif film.is_dir:
-            cls.prepare_dir(film)
+        elif film.is_folder:
+            cls.prepare_folder(film)
 
         # If we're not running in interactive mode, do all the moving 
         # on a first-in-first out basis.
@@ -163,6 +141,7 @@ class processor:
         global _move_queue
 
         # Enumerate the move/copy queue and execute
+        film: Film
         for film, queued_ops in _move_queue:
 
             if config.interactive is True:
@@ -170,8 +149,8 @@ class processor:
 
             copied_files = 0
 
-            # Determine the root destionation path for the film
-            dst_path = film.destination_dir if film.is_dir else queued_ops[0].dst
+            # Determine the destination path for the film
+            dst_path = queued_ops[0].dst
 
             if film.source_path == dst_path:
                 console().indent().dark_gray('Already renamed').print()
@@ -179,23 +158,26 @@ class processor:
             for move in queued_ops:
 
                 # Execute the move/copy and print details
-                console().print_move_or_copy(move.src, dst_path, move.dst)
+                console().print_move_or_copy(move.file.parent_film.source_path, dst_path, move.dst)
                 copied_files += move.do()
 
             # If the move is successful...
             if copied_files == len(queued_ops):
 
-                # Update the coujnter
-                counter.add(1)
+                for file in film.all_valid_files:
 
-                # Notify Pushover
-                notify.pushover(film)
+                    # Update the coujnter
+                    if file.is_video:
+                        counter.add(1)
 
-                # Clean up the source dir (only executes if it's a dir)
-                cls.cleanup_dir(film)
+                        # Notify Pushover
+                        notify.pushover(file.parent_film)
 
-                # Update the film's source_path its new location once all files have been moved.
-                film.source_path = dst_path
+                    # Clean up the source dir (only executes if it's a dir)
+                    cls.cleanup_dir(file.parent_film)
+
+                    # Update the film's source_path its new location once all files have been moved.
+                    file.source_path = dst_path
 
             if config.interactive is True:
                 # Print blank line to separate next film
@@ -205,7 +187,7 @@ class processor:
         _move_queue = []
 
     @classmethod
-    def prepare_file(cls, film):
+    def prepare_file(cls, film: Film):
         """Process a single file film object.
 
         Args:
@@ -214,27 +196,32 @@ class processor:
 
         global _move_queue
 
+        # Get the main file
+        file = film.all_valid_files[0]
+
         # Rename the source file to its new filename
-        ops.fileops.rename(film.source_path, film.new_filename__ext())
+        ops.fileops.rename(file.source_path, file.new_filename_and_ext)
 
         # Update the source path of the film if we're running in live mode
         # to its new name, otherwise the move will fail (because it will 
         # be looking for its original filename).
         if config.test is False:
-            film.source_path = os.path.normpath(os.path.join(os.path.dirname(film.source_path), film.new_filename__ext()))
+            film.source_path = os.path.normpath(os.path.join(os.path.dirname(file.source_path), file.new_filename_and_ext))
+            film.all_valid_files[0].source_path = film.source_path
 
         # Generate a new source path based on the new filename and the
-        # destination dir.
-        dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext()))
+        # destination dir. In this case, we know that the first object
+        # in .all_valid_files is the only file reference.
+        dst = os.path.normpath(os.path.join(file.destination_path, file.new_filename_and_ext))
 
         # Move the file. (Only executes in live mode).
         # If this film is a duplicate and is set to replace an existing film, suppress
         # the overwrite warning.
-        _move_queue.append((film, [_QueuedMoveOperation(film, film.source_path, dst)]))
+        _move_queue.append((film, [_QueuedMoveOperation(film.all_valid_files[0], dst)]))
 
     @classmethod
-    def prepare_dir(cls, film):
-        """Process a directory film object.
+    def prepare_folder(cls, film: Film):
+        """Process a directory film object containing one or more files.
 
         Args:
             film: (Film) film object to process.
@@ -247,26 +234,22 @@ class processor:
         move_constructor = (film, [])
 
         # Enumerate valid files.
-        for file in film.valid_files:
-
-            # Split filename and ext for inner file.
-            src = file
-            ext = os.path.splitext(file)[1]
-
-            # Generate a new filename based on the film's title, and alter it
+        file: Film.File
+        for file in film.all_valid_files:
+            # Generate a new destination based on the film's title, and alter it
             # depending on whether the file is a subtitle, or if it needs to be
             # renamed to prevent clobbering.
-            dst = os.path.normpath(os.path.join(film.destination_dir, film.new_filename__ext(ext)))
+            dst = os.path.normpath(os.path.join(file.destination_path, file.new_filename_and_ext))
 
             # If it is a subtitle, we try to find the language.
-            if Subtitle.is_subtitle(src):
+            if file.is_subtitle:
                 # Insert the language into the subtitle filename.
-                dst = Subtitle(src).insert_lang(dst) or dst
+                dst = Subtitle(file.new_filename).insert_lang(dst) or dst
 
             # Append the destination to the queued files list
             uniqueness_map.append(dst)
 
-            # Check if a file with the same name exists more than once in the queue.
+            # Check if a file with the identical name exists more than once in the queue.
             # If so, handle the filename conflict by appending a number to the filename.
             # e.g. My Little Pony.srt would become My Little Pony.1.srt if its already
             # in the queue.
@@ -276,32 +259,35 @@ class processor:
                 # If there's a duplicate filename, we need to rename each file
                 # sequentially to prevent clobbering.   
                 dst = f'{new_filename}.{uniqueness_map.count(dst) - 1}{ext}'
-
+            
             # Rename the source file to its new filename
-            ops.fileops.rename(src, os.path.basename(dst))
+            ops.fileops.rename(file.source_path, os.path.basename(dst))
 
             # Update source with the newly renamed path, derived from destination name, in 
-            # case it was altered by subtitle or duplicate clobber prevention.
-            src = os.path.normpath(os.path.join(os.path.dirname(src), os.path.basename(dst)))
+            # case it was altered by subtitle or duplicate clobber prevention. Only run
+            # in live mode.
+            if config.test is False:
+                file.source_path = os.path.normpath(os.path.join(os.path.dirname(file.source_path), os.path.basename(dst)))
 
             # Move the file. (Only executes in live mode).
             # If this film is a duplicate and is set to replace an existing film, suppress
             # the overwrite warning.
-            move_constructor[1].append(_QueuedMoveOperation(film, src, dst))
+            move_constructor[1].append(_QueuedMoveOperation(file, dst))
 
         # Add the current film's queued files to the move queue.
         _move_queue.append(move_constructor)
 
     @classmethod
-    def cleanup_dir(cls, film):
+    def cleanup_dir(cls, film: Film):
         """Clean up a directory film object after it has been moved.
 
         Args:
             film: (Film) film object to process.
         """
 
-        # Do not try to delete unwanted files if the film is a dir.
-        if not film.is_dir:
+        # Do not try to delete unwanted files if the film isn't in a folder.
+        # That means it's the root src directory, and contains other files.
+        if not film.is_folder:
             return
 
         # Recursively delete unwanted files and set the count.
@@ -316,7 +302,8 @@ class processor:
         # empty, and that it is < 1 KB in size. If true, remove it. We also
         # don't want to try and remove the source folder if the original source
         # is the same as the destination.
-        if config.remove_source and film.original_path != film.destination_dir:
+
+        if config.remove_source and film.original_path != film.destination_path:
             console().indent().dark_gray('Removing parent folder').print()
             console.debug(f'Deleting {film.original_path}')
 
@@ -329,14 +316,26 @@ class _QueuedMoveOperation(object):
     Each move operation contains a source and destination path that are passed
     as args to ops.fileops.safe_move()
     """
-    def __init__(self, film, src, dst):
-        self.film = film
-        self.src = src
+    def __init__(self, file: Film.File, dst: str):
+        self.file = file
         self.dst = dst
-        self.should_replace = film.is_duplicate and duplicates.should_replace(film, dst)
     
     def do(self):
         """Passthrough function to call ops.fileops.safe_move()
         """
-        return ops.fileops.safe_move(self.src, self.dst, self.should_replace)
+
+        if not os.path.exists(self.file.source_path):
+            console().yellow().indent(f'\'{os.path.basename(self.file.source_path)}\' no longer exists or cannot be accessed').print()
+            return False
+
+        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.dst)
+
+        # Clean up duplicates if all the files in the parent film have been moved
+        if (len(self.file.parent_film.duplicate_files) > 0 
+            and config.interactive is False 
+            and len(list(filter(lambda m: m.did_move == False, self.file.parent_film.all_valid_files))) == 0):
+            if config.interactive is False:
+                duplicates.delete_unwanted(self.file.parent_film)
+
+        return self.file.did_move
 

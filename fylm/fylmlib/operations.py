@@ -30,6 +30,7 @@ import os
 import shutil
 import sys
 import unicodedata
+import itertools
 from itertools import islice
 from multiprocessing import Pool
 
@@ -45,7 +46,7 @@ class dirops:
     _existing_films = None
 
     @classmethod
-    def verify_paths_exist(cls, paths):
+    def verify_root_paths_exist(cls, paths):
         """Verifies that the specified paths (array) exist.
 
         Loops through an array of paths to check that each one exists. If any do not,
@@ -122,17 +123,15 @@ class dirops:
         for path in list(set(os.path.normpath(path) for _, path in paths.items())):
             if os.path.normpath(path) not in config.source_dirs:
                 xfs = [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
-                if sys.version_info[0] < 3:
-                    cls._existing_films += map(Film, xfs)
-                else:
-                    with Pool(processes=20) as pool:
-                        cls._existing_films += pool.map(Film, xfs)
+                with Pool(processes=25) as pool:                    
+                    cls._existing_films += pool.map(Film, xfs)
 
-        console.debug(f'Loaded {len(cls._existing_films)} existing films')
+        files_count = list(itertools.chain(*[f.video_files for f in cls._existing_films]))
+        console.debug(f'Loaded {len(cls._existing_films)} existing unique Film objects containing {len(files_count)} video files')
 
         # Uncomment for verbose debugging. This can get quite long.
-        # for f in sorted(_existing_films, key=lambda s: s.title.lower()):
-        #     console.debug(f' - {f.source_path}')
+        # for f in sorted(cls._existing_films, key=lambda s: s.title.lower()):
+        #     console.debug(f' - {f.source_path} {f.all_valid_films}')
         
         # Sort the existing films alphabetically, case-insensitive, and return.
         return sorted(cls._existing_films, key=lambda s: s.title.lower())
@@ -169,7 +168,7 @@ class dirops:
         return sum(films, [])
 
     @classmethod
-    def get_valid_files(cls, path):
+    def get_valid_files(cls, path) -> [str]:
         """Get a list valid files inside the specified path.
 
         Scan deeply in the specified path to get a list of valid files, as
@@ -178,7 +177,7 @@ class dirops:
         Args:
             path: (str, utf-8) path to search for valid files.
         Returns:
-            An array of valid files.
+            An array of valid file paths.
         """
 
         # Call dirops.find_deep to search for files within the specified path.
@@ -403,7 +402,7 @@ class fileops:
             or (s >= 0 and is_extra))
 
     @classmethod
-    def safe_move(cls, src, dst, should_replace=False):
+    def safe_move(cls, src: str, dst: str):
         """Performs a 'safe' move operation.
 
         Performs some additional checks before moving files. Optionally supports
@@ -413,9 +412,7 @@ class fileops:
         Args:
             src: (str, utf-8) path of file to move.
             dst: (str, utf-8) destination for file to move to.
-            expected_size: (int) size in bytes the file is expected to be.
-            should_replace: (bool) True if a film is expected to replace a duplicate,
-                            else False.
+
         Returns:
             True if the file move was successful, else False.
         """
@@ -440,18 +437,15 @@ class fileops:
         # and print a warning to the console. If overwrite_existing is enabled, 
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
         if os.path.exists(dst):
-            # If should_replace is true, we don't need to check for the overwrite
-            # setting, because we can assume we're going to move things. Generally 
-            # this point of code won't be reached because duplicate checking
-            # *should* have already removed duplicates at the destination.
-            if should_replace is False and config.overwrite_existing is False:
+            # If overwrite_existing is turned off and , we can't overwrite this file.
+            if config.overwrite_existing is False:
                 # If we're not overwriting, return false
                 console().red().indent('Unable to move (identical file already exists)')
                 return False
                 
             # File overwriting is enabled and not marked to replace, so warn, 
             # and proceed continue.
-            console().red().indent(f'Overwriting {os.path.basename(dst)}')
+            console().red().indent(f'Overwriting existing file {os.path.basename(dst)}')
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
@@ -463,6 +457,12 @@ class fileops:
             return True
 
         try:
+
+            # If we're overwriting, first try and rename an existing (identical) 
+            # duplicate so we don't lose it if the move fails
+            if os.path.exists(dst):
+                os.rename(dst, f'{dst}.dup')
+
             # If safe_copy is enabled, or if partition is not the same, copy instead.
             if config.safe_copy is True or not dirops.is_same_partition(src, dst): 
 
@@ -491,6 +491,10 @@ class fileops:
             else: 
                 shutil.move(src, dst)
 
+            # Clean up any backup duplicate that might have been created, if the move was successful
+            if os.path.exists(dst) and os.path.exists(f'{dst}.dup'):
+                os.remove(f'{dst}.dup')
+
             return True
 
         except (IOError, OSError) as e:
@@ -499,6 +503,11 @@ class fileops:
             console().red().indent(f'Failed to move {src} to {dst}')
             console.debug(e)
             print(e)
+
+            # If we're overwriting and a duplicate was created, undo its renaming
+            if os.path.exists(f'{dst}.dup'):
+                os.rename(f'{dst}.dup', dst)
+
             return False
 
     @classmethod
@@ -580,7 +589,7 @@ class fileops:
             callback(copied, total=total)
 
     @classmethod
-    def rename(cls, src, new_filename__ext):
+    def rename(cls, src, new_filename_and_ext):
         """Renames a file using shutil.move.
 
         Renames a file using shutil.move, which under the hood, intelligently determines
@@ -590,17 +599,17 @@ class fileops:
 
         Args:
             src: (str, utf-8) full path (including filename) of file to move.
-            new_filename__ext: (str, utf-8) new filename.ext (not including path).
+            new_filename_and_ext: (str, utf-8) new filename.ext (not including path).
         """
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # If we don't do this, the filesystem will try and create a new folder instead
         # of the correct filename.
         # Credit: https://stackoverflow.com/a/34504896/1214800
-        new_filename__ext = new_filename__ext.replace(r'/', '-')
+        new_filename_and_ext = new_filename_and_ext.replace(r'/', '-')
 
         # Generate a destination string based on src's path and the new filename
-        dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename__ext))
+        dst = os.path.normpath(os.path.join(os.path.dirname(src), new_filename_and_ext))
 
         # Silently abort if the src==dst (we don't need to waste cycles renaming files
         # that are already correctly named). This also allows us to check for identically
@@ -710,7 +719,7 @@ def largest_video(path):
     else:
         return None
 
-def size(path):
+def size(path) -> int:
     """Determine the size of a file or dir.
 
     Args:
@@ -720,7 +729,9 @@ def size(path):
     """
 
     # First check that the path actually exists before we try to determine its size.
-    if path is not None and os.path.exists(path):
+    if path is not None:
+        if not os.path.exists(path):
+            raise Exception(f'Cannot calculate size for a path that does not exist ({path})')
 
         # If it's a directory, we need to call the _size_dir func to recursively get
         # the size of each file inside.

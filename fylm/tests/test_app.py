@@ -17,6 +17,7 @@ from __future__ import unicode_literals, print_function, absolute_import
 from builtins import *
 
 import pytest
+import os
 
 import fylm
 import fylmlib.config as config
@@ -43,13 +44,13 @@ class TestApp(object):
         # Execute
         fylm.main()
 
-        moved_films = conftest.moved_films()
-        assert(len(moved_films) > 0)
+        # moved_films = conftest.moved_films()
+        # assert(len(moved_films) > 0)
 
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
         for expected in conftest.expected_no_lookup:
             expected_path = conftest.expected_path(expected, folder=True).lower()
-            assert(expected_path in [m.lower() for m in moved_films])
+            assert(os.path.exists(expected_path))
 
     # @pytest.mark.skip(reason="Slow")
     def test_app_use_folders_true(self):
@@ -66,12 +67,12 @@ class TestApp(object):
         # Execute
         fylm.main()
 
-        moved_films = conftest.moved_films()
+        # moved_films = conftest.moved_films()
 
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
         for expected in conftest.expected:
             expected_path = conftest.expected_path(expected, folder=True)
-            assert(expected_path in moved_films)
+            assert(os.path.exists(expected_path))
 
     # @pytest.mark.skip(reason="Slow")
     def test_app_use_folders_false(self):
@@ -88,11 +89,11 @@ class TestApp(object):
         # Execute
         fylm.main()
 
-        moved_films = conftest.moved_films()
+        # moved_films = conftest.moved_films()
 
         # Assert that all of the films were moved successfully into the correct destination folders.
         for expected in conftest.expected:
             expected_path = conftest.expected_path(expected, folder=False)
-            assert(expected_path in moved_films)
+            assert(os.path.exists(expected_path))
 
         fylm.config.use_folders = True

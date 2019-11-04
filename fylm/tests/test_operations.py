@@ -30,20 +30,20 @@ import make
 # @pytest.mark.skip()
 class TestDirOperations(object):
 
-    def test_verify_paths_exist(self):
+    def test_verify_root_paths_exist(self):
 
         if sys.platform == "win32":
-            ops.dirops.verify_paths_exist(['C:\\'])
+            ops.dirops.verify_root_paths_exist(['C:\\'])
         else:
-            ops.dirops.verify_paths_exist(['/bin'])
+            ops.dirops.verify_root_paths_exist(['/bin'])
 
     @pytest.mark.xfail(raises=(OSError, IOError))
-    def test_verify_paths_exist_err(self):
+    def test_verify_root_paths_exist_err(self):
 
         if sys.platform == "win32":
-            ops.dirops.verify_paths_exist(['C:\\__THERE_IS_NO_SPOON__'])
+            ops.dirops.verify_root_paths_exist(['C:\\__THERE_IS_NO_SPOON__'])
         else:
-            ops.dirops.verify_paths_exist(['/__THERE_IS_NO_SPOON__'])
+            ops.dirops.verify_root_paths_exist(['/__THERE_IS_NO_SPOON__'])
 
     @pytest.mark.skip(reason='Cannot reliably test multiple partitions/mount points')
     def test_is_same_partition(self):
@@ -56,7 +56,7 @@ class TestDirOperations(object):
 
         files = {
             '2160p': 'Rogue.One.A.Star.Wars.Story.2016.4K.2160p.DTS.mp4',
-            '1080p': 'Rogue.One.A.Star.Wars.Story.2016.1080p.DTS.x264-group.mkv',
+            '1080p': 'Rogue.One.A.Star.Wars.Story.2016.1080p.BluRay.DTS.x264-group.mkv',
             '720p': 'Rogue.One.A.Star.Wars.Story.2016.720p.DTS.x264-group.mkv',
             'SD': 'Rogue.One.A.Star.Wars.Story.2016.avi'
         }
@@ -97,13 +97,14 @@ class TestDirOperations(object):
         assert(fylm.config.min_filesize == 50)
 
         files = [
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.mkv',
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.sample.mkv',
-            'Rogue.One.2016.1080p.DTS.x264-group/GROUP.mkv',
-            'Rogue.One.2016.1080p.DTS.x264-group/subs-english.srt',
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.nfo',
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.sfv',
-            'Rogue.One.2016.1080p.DTS.x264-group/Cover.jpg'
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sample.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/GROUP.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/RO-ad-scene-WATCHME.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/subs-english.srt',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.nfo',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sfv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Cover.jpg'
         ]
 
         conftest.cleanup_all()
@@ -112,23 +113,24 @@ class TestDirOperations(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb)
         make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb)
         make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   14 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    5 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    6 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    7 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb)
         
         # Assert that there is only one test film identified at the source
         assert(len(ops.dirops.get_new_films([conftest.films_src_path])) == 1)
 
         valid_files = ops.dirops.get_valid_files(
-            os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.DTS.x264-group')
+            os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
         )
 
-        # Assert that of the 7 files presented, only two are valid
+        # Assert that of the 8 files presented, only two are valid
         assert(len(valid_files) == 2)
 
-        assert(os.path.join(conftest.films_src_path, files[0]) in valid_files)
-        assert(os.path.join(conftest.films_src_path, files[3]) in valid_files)
+        assert(os.path.join(conftest.films_src_path, files[0]) in valid_files) # Main video file
+        assert(os.path.join(conftest.films_src_path, files[4]) in valid_files) # .srt
 
     def get_invaild_files(self):
 
@@ -138,13 +140,13 @@ class TestDirOperations(object):
         assert(fylm.config.min_filesize == 50)
 
         files = [
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.mkv',
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.sample.mkv',
-            'Rogue.One.2016.1080p.DTS.x264-group/GROUP.mkv',
-            'Rogue.One.2016.1080p.DTS.x264-group/subs-english.srt',
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.nfo',
-            'Rogue.One.2016.1080p.DTS.x264-group/Rogue.One.2016.1080p.DTS.x264-group.sfv',
-            'Rogue.One.2016.1080p.DTS.x264-group/Cover.jpg'
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sample.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/GROUP.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/subs-english.srt',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.nfo',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sfv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Cover.jpg'
         ]
 
         conftest.cleanup_all()
@@ -153,23 +155,24 @@ class TestDirOperations(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb)
         make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb)
         make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   14 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    5 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    6 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    7 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb)
         
         # Assert that there is only one test film identified at the source
         assert(len(ops.dirops.get_new_films(conftest.films_src_path)) == 1)
 
         invalid_files = ops.dirops.get_invalid_files(
-            os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.DTS.x264-group')
+            os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
         )
 
-        # Assert that of the 7 files presented, five are invalid
-        assert(len(invalid_files) == 5)
+        # Assert that of the 8 files presented, 6 are invalid
+        assert(len(invalid_files) == 6)
 
-        assert(os.path.join(conftest.films_src_path, files[0]) not in invalid_files)
-        assert(os.path.join(conftest.films_src_path, files[3]) not in invalid_files)
+        assert(os.path.join(conftest.films_src_path, files[0]) not in invalid_files) # Main video file
+        assert(os.path.join(conftest.films_src_path, files[4]) not in invalid_files) # .srt
 
     def test_sanitize_dir_list(self):
 

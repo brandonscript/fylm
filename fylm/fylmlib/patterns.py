@@ -32,11 +32,14 @@ import sys
 # 1920 because of 1920x1080 resolution.
 year = re.compile(r'\W+(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)')
 
-# Compiled pattern that matches 720p, 1080p, of 2160p, case insensitive.
-quality = re.compile(r'(?P<quality>(?:72|108|216)0p?)', re.I)
+# Compiled pattern that matches 720p, 1080p, or 2160p, case insensitive.
+resolution = re.compile(r'(?P<resolution>(?:72|108|216)0p?)', re.I)
 
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
-media = re.compile(r'(?:(?P<bluray>bluray|bdremux)|(?P<web>web-?dl|webrip)|(?P<hdtv>hdtv))', re.I)
+media = re.compile(r'\b(?:(?P<bluray>blu-?ray|bdremux|bdrip)|(?P<web>web-?dl|webrip|amzn|nf|hulu)|(?P<hdtv>hdtv)|(?P<dvd>dvd)|(?P<sdtv>sdtv))\b', re.I)
+
+# Compiled pattern that matches Proper, case insensitive.
+proper = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
 
 # Compiled pattern that "Part n" where n is a number or roman numeral.
 part = re.compile(r'\bpart\W?(?P<part>(?:(\d+|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))))', re.I)

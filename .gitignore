@@ -11,3 +11,5 @@ fylm/tests/files
 coverage.xml
 .vscode/settings.json
 *.code-workspace
+.vscode/.ropeproject/config.py
+.vscode/.ropeproject/objectdb

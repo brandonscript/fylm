@@ -23,6 +23,7 @@ from builtins import *
 
 import os
 import re
+import itertools
 
 from pymediainfo import MediaInfo
 
@@ -58,69 +59,54 @@ class Film:
 
         overview:           A short description of the film.
 
-        poster_path:         URL for the film poster.
-
-        edition:            Special edition.
-
-        media:              Original release media, e.g. BluRay.
-
-        quality:            Original quality of media: 720p, 1080p,
-                            or 2160p.
+        poster_path:        URL for the film poster.
 
         part:               Part number of the original film, either
                             either a number or roman numeral
-
-        metadata:           Media metadata.
 
         title_similarity:   Similarity between parsed title and TMDb
                             title.
 
         source_path:        Current source path of film.
 
+        destination_path:   Parent (root) dir where we assume all files will be
+                            moved, based on quality-based sorting defined
+                            in config.destination_dirs. Occassionally this could
+                            be out of sync with some of a film's files, depending
+                            on the destination path configuration.
+
         original_path:      (Immutable) original path of film.
 
-        original_filename:  Original folder name (or filename without
-                            extension).
-
-        ext:                File extension, if film is a file.
+        original_basename:  Original folder name (or filename without
+                            extension) before it was renamed.
 
         size:               Size of file or folder contents belonging
                             to the film.
 
-        size_of_largest_video:      Size of file or largest video file inside
-                            a film folder.
-
-        new_filename:       Uses the configured templating pattern to
-                            generate a new filename.
-
-        new_filename__ext:  (optional param: ext)
-                            Returns the new filename with original
-                            extension, or value of ext.
-
-        destination_dir:    Destination dir where this file will be
-                            moved.
-
-        has_valid_ext:      Returns true if the film is a file and
-                            has avalid file extension.
-
-        is_video_file:      Returns true if the film is a file and
-                            has a valid video file extension.
+        new_basename:       Uses the configured templating pattern to
+                            generate a new base object name.
 
         is_tv_show:         Returns true if the film is actually a
                             TV show.
 
         is_file:            Returns true if the film was loaded from
-                            a file.
+                            a file. If true, the all_valid_files will contain
+                            exactly one file, at position 0.
 
-        is_dir:             Returns true if the film was loaded from
+        is_folder:          Returns true if the film was loaded from
                             a folder.
 
-        valid_files:        If the film is a dir, returns a list of
-                            valid files (including full path).
+        # is_video_file:      Returns true if the film is a file and
+        #                     has a valid video file extension.
 
-        is_duplicate:       Determines if the film is a duplicate,
-                            when compared to an array of existing
-                            films.
+        all_valid_files:    If the film is a dir, returns a list of
+                            all valid FilmFile objects. Invalid files 
+                            are omitted.
+
+        video_files:        A subset of all_valid_files that contains a
+                            list of unique film versions, as determined
+                            by comparing media, resolution, format, and
+                            edition.s
 
         duplicates:         Get a list of duplicates from the cached
                             list of existing films.
@@ -134,87 +120,48 @@ class Film:
 
     def __init__(self, source_path):
         self.source_path = source_path
-        self.title = parser.get_title(source_path)
-        self.year = parser.get_year(source_path)
+
+        # Internal setter for `duplicates`.
+        self._duplicate_files = None
+
+        # Internal setter for `metadata`.
+        self._metadata = None
+
+         # Internal setter for `size`.
+        self._size = None
+
+        # Internal setter for `valid_files`.
+        self._all_valid_files = None
+
+        # Internal setter for (immutable) `original_path`.
+        # Do not change even if the file is renamed, moved, or copied.
+        self._original_path = source_path
+
+        # Initialize remaining properties
+        self.title = parser.get_title(self.all_valid_files[0].source_path)
+        self.year = parser.get_year(self.all_valid_files[0].source_path)
         self.overview = ''
         self.poster_path = None
-        self.edition = parser.get_edition(source_path)
-        self.media = parser.get_media(source_path)
-        self.quality = parser.get_quality(source_path)
-        self.part = parser.get_part(source_path)
+        self.part = parser.get_part(self.all_valid_files[0].source_path)
         self.tmdb_id = None
         self.tmdb_verified = False
         self.matches = []
         self.title_similarity = 0
         self.ignore_reason = None
 
-        # Internal setter for `duplicates`.
-        self._duplicates = None
-
-        # Internal setter for `ext`.
-        # We use this because at times `source_path` is overwritten.
-        self._ext = None
-
-        # Internal setter for `metadata`.
-        self._metadata = None
-
-        # Internal setter for `largest_video`.
-        self._largest_video = None
-
-        # Internal setter for `size`.
-        self._size = None
-
-        # Internal setter for `size_of_largest_video`.
-        self._size_of_largest_video = None
-
-        # Internal setter for `valid_files`.
-        self._valid_files = None
-
-        # Internal setter for (immutable) `original_path`.
-        # Do not change even if the file is renamed, moved, or copied.
-        self._original_path = source_path
-
     @property
     def original_path(self):
         return self._original_path
 
     @property
-    def original_filename(self):
+    def original_basename(self):
         return os.path.basename(os.path.splitext(self.source_path)[0] if os.path.isfile(self.source_path) else self.source_path)
-
-    @property
-    def ext(self):
-        if not self._ext:
-            self._ext = os.path.splitext(self.source_path)[1] if os.path.isfile(self.source_path) else None
-        return self._ext
-
-    @property
-    def metadata(self):
-        if not self._metadata:
-            media_info = MediaInfo.parse(self.largest_video, 
-                library_file=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'libmediainfo.0.dylib'))
-            for track in media_info.tracks:
-                if track.track_type == 'Video':
-                    self._metadata = track
-        return self._metadata
-
-    @property
-    def largest_video(self):
-        if not self._largest_video:
-            self._largest_video = ops.largest_video(self.source_path)
-        return self._largest_video
 
     @property
     def size(self):
         if not self._size:
             self._size = ops.size(self.source_path)
         return self._size
-
-    @property
-    def size_of_largest_video(self):
-        if not self._size_of_largest_video:
-            self._size_of_largest_video = ops.size(self.largest_video)
-        return self._size_of_largest_video
 
     @property
     def title_the(self):
@@ -224,54 +171,95 @@ class Film:
             return self.title
 
     @property
-    def has_valid_ext(self):
-        return ops.fileops.has_valid_ext(self.source_path) if self.is_file else False
-
-    @property
-    def is_video_file(self):
-        return any([self.ext in config.video_exts]) if self.is_file else False
-
-    @property
     def is_tv_show(self):
-        return bool(re.search(r"\bS\d{2}(E\d{2})?\b", self.original_filename, re.I))
+        return bool(re.search(r"\bS\d{2}(E\d{2})?\b", self.original_basename, re.I))
 
     @property
     def is_file(self):
         return os.path.isfile(self.source_path)
 
     @property
-    def is_dir(self):
+    def is_folder(self):
         return os.path.isdir(self.source_path)
 
-    @property
-    def valid_files(self):
-        if self._valid_files is None:
-            self._valid_files = ops.dirops.get_valid_files(self.source_path)
-        return self._valid_files
+    # @property
+    # def is_video_file(self):
+    #     return any([self.all_valid_files[0].ext in config.video_exts]) if self.is_file else False
 
     @property
-    def new_filename(self):
-        """Build a new file name from the specified renaming pattern.
+    def all_valid_files(self) -> ['Film.File']:
+        if self._all_valid_files is None:
+            if self.is_file:
+                self._all_valid_files = [Film.File(self.source_path, self)]
+            else:
+                self._all_valid_files = list(Film.File(path, self) for path in ops.dirops.get_valid_files(self.source_path))
+                self._all_valid_files.sort(key=lambda f: f.size, reverse=True)
+
+        return self._all_valid_files
+
+    @property
+    def video_files(self) -> ['Film.File']:
+        """For files that have already been moved and renamed (i.e., exist on
+        the target filesystem), we need to accomodate configurations supporting 
+        multiple versions of the same file under the same parent folder. 
+        These could be multiple editions of the same film, or different 
+        qualities or media of the same film. In all other cases, this will will be
+        an array of one at index 0 (the main video file)."""
+        
+        return list(filter(lambda f:
+            f.is_video and (f.year is not None or f.resolution is not None or f.media is not None),
+        self.all_valid_files))
+
+    @property
+    def duplicate_files(self) -> ['Film.File']:
+        """An array of duplicate files in existing films.
+
+        Returns:
+            A an array of duplicate films file objects.
+        """
+        # Import duplicates here to avoid circular imports.
+        from fylmlib.duplicates import duplicates
+
+        if self._duplicate_files is None:
+            self._duplicate_files = duplicates.find(self)
+        
+        return self._duplicate_files
+
+    @property
+    def existing_duplicate_files(self) -> ['Film.File']:
+        """An array of duplicate files in existing films that are 
+        verified to exist on the filesystem.
+
+        Returns:
+            A an array of duplicate films file objects.
+        """
+        return list(filter(lambda d: os.path.exists(d.source_path) or os.path.exists(f'{d.source_path}.dup'), self.duplicate_files))
+
+    @property
+    def new_basename(self):
+        """Build a new path name from the specified renaming pattern.
+
+        If using a folder-based file structure, this will be the base
+        folder for all files for this film, and will use the 
+        rename_pattern.folder config. If using file-based structure, 
+        this will derive from rename_pattern.file.
 
         Use regular expressions and a { } templating syntax to construct
         a new filename by mapping available properties to config.rename_pattern.
 
         # Permitted rename pattern objects:
-        # {title}, {title-the}, {year}, {quality}, {edition}, {media}. For
+        # {title}, {title-the}, {year}, {edition}, {quality}, {quality-full}. For
         # using other characters with pattern objects, place chars inside {}
         # e.g. { - edition}. For escaping templating characters, use \{ \},
         # e.g. {|{edition\}}.
 
         Returns:
-            A new filename based on config.rename_pattern.
+            A new new path name based on config.rename_pattern.
         """
-        return formatter.build_new_filename(self)
-
-    def new_filename__ext(self, ext=''):
-        return f'{self.new_filename}{self.ext or ext}'
+        return formatter.build_new_basename(self.video_files[0], 'file' if self.is_file else 'folder')
 
     @property
-    def destination_dir(self):
+    def destination_path(self):
         # If 'rename_only' is enabled, we need to override the configured
         # destination dir with the source dir.
         
@@ -280,29 +268,30 @@ class Film:
             dst = os.path.dirname(self.source_path)
         else:
             try:
-                dst = config.destination_dirs[self.quality] if self.quality else config.destination_dirs['SD']
+                biggest_file = self.all_valid_files[0]
+                dst = config.destination_dirs[biggest_file.resolution] if biggest_file.resolution else config.destination_dirs['SD']
             except KeyError:
                 dst = config.destination_dirs['default']
-        return os.path.normpath(os.path.join(dst, self.new_filename)) if config.use_folders else dst
+        return os.path.normpath(os.path.join(dst, self.new_basename)) if config.use_folders else dst
 
     @property
     def should_ignore(self):
-        if re.search('^_UNPACK_', self.original_filename):
+        if re.search('^_UNPACK_', self.original_basename):
             self.ignore_reason = 'Unpacking'
 
-        elif ops.fileops.contains_ignored_strings(self.original_filename):
+        elif ops.fileops.contains_ignored_strings(self.original_basename):
             self.ignore_reason = 'Ignored string'
 
         elif not os.path.exists(self.source_path):
             self.ignore_reason = 'Path no longer exists'
 
-        elif self.is_file and not self.has_valid_ext:
+        elif self.is_file and not self.all_valid_files[0].has_valid_ext:
             self.ignore_reason = 'Not a valid file extension'
 
         elif self.is_tv_show:
             self.ignore_reason = 'Appears to be a TV show'
 
-        elif self.is_dir and len(self.valid_files) == 0:
+        elif self.is_folder and len(self.all_valid_files) == 0:
             self.ignore_reason = 'No valid files found in this folder'
 
         elif self.title is None:
@@ -311,40 +300,10 @@ class Film:
         elif self.year is None and (config.force_lookup is False or config.tmdb.enabled is False):
             self.ignore_reason = 'Unknown year'
 
-        elif self.size < config.min_filesize * 1024 * 1024 and self.is_video_file:
+        elif self.size < config.min_filesize * 1024 * 1024 and len(self.video_files) > 0:
             self.ignore_reason = f'{formatter.pretty_size(self.size)} is too small'
 
         return self.ignore_reason is not None
-
-    @property
-    def duplicates(self):
-        """Get a list of duplicates from a list of existing films.
-
-        Compare the film objects to an array of existing films in
-        order to determine if any duplicates exist at the destination.
-        Criteria for a duplicate: title, year, and edition must match (case insensitive).
-
-        Returns:
-            A an array of duplicate films.
-        """
-        # Import duplicates here to avoid circular imports.
-        from fylmlib.duplicates import duplicates
-
-        if self._duplicates is None:
-            self._duplicates = duplicates.find(self)
-        return self._duplicates
-
-    @property
-    def is_duplicate(self):
-        """Returns true if the current film is a duplicate of an existing one.
-
-        Compares the current film to a list of existing films and returns true
-        if 1 or more duplicates are found.
-
-        Returns:
-            True if 1 or more duplicates are found, else False.
-        """
-        return len(self.duplicates) > 0
 
     def search_tmdb(self):
         """Performs a TMDb search on the existing film.
@@ -358,7 +317,7 @@ class Film:
         if config.tmdb.enabled is False:
             return
 
-        # Perform the search and save the first 10 results to the matches list. 
+        # Perform the search and save the first 10 sresults to the matches list. 
         # If ID is not None, search by ID.
         self.matches = (tmdb.search(self.tmdb_id) if (self.tmdb_id is not None) else tmdb.search(self.title, self.year))[:10]
         best_match = next(iter(self.matches or []), None)
@@ -392,4 +351,241 @@ class Film:
         # title. Used for rate cases where a film is broken into two parts (looking at
         # you, Dragon Tattoo)
         if not parser.get_part(self.title) and self.part:
-            self.title += ', Part ' + self.part
+            self.title += ', Part ' + self.part    
+
+    class File:
+        """An object that identifies an individual film file and its attributes.
+
+        Using a combination of regular expressions and intelligent
+        algorithms, determine the most likely attributes that
+        pertain to a film.
+
+        Attributes:
+            title:              Title of the file.
+
+            title_the:          Title, The of the file.
+
+            year:               Year of the file.
+
+            edition:            Special edition.
+
+            media:              Original release media, e.g. Bluray, WEBDL, HDTV, None (unknown)
+            
+            resolution:         Original quality of media: SD, 720p, 1080p, or 2160p.
+
+            is_proper:          Bool to indicate whether this version is a proper release.
+
+            parent_film:        Parent film containing the file.
+
+            source_path:        Current source path of file.
+
+            destination_path:   Parent (root) dir where this file will be
+                                moved, based on quality-based sorting defined
+                                in config.destination_dirs.
+
+            original_path:      (Immutable) original path of file.
+
+            original_basename:  Original filename before it was renamed.
+
+            ext:                File extension.
+
+            size:               Size of file, in bytes.
+
+            metadata:           Media metadata derived from libmediainfo
+
+            new_filename:       New filename generated using the defined templating pattern
+                                in config.rename_pattern.file.
+
+            new_foldername:     New foldername generated using the defined templating pattern
+                                in config.rename_pattern.folder.
+
+            new_filename_and_ext: 
+                                Returns the new file name including file extension. Supports
+                                an optinal second param to override ext.
+
+            has_valid_ext:      Returns true if the film is a file and
+                                has a valid file extension.
+
+            is_file:            Returns true if the film was loaded from
+                                a file.
+
+            is_video_file:      Returns true if the film is a file and
+                                has a valid video file extension.
+
+            is_subtitle_file:   Returns ture if the file is a subtitle.
+
+            is_duplicate:       Returns true if the file is a duplicate,
+                                when compared to the list of existing
+                                films and their versions.
+            
+            did_move:           Returns true when the file has been successfully moved.
+        """
+
+        def __init__(self, source_path, parent_film: 'Film'):
+            self.source_path = source_path
+            self.parent_film = parent_film
+            self.did_move = False
+
+            # Internal setter for `ext`.
+            # We use this because at times `source_path` is overwritten.
+            self._ext = None
+
+            # Internal setter for `metadata`.
+            self._metadata = None
+
+            # Internal setter for `size`.
+            self._size = None
+
+            # Internal setter for (immutable) `original_path`.
+            # Do not change even if the file is renamed, moved, or copied.
+            self._original_path = source_path
+
+            # Internal setter for `resolution`.
+            self._resolution = None
+
+            # Initialize remaining properties
+            self.edition = parser.get_edition(self.source_path)
+            self.media = parser.get_media(self.source_path)
+            self.is_proper = parser.is_proper(self.source_path)
+
+        @property
+        def title(self):
+            return self.parent_film.title
+
+        @property
+        def title_the(self):
+            return self.parent_film.title_the
+
+        @property
+        def year(self):
+            return self.parent_film.year
+
+        @property
+        def resolution(self):
+            if self._resolution is None:
+                self._resolution = parser.get_resolution(self.source_path)
+            if self._resolution is None:
+                # Try using the film's actual metadata
+                try:
+                    if self.metadata.width == 1920:
+                        self._resolution = '1080p'
+                    elif self.metadata.width == 1280:
+                        self._resolution = '720p'
+                    elif self.metadata.width == 3840:
+                        self._resolution = '2160p'
+                except Exception:
+                    pass
+            return self._resolution
+            
+        @property
+        def original_path(self):
+            return self._original_path
+
+        @property
+        def original_basename(self):
+            return os.path.basename(os.path.splitext(self.source_path)[0] if os.path.isfile(self.source_path) else self.source_path)
+
+        @property
+        def ext(self):
+            if not self._ext:
+                self._ext = os.path.splitext(self.source_path)[1].replace('.', '') if os.path.isfile(self.source_path) else None
+            return self._ext
+
+        @property
+        def size(self):
+            if not self._size:
+                self._size = ops.size(self.source_path)
+            return self._size
+
+        @property
+        def metadata(self):
+            if not self._metadata and self.is_video:
+                media_info = MediaInfo.parse(self.source_path, 
+                    library_file=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'libmediainfo.0.dylib'))
+                for track in media_info.tracks:
+                    if track.track_type == 'Video':
+                        self._metadata = track
+            return self._metadata
+
+        @property
+        def has_valid_ext(self):
+            return ops.fileops.has_valid_ext(self.source_path) if self.is_file else False
+
+        @property
+        def is_file(self):
+            return os.path.isfile(self.source_path)
+
+        @property
+        def is_video(self):
+            return any([self.ext in [x.replace('.', '') for x in config.video_exts]])
+
+        @property
+        def is_subtitle(self):
+            return self.ext == 'srt' or self.ext == 'sub'
+
+        @property
+        def is_duplicate(self):
+            """Returns true if the current film is a duplicate of an existing one.
+
+            Compares the current film to a list of existing films and returns true
+            if 1 or more duplicates are found.
+
+            Returns:
+                True if 1 or more duplicates are found, else False.
+            """
+            return len(self.parent_film.duplicate_files) > 0
+
+        @property
+        def new_filename(self):
+            """Build a new file name from the specified renaming pattern.
+
+            Use regular expressions and a { } templating syntax to construct
+            a new filename by mapping available properties to config.rename_pattern.
+
+            # Permitted rename pattern objects:
+            # {title}, {title-the}, {year}, {edition}, {quality}, {quality-full}. For
+            # using other characters with pattern objects, place chars inside {}
+            # e.g. { - edition}. For escaping templating characters, use \{ \},
+            # e.g. {|{edition\}}.
+
+            Returns:
+                A new filename based on config.rename_pattern.file, excluding file ext
+            """
+            return formatter.build_new_basename(self, 'file')
+
+        @property
+        def new_foldername(self):
+            """Build a new folder name from the specified renaming pattern.
+
+            This will be the same as new_filename, but deriving itself from 
+            rename_pattern.folder instead.
+
+            Returns:
+                A new foldername based on config.rename_pattern.folder.
+            """
+            return formatter.build_new_basename(self, 'folder')
+
+        @property
+        def new_filename_and_ext(self, ext=''):
+            """Return the new filemname plus ext.
+            Supports an optional override for ext value.
+
+            Returns:
+                A new filename.ext based on new_filename method.
+            """
+            return f'{self.new_filename}.{(self.ext or ext).replace(".", "")}'
+
+        @property
+        def destination_path(self):
+            # If 'rename_only' is enabled, we need to override the configured
+            # destination dir with the source dir.
+            
+            dst = ''
+            if config.rename_only is True:
+                dst = os.path.dirname(self.source_path)
+            else:
+                try:
+                    dst = config.destination_dirs[self.resolution] if self.resolution else config.destination_dirs['SD']
+                except KeyError:
+                    dst = config.destination_dirs['default']
+            return os.path.normpath(os.path.join(dst, self.new_foldername)) if config.use_folders else dst

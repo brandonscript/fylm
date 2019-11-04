@@ -92,9 +92,16 @@ def _setup():
     expected_no_lookup = make_result.expected_no_lookup
     ignored = make_result.ignored
 
+    # Enable debugging
+    config.debug = False
+
     # Set dirs
     config.source_dirs = [films_src_path]
     config.destination_dirs = films_dst_paths
+
+    # Set default rename mask
+    fylm.config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
+    fylm.config.rename_pattern.folder = r'{title} {(year)}'
 
     # Load films and filter them into valid films.
     films = ops.dirops.get_new_films([films_src_path])
@@ -157,9 +164,15 @@ def moved_films():
     ))))
 
 def expected_path(expected, folder=True):
-    quality = parser.get_quality(expected)
-    return os.path.join(config.destination_dirs[quality or 'SD'], os.path.splitext(expected)[0] if folder is True else '', expected)
+    # Commenting this out because we would be introducing tests dependent on core functionality
+    #   from fylmlib.film import Film
+    #   film = Film(expected)
+    #   return os.path.join(config.destination_dirs[film.resolution or 'SD'], film.new_foldername if folder is True else '', expected)
+    # Tests should be isolated from app functionality
+    resolution = parser.get_resolution(expected)
+    return os.path.join(config.destination_dirs[resolution or 'SD'], expected if folder is True else os.path.basename(expected))
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):
+    return
     cleanup_all()

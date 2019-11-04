@@ -54,13 +54,15 @@ class parser:
         # Ensure source_path is a str
         source_path = str(source_path)
 
-        # Create a title object based on the name of the file or active folder.
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
 
-        title = os.path.basename(source_path)
+        # Determine whether to use the file or its containing folder
+        # to determine the title by parsing for year and resolution
+        title = folder if cls.get_year(folder) is not None or cls.get_resolution(folder) is not None else file
 
-        # If the film is a file, remove the extension.
-        if os.path.isfile(source_path):
-            title = os.path.splitext(title)[0]
+        # Remove the file extension.
+        title = os.path.splitext(title)[0]
 
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
@@ -77,7 +79,7 @@ class parser:
         # Use the 'strip_from_title' regular expression to replace unwanted
         # characters in a title with a space.
         title = re.sub(patterns.strip_from_title, ' ', title)
-
+        
         # If the title contains a known edition, strip it from the title. E.g.,
         # if we have Dinosaur.Special.Edition, we already know the edition, and
         # we don't need it to appear, duplicated, in the title. Because
@@ -105,6 +107,7 @@ class parser:
         # Remove extra whitespace from the edges of the title and remove repeating
         # whitespace.
         title = formatter.strip_extra_whitespace(title.strip())
+
         return title
 
     @classmethod
@@ -126,38 +129,18 @@ class parser:
         # Ensure source_path is a str
         source_path = str(source_path)
 
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and
         # no one will use python anymore). Also convert the matches iterator
         # to a list.
-        matches = list(re.finditer(patterns.year, os.path.basename(source_path)))
+        matches = list(re.finditer(patterns.year, f'{folder}/{file}'))
 
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
         return int(matches[-1].group('year')) if matches else None
-
-    @classmethod
-    def get_media(cls, source_path):
-        """Get media from full path of file or folder.
-
-        Use regular expressions to identity the original media of the file.
-
-        Args:
-            source_path: (str, utf-8) full path of file or folder.
-
-        Returns:
-            A string representing the original media format, or None, if no
-            match is found.
-        """
-        match = re.search(patterns.media, os.path.basename(source_path))
-        if match and match.group('bluray'):
-            return "BluRay"
-        elif match and match.group('web'):
-            return "WEB-DL"
-        elif match and match.group('hdtv'):
-            return "HDTV"
-        else:
-            return None
 
     @classmethod
     def get_edition(cls, source_path):
@@ -174,16 +157,19 @@ class parser:
             A corrected string representing the film's edition, or None.
         """
 
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
         # Because _edition_map returns a (key, value) tuple, we need to
         # return the second value in the tuple which represents the corrected
         # string value of the edition.
-        return cls._edition_map(os.path.basename(source_path))[1] or None
+        return cls._edition_map(f'{folder}/{file}')[1] or None
 
     @classmethod
-    def get_quality(cls, source_path):
-        """Get quality (resolution) from full path of file or folder.
+    def get_resolution(cls, source_path):
+        """Get resolution from full path of file or folder.
 
-        Use a regular expression to retrieve release quality from the source path
+        Use a regular expression to retrieve release resolutions from the source path
         (e.g. 720p, 1080p, or 2160p).
 
         Args:
@@ -193,16 +179,69 @@ class parser:
             A corrected string representing the film's edition, or None.
         """
 
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
         # Search for any of the known qualities.
-        match = re.search(patterns.quality, os.path.basename(source_path))
+        match = re.search(patterns.resolution, f'{folder}/{file}')
 
         # If a match exists, convert it to lowercase.
-        quality = match.group('quality').lower() if match else None
+        resolution = match.group('resolution').lower() if match else None
 
-        # If the quality doesn't end in p, append p.
-        if quality is not None and 'p' not in quality:
-            quality += 'p'
-        return quality
+        # If the resolution doesn't end in p, append p.
+        if resolution is not None and 'p' not in resolution:
+            resolution += 'p'
+            
+        return resolution
+
+    @classmethod
+    def get_media(cls, source_path):
+        """Get media from full path of file or folder.
+
+        Use regular expressions to identity the original media of the file.
+
+        Args:
+            source_path: (str, utf-8) full path of file or folder.
+
+        Returns:
+            A string representing the original media format, or None, if no
+            match is found.
+        """
+
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
+        match = re.search(patterns.media, f'{folder}/{file}')
+        if match and match.group('bluray'):
+            return "Bluray"
+        elif match and match.group('web'):
+            return "WEBDL"
+        elif match and match.group('dvd'):
+            return "DVD"
+        elif match and match.group('hdtv'):
+            return "HDTV"
+        elif match and match.group('sdtv'):
+            return "SDTV"
+        else:
+            return None
+
+    @classmethod
+    def is_proper(cls, source_path):
+        """Determine whether the media is a proper rip.
+
+        Use regular expressions to identity whether the file is a proper or not.
+
+        Args:
+            source_path: (str, utf-8) full path of file or folder.
+
+        Returns:
+            A bool representing the proper state of the media.
+        """
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
+        match = re.search(patterns.proper, f'{folder}/{file}')
+        return (match and match.group('proper')) or False
 
     @classmethod
     def get_part(cls, source_path):
@@ -218,8 +257,11 @@ class parser:
             match is found.
         """
 
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
         # Search for a matching part condition
-        match = re.search(patterns.part, os.path.basename(source_path))
+        match = re.search(patterns.part, f'{folder}/{file}')
         
         # If a match exists, convert it to lowercase.
         return match.group('part').upper() if match else None
@@ -240,7 +282,8 @@ class parser:
             corrected counterpart, or (None, None).
         """
 
-        filename = os.path.basename(source_path)
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
 
         # Iterate over the edition map.
         for key, value in config.edition_map:
@@ -250,7 +293,7 @@ class parser:
             
             # Because this map is in a specific order, of we find a suitable match, we
             # want to return it right away.
-            result = re.search(rx, filename)
+            result = re.search(rx, f'{folder}/{file}')
             if result:
                 # Return a tuple containing the matching compiled expression and its
                 # corrected value after performing a capture group replace, then break 

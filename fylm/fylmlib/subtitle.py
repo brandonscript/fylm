@@ -20,7 +20,7 @@ name or content, by loading a ISO-639-1 language.json map file.
 
     Subtitle: the main class exported by this module.
 
-Sample subtitle fileames:
+Sample subtitle filenames:
     The.Planet.Beyond.2010.1080p.BluRay.x264-Group.bulgarian.srt
     The.Planet.Beyond.2010.1080p.BluRay.x264-Group.croatian.srt
     The.Planet.Beyond.2010.1080p.BluRay.x264-Group.czech.srt
@@ -123,18 +123,3 @@ class Subtitle:
 
         # if self.language is None:
         return f'{filename}.{self.captured}{ext}' if self.captured else None
-
-    @classmethod
-    def is_subtitle(cls, file):
-        """Determine if a file is a subtitle file.
-
-        Args:
-            file: (str, utf-8) File to determine whether or not it is a subtitle file.
-        Returns:
-            True if the file is a subtitle file (.srt), else False.
-        """
-        try:
-            return os.path.splitext(file)[1].lower() == '.srt'
-        except IOError:
-            # Return false if the file does not exist
-            return False

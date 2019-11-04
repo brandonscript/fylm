@@ -17,12 +17,15 @@ destination_dirs:
   default: /Volumes/Films/#new
 
 # Template pattern for renaming files.
-# Valid template objects: {title}, {title-the}, {year}, {quality}, {edition}, {media}
+# Valid template objects: {title}, {title-the}, {year}, {edition}, {quality}, {quality-full}
 # If you want to add characters with pattern objects, place them inside {} e.g. { - edition}.
 # For escaping templating delimiters, use \{ \}, e.g. {|{edition\}}.
-rename_pattern: '{title} {[edition]} {(year)} {quality}'
+rename_pattern: 
+  file: '{title} {(year)} {[edition]} {quality-full}'
+  folder: '{title} {(year)}'
 
-# Sort files into identically named subfolders when moving them, e.g. /Volumes/Films/HD/The Last Starfighter (1984) 1080p/{files go here}.
+# Sort files into individual subfolders when moving them, e.g. /Volumes/Films/HD/The Last Starfighter (1984)/{files go here}.
+# If set to false, the folder rename_pattern above is ignored.
 use_folders: true
 
 # Remove unwanted files from source folders after the important files have been copied.
@@ -49,6 +52,10 @@ test: false
 # --debug
 # Write advanced debugging details to the console.
 debug: false
+
+# Show runtime errors in the console
+# TODO: Convert this to error_level
+errors: true
 
 # --no-console
 # Do not write any information to console or stdout.
@@ -108,6 +115,8 @@ duplicate_replacing:
 
   # Replace duplicates of identical quality if the existing film is smaller.
   replace_smaller: true
+
+  # TODO: ignore_edition
 
   # Replace duplicates of a specific quality with a better quality, regardless of size.
   replace_quality: 
