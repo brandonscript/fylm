@@ -141,7 +141,6 @@ class processor:
         global _move_queue
 
         # Enumerate the move/copy queue and execute
-        film: Film
         for film, queued_ops in _move_queue:
 
             if config.interactive is True:
@@ -234,7 +233,6 @@ class processor:
         move_constructor = (film, [])
 
         # Enumerate valid files.
-        file: Film.File
         for file in film.all_valid_files:
             # Generate a new destination based on the film's title, and alter it
             # depending on whether the file is a subtitle, or if it needs to be

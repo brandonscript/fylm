@@ -224,10 +224,7 @@ class console(object):
             console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found:").print()
 
             if config.interactive is False:
-
-                v: Film.File
                 for v in film.video_files:
-                    d: Film.File
                     for d in film.existing_duplicate_files:
         
                         size_diff = formatter.pretty_size_diff(v.source_path, d.source_path)
