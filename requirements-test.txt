@@ -1,2 +1,2 @@
 pytest>=5.0
-future-fstrings==1.2.0
+future-fstrings>=1.2.0

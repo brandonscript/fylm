@@ -59,7 +59,7 @@ class TestTemplates(object):
         'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016).mkv')
 
         config.rename_pattern.file = r'{title} {(year)}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -88,7 +88,7 @@ class TestTemplates(object):
         'Last Starfighter, The (1984)/Last Starfighter, The (1984).mkv')
 
         config.rename_pattern.file = r'{title-the} {(year)}'
-        config.rename_pattern.folder: r'{title-the} {(year)}'
+        config.rename_pattern.folder = r'{title-the} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -117,7 +117,7 @@ class TestTemplates(object):
         'The Last Starfighter (1984)/Last Starfighter (1984) - 25th Anniversary Edition.mkv')
 
         config.rename_pattern.file = r'{title} {(year)}{ - edition}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -146,7 +146,7 @@ class TestTemplates(object):
         'The Last Starfighter (1984)/Last Starfighter (1984) [25th Anniversary Edition].mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -175,7 +175,7 @@ class TestTemplates(object):
         'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -204,7 +204,7 @@ class TestTemplates(object):
         'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -233,7 +233,7 @@ class TestTemplates(object):
         'Rogue One A Star Wars Story (2016) Bluray-1080p Proper/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
-        config.rename_pattern.folder: r'{title} {(year)} {[edition]} {quality-full}'
+        config.rename_pattern.folder = r'{title} {(year)} {[edition]} {quality-full}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -262,7 +262,7 @@ class TestTemplates(object):
         'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) 1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -291,7 +291,7 @@ class TestTemplates(object):
         'The Last Starfighter (1984)/Last Starfighter (1984) [25th Anniversary Edition] Bluray-1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]}'
-        config.rename_pattern.folder: r'{title} {(year)}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 

@@ -31,7 +31,6 @@ import copy
 import time
 import warnings
 warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
-from typing import List
 
 import tmdbsimple as tmdb
 from fuzzywuzzy import fuzz
@@ -155,14 +154,14 @@ class TmdbResult:
         return compare.title_similarity(self.title, self.proposed_title)
 
     @property
-    def year_deviation(self):
+    def year_deviation(self) -> int:
         """Compare parsed year to TMDb release year.
 
         Returns:
             An absolute integer value representing the difference between
             the parsed year and the TMDb result's release year.
         """
-        return compare.year_deviation(self.year, self.proposed_year)
+        return int(compare.year_deviation(self.year, self.proposed_year))
 
     def is_instant_match(self, i):
         """Determine if a search result is an instant match.
@@ -271,7 +270,7 @@ def search(query, year=None):
     console.debug(f'\nInitializing search for "{query}" / {year}\n')
 
     # Initialize a array to store potential matches.
-    potential_matches: List[TmdbResult] = []
+    potential_matches = []
 
     # Initialize a counter to track the number of results checked.
     count = 0
@@ -321,7 +320,7 @@ def search(query, year=None):
             (x.year_deviation == 0 
                 and (x.vote_count + x.popularity) >= 100
                 and x.title_similarity == config.tmdb.min_title_similarity / 1.4) or
-            (x.year_deviation <= config.tmdb.max_year_diff 
+            (int(x.year_deviation) <= config.tmdb.max_year_diff 
                 and x.popularity >= config.tmdb.min_popularity
                 and x.title_similarity == config.tmdb.min_title_similarity) or
             (x.year_deviation <= 2

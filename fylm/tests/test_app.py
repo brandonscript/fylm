@@ -64,6 +64,8 @@ class TestApp(object):
         assert(fylm.config.use_folders is True)
         assert(fylm.config.tmdb.enabled is True)
 
+        # fylm.config.debug = True
+
         # Execute
         fylm.main()
 

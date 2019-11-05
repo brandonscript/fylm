@@ -50,7 +50,7 @@ def title_similarity(a, b):
     b = ' '.join(re.sub(patterns.strip_when_comparing, ' ', b or '').lower().split())    
     return fuzz.token_sort_ratio(a, b) / 100
 
-def year_deviation(year, proposed_year):
+def year_deviation(year, proposed_year) -> int:
     """Calculate the difference between the expected year of a film to a
     counterpart release year retrieved from TMDb.
 
@@ -66,7 +66,7 @@ def year_deviation(year, proposed_year):
     if proposed_year is None or year is None: return 0
 
     # Calculate the absolute difference in years and return the value.
-    return abs(year - proposed_year)
+    return int(abs(year - proposed_year))
 
 def initial_chars_match(a, b, chars):
     """Determine if the first n characters of two strings are identical (case
