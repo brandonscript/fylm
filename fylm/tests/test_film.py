@@ -138,9 +138,12 @@ class TestFilm(object):
         # Check file extensions to verify whether source is a file or a dir
         for film in conftest.films:
             if film.is_file:
-                assert(film.ext is not None and [film.ext in config.video_exts + config.extra_exts])
-            elif film.is_file:
-                assert(film.ext == None)
+                assert(len(film.video_files) == 1)
+                assert(len(film.all_valid_files) == 1)
+                assert(film.all_valid_files[0].ext is not None and [film.all_valid_files[0].ext in config.video_exts + config.extra_exts])
+                assert(film.is_folder == False)
+            elif film.is_folder:
+                assert(film.is_file == False)
 
     def test_should_ignore(self):
 
