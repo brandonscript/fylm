@@ -88,16 +88,15 @@ class parser:
         if cls._edition_map(source_path)[0] is not None:
             title = re.sub(cls._edition_map(source_path)[0], '', title)
 
+        # Strip all resolution and media tags from the title.
+        title = re.sub(patterns.media, '', title)
+        title = re.sub(patterns.resolution, '', title)
+
         # Typical naming patterns place the year as a delimiter between the title
         # and the rest of the file. Therefore we can assume we only care about
         # the first part of the string, and so we split on the year value, and keep
         # only the left-hand portion.
         title = title.split(str(cls.get_year(source_path)))[0]
-
-        # If any of the standard quality tags still remain in the title after
-        # splitting on "year", remove them.
-        for q in ['480p', '720p', '1080p', '2160p', 'HDTV']:
-            title = formatter.replace_insensitive(q, '', title)
 
         # Add back in . to titles or strings we know need to to keep periods.
         # Looking at you, S.W.A.T and After.Life.
