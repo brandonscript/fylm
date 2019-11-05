@@ -22,6 +22,7 @@ from builtins import *
 
 import os
 import itertools
+from typing import List
 
 import fylmlib.config as config
 from fylmlib.console import console
@@ -57,7 +58,7 @@ class duplicates:
             console.debug('Duplicate checking is disabled, skipping.')
             return []
 
-        existing_films: [Film] = ops.dirops.get_existing_films(config.destination_dirs)
+        existing_films: List[Film] = ops.dirops.get_existing_films(config.destination_dirs)
 
         console.debug(f'Checking list of duplicates for "{film.new_basename}"')
         # Filter the existing_films cache array to titles beginning with the first letter of the

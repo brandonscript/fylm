@@ -31,6 +31,7 @@ import copy
 import time
 import warnings
 warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
+from typing import List
 
 import tmdbsimple as tmdb
 from fuzzywuzzy import fuzz
@@ -270,7 +271,7 @@ def search(query, year=None):
     console.debug(f'\nInitializing search for "{query}" / {year}\n')
 
     # Initialize a array to store potential matches.
-    potential_matches: [TmdbResult] = []
+    potential_matches: List[TmdbResult] = []
 
     # Initialize a counter to track the number of results checked.
     count = 0

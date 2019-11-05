@@ -24,6 +24,7 @@ from __future__ import unicode_literals, print_function
 from builtins import *
 
 import os
+from typing import List
 
 from fylmlib.film import Film
 from fylmlib.console import console
@@ -45,7 +46,7 @@ class processor:
     """
 
     @classmethod
-    def iterate(cls, films: [Film]):
+    def iterate(cls, films: List[Film]):
         """Main entry point for processor, iterates a list of films.
 
         Args:
