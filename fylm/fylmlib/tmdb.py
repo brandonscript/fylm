@@ -304,10 +304,22 @@ def search(query, year=None):
 
     # If no instant match was found, we need to figure out which are the most likely matches
 
+    # Debug helper to show all results after disqualified ones have been removed:
+    # console.debug("\nAll matches found:")
+    # for r in potential_matches:
+    #     console.debug(f"   > {r.proposed_title}" \
+    #                   f" ({r.proposed_year}), " \
+    #                   f"   T_{r.title_similarity}, " \
+    #                   f"Y_{r.year_deviation}, " \
+    #                   f"P_{(r.vote_count + r.popularity)}")
+
     # Strip duplicate results and remove results that don't match the configured
     # match threshold:
     filtered_results = list(filter(
         lambda x: 
+            (x.year_deviation == 0 
+                and (x.vote_count + x.popularity) >= 100
+                and x.title_similarity == config.tmdb.min_title_similarity / 1.4) or
             (x.year_deviation <= config.tmdb.max_year_diff 
                 and x.popularity >= config.tmdb.min_popularity
                 and x.title_similarity == config.tmdb.min_title_similarity) or
@@ -329,6 +341,7 @@ def search(query, year=None):
     ))
 
     # Debug helper to show all results after disqualified ones have been removed:
+    console.debug("\nFiltered matches found:")
     for r in sorted_results:
         console.debug(f"   > {r.proposed_title}" \
                       f" ({r.proposed_year}), " \
