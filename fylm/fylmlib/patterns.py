@@ -28,12 +28,13 @@ import sys
 # Compiled pattern that matches a 4-digit year between 1921 and 2159.
 # We ignore 2160 because it would conflict with 2160p, and we also
 # ensure that it isn't at the beginning of the string and that it's
-# preceded by a non-word char. (Looking at you, BT2020). We also ignore
-# 1920 because of 1920x1080 resolution.
-year = re.compile(r'\W+(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)')
+# preceded by a word boundary. (Looking at you, BT2020). We also ignore
+# 1920 because of 1920x1080 resolution. It also cannot be at the start of
+# the input string or after a /.
+year = re.compile(r'[^\/]+\b(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)')
 
 # Compiled pattern that matches 720p, 1080p, or 2160p, case insensitive.
-resolution = re.compile(r'(?P<resolution>(?:72|108|216)0p?)', re.I)
+resolution = re.compile(r'\b(?P<resolution>(?:(?:72|108|216)0p?)|4K)', re.I)
 
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
 media = re.compile(r'\b(?:(?P<bluray>blu-?ray|bdremux|bdrip)|(?P<web>web-?dl|WEBRip|amzn|nf|hulu)|(?P<hdtv>hdtv)|(?P<dvd>dvd)|(?P<sdtv>sdtv))\b', re.I)
