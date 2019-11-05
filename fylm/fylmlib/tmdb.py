@@ -312,7 +312,9 @@ def search(query, year=None):
                 and x.popularity >= config.tmdb.min_popularity
                 and x.title_similarity == config.tmdb.min_title_similarity) or
             (x.year_deviation <= 2
-                and x.title_similarity == 1.0) or
+                and x.title_similarity >= 1.0) or
+            (x.year_deviation <= 1
+                and x.title_similarity >= 0.8) or
             (x.year_deviation == 0
                 and x.title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
         set(potential_matches)
