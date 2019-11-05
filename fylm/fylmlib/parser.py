@@ -115,7 +115,8 @@ class parser:
 
         Use regular expressions to identity a year value between 1910 and 2159,
         getting the right-most match if there is more than one year found (looking
-        at you, 2001: A Space Odyssey).
+        at you, 2001: A Space Odyssey) and not at the start of the input string
+        or filename.
 
         Args:
             source_path: (str, utf-8) full path of file or folder.
@@ -187,6 +188,10 @@ class parser:
         # If a match exists, convert it to lowercase.
         resolution = match.group('resolution').lower() if match else None
 
+        # Manual fix for 4K files
+        if resolution == '4k':
+            resolution = '2160p'
+
         # If the resolution doesn't end in p, append p.
         if resolution is not None and 'p' not in resolution:
             resolution += 'p'
@@ -225,7 +230,7 @@ class parser:
             return None
 
     @classmethod
-    def is_proper(cls, source_path):
+    def is_proper(cls, source_path) -> bool:
         """Determine whether the media is a proper rip.
 
         Use regular expressions to identity whether the file is a proper or not.
@@ -240,7 +245,7 @@ class parser:
         file = os.path.basename(source_path)
 
         match = re.search(patterns.proper, f'{folder}/{file}')
-        return (match and match.group('proper')) or False
+        return True if (match and match.group('proper')) else False
 
     @classmethod
     def get_part(cls, source_path):
