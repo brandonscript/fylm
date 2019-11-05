@@ -270,7 +270,7 @@ def search(query, year=None):
     console.debug(f'\nInitializing search for "{query}" / {year}\n')
 
     # Initialize a array to store potential matches.
-    potential_matches = []
+    potential_matches: [TmdbResult] = []
 
     # Initialize a counter to track the number of results checked.
     count = 0
@@ -302,42 +302,39 @@ def search(query, year=None):
             else: 
                 potential_matches.append(result)
 
-    # Debug helper:
-    # print([m.proposed_title for m in potential_matches])
+    # If no instant match was found, we need to figure out which are the most likely matches
 
     # Strip duplicate results and remove results that don't match the configured
     # match threshold:
-
-    potential_matches = filter(
+    filtered_results = list(filter(
         lambda x: 
-            (x.year_deviation <= config.tmdb.max_year_diff
-            and x.popularity >= config.tmdb.min_popularity
-            and x.title_similarity >= config.tmdb.min_title_similarity) or
+            (x.year_deviation <= config.tmdb.max_year_diff 
+                and x.popularity >= config.tmdb.min_popularity
+                and x.title_similarity == config.tmdb.min_title_similarity) or
+            (x.year_deviation <= 2
+                and x.title_similarity == 1.0) or
             (x.year_deviation == 0
-            and x.popularity >= config.tmdb.min_popularity / 1.5
-            and x.title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
-        list(set(potential_matches)
+                and x.title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
+        set(potential_matches)
     ))
 
-    # If no instant match was found, sort the results so we can return the most
-    # likely match. Sort criteria:
-    #   - prefer highest title similarity second (a 0.7 is better than a 0.4)
-    #   - then prefer lowest year deviation first (0 is better than 1)
-    sorted_results = sorted(potential_matches, 
-        key=lambda x: (-(x.vote_count * x.popularity), -x.title_similarity, x.year_deviation)
-    )
+    # Sort the results by:
+    #   - Sort by highest popularity rank first
+    #   - Then prefer a matching title similarity first (a 0.7 is better than a 0.4)
+    #   - Then prefer lowest year deviation (0 is better than 1)
+    sorted_results = list(sorted(filtered_results, 
+        key=lambda x: (-(x.vote_count + x.popularity), -x.title_similarity, x.year_deviation)
+    ))
 
-    # If debugging, print the possible matches in the correct sort order to the
-    # console.
-    console.debug(f'{len(sorted_results)} possible matches, sorted:')
+    # Debug helper to show all results after disqualified ones have been removed:
     for r in sorted_results:
-        console.debug(f"   - '{r.proposed_title}'," \
-                      f" '{r.proposed_year}'," \
-                      f" {r.title}," \
-                      f" {r.title_similarity}" \
-                      f" {r.year_deviation}")
+        console.debug(f"   > {r.proposed_title}" \
+                      f" ({r.proposed_year}), " \
+                      f"   T_{r.title_similarity}, " \
+                      f"Y_{r.year_deviation}, " \
+                      f"P_{(r.vote_count + r.popularity)}")
 
-    # Return the sorted list
+    # Return the sorted and filtered list
     return sorted_results
 
 def _id_search(tmdb_id):
