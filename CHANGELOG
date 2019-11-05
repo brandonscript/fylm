@@ -2,6 +2,13 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.0-beta] 2019-11-05
+- New support for files and folders using different naming template
+- New support for multiple copies of a film in the same parent folder
+- Improved duplicate checking and stability for duplicate removal
+- Empty duplicate folders are cleaned up
+- Adjustments to improve accuracy of matching heuristic 
+
 ## [0.2.7-beta] 2019-07-07
 - Fix Plex not updating on completion
 - Fix progress bar not formatting correctly

@@ -41,7 +41,7 @@ with open('requirements-test.txt') as f:
 setup(
     name='Fylm',
 
-    version='0.2.7-beta',
+    version='0.3.0-beta',
 
     description='A automated command line app for organizing your film media.',
     long_description=long_description,
@@ -75,7 +75,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
 
         # Supported Python versions.
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 
     # List of runtime dependencies. These will be installed by pip when
