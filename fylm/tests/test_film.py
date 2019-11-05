@@ -22,6 +22,7 @@ import os
 import pytest
 
 import fylmlib.config as config
+import fylmlib.patterns as patterns
 import fylm
 import conftest
 
@@ -47,7 +48,8 @@ class TestFilm(object):
 
             matching_tests = list(filter(lambda t: (t.expected_title == film.title and len(t.acceptable_names) > 0), conftest.all_test_films))
 
-            print(f"Looking up '{film.title}' ({film.year})")
+            # Debugging helper
+            # print(f"Looking up '{film.title}' ({film.year}) for '{film.original_basename}'")
 
             # Ensure that at least one matching test is found for the film
             assert(len(matching_tests) > 0)
@@ -138,6 +140,7 @@ class TestFilm(object):
         # Check file extensions to verify whether source is a file or a dir
         for film in conftest.films:
             if film.is_file:
+                print([x.ext for x in film.all_valid_files])
                 assert(len(film.video_files) == 1)
                 assert(len(film.all_valid_files) == 1)
                 assert(film.all_valid_files[0].ext is not None and [film.all_valid_files[0].ext in config.video_exts + config.extra_exts])
