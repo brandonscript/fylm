@@ -138,11 +138,18 @@ class Film:
         self._original_path = source_path
 
         # Initialize remaining properties
-        self.title = parser.get_title(self.all_valid_files[0].source_path)
-        self.year = parser.get_year(self.all_valid_files[0].source_path)
+        
+        try:
+            name_path = self.all_valid_files[0].source_path
+        except IndexError:
+            name_path = source_path
+
+        # Initialize remaining properties
+        self.title = parser.get_title(name_path)
+        self.year = parser.get_year(name_path)
         self.overview = ''
         self.poster_path = None
-        self.part = parser.get_part(self.all_valid_files[0].source_path)
+        self.part = parser.get_part(name_path)
         self.tmdb_id = None
         self.tmdb_verified = False
         self.matches = []
