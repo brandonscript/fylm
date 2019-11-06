@@ -25,15 +25,11 @@ from builtins import *
 
 import re
 import copy
-from typing import TYPE_CHECKING
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 
-if TYPE_CHECKING:
-    from fylmlib.film import Film
-
-def build_new_basename(file: 'Film.File', type="file"):
+def build_new_basename(file, type="file"):
     """Build a new file or folder name from the specified renaming pattern.
 
     Using regular expressions and a { } templating syntax, construct

@@ -31,7 +31,6 @@ import sys
 import itertools
 
 from colors import color
-from typing import TYPE_CHECKING
 
 from fylmlib.pyfancy import *
 import fylmlib.config as config
@@ -40,9 +39,6 @@ from fylmlib.ansi import ansi
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
-
-if TYPE_CHECKING:
-    from fylmlib.film import Film
 
 class console(object):
     """Main class for console output methods.
