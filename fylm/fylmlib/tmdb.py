@@ -137,7 +137,7 @@ class TmdbResult:
             "popularity": raw_result['popularity'],
             "vote_count": raw_result['vote_count'],
             "proposed_title": raw_result['title'],
-            "proposed_year": int(raw_result['release_date'][:4]) if len(raw_result['release_date']) > 0 else 0
+            "proposed_year": 0 if 'release_date' not in raw_result or len(raw_result['release_date']) == 0 else int(raw_result['release_date'][:4])
         }.items():
             setattr(self, key, value)
 
