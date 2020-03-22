@@ -33,7 +33,7 @@ import warnings
 warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
 import tmdbsimple as tmdb
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 
 import fylmlib.config as config
 from fylmlib.console import console

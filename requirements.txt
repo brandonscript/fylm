@@ -8,4 +8,4 @@ PlexAPI
 requests>=2.20.0
 pymediainfo>=4.0
 future-fstrings>=1.2.0
-fuzzywuzzy>=0.17.0
+rapidfuzz>=0.2.0
