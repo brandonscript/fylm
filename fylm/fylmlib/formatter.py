@@ -245,9 +245,8 @@ def strip_illegal_chars(s):
     s = re.sub(r'(?<=\S)[' + patterns.illegal_chars + r'](?=\S)', '-', s)
 
     # If it terminates another word, e.g. Mission: Impossible, we replace it
-    # and any surrounding spaces with a single space instead. This will later
-    # be corrected when strip_extra_whitespace is called.
-    s = re.sub(r'\s?[' + patterns.illegal_chars + r']\s?', ' ', s)
+    # with space-dash-space. Duplicate whitespace will be removed later.
+    s = re.sub(r'\s?[' + patterns.illegal_chars + r']\s?', ' - ', s)
     return s
 
 def strip_extra_whitespace(s):

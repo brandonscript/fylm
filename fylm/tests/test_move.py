@@ -33,7 +33,7 @@ src = os.path.join(
 
 dst = os.path.join(
     conftest.films_dst_paths['1080p'], 
-    'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
+    'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
 expected_size = 7354 * make.mb_t
 

@@ -50,10 +50,10 @@ raw_files = {
 }
 
 clean_files = {
-    '2160p': 'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) WEBDL-2160p.mp4',
-    '1080p': 'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p.mkv',
-    '720p': 'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-720p.mkv',
-    'SD': 'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016).avi',
+    '2160p': 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) WEBDL-2160p.mp4',
+    '1080p': 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p.mkv',
+    '720p': 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-720p.mkv',
+    'SD': 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016).avi',
     'non-dup': 'Mission Impossible - Rogue Nation (2015)/Mission Impossible - Rogue Nation (2015) Bluray-1080p.mkv'
 }
 
@@ -365,7 +365,7 @@ class TestDuplicates(object):
         sm_size = 11213 * make.mb_t
 
         proper = 'Rogue.One.A.Star.Wars.Story.2016.1080p.PROPER.BluRay.DTS.x264-group.mkv'
-        proper_moved = 'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv'
+        proper_moved = 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv'
         
         make.make_mock_file(os.path.join(conftest.films_src_path, proper), sm_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), big_size)

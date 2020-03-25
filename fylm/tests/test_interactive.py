@@ -46,10 +46,10 @@ class TestInteractive(object):
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
 
-        fylm.config.mock_input = ['N', 'Bridget Jones The Edge of Reason', 1]
+        fylm.config.mock_input = ['N', 'Bridget Jones - The Edge of Reason', 1]
 
-        f = os.path.join(conftest.films_src_path, 'Bridget Jones The Edge of Reason 1080p/Bridget Jones The Edge of Reason Bluray-1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Bridget Jones The Edge of Reason (2004)/Bridget Jones The Edge of Reason (2004) Bluray-1080p.mkv')
+        f = os.path.join(conftest.films_src_path, 'Bridget Jones - The Edge of Reason 1080p/Bridget Jones - The Edge of Reason Bluray-1080p.mkv')
+        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Bridget Jones - The Edge of Reason (2004)/Bridget Jones - The Edge of Reason (2004) Bluray-1080p.mkv')
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()

@@ -47,9 +47,9 @@ part = re.compile(r'\bpart\W?(?P<part>(?:(\d+|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0
 
 # Compiled pattern that matches all unwanted characters that should be
 # stripped from a title:
-#   - From entire title: . (period) _ (underscore) - (hyphen) and {}[]() (brackets/braces)
+#   - From entire title: . (period) _ (underscore) and {}[]() (brackets/braces)
 #   - From the end of a string: non-word chars and whitespace
-strip_from_title = re.compile(r'([\._·\-\[\]{}\(\)]|[\s\W]+$)')
+strip_from_title = re.compile(r'([\._·\[\]{}\(\)]|[\s\W]+$)')
 
 # Uncompiled pattern that matches illegal OS chars. Must remain uncompiled here.
 illegal_chars = r'/?<>\:*|"' if (sys.platform == "win32") else r':'

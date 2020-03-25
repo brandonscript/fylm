@@ -14,17 +14,8 @@
         {
             "files": [
                 {
-                    "expect": null,
-                    "filename": "2001 A Space Odyssey.BluRay.1080p.DTS.x264-CHD.mkv"
-                }
-            ],
-            "title": "2001: A Space Odyssey",
-            "tmdb_id": 62
-        },
-        {
-            "files": [
-                {
-                    "expect": "2001 A Space Odyssey (1968)/2001 A Space Odyssey (1968) Bluray-1080p.mkv",
+                    "expect": "2001 - A Space Odyssey (1968)/2001 - A Space Odyssey (1968) Bluray-1080p.mkv",
+                    "expect_no_lookup": "2001 A Space Odyssey (1968)/2001 A Space Odyssey (1968) Bluray-1080p.mkv",
                     "filename": "2001.A.Space.odyssey.1968.1080p.BluRay.x264.anoXmous.mkv"
                 }
             ],
@@ -79,7 +70,8 @@
             "dir": "An.Inconvenient.Sequel.Truth.to.Power.2017.1080p.BluRay.x264-BRMP",
             "files": [
                 {
-                    "expect": "An Inconvenient Sequel Truth to Power (2017)/An Inconvenient Sequel Truth to Power (2017) Bluray-1080p.mkv",
+                    "expect": "An Inconvenient Sequel - Truth to Power (2017)/An Inconvenient Sequel - Truth to Power (2017) Bluray-1080p.mkv",
+                    "expect_no_lookup": "An Inconvenient Sequel Truth to Power (2017)/An Inconvenient Sequel Truth to Power (2017) Bluray-1080p.mkv",
                     "filename": "main_file.mkv"
                 }
             ],
@@ -189,7 +181,8 @@
             "dir": "FernGully The Last Rainforest 1992 1080p BluRay x264 HD4U",
             "files": [
                 {
-                    "expect": "FernGully The Last Rainforest (1992)/FernGully The Last Rainforest (1992) Bluray-1080p.mkv",
+                    "expect_no_lookup": "FernGully The Last Rainforest (1992)/FernGully The Last Rainforest (1992) Bluray-1080p.mkv",
+                    "expect": "FernGully - The Last Rainforest (1992)/FernGully - The Last Rainforest (1992) Bluray-1080p.mkv",
                     "filename": "main_file.mkv"
                 }
             ],
@@ -233,7 +226,8 @@
             "dir": "Kingsman.The.Golden.Circle.2017.1080p.BluRay.x264-SPARKS",
             "files": [
                 {
-                    "expect": "Kingsman The Golden Circle (2017)/Kingsman The Golden Circle (2017) Bluray-1080p.mkv",
+                    "expect": "Kingsman - The Golden Circle (2017)/Kingsman - The Golden Circle (2017) Bluray-1080p.mkv",
+                    "expect_no_lookup": "Kingsman The Golden Circle (2017)/Kingsman The Golden Circle (2017) Bluray-1080p.mkv",
                     "filename": "main_file.mkv"
                 }
             ],
@@ -266,7 +260,8 @@
             "dir": "Mad Max Fury Road 2015 UltraHD BluRay 2160p HEVC BT2020 TrueHD 7 1 Atmos-HDLeader",
             "files": [
                 {
-                    "expect": "Mad Max Fury Road (2015)/Mad Max Fury Road (2015) Bluray-2160p.mkv",
+                    "expect": "Mad Max - Fury Road (2015)/Mad Max - Fury Road (2015) Bluray-2160p.mkv",
+                    "expect_no_lookup": "Mad Max Fury Road (2015)/Mad Max Fury Road (2015) Bluray-2160p.mkv",
                     "filename": "byBjaG9vc2UgYSBzZXQgb2YgNjQgY2hhcmFjdGV.mkv"
                 }
             ],
@@ -394,7 +389,8 @@
             "dir": "TRON.Legacy.2010.Proper.1080p.Blu-ray.DTS.x264-ViSTA",
             "files": [
                 {
-                    "expect": "TRON Legacy (2010)/TRON Legacy (2010) Bluray-1080p Proper.mkv",
+                    "expect": "TRON - Legacy (2010)/TRON - Legacy (2010) Bluray-1080p Proper.mkv",
+                    "expect_no_lookup": "TRON Legacy (2010)/TRON Legacy (2010) Bluray-1080p Proper.mkv",
                     "filename": "main_file.mkv"
                 }
             ],
@@ -436,7 +432,8 @@
         {
             "files": [
                 {
-                    "expect": "The Chronicles of Narnia The Lion, the Witch and the Wardrobe (2005)/The Chronicles of Narnia The Lion, the Witch and the Wardrobe (2005) 720p.mkv",
+                    "expect": "The Chronicles of Narnia - The Lion, the Witch and the Wardrobe (2005)/The Chronicles of Narnia - The Lion, the Witch and the Wardrobe (2005) 720p.mkv",
+                    "expect_no_lookup": "The Chronicles of Narnia The Lion, the Witch and the Wardrobe (2005)/The Chronicles of Narnia The Lion, the Witch and the Wardrobe (2005) 720p.mkv",
                     "filename": "Chronicles of Narnia, The {1} The Lion, the Witch and the Wardrobe 720p (2005).mkv"
                 }
             ],
@@ -460,7 +457,7 @@
             "files": [
                 {
                     "expect_no_lookup": "Doctor Who Husbands of River Song (2015) Bluray-1080p.mkv",
-                    "expect": "Doctor Who The Husbands of River Song (2015)/Doctor Who The Husbands of River Song (2015) Bluray-1080p.mkv",
+                    "expect": "Doctor Who - The Husbands of River Song (2015)/Doctor Who - The Husbands of River Song (2015) Bluray-1080p.mkv",
                     "filename": "Doctor Who Husbands of River Song (2015) Bluray-1080p.mkv"
                 }
             ],
@@ -584,7 +581,52 @@
         {
             "files": [
                 {
-                    "expect": "Terminator 2 Judgment Day (1991)/Terminator 2 Judgment Day (1991) [Unrated Director's Cut] Bluray-1080p.mkv",
+                    "expect": "Terminator 2 - Judgment Day (1991)/Terminator 2 - Judgment Day (1991) [Director's Cut] Bluray-1080p.mkv",
+                    "expect_no_lookup": "Terminator 2 Judgment Day (1991)/Terminator 2 Judgment Day (1991) [Director's Cut] Bluray-1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 - Judgment Day (1991)/Terminator 2 - Judgment Day (1991) [Director's Cut Remastered] Bluray-1080p.mkv",
+                    "expect_no_lookup": "Terminator 2 Judgment Day (1991)/Terminator 2 Judgment Day (1991) [Director's Cut Remastered] Bluray-1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Directors.Cut.Remastered.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 - Judgment Day (1991)/Terminator 2 - Judgment Day (1991) [Extended Edition] Bluray-1080p.mkv",
+                    "expect_no_lookup": "Terminator 2 Judgment Day (1991)/Terminator 2 Judgment Day (1991) [Extended Edition] Bluray-1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Extended.Edition.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 - Judgment Day (1991)/Terminator 2 - Judgment Day (1991) [Unrated] Bluray-1080p.mkv",
+                    "expect_no_lookup": "Terminator 2 Judgment Day (1991)/Terminator 2 Judgment Day (1991) [Unrated] Bluray-1080p.mkv",
+                    "filename": "Terminator.2.Judgement.Day.Unrated.1991.BluRay.1080p.x264-KILLERS.mkv"
+                }
+            ],
+            "title": "Terminator 2: Judgment Day",
+            "tmdb_id": 280
+        },
+        {
+            "files": [
+                {
+                    "expect": "Terminator 2 - Judgment Day (1991)/Terminator 2 - Judgment Day (1991) [Unrated Director's Cut] Bluray-1080p.mkv",
+                    "expect_no_lookup": "Terminator 2 Judgment Day (1991)/Terminator 2 Judgment Day (1991) [Unrated Director's Cut] Bluray-1080p.mkv",
                     "filename": "Terminator.2.Judgement.Day.Unrated.Directors.Cut.1991.BluRay.1080p.x264-KILLERS.mkv"
                 }
             ],
@@ -630,6 +672,18 @@
             ],
             "title": "Return of the Jedi",
             "tmdb_id": 1892
+        },
+        {
+            "dir": "Terminator.Dark.Fate.2019.1080p.BluRay.x264-SPARKS",
+            "files": [
+                {
+                    "expect": "Terminator - Dark Fate (2019)/Terminator - Dark Fate (2019) Bluray-1080p.mkv",
+                    "expect_no_lookup": "Terminator Dark Fate (2019)/Terminator Dark Fate (2019) Bluray-1080p.mkv",
+                    "filename": "main_file.mkv"
+                }
+            ],
+            "title": "Terminator: Dark Fate",
+            "tmdb_id": 290859
         }
     ]
 }

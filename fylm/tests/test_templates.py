@@ -56,7 +56,7 @@ class TestTemplates(object):
 
         dst = os.path.join(
         conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016).mkv')
+        'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016).mkv')
 
         config.rename_pattern.file = r'{title} {(year)}'
         config.rename_pattern.folder = r'{title} {(year)}'
@@ -172,7 +172,7 @@ class TestTemplates(object):
 
         dst = os.path.join(
         conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p.mkv')
+        'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality}'
         config.rename_pattern.folder = r'{title} {(year)}'
@@ -201,7 +201,7 @@ class TestTemplates(object):
 
         dst = os.path.join(
         conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
+        'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)}'
@@ -230,7 +230,7 @@ class TestTemplates(object):
 
         dst = os.path.join(
         conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016) Bluray-1080p Proper/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
+        'Rogue One - A Star Wars Story (2016) Bluray-1080p Proper/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)} {[edition]} {quality-full}'
@@ -259,7 +259,7 @@ class TestTemplates(object):
 
         dst = os.path.join(
         conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) 1080p Proper.mkv')
+        'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) 1080p Proper.mkv')
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)}'
