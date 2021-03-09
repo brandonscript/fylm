@@ -109,6 +109,16 @@ class TestFilm(object):
                 if file.media is not None:
                     assert(file.media in ['Bluray', 'WEBDL', 'HDTV', 'SDTV'])
 
+    def test_hdr(self):
+
+        conftest._setup()
+
+        # Check that media is detected correctly
+        for film in conftest.films:
+            for file in film.video_files:
+                assert(file.is_hdr is True or file.is_hdr is False)
+
+
     def test_proper(self):
 
         conftest._setup()

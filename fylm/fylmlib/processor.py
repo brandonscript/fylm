@@ -68,7 +68,7 @@ class processor:
 
             # If we're moving more than one film, print the move header.
             queue_count = len(_move_queue)
-            c = console().pink(f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}")
+            c = console().pink(f"{'Copying' if config.safe_copy else 'Moving'}")
             c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...\n").print()
 
             # Process the entire queue

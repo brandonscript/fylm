@@ -211,7 +211,7 @@ class TestTemplates(object):
         assert(move is True)
         assert(os.path.exists(dst))
 
-    def test_folder_title_year_quality_full(self):
+    def test_folder_title_year_quality_full_proper(self):
 
         src = os.path.join(
         conftest.films_src_path,
@@ -234,6 +234,35 @@ class TestTemplates(object):
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)} {[edition]} {quality-full}'
+
+        move = ops.fileops.safe_move(src, dst)
+
+        assert(move is True)
+        assert(os.path.exists(dst))
+
+    def test_hdr(self):
+
+        src = os.path.join(
+        conftest.films_src_path,
+        'Rogue.One.A.Star.Wars.Story.2016.HDR.10-bit.2160p.BluRay.DTS.x265-DON/Rogue.One.A.Star.Wars.Story.2016.HDR.10-bit.2160p.BluRay.DTS.x265-DON.mp4')
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+
+        make.make_mock_file(src, expected_size)
+
+        config.safe_copy = False
+        assert(config.safe_copy is False)
+        
+        config.test = False
+        assert(config.test is False)
+
+        dst = os.path.join(
+        conftest.films_dst_paths['2160p'], 
+        'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-2160p HDR.mkv')
+
+        config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full} {hdr}'
+        config.rename_pattern.folder = r'{title} {(year)}'
 
         move = ops.fileops.safe_move(src, dst)
 

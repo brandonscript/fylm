@@ -42,6 +42,9 @@ media = re.compile(r'\b(?:(?P<bluray>blu-?ray|bdremux|bdrip)|(?P<web>web-?dl|WEB
 # Compiled pattern that matches Proper, case insensitive.
 proper = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
 
+# Compiled pattern that matches HDR.
+hdr = re.compile(r'\b(?P<hdr>hdr)\b', re.I)
+
 # Compiled pattern that "Part n" where n is a number or roman numeral.
 part = re.compile(r'\bpart\W?(?P<part>(?:(\d+|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))))', re.I)
 

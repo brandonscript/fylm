@@ -381,6 +381,8 @@ class Film:
             
             resolution:         Original quality of media: SD, 720p, 1080p, or 2160p.
 
+            is_hdr:             Bool to indicate whether this version is HDR.
+
             is_proper:          Bool to indicate whether this version is a proper release.
 
             parent_film:        Parent film containing the file.
@@ -454,6 +456,7 @@ class Film:
             # Initialize remaining properties
             self.edition = parser.get_edition(self.source_path)
             self.media = parser.get_media(self.source_path)
+            self.is_hdr = parser.is_hdr(self.source_path)
             self.is_proper = parser.is_proper(self.source_path)
 
         @property

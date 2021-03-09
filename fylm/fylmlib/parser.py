@@ -230,6 +230,24 @@ class parser:
             return None
 
     @classmethod
+    def is_hdr(cls, source_path) -> bool:
+        """Determine whether the media is an HDR file.
+
+        Use regular expressions to identity whether the media is HDR or not.
+
+        Args:
+            source_path: (str, utf-8) full path of file or folder.
+
+        Returns:
+            A bool representing the HDR status of the media.
+        """
+        folder = os.path.basename(os.path.dirname(source_path))
+        file = os.path.basename(source_path)
+
+        match = re.search(patterns.hdr, f'{folder}/{file}')
+        return True if (match and match.group('hdr')) else False
+
+    @classmethod
     def is_proper(cls, source_path) -> bool:
         """Determine whether the media is a proper rip.
 
