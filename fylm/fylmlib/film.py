@@ -155,6 +155,7 @@ class Film:
         self.matches = []
         self.title_similarity = 0
         self.ignore_reason = None
+        self.should_ignore
 
     @property
     def original_path(self):

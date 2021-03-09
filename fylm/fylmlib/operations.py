@@ -126,6 +126,9 @@ class dirops:
                 with Pool(processes=25) as pool:                    
                     cls._existing_films += pool.map(Film, xfs)
 
+        # Strip bad duplicates
+        cls._existing_films = list(filter(lambda x: x.should_ignore is False, cls._existing_films))
+
         files_count = list(itertools.chain(*[f.video_files for f in cls._existing_films]))
         console.debug(f'Loaded {len(cls._existing_films)} existing unique Film objects containing {len(files_count)} video files')
 

@@ -68,7 +68,8 @@ class processor:
 
             # If we're moving more than one film, print the move header.
             queue_count = len(_move_queue)
-            console().pink(f"Moving {queue_count} {formatter.pluralize('file', queue_count)}...").print()
+            c = console().pink(f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}")
+            c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...\n").print()
 
             # Process the entire queue
             cls.process_move_queue()
@@ -89,12 +90,6 @@ class processor:
             if interactive.lookup(film) is False:
                 return
         else:
-
-            # If the film should be ignored, skip.
-            if film.should_ignore is True:
-                console().print_skip(film)
-                return
-
             # Search TMDb for film details (if enabled).
             film.search_tmdb()
 
