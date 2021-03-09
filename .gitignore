@@ -13,3 +13,5 @@ coverage.xml
 *.code-workspace
 .vscode/.ropeproject/config.py
 .vscode/.ropeproject/objectdb
+env/*
+@eaDir/*

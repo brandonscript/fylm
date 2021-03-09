@@ -63,6 +63,7 @@ class duplicates:
         # Filter the existing_films cache array to titles beginning with the first letter of the
         # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.
+
         duplicates = list(filter(lambda x:
                 # First letter of the the potential duplicate's title must be the same.
                 # Checking this first allows us to have a much smaller list to compare against.
