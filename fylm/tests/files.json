@@ -474,17 +474,6 @@
             "tmdb_id": 1624
         },
         {
-            "dir": "Ouija.Summoning.2016.1080p.BluRay.x264-THUGLiNE",
-            "files": [
-                {
-                    "expect": "Ouija Summoning (2015)/Ouija Summoning (2015) Bluray-1080p.mkv",
-                    "filename": "main_file.mkv"
-                }
-            ],
-            "title": "Ouija Summoning",
-            "tmdb_id": 413100
-        },
-        {
             "dir": "Petes.Dragon.2016.1080p.BluRay.x264-BLOW",
             "files": [
                 {
@@ -753,13 +742,15 @@
         {
             "files": [
                 {
+                    "skip_reason": "Tmdb is returning years off by one",
                     "expect_no_lookup": "Crash (2003) Bluray-1080p.mkv",
                     "expect": "Crash (2004)/Crash (2004) Bluray-1080p.mkv",
-                    "filename": "Crash 1080p (2003) BluRay.mkv"
+                    "filename": "Crash 1080p (2003).mkv"
                 }
             ],
             "title": "Crash",
-            "tmdb_id": 1640
+            "tmdb_id": 1640,
+            "skip": true
         },
         {
             "files": [
