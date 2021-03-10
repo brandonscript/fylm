@@ -164,6 +164,15 @@ class Config(object):
             dest="force_move",
             help='Force move behavior for folders that appear to be (but are not) on different partitions')
 
+        # --hide-skipped
+        # This option will hide skipped files from the console output.
+        parser.add_argument(
+            '--hide-skipped',
+            action="store_true",
+            default=self._defaults.hide_skipped,
+            dest="hide_skipped",
+            help='Hide skipped files from the console output')
+
         # -i, --interactive
         # This option enables prompts to confirm or correct TMDb matches.
         parser.add_argument(
@@ -172,7 +181,7 @@ class Config(object):
             action="store_true",
             default=self._defaults.interactive,
             dest="interactive",
-            help='Prompt to confirm or correct TMDb matches')
+            help='Interactively prompt to confirm or correct TMDb matches or look up corrections')
 
         # --no-strict
         # This option disables the intelligent string comparison algorithm that verifies titles

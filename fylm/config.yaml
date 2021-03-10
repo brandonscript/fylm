@@ -41,6 +41,10 @@ min_filesize: 10
 # Path Where history.log will be written.
 log_path: ./
 
+# --hide-skipped
+# Hide skipped files from the console output.
+hide_skipped: true
+
 # --interactive
 # Prompt to confirm or correct TMDb matches.
 interactive: false
@@ -216,7 +220,7 @@ edition_map: [
   ["extended.remastered", "Extended Remastered"],
   ["extended.edition", "Extended Edition"],
   ["(dc|director.?s.cut).remastered", "Director's Cut Remastered"],
-  ["(\\d+)th.a(nniversary)?.e(dition)?", "\\1th Anniversary Edition"],
+  ["(\\d+)th.a(nniversary)?.ed?(ition)?", "\\1th Anniversary Edition"],
   ["(\\d+)th.anniv(ersary)?", "\\1th Anniversary"],
   ["extended.collector.?s.edition", "Extended Collector's Edition"],
   ["collector.?s.edition", "Collector's Edition"],

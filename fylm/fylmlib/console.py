@@ -160,7 +160,7 @@ class console(object):
     def print_exit_early(self):
         """Print the early exit message.
         """
-        console().pink('\n\nBye, Fylicia.').print()
+        console().pink('\n\nThat\'s it, I quit.').print()
 
     def print_film_header(self, film):
         """When a film is loaded, print a title header.
@@ -170,6 +170,10 @@ class console(object):
             ignore: (bool) True if the film should be ignored, else False
         """
 
+        # Skip if this film is ignored
+        if film.should_ignore is True and config.hide_skipped is True:
+            return
+
         # Print original filename and size.
         c = console().bold(' ')
         if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
@@ -177,6 +181,8 @@ class console(object):
         c.add(film.original_basename)
         c.reset().dark_gray(f' ({formatter.pretty_size(film.size)})')
         c.print()
+        console().gray().indent(f'in {film.original_path}').print()
+
 
     def print_search_result(self, film):
         """Print and log film search result details.
@@ -184,6 +190,10 @@ class console(object):
         Args:
             film: (Film) Film to print/log.
         """
+
+        # Skip if this film is ignored
+        if film.should_ignore is True and config.hide_skipped is True:
+            return
         
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
@@ -201,6 +211,11 @@ class console(object):
         Args:
             film: (Film) Film that was skipped.
         """
+
+        # Skip if this film is ignored
+        if film.should_ignore is True and config.hide_skipped is True:
+            return
+
         console().red().dim().indent().red().dim(film.ignore_reason).print()
 
     def print_duplicates(self, film: 'Film'):
@@ -288,7 +303,7 @@ class console(object):
         from fylmlib.operations import dirops
         console().gray().indent(
             f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
-            f" {os.path.basename(src)} to {os.path.dirname(dst)}"
+            f" {os.path.basename(dst)} to {os.path.dirname(dst)}"
         ).print()
 
     def print_copy_progress_bar(self, copied, total):

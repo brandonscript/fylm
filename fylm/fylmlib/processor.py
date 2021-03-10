@@ -58,9 +58,6 @@ class processor:
             # Route film to correct handler
             cls.route(film)
 
-            # Print blank line to separate next film
-            console().print()
-
         # If we are running in interactive mode, we need to handle the moves
         # after all the lookups are completed in case we have long-running copy
         # operations.
@@ -130,6 +127,10 @@ class processor:
         # on a first-in-first out basis.
         if config.interactive is False:
             cls.process_move_queue()
+
+        # Print blank line to separate next film
+        if film.should_ignore is False or (film.should_ignore is True and config.hide_skipped is False):
+            console().print()
 
     @classmethod
     def process_move_queue(cls):
