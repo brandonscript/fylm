@@ -408,11 +408,11 @@
             "tmdb_id": 433471
         },
         {
-            "dir": "Mad Max Fury Road 2015 UltraHD BluRay 2160p HEVC BT2020 TrueHD 7 1 Atmos-HDLeader",
+            "dir": "Mad Max Fury Road 2015 UltraHD BluRay 2160p HDR HEVC BT2020 TrueHD 7 1 Atmos-HDLeader",
             "files": [
                 {
-                    "expect": "Mad Max - Fury Road (2015)/Mad Max - Fury Road (2015) Bluray-2160p.mkv",
-                    "expect_no_lookup": "Mad Max Fury Road (2015)/Mad Max Fury Road (2015) Bluray-2160p.mkv",
+                    "expect": "Mad Max - Fury Road (2015)/Mad Max - Fury Road (2015) Bluray-2160p HDR.mkv",
+                    "expect_no_lookup": "Mad Max Fury Road (2015)/Mad Max Fury Road (2015) Bluray-2160p HDR.mkv",
                     "filename": "byBjaG9vc2UgYSBzZXQgb2YgNjQgY2hhcmFjdGV.mkv"
                 }
             ],

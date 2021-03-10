@@ -21,7 +21,7 @@ destination_dirs:
 # If you want to add characters with pattern objects, place them inside {} e.g. { - edition}.
 # For escaping templating delimiters, use \{ \}, e.g. {|{edition\}}.
 rename_pattern: 
-  file: '{title} {(year)} {[edition]} {quality-full}'
+  file: '{title} {(year)} {[edition]} {quality-full} {hdr}'
   folder: '{title} {(year)}'
 
 # Sort files into individual subfolders when moving them, e.g. /Volumes/Films/HD/The Last Starfighter (1984)/{files go here}.

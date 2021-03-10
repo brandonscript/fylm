@@ -100,7 +100,7 @@ def _setup():
     config.destination_dirs = films_dst_paths
 
     # Set default rename mask
-    fylm.config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
+    fylm.config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full} {hdr}'
     fylm.config.rename_pattern.folder = r'{title} {(year)}'
 
     # Load films and filter them into valid films.

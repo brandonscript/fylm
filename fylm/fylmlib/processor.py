@@ -205,15 +205,11 @@ class processor:
             film.source_path = os.path.normpath(os.path.join(os.path.dirname(file.source_path), file.new_filename_and_ext))
             film.all_valid_files[0].source_path = film.source_path
 
-        # Generate a new source path based on the new filename and the
-        # destination dir. In this case, we know that the first object
-        # in .all_valid_files is the only file reference.
-        dst = os.path.normpath(os.path.join(file.destination_path, file.new_filename_and_ext))
-
+        # In this case, we know that the first object in .all_valid_files is the only file reference.
         # Move the file. (Only executes in live mode).
         # If this film is a duplicate and is set to replace an existing film, suppress
         # the overwrite warning.
-        _move_queue.append((film, [_QueuedMoveOperation(film.all_valid_files[0], dst)]))
+        _move_queue.append((film, [_QueuedMoveOperation(film.all_valid_files[0])]))
 
     @classmethod
     def prepare_folder(cls, film: Film):
@@ -234,7 +230,7 @@ class processor:
             # Generate a new destination based on the film's title, and alter it
             # depending on whether the file is a subtitle, or if it needs to be
             # renamed to prevent clobbering.
-            dst = os.path.normpath(os.path.join(file.destination_path, file.new_filename_and_ext))
+            dst = file.destination_path
 
             # If it is a subtitle, we try to find the language.
             if file.is_subtitle:
@@ -311,9 +307,9 @@ class _QueuedMoveOperation(object):
     Each move operation contains a source and destination path that are passed
     as args to ops.fileops.safe_move()
     """
-    def __init__(self, file: Film.File, dst: str):
+    def __init__(self, file: Film.File, dst: str=None):
         self.file = file
-        self.dst = dst
+        self.dst = dst or file.destination_path
     
     def do(self):
         """Passthrough function to call ops.fileops.safe_move()
@@ -323,7 +319,7 @@ class _QueuedMoveOperation(object):
             console().yellow().indent(f'\'{os.path.basename(self.file.source_path)}\' no longer exists or cannot be accessed').print()
             return False
 
-        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.dst)
+        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.file.destination_path)
 
         # Clean up duplicates if all the files in the parent film have been moved
         if (len(self.file.parent_film.duplicate_files) > 0 

@@ -62,6 +62,7 @@ def build_new_basename(file, type="file"):
         ["edition", file.edition],
         ["year", file.parent_film.year],
         ["quality-full", f'{quality}{" Proper" if file.is_proper else ""}'],
+        ["hdr", " HDR" if file.is_hdr else ""],
         ["quality", f'{quality}']
     ]
 
@@ -89,8 +90,8 @@ def build_new_basename(file, type="file"):
         template = re.sub(rx, str(replacement) if value is not None else '', template)
 
     # Convert escaped template characters to un-escaped plain { }.
-    template = template.replace('\{', '{')
-    template = template.replace('\}', '}')
+    template = template.replace(r'\{', '{')
+    template = template.replace(r'\}', '}')
 
     # Strip illegal chars
     template = strip_illegal_chars(template)
@@ -261,6 +262,21 @@ def strip_extra_whitespace(s):
         A string without repeating whitespace chars.
     """
     return ' '.join(s.split()).strip()
+
+def title_case(s):
+    """Convert a string to title case, with some grammatical exceptions.
+
+    Args:
+        s (str, utf-8): original string to be Title Cased.
+    Returns:
+        A Title Cased string.
+    """
+    articles = ['a', 'an', 'of', 'the', 'is']
+    word_list = re.split(' ', s)
+    final = [word_list[0].capitalize()]
+    for word in word_list[1:]:
+        final.append(word if word in articles else word.capitalize())
+    return " ".join(final)
 
 def pluralize(s, c):
     """Pluralizes a string if count <> 1.

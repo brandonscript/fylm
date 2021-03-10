@@ -73,7 +73,7 @@ class Film:
                             moved, based on quality-based sorting defined
                             in config.destination_dirs. Occassionally this could
                             be out of sync with some of a film's files, depending
-                            on the destination path configuration.
+                            on the destination path configuration.      
 
         original_path:      (Immutable) original path of film.
 
@@ -145,7 +145,7 @@ class Film:
             name_path = source_path
 
         # Initialize remaining properties
-        self.title = parser.get_title(name_path)
+        self.title = formatter.title_case(parser.get_title(name_path))
         self.year = parser.get_year(name_path)
         self.overview = ''
         self.poster_path = None
@@ -245,7 +245,7 @@ class Film:
 
     @property
     def new_basename(self):
-        """Build a new path name from the specified renaming pattern.
+        r"""Build a new path name from the specified renaming pattern.
 
         If using a folder-based file structure, this will be the base
         folder for all files for this film, and will use the 
@@ -389,9 +389,12 @@ class Film:
 
             source_path:        Current source path of file.
 
-            destination_path:   Parent (root) dir where this file will be
+            destination_folder: Parent (root) dir where this file will be
                                 moved, based on quality-based sorting defined
                                 in config.destination_dirs.
+
+            destination_path:   Full folder+file destination of the new file after
+                                being renamed.
 
             original_path:      (Immutable) original path of file.
 
@@ -548,7 +551,7 @@ class Film:
 
         @property
         def new_filename(self):
-            """Build a new file name from the specified renaming pattern.
+            r"""Build a new file name from the specified renaming pattern.
 
             Use regular expressions and a { } templating syntax to construct
             a new filename by mapping available properties to config.rename_pattern.
@@ -587,7 +590,7 @@ class Film:
             return f'{self.new_filename}.{(self.ext or ext).replace(".", "")}'
 
         @property
-        def destination_path(self):
+        def destination_folder(self):
             # If 'rename_only' is enabled, we need to override the configured
             # destination dir with the source dir.
             
@@ -600,3 +603,7 @@ class Film:
                 except KeyError:
                     dst = config.destination_dirs['default']
             return os.path.normpath(os.path.join(dst, self.new_foldername)) if config.use_folders else dst
+
+        @property
+        def destination_path(self):
+            return os.path.normpath(os.path.join(self.destination_folder, self.new_filename_and_ext))
