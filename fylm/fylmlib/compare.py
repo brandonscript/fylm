@@ -133,7 +133,7 @@ def is_higher_quality(file, existing_file):
         raise Exception(f'Unable to accurately determine the quality delta between \'{file.source_path}\' and \'{existing_file.source_path}\'')
 
     # Media is different, determine which one is better
-    if file.media != existing_file.media:
+    if file.media is not None and existing_file.media is not None and file.media != existing_file.media:
         return media_hierarchy.index(file.media.lower()) < media_hierarchy.index(existing_file.media.lower())
     # One is a proper, one is not
     elif file.is_proper is True and existing_file.is_proper is False:
