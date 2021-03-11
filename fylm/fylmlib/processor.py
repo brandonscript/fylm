@@ -100,7 +100,9 @@ class processor:
 
         # If duplicate checking is enabled and the film is a duplicate, rename
         # all the duplicates we do not want to keep so they can be deleted later.
-        if len(film.existing_duplicate_files) > 0:
+        # When getting `verified_duplicate_files`, duplicate upgrade/ignore checking
+        # is also executed.
+        if len(film.verified_duplicate_files) > 0:
 
             console().print_duplicates(film)
 
@@ -114,14 +116,15 @@ class processor:
             else:
                 duplicates.rename_unwanted(film)
 
-        # If it is a file and as a valid extension, process it as a file
-        if film.is_file and film.all_valid_files[0].has_valid_ext:
-            cls.prepare_file(film)
+        if not film.should_ignore or config.interactive is True:
+            # If it is a file and as a valid extension, process it as a file
+            if film.is_file and film.all_valid_files[0].has_valid_ext:
+                cls.prepare_file(film)
 
-        # Otherwise if it's a folder, process it as a folder containing
-        # potentially multiple related files.
-        elif film.is_folder:
-            cls.prepare_folder(film)
+            # Otherwise if it's a folder, process it as a folder containing
+            # potentially multiple related files.
+            elif film.is_folder:
+                cls.prepare_folder(film)
 
         # If we're not running in interactive mode, do all the moving 
         # on a first-in-first out basis.
@@ -129,8 +132,7 @@ class processor:
             cls.process_move_queue()
 
         # Print blank line to separate next film
-        if film.should_ignore is False or (film.should_ignore is True and config.hide_skipped is False):
-            console().print()
+        console().print()
 
     @classmethod
     def process_move_queue(cls):
@@ -162,7 +164,7 @@ class processor:
 
                 for file in film.all_valid_files:
 
-                    # Update the coujnter
+                    # Update the counter
                     if file.is_video:
                         counter.add(1)
 
@@ -326,7 +328,7 @@ class _QueuedMoveOperation(object):
             and config.interactive is False 
             and len(list(filter(lambda m: m.did_move == False, self.file.parent_film.all_valid_files))) == 0):
             if config.interactive is False:
-                duplicates.delete_unwanted(self.file.parent_film)
+                duplicates.delete_upgraded(self.file.parent_film)
 
         return self.file.did_move
 

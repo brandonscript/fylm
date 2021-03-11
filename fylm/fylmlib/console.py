@@ -39,6 +39,7 @@ from fylmlib.ansi import ansi
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
 import fylmlib.progress as progress
+from fylmlib.enums import Should
 
 class console(object):
     """Main class for console output methods.
@@ -55,6 +56,9 @@ class console(object):
 
     """
     def __init__(self, s=''):
+
+        # Coerce to string
+        s = f"{s}"
 
         # Formatted string
         self._fmtxt = pyfancy(s)
@@ -81,6 +85,7 @@ class console(object):
         self.__setattr__(c, add)
 
     def add(self, s=''):
+        s = f"{s}"
         style = '+'.join(list(set(self._style))) if self._style else None
         self._fmtxt.add(color(s, fg=getattr(ansi, self._color or 'white'), style=style))
         self._pltxt.add(s)
@@ -222,13 +227,13 @@ class console(object):
         """Print any duplicates found to the console.
 
         Args:
-            film: (Film) Inbound film that has been marked as duplicate.
+            film: (Film) Inbound film for which one or more duplicates has been detected.
         """
 
         # Import duplicates' should_replace function here to prevent circular imports.
         from fylmlib.duplicates import duplicates
 
-        duplicate_count = len(film.existing_duplicate_files)
+        duplicate_count = len(film.verified_duplicate_files)
 
         if duplicate_count > 0:
             
@@ -236,23 +241,29 @@ class console(object):
 
             if config.interactive is False:
                 for v in film.video_files:
-                    for d in film.existing_duplicate_files:
+                    for d in film.verified_duplicate_files:
         
                         size_diff = formatter.pretty_size_diff(v.source_path, d.source_path)
                         pretty_size = formatter.pretty_size(d.size)
-                        should_replace = duplicates.should_replace(v, d)
+                        should = d.duplicate
                         
-                        c = console()
+                        c = console().indent()
 
-                        if should_replace:
-                            c.blue().indent(f"  {'Replacing' if should_replace else 'Keeping'} ")
+                        if should == Should.UPGRADE:
+                            c.blue().add(f"  Upgrading ")
                             c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
-                            c.dark_gray(f' [{size_diff}]')
-                        elif v.edition == d.edition:
-                            c.red().indent(f"  Ignoring because '{os.path.basename(d.source_path)}'" \
-                                f" ({pretty_size}) is {size_diff}")
+                        elif should == Should.KEEP_BOTH:
+                            c.purple().add(f"  Keeping both this and ")
+                            c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
+                        elif should == Should.IGNORE:
+                            c.red().add(f"  Ignoring, not an upgrade for ")
+                            c.add(f"'{os.path.basename(d.source_path)}'")
                         else:
-                            c.blue().indent("  Keeping both because they aren't the same edition")
+                            c.gray(f"  '{os.path.basename(d.source_path)}' ({pretty_size})")
+                        c.dark_gray(' [')
+                        if d.upgrade_reason != '':
+                            c.add(f'{d.upgrade_reason}, ')
+                        c.add(f'{size_diff}]')
                         c.print()
 
     def print_ask(self, s):

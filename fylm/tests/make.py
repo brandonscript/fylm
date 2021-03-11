@@ -58,6 +58,9 @@ def make_mock_file(path, size):
     except Exception:
         pass
 
+    if isinstance(size, float):
+        size = int(round(size))
+
     f = open(path, 'wb')
     f.seek(size)
     f.write(b'\0')

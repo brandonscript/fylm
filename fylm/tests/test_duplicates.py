@@ -453,8 +453,8 @@ class TestDuplicates(object):
         fylm.main()
         
         # Assert that the new, smaller 1080p did not overwrite the existing, bigger one
-        # It will, however, be renamed, so we need to check for the proper filename
-        assert(    os.path.exists(os.path.join(conftest.films_src_path, os.path.basename(clean_files['1080p']))))
+        # and that the original was left intact (not renamed)
+        assert(    os.path.exists(os.path.join(conftest.films_src_path, raw_files['1080p'])))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
         assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
 
@@ -497,3 +497,87 @@ class TestDuplicates(object):
         assert(not os.path.exists(os.path.join(conftest.films_src_path, new)))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], new_moved)))
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], existing)))
+
+    def test_keep_4k_and_hdr(self):
+
+        conftest._setup()
+
+        new = [('Aquaman.2018.1080p.BluRay.X264-SoNG/Aquaman.2018.1080p.BluRay.X264-SoNG.mkv', 8.48),
+               ('Aquaman.2018.2160p.UHD.BluRay.X265-IAMABLE/Aquaman.2018.2160p.UHD.BluRay.X265-IAMABLE.mkv', 32.18),
+               ('Rogue.One.A.Star.Wars.Story.2016.1080p.BluRay.DTS.x264-group/Rogue.One.A.Star.Wars.Story.2016.1080p.BluRay.DTS.x264-group.mkv', 14.41),
+               ('Rogue.One.A.Star.Wars.Story.2016.4K.2160p.WEB-DL.DTS/Rogue.One.A.Star.Wars.Story.2016.4K.2160p.WEB-DL.DTS.mp4', 21.68),
+               ('Star.Trek.Beyond.2016.2160p.BluRay.HDR-10bit.x265-AMiABLE/Star.Trek.Beyond.2016.2160p.BluRay.HDR-10bit.x265-AMiABLE.mkv', 18.54),
+               ('Star Trek - Into Darkness (2013) (2160p BluRay x265 HEVC 10bit HDR AAC 7.1 Tigole)/Star Trek Into Darkness (2013) Bluray-2160p.mkv', 15.23),
+               ('Star.Trek.Into.Darkness.2013.2160p.UHD.BluRay.x265-TERMiNAL/Star.Trek.Into.Darkness.2013.2160p.UHD.BluRay.x265-TERMiNAL.mkv', 22.81)]
+
+        existing = [('1080p', 'Aquaman (2018)/Aquaman (2018) Bluray-1080p.mkv', 18.53),
+                    ('1080p', 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) WEBDL-1080p.mkv', 9.80),
+                    # Intentionally in the wrong folder
+                    ('1080p', 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) WEBDL-2160p.mp4', 18.55),
+                    ('2160p', 'Star Trek Beyond (2016)/Star Trek Beyond (2016) Bluray-2160p.mkv', 20.48),
+                    ('1080p', 'Star Trek Into Darkness (2013)/Star Trek Into Darkness (2013) Bluray-1080p.mkv', 12.72),
+                    ('2160p', 'Star Trek Into Darkness (2013)/Star Trek Into Darkness (2013) Bluray-2160p.mkv', 24.20)]
+
+        expect = [('1080p', 'Aquaman (2018)/Aquaman (2018) Bluray-1080p.mkv', 18.53),
+                  ('2160p', 'Aquaman (2018)/Aquaman (2018) Bluray-2160p.mkv', 32.18),
+                  ('1080p', 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p.mkv', 14.41),
+                  ('2160p', 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) WEBDL-2160p.mp4', 21.68),
+                  ('2160p', 'Star Trek Beyond (2016)/Star Trek Beyond (2016) Bluray-2160p.mkv', 20.48),
+                  ('2160p', 'Star Trek Beyond (2016)/Star Trek Beyond (2016) Bluray-2160p HDR.mkv', 18.54),
+                  ('1080p', 'Star Trek Into Darkness (2013)/Star Trek Into Darkness (2013) Bluray-1080p.mkv', 12.72),
+                  ('2160p', 'Star Trek Into Darkness (2013)/Star Trek Into Darkness (2013) Bluray-2160p HDR.mkv', 15.23),
+                  ('2160p', 'Star Trek Into Darkness (2013)/Star Trek Into Darkness (2013) Bluray-2160p.mkv', 24.20)]
+
+
+        do_not_move = [new[0], new[6]]
+
+        # Set up config
+        fylm.config.test = False
+        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicate_replacing.enabled = True
+        fylm.config.duplicate_replacing.replace_smaller = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicate_replacing.enabled is True)
+        assert(fylm.config.duplicate_replacing.replace_smaller is True)
+
+        # Do not replace 2160p films with any other quality
+        fylm.config.duplicate_replacing.replace_quality['2160p'] = []
+        assert(len(fylm.config.duplicate_replacing.replace_quality['2160p']) == 0)
+
+        # Do not replace 1080p films with any other quality
+        fylm.config.duplicate_replacing.replace_quality['1080p'] = []
+        assert(len(fylm.config.duplicate_replacing.replace_quality['1080p']) == 0)
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+        
+        for f in new:
+            make.make_mock_file(os.path.join(conftest.films_src_path, f[0]), f[1] * make.gb_t)
+
+        for f in existing:
+            make.make_mock_file(os.path.join(conftest.films_dst_paths[f[0]], f[1]), f[2] * make.gb_t)
+
+        # Reset existing films
+        ops.dirops._existing_films = None
+
+        existing_films = ops.dirops.get_existing_films(config.destination_dirs)
+        # Assert that there are 6 duplicate films
+        assert(len(existing_films) == 5)
+
+        # Assert that the total duplicate files is 7
+        assert(len(list(itertools.chain(*[f.all_valid_files for f in existing_films]))) == 6)
+        
+        # Execute
+        fylm.main()
+        
+        # Assert that the correct editions were moved, and those that didn't meet the criteria were left alone
+        for f in expect:
+            path = os.path.join(conftest.films_dst_paths[f[0]], f[1])
+            assert(os.path.exists(path))
+            assert(isclose(os.path.getsize(path), f[2] * make.gb_t, abs_tol=10))
+
+        for f in do_not_move:
+            path = os.path.join(conftest.films_src_path, f[0])
+            assert(os.path.exists(path))
+            assert(isclose(os.path.getsize(path), f[1] * make.gb_t))

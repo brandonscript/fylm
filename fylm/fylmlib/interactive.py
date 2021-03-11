@@ -83,10 +83,10 @@ class interactive:
             pretty_size = formatter.pretty_size(d.size)
 
             c = console().blue().indent()
-
             c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
             c.dark_gray(f' [{size_diff}]')
             c.print()
+            console().dark_gray().indent(f'in {os.path.dirname(d.source_path)}').print()
 
             choices = [
                 'Upgrade (replace) existing film', 
@@ -159,6 +159,7 @@ class interactive:
                 console().print_interactive_skipped()
                 return False
             else:
+                # User is happy with the result, verify
                 return film.tmdb_verified  
 
         else:

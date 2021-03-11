@@ -28,6 +28,7 @@ from fylmlib.console import console
 from fylmlib.film import Film
 import fylmlib.compare as compare
 import fylmlib.operations as ops
+from fylmlib.enums import Should
 
 class duplicates:
     """Class for handling duplicate checking and governance.
@@ -83,29 +84,50 @@ class duplicates:
             # Perform the filter against the existing films cache.
            existing_films))
 
-        duplicate_files = list(itertools.chain(*[d.video_files for d in duplicates]))
-        console.debug(f'Total duplicate files(s) found: {len(duplicate_files)}')
-        return duplicate_files
+        duplicate_videos = list(itertools.chain(*[d.video_files for d in duplicates]))
+        
+        for v in film.video_files:
+            for d in duplicate_videos:
+                # Mark each duplicate in the record
+                should = cls.should(v, d)
+                if should == Should.IGNORE:
+                    film.ignore_reason = "Not an upgrade for existing version"
+
+        # Sort to ensure ignored files are last, so that the console print order makes
+        # sense. (E.g., you wouldn't want to 'ignore' first then say 'keep' when 
+        # ignore should be the last in the list).
+        sort_order = [Should.UPGRADE, Should.KEEP_BOTH, Should.IGNORE]
+        duplicate_videos = [d for x in sort_order for d in duplicate_videos if d.duplicate == x]
+
+        console.debug(f'Total duplicate files(s) found: {len(duplicate_videos)}')
+        return duplicate_videos
 
     @classmethod
-    def should_replace(cls, src: Film.File, duplicate: Film.File):
-        """Determines if a duplicate file should be replaced.
+    def should(cls, current: Film.File, duplicate: Film.File) -> Should:
+        """Determines how to handle the current file when a duplicate is detected.
 
-        Config settings govern whether a duplicate can be replaced if it is of
-        a specific quality, e.g. a 1080p can be allowed replace a 720p, but a
-        2160p cannot. This method will be eventually expanded to handle quality
-        upgrading and multiple media sources.
+        Config settings govern whether a duplicate can be upgraded if it is of
+        a specific quality, e.g. a 1080p can be allowed upgrade a 720p, but a
+        2160p cannot.
+
+        Todo: Add media-based upgrading.
+
+        The return value of this method is an Enum, the result of which should
+        incicate which action to take:
+            - upgrade: the current file should upgrade the duplicate
+            - ignore: the current file should be skipped and the duplicate left intact
+            - keep_both: both files should be kept, as they are treated as unique
         
         Args:
-            src (Film.File): Film object to determine if it should replace a duplicate.
-            duplicate (Film.File): Verified duplicate file to check src against.
+            current (Film.File): The current Film (file) object.
+            duplicate (Film.File): Verified duplicate file that the current file will be compared to.
         Returns:
-            True if `src` should replace `duplicate`.
+            Enum, one of 'Should.UPGRADE', 'Should.IGNORE', or 'Should.KEEP_BOTH'.
         """
 
         # If duplicate replacing is disabled, don't replace.
         if config.duplicate_replacing.enabled is False:
-            return False
+            return cls._mark(duplicate, Should.IGNORE)
 
         # If the duplicate is a path and not a film, we need to load it.
         # from fylmlib.film import Film
@@ -118,83 +140,74 @@ class duplicates:
         #   2160p: [] # Do not replace 2160p films with any other quality
         #   1080p: [] # Do not replace 1080p films with any other quality
         #   720p: ['1080p'] # Replace 720p films with 1080p
-        #   SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) 
+        #   SD: ['1080p', '720p'] # Replace standard definition (or unknown quality)
         #       with 1080p or 720p
-        if src.resolution in config.duplicate_replacing.replace_quality[duplicate.resolution or 'SD']:
-            return True
+        
+        # HDR and different editions should be warned, but treated as distinct.
+        # Media order of priority is ["bluray", "webdl", "hdtv", "dvd", "sdtv"]
+        # Proper should always take preference over a non-proper.
 
-        # If the editions do not match, we want to warn, but not replace.
-        if src.edition != duplicate.edition:
-            return False
+        ignore_reason = ''
 
-        # If the src is a better quality or proper, replace the same resolutions
-        elif src.resolution == duplicate.resolution and compare.is_higher_quality(src, duplicate):
-            return True
-
-        # Or, if quality is the same and the size is larger, 
-        elif (config.duplicate_replacing.replace_smaller is True
-            and src.resolution == duplicate.resolution
-            and src.size > (duplicate.size or 0)):
-            return True
-
-        # Otherwise it should not be replaced.
+        # If the resolutions don't match and the current resolution is in the
+        # duplicate's upgrade table, upgrade, otherwise keep both.
+        if current.resolution != duplicate.resolution:
+            if current.resolution in config.duplicate_replacing.replace_quality[duplicate.resolution or 'SD']:
+                return cls._mark(duplicate, Should.UPGRADE, 'Lower resolution')
+            else:
+                return cls._mark(duplicate, Should.KEEP_BOTH, 'Different resolutions')
         else:
-            return False
+            ignore_reason = 'Better resolution'
 
-    @classmethod # deprecatd
-    def should_keep_both(cls, film, duplicate):
-        """Determines if both a film and a duplicate should be kept.
+        # If the resolutions match, we need to do some additional comparisons.
+        if current.resolution == duplicate.resolution:
+            # For now, HDR will always be kept alongside SDR copies, so if one is an HDR, 
+            # we will automatically keep both.
+            if current.is_hdr != duplicate.is_hdr:
+                return cls._mark(duplicate, Should.KEEP_BOTH, 'HDR' if duplicate.is_hdr else 'Not HDR')
 
-        Under certain conditions, both a film and a duplicte should be kept.
+            # If editions don't match, keep both unless the ignore_edition flag is enabled
+            # Console should show a warning but the duplicate will remain intact.
+            if current.edition != duplicate.edition and not config.duplicate_replacing.ignore_edition:
+                return cls._mark(duplicate, Should.KEEP_BOTH, 'Different editions')
+
+            # If the current is a better quality or proper, replace the same resolutions
+            # This heuristic is quite complex, see code comments in compare.is_higher_quality()
+            if compare.is_higher_quality(current, duplicate):
+                return cls._mark(duplicate, Should.UPGRADE, 'Lower quality')
+            else:
+                ignore_reason = 'Same or better quality'
+
+            # If the current file is of the same quality and the file size is larger, upgrade
+            if (config.duplicate_replacing.replace_smaller is True and current.size > (duplicate.size or 0)):
+                return cls._mark(duplicate, Should.UPGRADE)
+            elif current.size == (duplicate.size or 0):
+                ignore_reason = "Files are identical"
+
+        # If up to this point we can't determine if we should upgrade or keep both, ignore the current file
+        # because it cannot be safely moved without risk of data loss. Chances are at this point everything
+        # is the same, except the current file is the same or smaller size than the duplicate.
+        
+        return cls._mark(duplicate, Should.IGNORE, ignore_reason)
+
+    @classmethod
+    def _mark(cls, d: Film.File, should: Should, reason: str='') -> Should:
+        """Marks a duplicate file with the result of a should() call,
+        then returns the original should() value.
         
         Args:
-            film (Film): Film object to determine if it should replace a duplicate.
-            duplicate (Film or path): Duplicate object to check `film` against.
+            current (Film.File): The current Film (file) object.
+            duplicate (Film.File): Verified duplicate file that the current file will be compared to.
         Returns:
-            True if `film` and `duplicate` should both be kept, else False.
+            Enum, one of 'Should.UPGRADE', 'Should.IGNORE', or 'Should.KEEP_BOTH'.
         """
-
-        # TODO: Why do we have this method if we already have should_replace?
-
-        # If the duplicate is a path and not a film, we need to load it.
-        # TODO: Don't really want to have to do this here.
-        from fylmlib.film import Film
-        if not isinstance(duplicate, Film):
-            duplicate = Film(duplicate)
-
-        # If the editions are not the same, we want to keep both, but warn.
-        if film.edition != duplicate.edition:
-            return True
-
-        # If new and existing films have a different quality, and the new film is larger 
-        # (better), if the new film doesn't qualify as a replacement, we can assume that 
-        # we want to keep both the current film and the duplicate.
-        return (film.resolution != duplicate.resolution 
-            and not cls.should_replace(film, duplicate))
-
-    @classmethod # deprecated
-    def should_keep(cls, film):
-        """Determines if a film should be kept, if there are duplicates.
-
-        Under certain conditions, a film is not wanted. This function determines
-        if the film should be ignored or kept.
-        
-        Args:
-            film (Film): Film object to determine if it should be kept.
-        Returns:
-            True if `film` is wanted, else False.
-        """
-
-        # If all of the duplicates should not be replaced, and we don't want to keep
-        # both this film and (any) of its duplicates, return false.
-        return not all(
-            not cls.should_replace(film, d) 
-            and not cls.should_keep_both(film, d) 
-            for d in film.duplicates)
+        d.duplicate = should
+        d.upgrade_reason = reason
+        return should
 
     @classmethod
     def rename_unwanted(cls, film: Film):
-        """Rename unwanted duplicates on the destination dirs.
+        """Rename duplicates on the destination dirs that will be upgraded.
 
         If duplicates are found and the inbound film should replace them,
         we want to prepare them for deletion by renaming them. If a move/copy
@@ -206,12 +219,17 @@ class duplicates:
 
         # Loop through each duplicate that should be replaced.
         for file in film.video_files:
-            for d in filter(lambda d: cls.should_replace(file, d), film.duplicate_files):
+            # Only rename files that we want to upgrade
+            for d in filter(lambda d: cls.should(file, d) == Should.UPGRADE, film.duplicate_files):
+                if os.path.exists(f'{d.source_path}.dup'):
+                    # Skip if it's already been renamed (edge case for when
+                    # there are multiple copies of the same film being moved)
+                    continue
                 ops.fileops.rename(d.source_path, f'{os.path.basename(d.source_path)}.dup')
 
     @classmethod
-    def delete_unwanted(cls, film: Film):
-        """Delete unwanted duplicates on the destination dirs.
+    def delete_upgraded(cls, film: Film):
+        """Delete upgraded duplicates on the destination dirs.
 
         If duplicates are found and the inbound film should replace them,
         we want to delete the copies on the destination dir that we don't
@@ -223,7 +241,7 @@ class duplicates:
 
         # Loop through each duplicate that should be replaced.
         for file in film.video_files:
-            for d in filter(lambda d: cls.should_replace(file, d), film.duplicate_files):
+            for d in filter(lambda d: cls.should(file, d) == Should.UPGRADE, film.duplicate_files):
                 ops.fileops.delete(f'{d.source_path}.dup')
 
         # Delete empty duplicate container folders
@@ -231,7 +249,7 @@ class duplicates:
 
         # Remove deleted duplicates from the film object
         for file in film.video_files:
-            for d in filter(lambda d: cls.should_replace(file, d), film.duplicate_files):
+            for d in filter(lambda d: cls.should(file, d), film.duplicate_files):
                 film._duplicate_files = list(filter(lambda d: os.path.exists(d.source_path) or os.path.exists(f'{d.source_path}.dup'), film._duplicate_files))
 
     @classmethod

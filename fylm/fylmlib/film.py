@@ -32,6 +32,7 @@ from fylmlib.parser import parser
 import fylmlib.formatter as formatter
 import fylmlib.tmdb as tmdb
 import fylmlib.operations as ops
+from fylmlib.enums import Should
 
 class Film:
     """An object that identifies and processes film attributes.
@@ -106,7 +107,7 @@ class Film:
         video_files:        A subset of all_valid_files that contains a
                             list of unique film versions, as determined
                             by comparing media, resolution, format, and
-                            edition.s
+                            edition.
 
         duplicates:         Get a list of duplicates from the cached
                             list of existing films.
@@ -234,14 +235,14 @@ class Film:
         return self._duplicate_files
 
     @property
-    def existing_duplicate_files(self) -> ['Film.File']:
+    def verified_duplicate_files(self) -> ['Film.File']:
         """An array of duplicate files in existing films that are 
         verified to exist on the filesystem.
 
         Returns:
             A an array of duplicate films file objects.
         """
-        return list(filter(lambda d: os.path.exists(d.source_path) or os.path.exists(f'{d.source_path}.dup'), self.duplicate_files))
+        return list(filter(lambda d: os.path.exists(d.source_path), self.duplicate_files))
 
     @property
     def new_basename(self):
@@ -369,11 +370,11 @@ class Film:
         pertain to a film.
 
         Attributes:
-            title:              Title of the file.
+            title:              Title of the parent film.
 
-            title_the:          Title, The of the file.
+            title_the:          Title, The of the  parent film.
 
-            year:               Year of the file.
+            year:               Year of the  parent film.
 
             edition:            Special edition.
 
@@ -427,9 +428,11 @@ class Film:
 
             is_subtitle_file:   Returns ture if the file is a subtitle.
 
-            is_duplicate:       Returns true if the file is a duplicate,
-                                when compared to the list of existing
-                                films and their versions.
+            is_duplicate:       Returns true if the file is marked as a duplicate.
+
+            duplicate:          Returns None, or one of Should enum (upgrade, ignore, keep_both)
+
+            upgrade_reason:     Returns the reason this file should be upgraded, or an empty string.
             
             did_move:           Returns true when the file has been successfully moved.
         """
@@ -438,6 +441,9 @@ class Film:
             self.source_path = source_path
             self.parent_film = parent_film
             self.did_move = False
+            self.is_duplicate = False
+            self.duplicate = None
+            self.upgrade_reason = ''
 
             # Internal setter for `ext`.
             # We use this because at times `source_path` is overwritten.
@@ -449,8 +455,11 @@ class Film:
             # Internal setter for `size`.
             self._size = None
 
+            # Internal setter for `source_path`.
+            self._source_path = source_path
+
             # Internal setter for (immutable) `original_path`.
-            # Do not change even if the file is renamed, moved, or copied.
+            # Does not change even if the file is renamed, moved, or copied.
             self._original_path = source_path
 
             # Internal setter for `resolution`.
@@ -491,13 +500,25 @@ class Film:
                     pass
             return self._resolution
             
-        @property
-        def original_path(self):
-            return self._original_path
+        # @property
+        # def source_path(self):
+        #     # TODO: Consider a more lightweight way of handling this, it could be expensive
+        #     if self.is_duplicate is True and not self.duplicate is None and os.path.exists(f"{self._source_path}.dup"):
+        #         return f"{self._source_path}.dup"
+        #     else:
+        #         return self._source_path
+
+        # @source_path.setter
+        # def source_path(self, new_path):
+        #     self._source_path = new_path
 
         @property
         def original_basename(self):
             return os.path.basename(os.path.splitext(self.source_path)[0] if os.path.isfile(self.source_path) else self.source_path)
+
+        @property
+        def original_path(self):
+            return self._original_path
 
         @property
         def ext(self):
@@ -536,18 +557,6 @@ class Film:
         @property
         def is_subtitle(self):
             return self.ext == 'srt' or self.ext == 'sub'
-
-        @property
-        def is_duplicate(self):
-            """Returns true if the current film is a duplicate of an existing one.
-
-            Compares the current film to a list of existing films and returns true
-            if 1 or more duplicates are found.
-
-            Returns:
-                True if 1 or more duplicates are found, else False.
-            """
-            return len(self.parent_film.duplicate_files) > 0
 
         @property
         def new_filename(self):

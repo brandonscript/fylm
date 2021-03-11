@@ -130,7 +130,7 @@ def is_higher_quality(file, existing_file):
     # we throw an error if the resolution is not the same - this protects false positives
     # from being discarded when config asks to keep multiple qualities.
     if file.resolution != existing_file.resolution:
-        raise Exception(f'Unable to accurately determine the quality delta between \'{file.source_path}\' and \'{existing_file.source_path}\'')
+        raise Exception(f'Unable to accurately determine which of \'{file.source_path}\' and \'{existing_file.source_path}\' is the better quality')
 
     # Media is different, determine which one is better
     if file.media is not None and existing_file.media is not None and file.media != existing_file.media:

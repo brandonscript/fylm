@@ -120,7 +120,8 @@ duplicate_replacing:
   # Replace duplicates of identical quality if the existing film is smaller.
   replace_smaller: true
 
-  # TODO: ignore_edition
+  # Treat different editions as if they were the same
+  ignore_edition: false
 
   # Replace duplicates of a specific quality with a better quality, regardless of size.
   replace_quality: 
