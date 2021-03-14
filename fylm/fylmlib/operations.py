@@ -197,18 +197,16 @@ class dirops:
             # or not 0 bytes if it's a supplementary file.
             and fileops.is_acceptable_size(x))
 
-        # Remove duplicates in case we've 
-
         # If debugging, print the resulting list of files and sizes.
-        if config.debug is True:
-            
-            # Get caller of this method
-            import inspect
-            for f in list(set(valid_files)):
-                console.debug(f'\n`{inspect.stack()[0][3]}`' \
-                              f' found "{os.path.basename(f)}"' \
-                              f' ({formatter.pretty_size(size(f))})' \
-                              f' \nin {path}')
+        # This is a very noisy output, so is commented out.
+
+        # if config.debug is True:
+        #     import inspect
+            # for f in list(set(valid_files)):
+            #     console.debug(f'\n`{inspect.stack()[0][3]}`' \
+            #                   f' found "{os.path.basename(f)}"' \
+            #                   f' ({formatter.pretty_size(size(f))})' \
+            #                   f' \nin {path}')
 
         return sorted(valid_files, key=os.path.getsize, reverse=True)
 
@@ -420,7 +418,8 @@ class fileops:
             True if the file move was successful, else False.
         """
 
-        # Abort if src does not exist in live mode
+        # Abort if src does not exist in live mode. We can't raise this error in 
+        # test mode, because the file would never have been renamed.
         if not os.path.exists(src) and config.test is False:
             raise OSError(f'Path does not exist: {src}')
 
@@ -440,28 +439,29 @@ class fileops:
         # and print a warning to the console. If overwrite_existing is enabled, 
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
         if os.path.exists(dst):
-            # If overwrite_existing is turned off and , we can't overwrite this file.
-            if config.overwrite_existing is False:
+            # If overwrite_existing is turned off, we can't overwrite this file.
+            if config.overwrite_existing is False and config.interactive is False:
                 # If we're not overwriting, return false
-                console().red().indent('Unable to move (identical file already exists)')
+                console().red().indent(f'Unable to move; a file with the same name already exists ({dst})').print()
                 return False
                 
             # File overwriting is enabled and not marked to replace, so warn, 
             # and proceed continue.
-            console().red().indent(f'Overwriting existing file {os.path.basename(dst)}')
+            console().yellow().indent(f'Replacing existing file ({dst})').print()
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
         if sys.platform == 'darwin':
             dst = os.path.join(os.path.dirname(dst), os.path.basename(dst).replace(r'/', '-'))
 
-        # Only perform destructive changes if running in live mode.
+        # Only perform destructive changes if running in live mode, so we can short-circuit
+        # the rest by returning True here and presuming it was successful.
         if config.test is True:
             return True
 
         try:
 
-            # If we're overwriting, first try and rename an existing (identical) 
+            # If we're overwriting, first try and rename the existing (identical) 
             # duplicate so we don't lose it if the move fails
             if os.path.exists(dst):
                 os.rename(dst, f'{dst}.dup')
