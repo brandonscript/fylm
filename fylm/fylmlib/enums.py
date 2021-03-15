@@ -22,4 +22,22 @@ from builtins import *
 
 from enum import Enum
 
-Should = Enum('Should', 'UPGRADE IGNORE KEEP_BOTH')
+Should = Enum('Should', 'UPGRADE IGNORE KEEP_BOTH DELETE')
+ComparisonResult = Enum('ComparisonResult', 'HIGHER EQUAL LOWER NOT_COMPARABLE')
+Resolutions = Enum('Resolutions', '2160P 1080P 720P 576P 480P UNKNOWN')
+
+class Media(Enum):
+    BLURAY = 1
+    WEBDL = 2
+    HDTV = 3
+    DVD = 4
+    SDTV = 5
+    UNKNOWN = 6
+    @property
+    def display_name(self):
+        if self == self.BLURAY:
+            return "Bluray"
+        elif self == self.UNKNOWN:
+            return None
+        else:
+            return self.name
