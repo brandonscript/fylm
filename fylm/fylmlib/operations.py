@@ -388,22 +388,50 @@ class fileops:
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
-    def is_acceptable_size(cls, file):
-        """Determine if a file is an acceptable size.
+    def is_acceptable_size(cls, file_path):
+        """Determine if a file_path is an acceptable size.
 
         Args:
             file: (str, utf-8) path to file.
         Returns:
             True, if the file is an acceptable size, else False.
         """
-        s = size(file)
-        is_video = any([file.endswith(ext) for ext in config.video_exts])
-        is_extra = any([file.endswith(ext) for ext in config.extra_exts])
-        return ((s >= config.min_filesize * 1024 * 1024 and is_video) 
-            or (s >= 0 and is_extra))
+        s = size(file_path)
+        min = cls.min_filesize_for_resolution(file_path)
+        is_video = any([file_path.endswith(ext) for ext in config.video_exts])
+        is_extra = any([file_path.endswith(ext) for ext in config.extra_exts])
+
+        return ((s >= min * 1024 * 1024 and is_video)
+                or (s >= 0 and is_extra))
 
     @classmethod
-    def safe_move(cls, src: str, dst: str):
+    def min_filesize_for_resolution(cls, file_path):
+        """Determine the minimum filesize for the resolution for file path.
+
+        Args:
+            file: (str, utf-8) path to file.
+        Returns:
+            int: The minimum file size, or default if resolution could not be determined
+        """
+        min = config.min_filesize
+        if isinstance(min, int):
+            return min
+
+        # If the min filesize is not an int, we assume
+        # that it is an AttrMap of resolutions.
+        from fylmlib.parser import parser
+        res = parser.get_resolution(file_path)
+        if res is None:
+            return min.default
+        if res == '720p' or res == '1080p' or res == '2160p':
+            return min[res]
+        elif res.lower() == 'sd' or res.lower() == 'sdtv':
+            return min.SD
+        else:
+            return min.default
+
+    @classmethod
+    def safe_move(cls, src: str, dst: str, ok_to_upgrade = False):
         """Performs a 'safe' move operation.
 
         Performs some additional checks before moving files. Optionally supports
@@ -413,6 +441,8 @@ class fileops:
         Args:
             src: (str, utf-8) path of file to move.
             dst: (str, utf-8) destination for file to move to.
+                                  as determined by checking for identical duplicates
+                                  that meet upgrade criteria.
 
         Returns:
             True if the file move was successful, else False.
@@ -436,18 +466,21 @@ class fileops:
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
-        # and print a warning to the console. If overwrite_existing is enabled, 
+        # and print a warning to the console. If force_overwrite is enabled, 
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
-        if os.path.exists(dst):
-            # If overwrite_existing is turned off, we can't overwrite this file.
-            if config.overwrite_existing is False and config.interactive is False:
+        # If the function was called with a Should property, we can skip this if it's
+        # marked for upgrade.
+        if os.path.exists(dst) and not ok_to_upgrade:
+            # If force_overwrite is turned off, we can't overwrite this file.
+            # If interactive is on, the user has some more flexibility and can choose to
+            # overwrite, so we can skip this.
+            if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                console().red().indent(f'Unable to move; a file with the same name already exists ({dst})').print()
+                console().red().indent(f"Unable to move; a file with the same name already exists in '{os.path.dirname(dst)}'").print()
                 return False
                 
-            # File overwriting is enabled and not marked to replace, so warn, 
-            # and proceed continue.
-            console().yellow().indent(f'Replacing existing file ({dst})').print()
+            # File overwriting is enabled and not marked to upgrade, so warn but continue
+            console().yellow().indent(f"Replacing existing file in '{os.path.dirname(dst)}'").print()
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
