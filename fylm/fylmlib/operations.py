@@ -388,19 +388,47 @@ class fileops:
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
-    def is_acceptable_size(cls, file):
-        """Determine if a file is an acceptable size.
+    def is_acceptable_size(cls, file_path):
+        """Determine if a file_path is an acceptable size.
 
         Args:
             file: (str, utf-8) path to file.
         Returns:
             True, if the file is an acceptable size, else False.
         """
-        s = size(file)
-        is_video = any([file.endswith(ext) for ext in config.video_exts])
-        is_extra = any([file.endswith(ext) for ext in config.extra_exts])
-        return ((s >= config.min_filesize * 1024 * 1024 and is_video) 
-            or (s >= 0 and is_extra))
+        s = size(file_path)
+        min = cls.min_filesize_for_resolution(file_path)
+        is_video = any([file_path.endswith(ext) for ext in config.video_exts])
+        is_extra = any([file_path.endswith(ext) for ext in config.extra_exts])
+
+        return ((s >= min * 1024 * 1024 and is_video)
+                or (s >= 0 and is_extra))
+
+    @classmethod
+    def min_filesize_for_resolution(cls, file_path):
+        """Determine the minimum filesize for the resolution for file path.
+
+        Args:
+            file: (str, utf-8) path to file.
+        Returns:
+            int: The minimum file size, or default if resolution could not be determined
+        """
+        min = config.min_filesize
+        if isinstance(min, int):
+            return min
+
+        # If the min filesize is not an int, we assume
+        # that it is an AttrMap of resolutions.
+        from fylmlib.parser import parser
+        res = parser.get_resolution(file_path)
+        if res is None:
+            return min.default
+        if res == '720p' or res == '1080p' or res == '2160p':
+            return min[res]
+        elif res.lower() == 'sd' or res.lower() == 'sdtv':
+            return min.SD
+        else:
+            return min.default
 
     @classmethod
     def safe_move(cls, src: str, dst: str):
