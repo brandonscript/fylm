@@ -232,7 +232,7 @@ class TestMove(object):
         conftest.make_empty_dirs()
 
         # Need to make sure this file is sufficiently big
-        make.make_mock_file(src, big_size * (100 if os.environ.get('TRAVIS') is not None else 1))
+        make.make_mock_file(src, big_size * (1024 if os.environ.get('TRAVIS') is not None else 1))
         
         config.test = False
         assert(config.test is False)
