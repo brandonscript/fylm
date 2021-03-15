@@ -31,6 +31,7 @@ class _AnsiColors:
         self.green = 35
         self.red = 1
         self.blue = 32
+        self.light_blue = 37
         self.yellow = 214
         self.amber = 208
         self.olive = 106
