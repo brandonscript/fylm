@@ -31,6 +31,7 @@ import re
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
+from fylmlib.enums import Media
 
 class parser:
     """Main class for film parser.
@@ -176,7 +177,7 @@ class parser:
             source_path: (str, utf-8) full path of file or folder.
 
         Returns:
-            A corrected string representing the film's edition, or None.
+            A corrected string representing the film's resolution, or None.
         """
 
         folder = os.path.basename(os.path.dirname(source_path))
@@ -199,7 +200,7 @@ class parser:
         return resolution
 
     @classmethod
-    def get_media(cls, source_path):
+    def get_media(cls, source_path) -> Media:
         """Get media from full path of file or folder.
 
         Use regular expressions to identity the original media of the file.
@@ -208,8 +209,7 @@ class parser:
             source_path: (str, utf-8) full path of file or folder.
 
         Returns:
-            A string representing the original media format, or None, if no
-            match is found.
+            An enum representing the media found.
         """
 
         folder = os.path.basename(os.path.dirname(source_path))
@@ -217,17 +217,17 @@ class parser:
 
         match = re.search(patterns.media, f'{folder}/{file}')
         if match and match.group('bluray'):
-            return "Bluray"
-        elif match and match.group('web'):
-            return "WEBDL"
-        elif match and match.group('dvd'):
-            return "DVD"
+            return Media.BLURAY
+        elif match and match.group('webdl'):
+            return Media.WEBDL
         elif match and match.group('hdtv'):
-            return "HDTV"
+            return Media.HDTV
+        elif match and match.group('dvd'):
+            return Media.DVD
         elif match and match.group('sdtv'):
-            return "SDTV"
+            return Media.SDTV
         else:
-            return None
+            return Media.UNKNOWN
 
     @classmethod
     def is_hdr(cls, source_path) -> bool:

@@ -32,6 +32,7 @@ from fylmlib.console import console
 from fylmlib.duplicates import duplicates
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
+from fylmlib.enums import Should
 
 class interactive:
 
@@ -68,7 +69,8 @@ class interactive:
         Args:
             film: (Film) Current film to process
         Returns:
-            True if the film should be moved, else False
+            False if deleting this or skipping this film, otherwise True
+            (if True, it will be processed)
         """
         if config.interactive is False:
             raise Exception('Interactive mode is not enabled')
@@ -77,44 +79,91 @@ class interactive:
         if len(film.duplicate_files) == 0:
             return True
 
-        for d in film.duplicate_files:
+        console().print_duplicate_lines(film)
 
-            size_diff = formatter.pretty_size_diff(film.source_path, d.source_path)
-            pretty_size = formatter.pretty_size(d.size)
+        choices = []
 
-            c = console().blue().indent()
-            c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
-            c.dark_gray(f' [{size_diff}]')
-            c.print()
-            console().dark_gray().indent(f'in {os.path.dirname(d.source_path)}').print()
+        # Get exact duplicates
+        exact_duplicates = duplicates.find_exact(film)
 
-            choices = [
-                'Upgrade (replace) existing film', 
-                'Delete this file (keep existing film)',
-                'Skip']
-            if d.new_filename_and_ext not in film.video_files:
-                choices[2:2] = ['Keep both copies']
+        # Find all lower quality duplicates that are marked as upgradable (i.e., in the upgrade table)
+        # TODO: This is probably very circular and could be improved a lot.
+        upgradable_files = [l for l in duplicates.find_lower_quality(film) if l.duplicate == Should.UPGRADE]
 
-            choice = cls._choice_input(
-                prompt='', 
-                choices=choices,
+        duplicates_to_delete = []
+        
+        if len(exact_duplicates) > 0:
+            # If there are any exact duplicates, choose the one at the destination that would be overwritten if possible
+            exact = next((d for d in exact_duplicates if d.destination_path == film.destination_path), exact_duplicates[0])
+            duplicates_to_delete.append(exact)
+            # If the duplicate is smaller than the current primary file, consider it an upgrade, otherwise a replace.
+            (s, a) = ('Upgrade', '') if exact.size < film.primary_file.size else ('Replace', ' anyway')
+            choices.append(f"{s} existing film '{exact.new_filename_and_ext}'{a} ({formatter.pretty_size(exact.size)})")
+        else:
+            # If there are no upgradable files, but still duplicates detected, 
+            # the only choice should be keep (not upgrade or replace)
+            if len(upgradable_files) == 0 and len(film.duplicate_files) > 0:
+                choices.append(f"Keep this file (and existing {formatter.pluralize('film', len(film.duplicate_files))})")
+            else:    
+                choices.append(f"Upgrade {len(upgradable_files)} existing lower quality {formatter.pluralize('film', len(upgradable_files))}")
+                duplicates_to_delete = upgradable_files
+
+        choices.extend([f"Delete this file (keep existing {formatter.pluralize('film', len(film.duplicate_files))})",
+                        ('S', '[ Skip ]')])
+
+        choice = cls._choice_input(
+            prompt='', 
+            choices=choices,
+            default=None,
+            mock_input=_first(config.mock_input))
+
+        config.mock_input = _shift(config.mock_input)
+
+        # Keep (move/copy) this file
+        if choice == 0:
+            film.ignore_reason = None # Reset ignore reason just in case this has changed
+            # If there were duplicates, and this film is upgrading/replacing, remove them
+            if len(duplicates_to_delete) > 0:
+                for d in duplicates_to_delete:
+                    # Mark the duplicate for upgrading
+                    d.duplicate = Should.UPGRADE
+                duplicates.rename_unwanted(film, duplicates_to_delete)
+            return True
+        
+        # Delete this file (last choice is always skip, second last is delete)
+        elif choice == len(choices) - 2:
+
+            # Ask user to confirm destructive action
+            console().print_ask(
+                f"Are you sure you want to delete '{film.source_path}?'")
+            confirm_delete = cls._choice_input(
+                prompt='',
+                choices=['Yes – delete it', 'No – keep it'],
                 default=None,
                 mock_input=_first(config.mock_input))
 
             config.mock_input = _shift(config.mock_input)
 
-            # 0 = upgrade existing, 1 = delete this file
-            if choice == 0:
-                ops.fileops.delete(d.source_path)
-                duplicates.delete_leftover_folders(film)
-            elif choice == 1:
-                if film.is_folder:
-                    ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1)
-                else:
-                    ops.fileops.delete(film.source_path)
+            if confirm_delete == 0:
+                cls.delete_and_keep_existing(film)
 
-            # If deleting this or skipping, return false, otherwise true
-            return False if choice == len(choices) - 1 or choice == 1 else True
+            return False
+        
+        # Skipping (or default)
+        else:
+            return False
+
+    @classmethod
+    def delete_and_keep_existing(cls, film):
+        """Keep the current duplicate instead of the current film
+
+        Args:
+            film: (Film) Current film being processed, to be deleted
+        """
+        if film.is_folder:
+            ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1)
+        else:
+            ops.fileops.delete(film.source_path)
 
     @classmethod
     def verify_film(cls, film):
@@ -410,9 +459,9 @@ class interactive:
         if enumeration == 'number':
             chars = [str(x + 1) for x in range(len(choices))]
         elif enumeration == 'char':
-            assert len(choices) < 27, "Choices can't be represented by single chars"
-            chars = [x[0].title() if isinstance(choices[0], tuple) else x[:1].title() for x in choices]
-            choices = [x[1] if isinstance(choices[0], tuple) else x for x in choices]
+            assert len(choices) < 27, "To many choices to be represented by single letters"
+            chars = [x[0].title() if isinstance(x, tuple) else x[:1].title() for x in choices]
+            choices = [x[1] if isinstance(x, tuple) else x for x in choices]
         else:
             raise ValueError("enumeration is not 'number' or 'char'")
 

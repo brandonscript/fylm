@@ -51,8 +51,8 @@ class TestDirOperations(object):
 
     def test_get_existing_films(self):
 
-        fylm.config.duplicate_checking.enabled = True
-        assert(fylm.config.duplicate_checking.enabled is True)
+        fylm.config.duplicates.enabled = True
+        assert(fylm.config.duplicates.enabled is True)
 
         files = {
             '2160p': 'Rogue.One.A.Star.Wars.Story.2016.4K.2160p.DTS.mp4',

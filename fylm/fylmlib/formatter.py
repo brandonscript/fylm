@@ -54,7 +54,7 @@ def build_new_basename(file, type="file"):
     # be ordered such that the most restrictive comes before the
     # most flexible match.
     
-    quality = '-'.join(filter(None, [file.media or None, file.resolution or None]))
+    quality = '-'.join(filter(None, [file.media.display_name if file.media else None, file.resolution or None]))
 
     pattern_map = [
         ["title-the", file.parent_film.title_the],

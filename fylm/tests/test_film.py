@@ -25,6 +25,7 @@ import fylmlib.config as config
 import fylmlib.patterns as patterns
 import fylm
 import conftest
+from fylmlib.enums import Media
 
 # @pytest.mark.skip()
 class TestFilm(object):
@@ -106,8 +107,8 @@ class TestFilm(object):
         # Check that media is detected correctly
         for film in conftest.films:
             for file in film.video_files:
-                if file.media is not None:
-                    assert(file.media in ['Bluray', 'WEBDL', 'HDTV', 'SDTV'])
+                if file.media is not None and file.media is not Media.UNKNOWN:
+                    assert(file.media in [Media.BLURAY, Media.WEBDL, Media.HDTV, Media.SDTV])
 
     def test_hdr(self):
 

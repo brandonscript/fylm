@@ -37,7 +37,7 @@ year = re.compile(r'[^\/]+\b(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)\b')
 resolution = re.compile(r'\b(?P<resolution>(?:(?:72|108|216)0p?)|4K)\b', re.I)
 
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
-media = re.compile(r'\b(?:(?P<bluray>blu-?ray|bdremux|bdrip)|(?P<web>web-?dl|WEBRip|amzn|nf|hulu)|(?P<hdtv>hdtv)|(?P<dvd>dvd)|(?P<sdtv>sdtv))\b', re.I)
+media = re.compile(r'\b(?:(?P<bluray>blu-?ray|bdremux|bdrip)|(?P<webdl>web-?dl|webrip|amzn|nf|hulu|dsnp|atvp)|(?P<hdtv>hdtv)|(?P<dvd>dvd)|(?P<sdtv>sdtv))\b', re.I)
 
 # Compiled pattern that matches Proper, case insensitive.
 proper = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
