@@ -132,16 +132,19 @@ class console(object):
         # Start log section header
         log.info(f'{("-"*40)} {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {("-"*40)}')
         
-        c = console().pink(f"\nFylm is scanning {', '.join(config.source_dirs)}\n")
+        dirs = '\n                 '.join(config.source_dirs)
+        c = console().pink(f"\nFylm is scanning {dirs}")
 
+        if config.test or config.force_lookup or config.duplicates.force_overwrite:
+            c.bold().add('\n')
         if config.test:
-            c.bold().purple('\n★ Test mode (no changes will be made)')
+            c.purple('\n★ Test mode (no changes will be made)')
         if config.force_lookup:
-            c.bold().yellow('\n★ Force lookup mode (smart folder checking is disabled, assuming all folders are films)')
-        if config.overwrite_existing:
-            c.bold().yellow('\n★ Overwrite mode enabled (identically named existing files will be silently overwritten)')
-        if config.test or config.force_lookup or config.overwrite_existing:
-            c.add('\n').print()
+            c.yellow('\n★ Force lookup mode (smart folder checking is disabled, assuming all folders are films)')
+        if config.duplicates.force_overwrite:
+            c.yellow('\n★ Force overwrite mode enabled (all identically named existing files will be silently overwritten, regardless of size)')
+        
+        c.print()
 
     def print_exit(self, count):
         """Print and log the closing summary prior to exit.
@@ -149,17 +152,15 @@ class console(object):
         Args:
             count: (int) Count of successful moves/renames, from counter module.
         """
-        s = f"{'(Test) ' if config.test else ''}No films moved"
-        if count > 0:
-            s = f"{'(Test) ' if config.test else ''}" \
-                f"Successfully {'renamed' if config.rename_only else 'moved'}" \
-                f" {count} {formatter.pluralize('film', count)}"
+
+        s = f"Successfully {'renamed' if config.rename_only else 'moved'}" \
+                f" {count} {formatter.pluralize('film', count)}" if count > 0 else "No films moved"
         
         c = console()
         if config.test is True:
-            c.purple(s)
+            c.purple(f'\n(Test) {s}')
         else:
-            c.pink(s)
+            c.pink(f"\n{s}")
         c.print()
 
     def print_exit_early(self):
@@ -174,11 +175,9 @@ class console(object):
             film: (Film) film to pass to debug calls.
             ignore: (bool) True if the film should be ignored, else False
         """
-
-        # Skip if this film is ignored
-        if film.should_ignore is True and config.hide_skipped is True:
-            return
-
+        
+        # Print blank line to separate from previous film
+        console().print()
         # Print original filename and size.
         c = console().bold(' ')
         if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
@@ -186,7 +185,7 @@ class console(object):
         c.add(film.original_basename)
         c.reset().dark_gray(f' ({formatter.pretty_size(film.size)})')
         c.print()
-        console().gray().indent(f'in {film.original_path}').print()
+        console().dark_gray().indent(f'in {film.original_path}').print()
 
 
     def print_search_result(self, film):
@@ -195,10 +194,6 @@ class console(object):
         Args:
             film: (Film) Film to print/log.
         """
-
-        # Skip if this film is ignored
-        if film.should_ignore is True and config.hide_skipped is True:
-            return
         
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
@@ -217,10 +212,6 @@ class console(object):
             film: (Film) Film that was skipped.
         """
 
-        # Skip if this film is ignored
-        if film.should_ignore is True and config.hide_skipped is True:
-            return
-
         console().red().dim().indent().red().dim(film.ignore_reason).print()
 
     def print_duplicates(self, film: 'Film'):
@@ -237,34 +228,70 @@ class console(object):
 
         if duplicate_count > 0:
             
-            console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found:").print()
+            c = console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found")
+
+            if config.interactive is True:
+                c.add(' for ').light_blue(f'{film.all_valid_files[0].new_filename_and_ext}')
+                c.blue(':').print()
+            else:
+                c.add(':').print()
 
             if config.interactive is False:
-                for v in film.video_files:
-                    for d in film.verified_duplicate_files:
-        
-                        size_diff = formatter.pretty_size_diff(v.source_path, d.source_path)
-                        pretty_size = formatter.pretty_size(d.size)
-                        should = d.duplicate
-                        
-                        c = console().indent()
+                self.print_duplicate_lines(film)
 
-                        if should == Should.UPGRADE:
-                            c.blue().add(f"  Upgrading ")
-                            c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
-                        elif should == Should.KEEP_BOTH:
-                            c.purple().add(f"  Keeping both this and ")
-                            c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
-                        elif should == Should.IGNORE:
-                            c.red().add(f"  Ignoring, not an upgrade for ")
-                            c.add(f"'{os.path.basename(d.source_path)}'")
-                        else:
-                            c.gray(f"  '{os.path.basename(d.source_path)}' ({pretty_size})")
-                        c.dark_gray(' [')
-                        if d.upgrade_reason != '':
-                            c.add(f'{d.upgrade_reason}, ')
-                        c.add(f'{size_diff}]')
-                        c.print()
+    def print_duplicate_lines(self, film):
+        """Print a duplicate line.
+
+        Args:
+            film: (Film.File) The film object for which to print duplicates
+        """
+
+        # In case there are multiple video files in the original film, 
+        # we need to process each separately.
+        for v in film.video_files:
+
+            # Veriified duplicates exist on the filesystem
+            for d in film.verified_duplicate_files:
+
+                # Print a line of detail for each duplicate
+                size_diff = formatter.pretty_size_diff(v.source_path, d.source_path)
+                pretty_size = formatter.pretty_size(d.size)
+                should = d.duplicate
+
+                c = console()
+                r = "" 
+                p = "  "
+                if config.interactive:
+                    c.yellow()
+                    r = "Recommend "
+                    p = ""
+                if should == Should.UPGRADE:
+                    c.blue() if not config.interactive else c.yellow()
+                    c.indent(p).add(f"{r}upgrading ".capitalize())
+                elif should == Should.KEEP_BOTH:
+                    c.purple() if not config.interactive else c.yellow()
+                    c.indent(p).add(f"{r}keeping both this and ".capitalize())
+                elif should == Should.IGNORE:
+                    if config.duplicates.force_overwrite is True and config.interactive is False:
+                        c.yellow()
+                        c.indent(p).add(f"(Force) replacing ")
+                    else:
+                        c.red()
+                        c.indent(p).add(f"{r}ignoring; not an upgrade for ".capitalize())
+                else:
+                    c.gray(p).indent()
+
+                c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
+                c.dark_gray(' [')
+                if d.upgrade_reason != '':
+                    c.add(f'{d.upgrade_reason}, ')
+                c.add(f'{size_diff}]')
+                c.print()
+
+                # If in non-interactive mode, if a duplicate of equal or greater quality is detected,
+                # we know this film won't be moved, so we can just display this duplicate.
+                if not config.interactive and should == Should.IGNORE:
+                    break
 
     def print_ask(self, s):
         """Print an interactive question.
@@ -314,7 +341,7 @@ class console(object):
         from fylmlib.operations import dirops
         console().gray().indent(
             f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
-            f" {os.path.basename(dst)} to {os.path.dirname(dst)}"
+            f" '{os.path.basename(dst)}' to {os.path.dirname(dst)}"
         ).print()
 
     def print_copy_progress_bar(self, copied, total):

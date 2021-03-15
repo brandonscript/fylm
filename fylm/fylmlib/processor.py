@@ -31,6 +31,7 @@ from fylmlib.console import console
 from fylmlib.subtitle import Subtitle
 from fylmlib.duplicates import duplicates
 from fylmlib.interactive import interactive
+from fylmlib.enums import Should
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
 import fylmlib.counter as counter
@@ -55,9 +56,12 @@ class processor:
 
         for film in films:
             
-            # Route film to correct handler
-            cls.route(film)
-
+            # If we determine that this file should be suppressed in the console, 
+            # there's no value in continuing to route it.
+            if not cls.should_be_skipped(film):
+                # Route film to correct handler
+                cls.route(film)
+                
         # If we are running in interactive mode, we need to handle the moves
         # after all the lookups are completed in case we have long-running copy
         # operations.
@@ -65,8 +69,8 @@ class processor:
 
             # If we're moving more than one film, print the move header.
             queue_count = len(_move_queue)
-            c = console().pink(f"{'Copying' if config.safe_copy else 'Moving'}")
-            c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...\n").print()
+            c = console().pink(f"\n{'Copying' if config.safe_copy else 'Moving'}")
+            c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...").print()
 
             # Process the entire queue
             cls.process_move_queue()
@@ -82,7 +86,7 @@ class processor:
         # Print film header to console.
         console().print_film_header(film)
             
-        if config.interactive is True and (not film.ignore_reason or film.ignore_reason.startswith('Unknown')):
+        if config.interactive is True:
             # If the film is rejected via the interactive flow, skip.
             if interactive.lookup(film) is False:
                 return
@@ -116,7 +120,7 @@ class processor:
             else:
                 duplicates.rename_unwanted(film)
 
-        if not film.should_ignore or config.interactive is True:
+        if not film.should_ignore or config.interactive is True or config.duplicates.force_overwrite:
             # If it is a file and as a valid extension, process it as a file
             if film.is_file and film.all_valid_files[0].has_valid_ext:
                 cls.prepare_file(film)
@@ -131,8 +135,26 @@ class processor:
         if config.interactive is False:
             cls.process_move_queue()
 
-        # Print blank line to separate next film
-        console().print()
+    @classmethod
+    def should_be_skipped(cls, film: Film):
+        """Determines whether the film should be processed
+        or be suppressed (including console suppression).
+
+        Args:
+            film: (Film) Film object to check for ignore_reason
+        Returns:
+            bool: True if the file/folder should be skipped, otherwise False
+        """
+
+        if (film.should_ignore is True and config.interactive is True
+            and not film.ignore_reason.startswith("Unknown")
+            and not film.ignore_reason == "Appears to be a TV show"
+            and not film.ignore_reason.endswith("small")):
+            return True
+        elif film.should_ignore is True and config.interactive is False and config.hide_skipped is True:
+            return True
+        else:
+            return False
 
     @classmethod
     def process_move_queue(cls):
@@ -297,7 +319,7 @@ class processor:
         # is the same as the destination.
 
         if config.remove_source and film.original_path != film.destination_path:
-            console().indent().dark_gray('Removing parent folder').print()
+            console().dark_gray().indent().add('Removing parent folder').print()
             console.debug(f'Deleting {film.original_path}')
 
             # Delete the source dir and its contents
@@ -321,14 +343,16 @@ class _QueuedMoveOperation(object):
             console().yellow().indent(f'\'{os.path.basename(self.file.source_path)}\' no longer exists or cannot be accessed').print()
             return False
 
-        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.file.destination_path)
+        # If an identically named duplicate exists, check the upgrade table to see if it is OK for upgrade
+        ok_to_upgrade = len(duplicates.find_exact(self.file.parent_film)) > 0 and len(duplicates.find_upgradable(self.file.parent_film)) > 0
+
+        # Execute the move
+        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.file.destination_path, ok_to_upgrade)
 
         # Clean up duplicates if all the files in the parent film have been moved
         if (len(self.file.parent_film.duplicate_files) > 0 
             and config.interactive is False 
             and len(list(filter(lambda m: m.did_move == False, self.file.parent_film.all_valid_files))) == 0):
-            if config.interactive is False:
-                duplicates.delete_upgraded(self.file.parent_film)
+            duplicates.delete_upgraded(self.file.parent_film)
 
         return self.file.did_move
-

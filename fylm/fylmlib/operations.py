@@ -106,7 +106,7 @@ class dirops:
 
         # If check_for_duplicates is disabled, we don't care about duplicates, and
         # don't need to spend cycles processing duplicates. Return an empty array.
-        if config.duplicate_checking.enabled is False:
+        if config.duplicates.enabled is False:
             return []
 
         # Fix paths being a str
@@ -441,6 +441,7 @@ class fileops:
         Args:
             src: (str, utf-8) path of file to move.
             dst: (str, utf-8) destination for file to move to.
+            ok_to_upgrade: (Bool) True if this file is OK to replace an existing one
                                   as determined by checking for identical duplicates
                                   that meet upgrade criteria.
 
@@ -520,7 +521,7 @@ class fileops:
 
                 # If not, then we print an error and return False.
                 else:
-                    console().red().indent(f"Size mismatch: file is {dst_size:,} bytes, expected {expected_size:,} bytes")
+                    console().red().indent(f"Size mismatch; file is {dst_size:,} bytes, expected {expected_size:,} bytes")
                     return False
             
             # Otherwise, move the file instead.

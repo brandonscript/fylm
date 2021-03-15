@@ -210,8 +210,8 @@ class Config(object):
         parser.add_argument(
             '--no-duplicates',
             action="store_false",
-            default=self._defaults.duplicate_checking.enabled,
-            dest="no_duplicates",
+            default=self._defaults.duplicates.enabled,
+            dest="duplicates_enabled",
             help='Disable duplicate checking')
 
         # -o, --overwrite
@@ -221,10 +221,9 @@ class Config(object):
             '-o',
             '--overwrite',
             action="store_true",
-            default=self._defaults.overwrite_existing,
-            dest="overwrite_existing",
-            help=('Forcibly overwrite any file (or matching files inside a film folder) with the same name, '
-                  'regardless of size difference) # Forcibly overwrite duplicate files regardless of size diff'))
+            default=self._defaults.duplicates.force_overwrite,
+            dest="force_overwrite",
+            help=('Forcibly overwrite any file (or matching files inside a film folder) with the same name, \regardless of size difference)'))
 
         # --source
         # This option overrides the source dirs configured in config.yaml.
@@ -285,6 +284,12 @@ class Config(object):
         # Create placeholder var for mock inputs in interactive mode.
         self._defaults.mock_input = None
 
+        # Set no_duplicates and force_overwrite nested properties in duplicates
+        self._defaults.duplicates.enabled = self._defaults.duplicates_enabled
+        del self._defaults.duplicates_enabled
+        self._defaults.duplicates.force_overwrite = self._defaults.force_overwrite
+        del self._defaults.force_overwrite
+
         # Set up cache.
         if self._defaults.cache is True:
             cache_ttl = self._defaults.cache_ttl or 1
@@ -293,6 +298,7 @@ class Config(object):
 
         for k, v in self._defaults.items():
             setattr(self, k, AttrMap(v) if isinstance(v, dict) else v)
+        del self._defaults
     
     def reload(self):
         """Reload config from config.yaml.

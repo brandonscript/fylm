@@ -35,7 +35,8 @@ dst = os.path.join(
     conftest.films_dst_paths['1080p'], 
     'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
-expected_size = 7354 * make.mb_t
+sm_size = 5354 * make.mb_t
+big_size = 7354 * make.mb_t
 
 def async_safe_copy(conn, *args):
     copy = ops.fileops.safe_move(*args)
@@ -50,7 +51,13 @@ class TestMove(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
+        # Reset config
+        conftest._setup()
+
+        config.interactive = False
+        assert(config.interactive is False)
+
+        make.make_mock_file(src, big_size)
 
         config.safe_copy = False
         assert(config.safe_copy is False)
@@ -61,21 +68,49 @@ class TestMove(object):
         move = ops.fileops.safe_move(src, dst)
 
         assert(move is True)
-        assert(os.path.exists(dst))
+        assert(not os.path.exists(src))
+        assert(    os.path.exists(dst))
 
-    def test_dst_exists_no_replace(self):
+    def test_dst_exists_upgrade_smaller(self):
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
-        make.make_mock_file(dst, expected_size - 220)
+        make.make_mock_file(src, big_size)
+        make.make_mock_file(dst, sm_size)
 
         config.safe_copy = False
         assert(config.safe_copy is False)
         
         config.test = False
         assert(config.test is False)
+
+        config.duplicates.force_overwrite = False
+        assert(config.duplicates.force_overwrite is False)
+
+        # Pass ok_to_upgrade here forcibly, because app logic doesn't determine upgrade eligibility
+        move = ops.fileops.safe_move(src, dst, True) 
+
+        assert(move is True)
+        assert(not os.path.exists(src))
+        assert(    os.path.exists(dst))
+
+    def test_dst_exists_dont_replace_bigger_overwrite_off(self):
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+
+        make.make_mock_file(src, sm_size)
+        make.make_mock_file(dst, big_size)
+
+        config.safe_copy = False
+        assert(config.safe_copy is False)
+        
+        config.test = False
+        assert(config.test is False)
+
+        config.duplicates.force_overwrite = False
+        assert(config.duplicates.force_overwrite is False)
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -83,43 +118,21 @@ class TestMove(object):
         assert(os.path.exists(src))
         assert(os.path.exists(dst))
 
-    def test_dst_exists_no_overwrite_no_replace(self):
+    def test_dst_exists_replace_bigger_overwrite_on(self):
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
-        make.make_mock_file(dst, expected_size - 220)
+        make.make_mock_file(src, sm_size)
+        make.make_mock_file(dst, big_size)
 
         config.safe_copy = False
         assert(config.safe_copy is False)
-        
+
         config.test = False
         assert(config.test is False)
-        config.overwrite_existing = False
-        assert(config.overwrite_existing is False)
-
-        move = ops.fileops.safe_move(src, dst)
-
-        assert(move is False)
-        assert(os.path.exists(src))
-        assert(os.path.exists(dst))
-
-    def test_dst_exists_overwrite(self):
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(src, expected_size)
-        make.make_mock_file(dst, expected_size - 220)
-
-        config.safe_copy = False
-        assert(config.safe_copy is False)
-        
-        config.test = False
-        assert(config.test is False)
-        config.overwrite_existing = True
-        assert(config.overwrite_existing is True)
+        config.duplicates.force_overwrite = True
+        assert(config.duplicates.force_overwrite is True)
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -127,21 +140,22 @@ class TestMove(object):
         assert(not os.path.exists(src))
         assert(os.path.exists(dst))
 
-    def test_dst_exists_replace(self):
+    def test_dst_exists_dont_replace_identical_overwrite_off(self):
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
-        make.make_mock_file(dst, expected_size - 220)
+        make.make_mock_file(src, big_size)
+        make.make_mock_file(dst, big_size)
 
         config.safe_copy = False
         assert(config.safe_copy is False)
         
         config.test = False
         assert(config.test is False)
-        config.overwrite_existing = False
-        assert(config.overwrite_existing is False)
+
+        config.duplicates.force_overwrite = False
+        assert(config.duplicates.force_overwrite is False)
 
         move = ops.fileops.safe_move(src, dst)
 
@@ -149,12 +163,35 @@ class TestMove(object):
         assert(os.path.exists(src))
         assert(os.path.exists(dst))
 
+    def test_dst_exists_replace_identical_overwrite_on(self):
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+
+        make.make_mock_file(src, big_size)
+        make.make_mock_file(dst, big_size)
+
+        config.safe_copy = False
+        assert(config.safe_copy is False)
+        
+        config.test = False
+        assert(config.test is False)
+
+        config.duplicates.force_overwrite = True
+        assert(config.duplicates.force_overwrite is True)
+
+        move = ops.fileops.safe_move(src, dst)
+
+        assert(move is True)
+        assert(not os.path.exists(src))
+        assert(    os.path.exists(dst))
+
     def test_test_enabled(self):
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
+        make.make_mock_file(src, big_size)
         assert(os.path.exists(src))
         assert(not os.path.exists(dst))
 
@@ -170,12 +207,12 @@ class TestMove(object):
         assert(os.path.exists(src))
         assert(not os.path.exists(dst))
 
-    def test_src_eq_dst(self):
+    def test_src_and_dst_are_same_dir(self):
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
+        make.make_mock_file(src, big_size)
 
         config.safe_copy = False
         assert(config.safe_copy is False)
@@ -190,11 +227,11 @@ class TestMove(object):
 
     def test_safe_copy(self):
 
-        expected_size = 75 * make.mb
+        big_size = 75 * make.mb
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, expected_size)
+        make.make_mock_file(src, big_size)
         
         config.test = False
         assert(config.test is False)

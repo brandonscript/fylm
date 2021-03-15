@@ -109,6 +109,9 @@ class Film:
                             by comparing media, resolution, format, and
                             edition.
 
+        primary_file:       The primary video file in folder, defined as
+                            the largest file in the list of video_files.
+
         duplicates:         Get a list of duplicates from the cached
                             list of existing films.
 
@@ -198,10 +201,15 @@ class Film:
     @property
     def all_valid_files(self) -> ['Film.File']:
         if self._all_valid_files is None:
+            # Initialize an empty array, just in case there are no valid files
+            self._all_valid_files = []
             if self.is_file:
+                # It's a file, we can just return an array with the file as its only value
                 self._all_valid_files = [Film.File(self.source_path, self)]
             else:
+                # Get all valid files
                 self._all_valid_files = list(Film.File(path, self) for path in ops.dirops.get_valid_files(self.source_path))
+                # Sort by size, inversely so that the largest file is first in the list
                 self._all_valid_files.sort(key=lambda f: f.size, reverse=True)
 
         return self._all_valid_files
@@ -213,18 +221,35 @@ class Film:
         multiple versions of the same file under the same parent folder. 
         These could be multiple editions of the same film, or different 
         qualities or media of the same film. In all other cases, this will will be
-        an array of one at index 0 (the main video file)."""
+        an array of one at index 0 (the main video file). This excludes sample files
+        or others that have been poorly named.
+        
+        Returns:
+            Array of Film.File objects that are valid video files."""
+
+        # if self.original_basename == 'Cinderfella.1960.720p.WEB-DL.AAC2.0.H264-FGT':
+        #     print(self.source_path, ops.dirops.get_valid_files(self.source_path))
         
         return list(filter(lambda f:
             f.is_video and (f.year is not None or f.resolution is not None or f.media is not None),
         self.all_valid_files))
 
     @property
+    def primary_file(self) -> 'Film.File':
+        """Returns the largest video file in a Film folder (or if there is only
+        a single file, that file).
+        
+        Returns:
+            The largest video file in the Film object, or None if there are no valid files"""
+
+        return self.video_files[0] if len(self.video_files) > 0 else None
+
+    @property
     def duplicate_files(self) -> ['Film.File']:
         """An array of duplicate files in existing films.
 
         Returns:
-            A an array of duplicate films file objects.
+            An array of duplicate films file objects.
         """
         # Import duplicates here to avoid circular imports.
         from fylmlib.duplicates import duplicates
@@ -265,23 +290,23 @@ class Film:
         Returns:
             A new new path name based on config.rename_pattern.
         """
-        return formatter.build_new_basename(self.video_files[0], 'file' if self.is_file else 'folder')
+        return formatter.build_new_basename(self.primary_file, 'file' if self.is_file else 'folder')
 
     @property
     def destination_path(self):
         # If 'rename_only' is enabled, we need to override the configured
         # destination dir with the source dir.
         
-        dst = ''
+        root_dst_folder = ''
         if config.rename_only is True:
-            dst = os.path.dirname(self.source_path)
+            root_dst_folder = os.path.dirname(self.source_path)
         else:
             try:
-                biggest_file = self.all_valid_files[0]
-                dst = config.destination_dirs[biggest_file.resolution] if biggest_file.resolution else config.destination_dirs['SD']
+                root_dst_folder = config.destination_dirs[self.primary_file.resolution] if self.primary_file.resolution else config.destination_dirs['SD']
             except KeyError:
-                dst = config.destination_dirs['default']
-        return os.path.normpath(os.path.join(dst, self.new_basename)) if config.use_folders else dst
+                root_dst_folder = config.destination_dirs['default']
+        film_folder = formatter.build_new_basename(self.primary_file, 'folder') if config.use_folders else ''
+        return os.path.normpath(os.path.join(root_dst_folder, film_folder))
 
     @property
     def should_ignore(self):
@@ -294,14 +319,14 @@ class Film:
         elif not os.path.exists(self.source_path):
             self.ignore_reason = 'Path no longer exists'
 
-        elif self.is_file and not self.all_valid_files[0].has_valid_ext:
-            self.ignore_reason = 'Not a valid file extension'
+        elif self.is_file and len(self.video_files) == 0:
+            self.ignore_reason = 'File does not a valid file extension'
 
         elif self.is_tv_show:
             self.ignore_reason = 'Appears to be a TV show'
 
-        elif self.is_folder and len(self.all_valid_files) == 0:
-            self.ignore_reason = 'No valid files found in this folder'
+        elif self.is_folder and len(self.video_files) == 0:
+            self.ignore_reason = 'No video files found in this folder'
 
         elif self.title is None:
             self.ignore_reason = 'Unknown title'
@@ -309,7 +334,7 @@ class Film:
         elif self.year is None and (config.force_lookup is False or config.tmdb.enabled is False):
             self.ignore_reason = 'Unknown year'
 
-        elif self.size < config.min_filesize * 1024 * 1024 and len(self.video_files) > 0:
+        elif len(self.video_files) > 0 and self.size < ops.fileops.is_acceptable_size(self.primary_file.source_path):
             self.ignore_reason = f'{formatter.pretty_size(self.size)} is too small'
 
         return self.ignore_reason is not None
@@ -380,7 +405,7 @@ class Film:
 
             media:              Original release media, e.g. Bluray, WEBDL, HDTV, None (unknown)
             
-            resolution:         Original quality of media: SD, 720p, 1080p, or 2160p.
+            resolution:         Original pixel depth: SD, 720p, 1080p, or 2160p.
 
             is_hdr:             Bool to indicate whether this version is HDR.
 
@@ -430,7 +455,7 @@ class Film:
 
             is_duplicate:       Returns true if the file is marked as a duplicate.
 
-            duplicate:          Returns None, or one of Should enum (upgrade, ignore, keep_both)
+            duplicate:          Returns None, or one of Should enum (UPGRADE, IGNORE, KEEP_BOTH, DELETE)
 
             upgrade_reason:     Returns the reason this file should be upgraded, or an empty string.
             
@@ -465,7 +490,7 @@ class Film:
             # Internal setter for `resolution`.
             self._resolution = None
 
-            # Initialize remaining properties
+            # Parse quality
             self.edition = parser.get_edition(self.source_path)
             self.media = parser.get_media(self.source_path)
             self.is_hdr = parser.is_hdr(self.source_path)
@@ -499,18 +524,6 @@ class Film:
                 except Exception:
                     pass
             return self._resolution
-            
-        # @property
-        # def source_path(self):
-        #     # TODO: Consider a more lightweight way of handling this, it could be expensive
-        #     if self.is_duplicate is True and not self.duplicate is None and os.path.exists(f"{self._source_path}.dup"):
-        #         return f"{self._source_path}.dup"
-        #     else:
-        #         return self._source_path
-
-        # @source_path.setter
-        # def source_path(self, new_path):
-        #     self._source_path = new_path
 
         @property
         def original_basename(self):

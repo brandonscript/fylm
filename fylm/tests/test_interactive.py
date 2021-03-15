@@ -63,17 +63,17 @@ class TestInteractive(object):
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))
 
-    def test_handle_duplicates_replace_same_quality_folder(self):
+    def test_handle_duplicates_upgrade_same_quality_folder(self):
 
         conftest._setup()
 
         # Set up config
         fylm.config.test = False
         fylm.config.interactive = True
-        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicates.enabled = True
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicates.enabled is True)
 
         fylm.config.mock_input = ['Y', 'U']
 
@@ -101,7 +101,7 @@ class TestInteractive(object):
         assert(os.path.exists(xf))
         assert(isclose(ops.size(xf), 8233 * make.mb_t, abs_tol=10))
 
-    def test_handle_duplicates_replace_same_quality_file(self):
+    def test_handle_duplicates_upgrade_same_quality_file(self):
 
         conftest._setup()
 
@@ -109,11 +109,11 @@ class TestInteractive(object):
         fylm.config.use_folders = False
         fylm.config.test = False
         fylm.config.interactive = True
-        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicates.enabled = True
         assert(fylm.config.use_folders is False)
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicates.enabled is True)
 
         fylm.config.mock_input = ['Y', 'U']
 
@@ -123,8 +123,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 8133 * make.mb_t)
-        make.make_mock_file(xf, 7801 * make.mb_t)
+        make.make_mock_file(f, 9576 * make.mb_t)
+        make.make_mock_file(xf, 6441 * make.mb_t)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -139,20 +139,20 @@ class TestInteractive(object):
 
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 8133 * make.mb_t, abs_tol=10))
+        assert(isclose(ops.size(xf), 9576 * make.mb_t, abs_tol=10))
 
-    def test_handle_duplicates_replace_lower_quality(self):
+    def test_handle_duplicates_upgrade_lower_quality(self):
 
         conftest._setup()
 
         # Set up config
         fylm.config.test = False
         fylm.config.interactive = True
-        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicates.enabled = True
         assert(fylm.config.use_folders is True)
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicates.enabled is True)
 
         fylm.config.mock_input = ['Y', 'U']
 
@@ -183,7 +183,44 @@ class TestInteractive(object):
         assert(os.path.exists(nf))
         assert(isclose(ops.size(nf), 9114 * make.mb_t, abs_tol=10))        
 
+    def test_handle_duplicates_replace_identical(self):
 
+        conftest._setup()
+
+        # Set up config
+        fylm.config.test = False
+        fylm.config.interactive = True
+        fylm.config.duplicates.enabled = True
+        assert(fylm.config.use_folders is True)
+        assert(fylm.config.test is False)
+        assert(fylm.config.interactive is True)
+        assert(fylm.config.duplicates.enabled is True)
+
+        fylm.config.mock_input = ['Y', 'R']
+
+        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p BluRay.mkv')
+        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+
+        make.make_mock_file(f, 8133 * make.mb_t)
+        make.make_mock_file(xf, 8133 * make.mb_t)
+
+        # Reset existing films
+        ops.dirops._existing_films = None
+
+        # Assert that there is 1 duplicate
+        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+
+        assert(os.path.exists(f))
+        assert(os.path.exists(xf))
+
+        fylm.main()
+
+        assert(not os.path.exists(f))
+        assert(os.path.exists(xf))
+        assert(isclose(ops.size(xf), 8133 * make.mb_t, abs_tol=10))
 
     def test_handle_duplicates_skip(self):
 
@@ -192,10 +229,10 @@ class TestInteractive(object):
         # Set up config
         fylm.config.test = False
         fylm.config.interactive = True
-        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicates.enabled = True
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicates.enabled is True)
 
         fylm.config.mock_input = ['Y', 'S']
 
@@ -229,10 +266,13 @@ class TestInteractive(object):
         # Set up config
         fylm.config.test = False
         fylm.config.interactive = True
-        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicates.enabled = True
+        # Allow 1080p and 720p to be kept
+        fylm.config.duplicates.upgrade_table['720p'] = [] 
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(len(fylm.config.duplicates.upgrade_table['720p']) == 0)
 
         fylm.config.mock_input = ['Y', 'K']
 
@@ -271,12 +311,12 @@ class TestInteractive(object):
         # Set up config
         fylm.config.test = False
         fylm.config.interactive = True
-        fylm.config.duplicate_checking.enabled = True
+        fylm.config.duplicates.enabled = True
         assert(fylm.config.test is False)
         assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicate_checking.enabled is True)
+        assert(fylm.config.duplicates.enabled is True)
 
-        fylm.config.mock_input = ['Y', 'D']
+        fylm.config.mock_input = ['Y', 'D', 'Y']
 
         f = os.path.join(conftest.films_src_path, 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
         xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
@@ -301,4 +341,7 @@ class TestInteractive(object):
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))    
         assert(isclose(ops.size(xf), 9814 * make.mb_t, abs_tol=10))  
+
+        fylm.config.interactive = False
+        assert(fylm.config.interactive is False)
 

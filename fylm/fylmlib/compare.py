@@ -30,6 +30,8 @@ from fuzzywuzzy import fuzz
 
 import fylmlib.formatter as formatter
 import fylmlib.patterns as patterns
+from fylmlib.enums import Media
+from fylmlib.enums import ComparisonResult
 
 def title_similarity(a, b):
     """Compare parsed title to TMDb title.
@@ -91,8 +93,15 @@ def is_duplicate(film, existing_film):
         film: (Film) the first film to compare.
         existing_film: (Film) the second film to compare.
     Returns:
-        True if the films are identical, else False
+        True if the films are a match, else False
     """
+
+    # If both films have already been looked up and have a matching TMDb IDs, 
+    # we can assume they are a match.
+    if (film.tmdb_id is not None 
+        and existing_film.tmdb_id is not None 
+        and film.tmdb_id == existing_film.tmdb_id):
+        return True
 
     invalid_comparison_chars = re.compile(r'[^\w\d\s&.]', re.I)
 
@@ -111,30 +120,109 @@ def is_duplicate(film, existing_film):
     # but works well with identifying copies with a different resolution or quality.
     return (title == existing_title and film.year == existing_film.year)
 
-# Heuristic to determine if a file is higher or lower quality than another
-def is_higher_quality(file, existing_file):
-    """Determine if a file is a higher or lower quality than another
-    for matching resolutions. Compare media and proper status.
+def is_exact_duplicate(file, existing_file):
+    """Determine if a film is an exact duplicate of another. To qualify as
+    an exact duplicate, it must pass is_duplicate, as well as edition, quality,
+    and media should match.
 
     Args:
-        file: (Film.File) the first film to compare.
+        file: (Film.File) the first file to compare.
+        existing_file: (Film.File) the second file to compare.
+    Returns:
+        True if the files are a match, else False
+    """
+    if not is_duplicate(file.parent_film, existing_file.parent_film):
+        return False
+    
+    return quality(file, existing_file) == ComparisonResult.EQUAL
+
+def is_identical(file, existing_file):
+    """Determine if a film is an identical copy of another. To qualify as
+    an identical duplicate, it must pass is_duplicate, is_exact_duplicate, and
+    the file sizes must be equal.
+
+    Args:
+        file: (Film.File) the first file to compare.
         existing_file: (Film.File) the second file to compare.
     Returns:
         True if the files are identical, else False
     """
 
-    media_hierarchy = ["bluray", "webdl", "hdtv", "dvd", "sdtv"]
-    # resolution_hierarchy = ["2160p", "1080p", "720p", "576p", "480p"]
+    if not is_exact_duplicate(file, existing_file):
+        return False
 
-    # Because this method is primarily used to determine if one file should replace another, 
-    # we throw an error if the resolution is not the same - this protects false positives
-    # from being discarded when config asks to keep multiple qualities.
-    if file.resolution != existing_file.resolution:
-        raise Exception(f'Unable to accurately determine which of \'{file.source_path}\' and \'{existing_file.source_path}\' is the better quality')
+    return file.size == existing_file.size
 
-    # Media is different, determine which one is better
-    if file.media is not None and existing_file.media is not None and file.media != existing_file.media:
-        return media_hierarchy.index(file.media.lower()) < media_hierarchy.index(existing_file.media.lower())
-    # One is a proper, one is not
-    elif file.is_proper is True and existing_file.is_proper is False:
-        return True
+def resolution(file, existing_file) -> ComparisonResult:
+    """Compare two file resolutions to determine if one is better than the other.
+
+    Args:
+        file: (Film.File) the first file to compare.
+        existing_file: (Film.File) the second file to compare.
+    Returns:
+        ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
+    """
+
+    resolution_hierarchy = ["2160p", "1080p", "720p", "576p", "480p"]
+
+    # Get the index where the resolutions for both files occur in the heirarchy.
+    # If the resolution isn't in the list, assume it's the lowest possible resolution.
+    l = resolution_hierarchy.index(file.resolution) if file.resolution in resolution_hierarchy else 10
+    r = resolution_hierarchy.index(existing_file.resolution) if existing_file.resolution in resolution_hierarchy else 10
+
+    # Compare the indexes. A higher number means lower quality.
+    if l == r:
+        return ComparisonResult.EQUAL
+    else:
+        return ComparisonResult.HIGHER if l < r else ComparisonResult.LOWER        
+
+def quality(file, existing_file) -> ComparisonResult:
+    """Compare two file qualities to determine if one is better than the other.
+    This method compares resolution, media, edition, proper, and HDR, but does 
+    NOT compare file size.
+
+    Args:
+        file: (Film.File) the first file to compare.
+        existing_file: (Film.File) the second file to compare.
+    Returns:
+        ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
+    """
+
+    # First we compare resolution; there's no point in comparing quality unless
+    # resolutions match, because resolution is the first/principal quality differentiator.
+    res = resolution(file, existing_file)
+    if res != ComparisonResult.EQUAL:
+        return res
+
+    # If everything we're comparing is equal, we can stop here.
+    if (file.media == existing_file.media
+        and file.resolution == existing_file.resolution
+        and file.edition == existing_file.edition
+        and file.is_proper == existing_file.is_proper
+        and file.is_hdr == existing_file.is_hdr):
+        return ComparisonResult.EQUAL
+
+    # If resolutions match, continue
+    media_hierarchy = [Media.BLURAY, Media.WEBDL, Media.HDTV, Media.DVD, Media.SDTV]
+
+    # Get the index where the media for both files occurs in the heirarchy.
+    # If the media isn't in the list, assume it's the lowest possible media.
+    l = media_hierarchy.index(file.media) if file.media in media_hierarchy else 10
+    r = media_hierarchy.index(existing_file.media) if existing_file.media in media_hierarchy else 10
+
+    # If one media is greater than the other, we can stop here
+    if not l == r:
+        return ComparisonResult.HIGHER if l < r else ComparisonResult.LOWER
+
+    # If one is a proper and one is not, we can stop here
+    if file.is_proper != existing_file.is_proper:
+        return ComparisonResult.HIGHER if file.is_proper else ComparisonResult.LOWER
+
+    # If one is an HDR and one is not, these aren't comparable; we can stop here
+    if file.is_hdr != existing_file.is_hdr:
+        return ComparisonResult.NOT_COMPARABLE
+
+    # At this point, we must assume that the files aren't comparable, but 
+    # this is a last resort fallback and should never be reached.
+    return ComparisonResult.NOT_COMPARABLE
+

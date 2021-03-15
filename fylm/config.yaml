@@ -102,30 +102,41 @@ limit: 0
 # false-positive results. Best to test first before running.
 force_lookup: false
 
+# Duplicate checking can scan your destination folders for copies of the same film or file, and allows
+# you to conditionally upgrade, replace, or ignore duplicates.
+duplicates:
 
-  # Check the destionation dir for duplicate files before copying. Adds some processing time, 
-  # but allows you to replace existing files with newer/better ones.
+  # --no-duplicates
+  # Enables duplicate checking
   enabled: true
 
-duplicate_replacing:
+  # --overwrite
+  # DANGER ZONE
+  # When duplicate checking is DISABLED, this will forcibly (and silently) overwrite ANY 
+  # file (or matching files inside a film folder) with the identical name. Recommend using test mode
+  # first before running if duplicate checking is disabled.
+  # When duplicate checking is ENABLED, upgrading is handled by duplicate logic, but enabling 
+  # this will force smaller files to overwrite larger files when the filenames are identical.
+  force_overwrite: false
 
-  # Enables duplicate replacing, allowing films with different qualities to be replaced.
-  # This option requires duplicate_checking to be enabled.
-  enabled: true
+  # Enables upgrading of duplicates based on the upgrade table
+  automatic_upgrading: true
 
-  # Replace duplicates of identical quality if the existing film is smaller.
-  replace_smaller: true
+  # For each resolution, identify which (if any) other resolutions are allowed to upgrade it.
+  # Media is not factored in here, but lower-quality media will be automatically upgraded - 
+  # for example, a 1080p Bluray will always upgrade a 1080p WEB-DL.
+  # Size is also not factored here, but a smaller-size film will always upgrade a larger-size
+  # film if the quality, media, resolution, and edition match.
+  upgrade_table: 
+    2160p: [] # Never upgrade or replace 2160p
+    1080p: [] # Never upgrade or replace 1080p
+    720p: ['1080p'] # 720p can be replaced with a 1080p file, but not a 2160p copy
+    SD: ['1080p', '720p'] # SD or unknown can be upgraded by a 1080p or a 720p copy
 
-  # Treat different editions as if they were the same
+  # When comparing films for upgrading, treat different editions as if they are the same film
+  # If false, edition must match to be considered eligible for upgrading.
   ignore_edition: false
 
-  # Replace duplicates of a specific quality with a better quality, regardless of size.
-  replace_quality: 
-    2160p: [] # Do not replace 2160p films with any other quality
-    1080p: [] # Do not replace 1080p films with any other quality
-    720p: ['1080p'] # Replace 720p films with 1080p
-    SD: ['1080p', '720p'] # Replace standard definition (or unknown quality) with 1080p or 720p
-      
 # Copy files to the destination, verify, and delete originals, instead of move, even if source and
 # destination are on the same partition. This is the default behavior when source and destination 
 # are on different partitions (or network).

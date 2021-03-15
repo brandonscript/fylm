@@ -67,26 +67,24 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = False
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         fylm.config.debug = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is False)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
         
         # Do not replace 2160p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
+        fylm.config.duplicates.upgrade_table['2160p'] = [] 
         
         # Replace 1080p films with 4K
-        fylm.config.duplicate_replacing.replace_quality['1080p'] = ['2160p'] 
+        fylm.config.duplicates.upgrade_table['1080p'] = ['2160p'] 
         
         # Replace 720p films with 4K or 1080p
-        fylm.config.duplicate_replacing.replace_quality['720p'] = ['2160p', '1080p'] 
+        fylm.config.duplicates.upgrade_table['720p'] = ['2160p', '1080p'] 
 
         # Replace SD with any higher quality.
-        fylm.config.duplicate_replacing.replace_quality['SD'] = ['2160p', '1080p', '720p'] 
+        fylm.config.duplicates.upgrade_table['SD'] = ['2160p', '1080p', '720p'] 
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -127,26 +125,24 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = False
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         fylm.config.debug = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is False)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
         
         # Do not replace 2160p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
+        fylm.config.duplicates.upgrade_table['2160p'] = [] 
         
         # Replace 1080p films with 4K
-        fylm.config.duplicate_replacing.replace_quality['1080p'] = ['2160p'] 
+        fylm.config.duplicates.upgrade_table['1080p'] = ['2160p'] 
         
         # Replace 720p films with 4K or 1080p
-        fylm.config.duplicate_replacing.replace_quality['720p'] = ['2160p', '1080p'] 
+        fylm.config.duplicates.upgrade_table['720p'] = ['2160p', '1080p'] 
 
         # Replace SD with any higher quality.
-        fylm.config.duplicate_replacing.replace_quality['SD'] = ['2160p', '1080p', '720p'] 
+        fylm.config.duplicates.upgrade_table['SD'] = ['2160p', '1080p', '720p'] 
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -193,25 +189,23 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = False
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is False)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
         
         # Do not replace 2160p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
+        fylm.config.duplicates.upgrade_table['2160p'] = [] 
         
         # Do not replace 1080p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['1080p'] = [] 
+        fylm.config.duplicates.upgrade_table['1080p'] = [] 
         
         # Replace 720p films with 1080p
-        fylm.config.duplicate_replacing.replace_quality['720p'] = ['1080p'] 
+        fylm.config.duplicates.upgrade_table['720p'] = ['1080p'] 
 
         # Replace SD with any higher quality except 2160p.
-        fylm.config.duplicate_replacing.replace_quality['SD'] = ['1080p', '720p'] 
+        fylm.config.duplicates.upgrade_table['SD'] = ['1080p', '720p'] 
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -248,25 +242,23 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = False
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is False)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
         
         # Do not replace 2160p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
+        fylm.config.duplicates.upgrade_table['2160p'] = [] 
         
         # Do not replace 1080p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['1080p'] = [] 
+        fylm.config.duplicates.upgrade_table['1080p'] = [] 
         
         # Replace 720p films with 1080p
-        fylm.config.duplicate_replacing.replace_quality['720p'] = ['1080p'] 
+        fylm.config.duplicates.upgrade_table['720p'] = ['1080p'] 
 
         # Replace SD with any higher quality except 2160p.
-        fylm.config.duplicate_replacing.replace_quality['SD'] = ['1080p', '720p'] 
+        fylm.config.duplicates.upgrade_table['SD'] = ['1080p', '720p'] 
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -304,25 +296,23 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = False
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is False)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
         
         # Do not replace 2160p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['2160p'] = [] 
+        fylm.config.duplicates.upgrade_table['2160p'] = [] 
         
         # Do not replace 1080p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['1080p'] = [] 
+        fylm.config.duplicates.upgrade_table['1080p'] = [] 
         
         # Replace 720p films with 1080p
-        fylm.config.duplicate_replacing.replace_quality['720p'] = ['1080p'] 
+        fylm.config.duplicates.upgrade_table['720p'] = ['1080p'] 
 
         # Replace SD with any higher quality except 2160p.
-        fylm.config.duplicate_replacing.replace_quality['SD'] = ['1080p', '720p'] 
+        fylm.config.duplicates.upgrade_table['SD'] = ['1080p', '720p'] 
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -344,19 +334,17 @@ class TestDuplicates(object):
         assert(    os.path.exists(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])))
 
     # @pytest.mark.skip()
-    def test_replace_proper(self):
+    def test_upgrade_with_proper(self):
 
         conftest._setup()
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = True
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is True)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -384,19 +372,19 @@ class TestDuplicates(object):
         assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], proper_moved)), sm_size, abs_tol=10))
 
     # @pytest.mark.skip()
-    def test_replace_smaller(self):
+    def test_replace_smaller_overwrite_on(self):
 
         conftest._setup()
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = True
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
+        fylm.config.duplicates.force_overwrite = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is True)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
+        assert(fylm.config.duplicates.force_overwrite is True)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -421,19 +409,19 @@ class TestDuplicates(object):
         assert(    isclose(os.path.getsize(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p'])), big_size, abs_tol=10))
 
     # @pytest.mark.skip()
-    def test_do_not_replace_larger(self):
+    def test_do_not_replace_larger_overwrite_off(self):
 
         conftest._setup()
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = True
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
+        fylm.config.duplicates.force_overwrite = False
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is True)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
+        assert(fylm.config.duplicates.force_overwrite is False)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -468,13 +456,11 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = True
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is True)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
@@ -533,21 +519,19 @@ class TestDuplicates(object):
 
         # Set up config
         fylm.config.test = False
-        fylm.config.duplicate_checking.enabled = True
-        fylm.config.duplicate_replacing.enabled = True
-        fylm.config.duplicate_replacing.replace_smaller = True
+        fylm.config.duplicates.enabled = True
+        fylm.config.duplicates.automatic_upgrading = True
         assert(fylm.config.test is False)
-        assert(fylm.config.duplicate_checking.enabled is True)
-        assert(fylm.config.duplicate_replacing.enabled is True)
-        assert(fylm.config.duplicate_replacing.replace_smaller is True)
+        assert(fylm.config.duplicates.enabled is True)
+        assert(fylm.config.duplicates.automatic_upgrading is True)
 
         # Do not replace 2160p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['2160p'] = []
-        assert(len(fylm.config.duplicate_replacing.replace_quality['2160p']) == 0)
+        fylm.config.duplicates.upgrade_table['2160p'] = []
+        assert(len(fylm.config.duplicates.upgrade_table['2160p']) == 0)
 
         # Do not replace 1080p films with any other quality
-        fylm.config.duplicate_replacing.replace_quality['1080p'] = []
-        assert(len(fylm.config.duplicate_replacing.replace_quality['1080p']) == 0)
+        fylm.config.duplicates.upgrade_table['1080p'] = []
+        assert(len(fylm.config.duplicates.upgrade_table['1080p']) == 0)
 
         conftest.cleanup_all()
         conftest.make_empty_dirs()
