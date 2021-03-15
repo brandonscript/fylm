@@ -23,20 +23,16 @@ import shutil
 import json
 import random
 
-kb = 1024
+# For tests on Travis, miniaturize filesizes.
+# To force this in local tests, do:
+#   export TRAVIS=true
+#   export TMDB_KEY={key}
+# To unset these:
+#   unset TRAVIS
+
+kb = 1 if os.environ.get('TRAVIS') is not None else 1024
 mb = kb * 1024
 gb = mb * 1024
-
-# Special Travis calculations that reduce file sizes by / 1024
-kb_t = kb
-mb_t = mb
-gb_t = gb
-
-# For tests on Travis, miniaturize filesizes.
-if os.environ.get('TRAVIS') is not None:
-    kb_t = 1
-    mb_t = kb_t * 1024
-    gb_t = mb_t * 1024
 
 class MockFilm:
     def __init__(self, expected_title, expected_id, acceptable_names):

@@ -27,6 +27,8 @@ import conftest
 import fylm
 import make
 
+t = 100 if os.environ.get('TRAVIS') else 1
+
 # @pytest.mark.skip()
 class TestDirOperations(object):
 
@@ -64,10 +66,10 @@ class TestDirOperations(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['2160p'], files['2160p']), 52234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], files['1080p']), 11234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], files['720p']), 6590 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], files['SD']), 723 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['2160p'], files['2160p']), 52234 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], files['1080p']), 11234 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], files['720p']), 6590 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], files['SD']), 723 * make.mb * t)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -110,14 +112,14 @@ class TestDirOperations(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb * t)
         
         # Assert that there is only one test film identified at the source
         assert(len(ops.dirops.get_new_films([conftest.films_src_path])) == 1)
@@ -127,6 +129,7 @@ class TestDirOperations(object):
         )
 
         # Assert that of the 8 files presented, only two are valid
+        #   Main video file and .srt
         assert(len(valid_files) == 2)
 
         assert(os.path.join(conftest.films_src_path, files[0]) in valid_files) # Main video file
@@ -152,14 +155,14 @@ class TestDirOperations(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb * t)
         
         # Assert that there is only one test film identified at the source
         assert(len(ops.dirops.get_new_films(conftest.films_src_path)) == 1)
@@ -190,7 +193,7 @@ class TestDirOperations(object):
         ]
 
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), (700 if f.endswith('.avi') else 1) * make.mb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), (700 if f.endswith('.avi') else 1) * make.mb * t)
 
         loaded_files = ops.dirops.get_valid_files(conftest.films_src_path)
 
@@ -260,7 +263,7 @@ class TestDirOperations(object):
         ]
 
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 10 * make.kb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 10 * make.kb * t)
 
         find = ops.dirops.find_deep(conftest.films_src_path)
 
@@ -288,7 +291,7 @@ class TestDirOperations(object):
         # does not exceed this method's max_size default (50KB).
         conftest.cleanup_all()
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb * t)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(before_contents) == 4)
@@ -302,7 +305,7 @@ class TestDirOperations(object):
         # Test that if file size exceeds the default max_size, we do not delete
         conftest.cleanup_all()
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 40 * make.mb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 40 * make.mb * t)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(before_contents) == 4)
@@ -316,7 +319,7 @@ class TestDirOperations(object):
         # Test overwriting default max_size with -1, unlimited
         conftest.cleanup_all()
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 400 * make.mb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 400 * make.mb * t)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(before_contents) == 4)
@@ -334,7 +337,7 @@ class TestDirOperations(object):
         conftest.cleanup_all()
 
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb * t)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(before_contents) == 4)
@@ -380,11 +383,11 @@ class TestDirOperations(object):
         # Create files. Ensure that for this to pass, the total filesize of the test dir
         # does not exceed this method's max_size default (50KB).
         for f in files_nfo:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb * t)
         for f in files_mkv:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7418 * make.mb_t)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7418 * make.mb * t)
         for f in bad_files_mkv:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7 * make.kb)
+             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7 * make.kb * t)
 
         before_contents = ops.dirops.find_deep(conftest.films_src_path)
         assert(len(before_contents) == 12)
@@ -426,12 +429,12 @@ class TestFileOperations(object):
             'Test.File.jpg',
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),   10 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  454 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    6 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),   10 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  454 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    6 * make.mb * t)
 
         assert(    ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[0])))
         assert(    ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[1])))
@@ -458,11 +461,11 @@ class TestFileOperations(object):
             'Test.File.nfo'
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]),  300 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),    1 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   54 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]),  300 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),    1 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   54 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb * t)
 
         assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[0])))
         assert(not ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[1])))
@@ -487,7 +490,7 @@ class TestFileOperations(object):
 
         file = os.path.join(conftest.films_src_path, 'Test.File.mkv')
 
-        make.make_mock_file(file, 2354 * make.mb_t)
+        make.make_mock_file(file, 2354 * make.mb * t)
 
         fylm.config.test = True
         assert(fylm.config.test is True)
@@ -517,13 +520,13 @@ class TestSizeOperations(object):
         file_in_dir_a2 = os.path.join(conftest.films_src_path, 'Test.Dir2/Test.File.jpg')
         file_in_dir_a3 = os.path.join(conftest.films_src_path, 'Test.Dir2/Test.File.avi')
 
-        size = 2354 * make.mb_t
+        size = 2354 * make.mb
 
         make.make_mock_file(file, size)
         make.make_mock_file(file_in_dir, size)
         make.make_mock_file(file_in_dir_a1, size)
-        make.make_mock_file(file_in_dir_a2, 10 * make.mb)
-        make.make_mock_file(file_in_dir_a3, 700 * make.mb)
+        make.make_mock_file(file_in_dir_a2, 10 * make.mb * t)
+        make.make_mock_file(file_in_dir_a3, 700 * make.mb * t)
 
         # Assert file is the correct size within 1 byte
         assert(abs(ops.size(file) - size) <= 1)
@@ -533,7 +536,7 @@ class TestSizeOperations(object):
         assert(abs(ops.size(os.path.dirname(file_in_dir)) - size) <= 1)
 
         # Test multiple files in dir to diff of 3 bytes
-        assert(abs(ops.size(os.path.dirname(file_in_dir_a1)) - (size + (710 * make.mb))) <= 3)
+        assert(abs(ops.size(os.path.dirname(file_in_dir_a1)) - (size + (710 * make.mb * t))) <= 3)
 
     def size_of_largest_video(self):
 
@@ -552,13 +555,13 @@ class TestSizeOperations(object):
             'Test.File/Test.File.nfo'
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]), 1612 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),  280 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   10 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),  454 * make.mb)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    4 * make.kb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]), 1612 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),  280 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   10 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),  454 * make.mb * t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    4 * make.kb * t)
 
         # Test multiple files to diff of 1 byte
-        assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * make.mb_t)) <= 1)
+        assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * make.mb * t)) <= 1)

@@ -54,7 +54,7 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 7354 * make.mb_t)
+        make.make_mock_file(f, 7354 * make.mb)
 
         assert(os.path.exists(f))
 
@@ -83,8 +83,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 8233 * make.mb_t)
-        make.make_mock_file(xf, 7901 * make.mb_t)
+        make.make_mock_file(f, 8233 * make.mb)
+        make.make_mock_file(xf, 7901 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -99,7 +99,7 @@ class TestInteractive(object):
 
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 8233 * make.mb_t, abs_tol=10))
+        assert(isclose(ops.size(xf), 8233 * make.mb, abs_tol=10))
 
     def test_handle_duplicates_upgrade_same_quality_file(self):
 
@@ -123,8 +123,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 9576 * make.mb_t)
-        make.make_mock_file(xf, 6441 * make.mb_t)
+        make.make_mock_file(f, 9576 * make.mb)
+        make.make_mock_file(xf, 6441 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -139,7 +139,7 @@ class TestInteractive(object):
 
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 9576 * make.mb_t, abs_tol=10))
+        assert(isclose(ops.size(xf), 9576 * make.mb, abs_tol=10))
 
     def test_handle_duplicates_upgrade_lower_quality(self):
 
@@ -164,8 +164,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 9114 * make.mb_t)
-        make.make_mock_file(xf, 4690 * make.mb_t)
+        make.make_mock_file(f, 9114 * make.mb)
+        make.make_mock_file(xf, 4690 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -181,7 +181,7 @@ class TestInteractive(object):
         assert(not os.path.exists(f))
         assert(not os.path.exists(xf))
         assert(os.path.exists(nf))
-        assert(isclose(ops.size(nf), 9114 * make.mb_t, abs_tol=10))        
+        assert(isclose(ops.size(nf), 9114 * make.mb, abs_tol=10))        
 
     def test_handle_duplicates_replace_identical(self):
 
@@ -204,8 +204,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 8133 * make.mb_t)
-        make.make_mock_file(xf, 8133 * make.mb_t)
+        make.make_mock_file(f, 8133 * make.mb)
+        make.make_mock_file(xf, 8133 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -220,7 +220,7 @@ class TestInteractive(object):
 
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 8133 * make.mb_t, abs_tol=10))
+        assert(isclose(ops.size(xf), 8133 * make.mb, abs_tol=10))
 
     def test_handle_duplicates_skip(self):
 
@@ -242,8 +242,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 8854 * make.mb_t)
-        make.make_mock_file(xf, 9814 * make.mb_t)
+        make.make_mock_file(f, 8854 * make.mb)
+        make.make_mock_file(xf, 9814 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -284,8 +284,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 10223 * make.mb_t)
-        make.make_mock_file(xf, 4690 * make.mb_t)
+        make.make_mock_file(f, 10223 * make.mb)
+        make.make_mock_file(xf, 4690 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -301,8 +301,8 @@ class TestInteractive(object):
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))
         assert(os.path.exists(nf))
-        assert(isclose(ops.size(xf), 4690 * make.mb_t, abs_tol=10))        
-        assert(isclose(ops.size(nf), 10223 * make.mb_t, abs_tol=10))   
+        assert(isclose(ops.size(xf), 4690 * make.mb, abs_tol=10))        
+        assert(isclose(ops.size(nf), 10223 * make.mb, abs_tol=10))   
 
     def test_handle_duplicates_delete_new(self):
 
@@ -324,8 +324,8 @@ class TestInteractive(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(f, 7854 * make.mb_t)
-        make.make_mock_file(xf, 9814 * make.mb_t)
+        make.make_mock_file(f, 7854 * make.mb)
+        make.make_mock_file(xf, 9814 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -340,7 +340,7 @@ class TestInteractive(object):
 
         assert(not os.path.exists(f))
         assert(os.path.exists(xf))    
-        assert(isclose(ops.size(xf), 9814 * make.mb_t, abs_tol=10))  
+        assert(isclose(ops.size(xf), 9814 * make.mb, abs_tol=10))  
 
         fylm.config.interactive = False
         assert(fylm.config.interactive is False)

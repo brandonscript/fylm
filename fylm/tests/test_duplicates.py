@@ -89,11 +89,11 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['non-dup']), 8522 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['non-dup']), 8522 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -147,10 +147,10 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -210,10 +210,10 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
         
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 12393 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -263,10 +263,10 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
         
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), 12393 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 52234 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), 12393 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], clean_files['720p']), 7213 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], clean_files['SD']), 786 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -317,8 +317,8 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
         
-        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 14234 * make.mb_t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 19393 * make.mb_t)
+        make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['2160p']), 14234 * make.mb)
+        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), 19393 * make.mb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -349,8 +349,8 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        big_size = 12393 * make.mb_t
-        sm_size = 11213 * make.mb_t
+        big_size = 12393 * make.mb
+        sm_size = 11213 * make.mb
 
         proper = 'Rogue.One.A.Star.Wars.Story.2016.1080p.PROPER.BluRay.DTS.x264-group.mkv'
         proper_moved = 'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv'
@@ -389,8 +389,8 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        big_size = 14393 * make.mb_t
-        sm_size = 8213 * make.mb_t
+        big_size = 14393 * make.mb
+        sm_size = 8213 * make.mb
         
         make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), big_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), sm_size)
@@ -426,8 +426,8 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        big_size = 14393 * make.mb_t
-        sm_size = 8213 * make.mb_t
+        big_size = 14393 * make.mb
+        sm_size = 8213 * make.mb
         
         make.make_mock_file(os.path.join(conftest.films_src_path, raw_files['1080p']), sm_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], clean_files['1080p']), big_size)
@@ -465,8 +465,8 @@ class TestDuplicates(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        new_size = 9393 * make.mb_t
-        existing_size = 8213 * make.mb_t
+        new_size = 9393 * make.mb
+        existing_size = 8213 * make.mb
         
         make.make_mock_file(os.path.join(conftest.films_src_path, new), new_size)
         make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], existing), existing_size)
@@ -537,10 +537,10 @@ class TestDuplicates(object):
         conftest.make_empty_dirs()
         
         for f in new:
-            make.make_mock_file(os.path.join(conftest.films_src_path, f[0]), f[1] * make.gb_t)
+            make.make_mock_file(os.path.join(conftest.films_src_path, f[0]), f[1] * make.gb)
 
         for f in existing:
-            make.make_mock_file(os.path.join(conftest.films_dst_paths[f[0]], f[1]), f[2] * make.gb_t)
+            make.make_mock_file(os.path.join(conftest.films_dst_paths[f[0]], f[1]), f[2] * make.gb)
 
         # Reset existing films
         ops.dirops._existing_films = None
@@ -559,9 +559,9 @@ class TestDuplicates(object):
         for f in expect:
             path = os.path.join(conftest.films_dst_paths[f[0]], f[1])
             assert(os.path.exists(path))
-            assert(isclose(os.path.getsize(path), f[2] * make.gb_t, abs_tol=10))
+            assert(isclose(os.path.getsize(path), f[2] * make.gb, abs_tol=10))
 
         for f in do_not_move:
             path = os.path.join(conftest.films_src_path, f[0])
             assert(os.path.exists(path))
-            assert(isclose(os.path.getsize(path), f[1] * make.gb_t))
+            assert(isclose(os.path.getsize(path), f[1] * make.gb, abs_tol=10))

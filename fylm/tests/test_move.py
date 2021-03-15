@@ -35,8 +35,8 @@ dst = os.path.join(
     conftest.films_dst_paths['1080p'], 
     'Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-1080p Proper.mkv')
 
-sm_size = 5354 * make.mb_t
-big_size = 7354 * make.mb_t
+sm_size = 5354 * make.mb
+big_size = 7354 * make.mb
 
 def async_safe_copy(conn, *args):
     copy = ops.fileops.safe_move(*args)
@@ -231,7 +231,8 @@ class TestMove(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        make.make_mock_file(src, big_size)
+        # Need to make sure this file is sufficiently big
+        make.make_mock_file(src, big_size * (100 if os.environ.get('TRAVIS') is not None else 1))
         
         config.test = False
         assert(config.test is False)

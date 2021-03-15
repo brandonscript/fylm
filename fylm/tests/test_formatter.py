@@ -37,7 +37,7 @@ def async_safe_copy(conn, *args):
 def do_every(src):
     conftest.cleanup_all()
     conftest.make_empty_dirs()
-    make.make_mock_file(src, 7354 * make.mb_t)
+    make.make_mock_file(src, 7354 * make.mb)
     config.safe_copy = False
     config.test = False
 

@@ -174,5 +174,5 @@ def expected_path(expected, folder=True):
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):
-    return
+    # return
     cleanup_all()
