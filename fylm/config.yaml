@@ -102,14 +102,6 @@ limit: 0
 # false-positive results. Best to test first before running.
 force_lookup: false
 
-# --overwrite
-# DANGER ZONE
-# Forcibly (and silently) overwrite any file (or matching files inside a film folder) with the same name.
-# Best to test first before running.
-overwrite_existing: false
-
-# --no-duplicates
-duplicate_checking:
 
   # Check the destionation dir for duplicate files before copying. Adds some processing time, 
   # but allows you to replace existing files with newer/better ones.

@@ -431,7 +431,7 @@ class fileops:
             return min.default
 
     @classmethod
-    def safe_move(cls, src: str, dst: str):
+    def safe_move(cls, src: str, dst: str, ok_to_upgrade = False):
         """Performs a 'safe' move operation.
 
         Performs some additional checks before moving files. Optionally supports
@@ -441,6 +441,8 @@ class fileops:
         Args:
             src: (str, utf-8) path of file to move.
             dst: (str, utf-8) destination for file to move to.
+                                  as determined by checking for identical duplicates
+                                  that meet upgrade criteria.
 
         Returns:
             True if the file move was successful, else False.
@@ -464,18 +466,21 @@ class fileops:
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
-        # and print a warning to the console. If overwrite_existing is enabled, 
+        # and print a warning to the console. If force_overwrite is enabled, 
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
-        if os.path.exists(dst):
-            # If overwrite_existing is turned off, we can't overwrite this file.
-            if config.overwrite_existing is False and config.interactive is False:
+        # If the function was called with a Should property, we can skip this if it's
+        # marked for upgrade.
+        if os.path.exists(dst) and not ok_to_upgrade:
+            # If force_overwrite is turned off, we can't overwrite this file.
+            # If interactive is on, the user has some more flexibility and can choose to
+            # overwrite, so we can skip this.
+            if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                console().red().indent(f'Unable to move; a file with the same name already exists ({dst})').print()
+                console().red().indent(f"Unable to move; a file with the same name already exists in '{os.path.dirname(dst)}'").print()
                 return False
                 
-            # File overwriting is enabled and not marked to replace, so warn, 
-            # and proceed continue.
-            console().yellow().indent(f'Replacing existing file ({dst})').print()
+            # File overwriting is enabled and not marked to upgrade, so warn but continue
+            console().yellow().indent(f"Replacing existing file in '{os.path.dirname(dst)}'").print()
 
         # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
         # Credit: https://stackoverflow.com/a/34504896/1214800
