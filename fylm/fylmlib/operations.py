@@ -157,6 +157,12 @@ class dirops:
         films = []
 
         for path in paths:
+
+            # Check if the source path is a single file (usually because of the -s switch)
+            if len(paths) == 1 and os.path.exists(path) and os.path.isfile(path):
+                films.append([Film(path)])
+                break
+
             # Enumerate the search path(s) for files/subfolders, sanitize them, then finally sort
             # the resulting list of files alphabetically, case-insensitive.
             sorted_files = sorted(cls.sanitize_dir_list(os.listdir(path)), key=lambda s: s.lower())
