@@ -48,6 +48,7 @@ def full_path(path):
 
 # Configure source and destination paths for test files.
 films_src_path = full_path('files/#new')
+films_src_path2 = full_path('files/#two')
 
 # Film destination map
 films_dst_paths = {
@@ -115,10 +116,12 @@ def _setup():
 
 def make_empty_dirs():
     global films_src_path
+    global films_src_path2
     global films_dst_paths
 
     try:
         os.makedirs(films_src_path)
+        os.makedirs(films_src_path2)
     except Exception:
         pass
 
@@ -130,8 +133,9 @@ def make_empty_dirs():
 
 def cleanup_src_files():
     global films_src_path
+    global films_src_path2
 
-    for o in os.listdir(films_src_path):
+    for o in os.listdir(films_src_path).extend(os.listdir(films_src_path2)):
         path = os.path.join(films_src_path, o)
         try:
             if os.path.isfile(path):
@@ -143,10 +147,12 @@ def cleanup_src_files():
 
 def cleanup_all():
     global films_src_path
+    global films_src_path2
     global films_dst_paths
 
     try:
         shutil.rmtree(films_src_path)
+        shutil.rmtree(films_src_path2)
     except Exception:
         pass
 
@@ -174,5 +180,5 @@ def expected_path(expected, folder=True):
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):
-    # return
+    return
     cleanup_all()

@@ -47,11 +47,11 @@ class processor:
     """
 
     @classmethod
-    def iterate(cls, films: List[Film]):
+    def iterate(cls, films: [Film]):
         """Main entry point for processor, iterates a list of films.
 
         Args:
-            films: (list(Film)) film objects to process.
+            films: [Film] list of film objects to process.
         """
 
         for film in films:

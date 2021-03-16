@@ -146,7 +146,7 @@ class dirops:
         Scan one level deep of the target path to get a list of potential new files/folders.
 
         Args:
-            paths: (Array[str, utf-8]) paths to search for new films.
+            paths: (List[str, utf-8]) paths to search for new films.
         Returns:
             An array of potential films.
         """
@@ -156,6 +156,10 @@ class dirops:
 
         films = []
 
+        # Convert to a list if paths is not already (safety check)
+        if isinstance(paths, str):
+            paths = [paths]
+
         for path in paths:
 
             # Check if the source path is a single file (usually because of the -s switch)
@@ -163,18 +167,19 @@ class dirops:
                 films.append([Film(path)])
                 break
 
-            # Enumerate the search path(s) for files/subfolders, sanitize them, then finally sort
-            # the resulting list of files alphabetically, case-insensitive.
-            sorted_files = sorted(cls.sanitize_dir_list(os.listdir(path)), key=lambda s: s.lower())
-
+            # Enumerate the search path(s) for files/subfolders, then sanitize them.
             # If using the `limit` option, create a sliced list to limit the number of
             # files to be processed.
-            limited_files = islice(sorted_files, config.limit if config.limit > 0 else None)
+            raw_films = islice(cls.sanitize_dir_list(os.listdir(
+                path)), config.limit if config.limit > 0 else None)
 
-            # Map the sorted/filtered list to Film objects.
-            films.append(list(map(Film, [os.path.join(path, file) for file in limited_files])))
+            # Map the list to Film objects and extend the films list
+            films.extend(
+                list(map(Film, [os.path.join(path, file) for file in raw_films])))
 
-        return sum(films, [])
+        # Sort the resulting list of files alphabetically, case-insensitive.
+        films.sort(key=lambda x: x.title.lower())
+        return list(films)
 
     @classmethod
     def get_valid_files(cls, path) -> [str]:

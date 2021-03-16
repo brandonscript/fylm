@@ -50,10 +50,12 @@ class MakeFilmsResult:
 def make_mock_file(path, size):
     # Create an empty file that appears to the system to be the size of `size`.
     try:
+        # Try to create the folder structure for the path just in case it doesn't exist
         os.makedirs(os.path.dirname(path))
-    except Exception:
+    except Exception as e:
         pass
 
+    # Force size to be an integer
     size = int(round(size))
 
     f = open(path, 'wb')

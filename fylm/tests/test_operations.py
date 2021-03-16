@@ -91,6 +91,32 @@ class TestDirOperations(object):
         # Assert that we're getting the expected number of valid films.
         assert(len(valid_films) == len(conftest.expected))
 
+    def test_get_new_films_multiple_dirs(self):
+
+        conftest._setup()
+
+        fylm.config.source_dirs.append(conftest.films_src_path2)
+
+        # Make files in alternate path
+        make.make_mock_file(os.path.join(
+            conftest.films_src_path2, 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE/All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE.mkv'), 
+            7354 * make.mb * t)
+        make.make_mock_file(os.path.join(
+            conftest.films_src_path2, 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE/Alita.Battle.Angel.2019.2017.BluRay.1080p.x264-NMaRE.mkv'),
+            8132 * make.mb * t)
+
+        all_films = ops.dirops.get_new_films(fylm.config.source_dirs)
+        valid_films = list(filter(lambda film: not film.should_ignore, all_films))
+
+        # Assert that we're getting the expected number of films. (+2 for the 2 we added)
+        assert(len(all_films) == len(conftest.all_test_films) + 2)
+
+        # Assert that we're getting the expected number of valid films. (+2 for the 2 we added)
+        assert(len(valid_films) == len(conftest.expected) + 2)
+
+        # Assert that the list is sorted alphabetically
+        assert(all_films == sorted(all_films, key=lambda x: x.title))
+
     def test_get_valid_files(self):
 
         conftest._setup()
