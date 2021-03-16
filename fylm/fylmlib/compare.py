@@ -26,7 +26,7 @@ import re
 import warnings
 warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 
 import fylmlib.formatter as formatter
 import fylmlib.patterns as patterns
