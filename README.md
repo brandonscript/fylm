@@ -92,7 +92,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.
 - `force-lookup` will look everything in your source folder(s) up on TMDb, even if something doesn't appear to be a film. Helpful for finding files with missing years, but can take a lot longer to run.
 - `no-duplicates` will disable duplicate checking entirely.
-- `overwrite` means thatany duplicates it finds at the destination will be *overwritten*. Use with caution (and run `--test` first!). Also HIGHLY recomment you keep `check_for_duplicates` enabled if you intend to overwrite duplicates, otherwise the Apache 2.0 license isn't liable for lost data.
+- `overwrite` means that any duplicates it finds at the destination will be *overwritten*, even if they are smaller or lower quality. Use with caution (and run `--test` first!). Only YOU can prevent data loss.
 - `source` overrides your usual `source_dir` setting with new source folder(s). Comma separate multiple folders.
 - `no-strict` will dramatically reduce the criteria that is is used to validate TMDb matches. Expect red herrings. Lots. So, `--test` first.
 - `no-console` will completely suppress console output. If you wanted that, for some reason.
@@ -111,7 +111,7 @@ To run tests:
 
 #### Contributing
 
-Contributions are welcome! Please send in a PR with a clear explanation of what you're adding and why, and where applicable, add tests (a new test class, even!) to validate.
+Contributions are welcome! Please send in a PR with a clear explanation of what you're adding and why, and where applicable, add tests (a new test class, even!) to validate. Please read our code of conduct before contributing.
 
 #### Credits
 
@@ -119,3 +119,6 @@ Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.fl
 
 Special thanks to [Pyfancy()](https://github.com/ilovecode1/Pyfancy-2) and [colors](https://github.com/jonathaneunice/colors/).
 
+#### License
+
+Fylm is licensed under both the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license and the [Hippocratic License](https://firstdonoharm.dev/version/2/1/license.html) license. Were a conflict or dispute to occur between these two licenses, the **Hippocratic License** license shall take precedence. Under its princples of Do No Harm, no portion of this software may be used to (or be a part of software that can be used to) cause, infer, encourage, incite, or otherwise lead to physical or verbal harm for any person or people, _especially_ marginalized and underrepresented people.
