@@ -100,7 +100,7 @@ class TestDirOperations(object):
         # Make files in alternate path
 
         make.make_mock_file(os.path.join(
-            conftest.films_src_path2, 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE/Alita.Battle.Angel.2019.2017.BluRay.1080p.x264-NMaRE.mkv'),
+            conftest.films_src_path2, 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE/Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE.mkv'),
             8132 * make.mb * t)
 
         make.make_mock_file(os.path.join(
@@ -118,9 +118,11 @@ class TestDirOperations(object):
 
         # Assert that the list is sorted alphabetically
 
-        print('1' < 'A')
+        print('1' <= 'A')
+        for i in range(len(valid_films)-1):
+            print(f'{valid_films[i].title <= valid_films[i+1].title} :: {valid_films[i].title} <= {valid_films[i+1].title}')
 
-        print([x.title for x in valid_films])
+        # print([x.title for x in valid_films])
         print(f'here: {all(valid_films[i].title <= valid_films[i+1].title for i in range(len(valid_films)-1))}')
         assert(False)
         assert(all(valid_films[i].title <= valid_films[i+1].title
