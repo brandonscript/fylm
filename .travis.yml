@@ -3,9 +3,9 @@ language: python
 dist: xenial
 
 python:
-  - "3.5"
-  - "3.6"
-  - "3.7"
+  # - "3.5"
+  # - "3.6"
+  # - "3.7"
   - "3.8"
 
 install:
@@ -13,7 +13,7 @@ install:
   - pip install -r requirements-test.txt --force
 
 script:
-  - cd fylm; pytest -xq fylm/tests/test_operations.py::TestDirOperations::test_get_new_films_multiple_dir
+  - cd fylm; pwd; pytest -xq fylm/tests/test_operations.py::TestDirOperations::test_get_new_films_multiple_dir
 
 notifications:
   email:
