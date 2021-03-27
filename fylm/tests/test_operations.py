@@ -116,16 +116,8 @@ class TestDirOperations(object):
         # Assert that we're getting the expected number of valid films. (+2 for the 2 we added)
         assert(len(valid_films) == len(conftest.expected) + 2)
 
-        # Assert that the list is sorted alphabetically
-
-        print('1' <= 'A')
-        for i in range(len(valid_films)-1):
-            print(f'{valid_films[i].title <= valid_films[i+1].title} :: {valid_films[i].title} <= {valid_films[i+1].title}')
-
-        # print([x.title for x in valid_films])
-        print(f'here: {all(valid_films[i].title <= valid_films[i+1].title for i in range(len(valid_films)-1))}')
-        assert(False)
-        assert(all(valid_films[i].title <= valid_films[i+1].title
+        # Assert that the list is sorted alphabetically (case insensitive is fine)
+        assert(all(valid_films[i].title.lower() <= valid_films[i+1].title.lower()
                    for i in range(len(valid_films)-1)))
 
     def test_get_valid_files(self):
