@@ -118,8 +118,8 @@ class TestDirOperations(object):
 
         # Assert that the list is sorted alphabetically
         print([x.title for x in valid_films])
-        print(all(valid_films[i].title <= valid_films[i+1].title
-                   for i in range(len(valid_films)-1)))
+        print(f'here: {all(valid_films[i].title <= valid_films[i+1].title
+                   for i in range(len(valid_films)-1))}')
         assert(False)
         assert(all(valid_films[i].title <= valid_films[i+1].title
                    for i in range(len(valid_films)-1)))
