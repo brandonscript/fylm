@@ -31,7 +31,7 @@ import codecs
 from datetime import timedelta
 from yaml import Loader, SafeLoader
 
-from attrdict import AttrMap
+from addict import Dict
 import requests_cache
 
 def construct_yaml_str(self, node):
@@ -76,9 +76,11 @@ class Config(object):
         # TODO: Perhaps we can improve this fragile hack using __future__?
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.yaml')
 
-        # Load the config file and map it to a 'AttrMap', a dot-notated dictionary.
+        # Load the config file and map it to a 'Dict', a dot-notated dictionary.
+        self._defaults = Dict({})
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
-            self._defaults = AttrMap(yaml.safe_load(yaml_config_file.read()), sequence_type=list)
+            self._defaults.update(Dict(yaml.safe_load(
+                yaml_config_file.read()), sequence_type=list))
 
         # Initialize the CLI argument parser.
         parser = argparse.ArgumentParser(description = 'A delightful filing and renaming app for film lovers.')
@@ -264,12 +266,12 @@ class Config(object):
         args, _ = parser.parse_known_args()
 
         # Re-map any deeply nested arguments
-        args.tmdb = AttrMap({'min_popularity': args.tmdb__min_popularity})
+        args.tmdb = Dict({'min_popularity': args.tmdb__min_popularity})
 
         # Re-map arg values onto known options already loaded from config.yaml.
-        self._defaults = self._defaults + AttrMap(vars(args))
+        self._defaults.update(Dict(vars(args)))
 
-        # Supress console if no_console is true.        
+        # Supress console if no_console is true.  
         if self._defaults.no_console is True:
             sys.stdout = None
 
@@ -297,7 +299,7 @@ class Config(object):
             requests_cache.core.remove_expired_responses()
 
         for k, v in self._defaults.items():
-            setattr(self, k, AttrMap(v) if isinstance(v, dict) else v)
+            setattr(self, k, Dict(v) if isinstance(v, dict) else v)
         del self._defaults
     
     def reload(self):

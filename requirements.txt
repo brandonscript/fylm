@@ -1,7 +1,7 @@
 future>=0.16.0
 pyyaml>=4.2b4
 ansicolors>=1.1.8
-git+git://github.com/brandonscript/AttrDict
+addict>=2.4.0
 requests-cache>=0.4.13
 tmdbsimple>=2.1.0
 PlexAPI
