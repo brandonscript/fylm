@@ -117,9 +117,8 @@ class TestDirOperations(object):
         assert(len(valid_films) == len(conftest.expected) + 2)
 
         # Assert that the list is sorted alphabetically
-        # assert([x.title for x in all_films] == [x.title for x in sorted(all_films, key=lambda x: x.title)])
-        assert(all_films[4].title == 'Alita Battle Angel 2019')
-        assert(all_films[5].title == 'All the Money In the World')
+        assert(all(valid_films[i].title <= valid_films[i+1].title
+                   for i in range(len(valid_films)-1)))
 
     def test_get_valid_files(self):
 

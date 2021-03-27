@@ -98,7 +98,12 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `no-console` will completely suppress console output. If you wanted that, for some reason.
 - `plaintext` will output to the console without pretty formatting. You'll want to use this option with SABnzbd.
 
-#### Testing
+If you'd like to run this automatically with some specific options, you can create a new file (e.g., `post-script.py`) and do:
+
+    import subprocess
+    subprocess.call(["python3", "/path/to/fylm/fylm", "-s", "/Volumes/Downloads", "--plaintext"])
+
+### Testing
 
 Tests are run using `pytest`. To install:
 
@@ -109,16 +114,16 @@ To run tests:
     cd fylm/
     python -m pytest -xq (--no-print-logs)
 
-#### Contributing
+### Contributing
 
 Contributions are welcome! Please send in a PR with a clear explanation of what you're adding and why, and where applicable, add tests (a new test class, even!) to validate. Please read our code of conduct before contributing.
 
-#### Credits
+### Credits
 
 Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/).
 
 Special thanks to [Pyfancy()](https://github.com/ilovecode1/Pyfancy-2) and [colors](https://github.com/jonathaneunice/colors/).
 
-#### License
+### License
 
 Fylm is licensed under both the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license and the [Hippocratic License](https://firstdonoharm.dev/version/2/1/license.html) license. Were a conflict or dispute to occur between these two licenses, the **Hippocratic License** license shall take precedence. Under its princples of Do No Harm, no portion of this software may be used to (or be a part of software that can be used to) cause, infer, encourage, incite, or otherwise lead to physical or verbal harm for any person or people, _especially_ marginalized and underrepresented people.
