@@ -30,7 +30,7 @@ import fylmlib.config as config
 import fylmlib.patterns as patterns
 
 def build_new_basename(file, type="file"):
-    """Build a new file or folder name from the specified renaming pattern.
+    r"""Build a new file or folder name from the specified renaming pattern.
 
     Using regular expressions and a { } templating syntax, construct
     a new filename by mapping available properties to config.rename_pattern.
