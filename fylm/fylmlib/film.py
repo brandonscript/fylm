@@ -118,6 +118,9 @@ class Film:
         should_ignore:      Returns true if the film should be ignored,
                             and sets the ignore_reason.
 
+        should_skip:        Return true if the film should be skipped
+                            when printing to the console.
+
         ignore_reason:      If applicable, the reason why this film
                             was ignored.
     """
@@ -338,6 +341,26 @@ class Film:
             self.ignore_reason = f'{formatter.pretty_size(self.size)} is too small'
 
         return self.ignore_reason is not None
+
+    @property
+    def should_skip(self):
+        """Determines whether the film should be processed
+        or be suppressed (including console suppression).
+
+        Args:
+            film: (Film) Film object to check for ignore_reason
+        Returns:
+            bool: True if the file/folder should be skipped, otherwise False
+        """
+        if (self.should_ignore is True and config.interactive is True
+            and not self.ignore_reason.startswith("Unknown")
+            and not self.ignore_reason == "Appears to be a TV show"
+                and not self.ignore_reason.endswith("small")):
+            return True
+        elif self.should_ignore is True and config.interactive is False and config.hide_skipped is True:
+            return True
+        else:
+            return False
 
     def search_tmdb(self):
         """Performs a TMDb search on the existing film.

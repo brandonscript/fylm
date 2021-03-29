@@ -25,6 +25,8 @@ from builtins import *
 
 import os
 from typing import List
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
 
 from fylmlib.film import Film
 from fylmlib.console import console
@@ -39,6 +41,7 @@ import fylmlib.notify as notify
 import fylmlib.config as config
 
 _move_queue = []
+_max_workers = 50  # Number of concurrent requests
 
 class processor:
     """Main class for scanning for and processing films.
@@ -54,14 +57,13 @@ class processor:
             films: [Film] list of film objects to process.
         """
 
-        for film in films:
-            
-            # If we determine that this file should be suppressed in the console, 
-            # there's no value in continuing to route it.
-            if not cls.should_be_skipped(film):
-                # Route film to correct handler
-                cls.route(film)
-                
+        # Perform async lookup of films when not in interactive mode
+        if not config.interactive and config.tmdb.enabled:
+            films = asyncio.run(_AsyncLookup(films).do())
+
+        # Route to the correct handler if the film shouldn't be skipped
+        [cls.route(film) for film in films if not film.should_skip]
+                        
         # If we are running in interactive mode, we need to handle the moves
         # after all the lookups are completed in case we have long-running copy
         # operations.
@@ -91,8 +93,10 @@ class processor:
             if interactive.lookup(film) is False:
                 return
         else:
-            # Search TMDb for film details (if enabled).
-            film.search_tmdb()
+            # Search TMDb for film details (if enabled, and if it doesn't already
+            # have a TMDb id).
+            if film.tmdb_id is None:
+                film.search_tmdb()
 
             # If the film still should be ignored after looking up, skip.
             if film.should_ignore is True:
@@ -134,27 +138,6 @@ class processor:
         # on a first-in-first out basis.
         if config.interactive is False:
             cls.process_move_queue()
-
-    @classmethod
-    def should_be_skipped(cls, film: Film):
-        """Determines whether the film should be processed
-        or be suppressed (including console suppression).
-
-        Args:
-            film: (Film) Film object to check for ignore_reason
-        Returns:
-            bool: True if the file/folder should be skipped, otherwise False
-        """
-
-        if (film.should_ignore is True and config.interactive is True
-            and not film.ignore_reason.startswith("Unknown")
-            and not film.ignore_reason == "Appears to be a TV show"
-            and not film.ignore_reason.endswith("small")):
-            return True
-        elif film.should_ignore is True and config.interactive is False and config.hide_skipped is True:
-            return True
-        else:
-            return False
 
     @classmethod
     def process_move_queue(cls):
@@ -325,7 +308,7 @@ class processor:
             # Delete the source dir and its contents
             ops.dirops.delete_dir_and_contents(film.original_path, max_size=1000)
 
-class _QueuedMoveOperation(object):
+class _QueuedMoveOperation():
     """A handler class for queued move operations.
 
     Each move operation contains a source and destination path that are passed
@@ -356,3 +339,52 @@ class _QueuedMoveOperation(object):
             duplicates.delete_upgraded(self.file.parent_film)
 
         return self.file.did_move
+
+class _AsyncLookup():
+    def __init__(self, films, max_workers=_max_workers):
+        self.films = films
+        # create a queue that only allows a maximum of _max_workers items
+        # asyncio.set_event_loop(asyncio.new_event_loop())
+        self.max_workers = max_workers
+
+    async def do(self):
+
+        q = asyncio.Queue()
+        tasks = []
+
+        # place all films on the queue
+        for film in self.films:
+            await q.put(film)
+
+        # Append all lookup jobs to the queue
+        for i in range(self.max_workers):
+            tasks.append(asyncio.create_task(self._worker(q, i)))
+        
+        # Wait for task completion
+        await q.join()
+
+        # Cancel any remaining tasks
+        for task in tasks:
+            task.cancel()
+
+        # Gather tasks and await
+        await asyncio.gather(*tasks, return_exceptions=True)
+        return self.films
+
+    async def _worker(self, q, i):
+        try:
+            while True:
+                film = await q.get()
+                try:
+                    if film.tmdb_id is not None or film.should_ignore:
+                        # this one is already done; simply return to exit
+                        q.task_done()
+                    console.debug(f'Fetch worker {i} is looking up a film: {film.title}')
+                    film.search_tmdb()
+                    q.task_done()
+                except Exception as e:
+                    raise
+                finally:
+                    q.task_done()
+        except asyncio.CancelledError:
+            raise
