@@ -59,7 +59,12 @@ class processor:
 
         # Perform async lookup of films when not in interactive mode
         if not config.interactive and config.tmdb.enabled:
-            films = asyncio.run(_AsyncLookup(films).do())
+            try:
+                films = asyncio.run(_AsyncLookup(films).do())
+            except:
+                loop = asyncio.get_event_loop()
+                films = loop.run_until_complete(
+                    asyncio.gather(*[_AsyncLookup(films, loop=loop).do()]))[0]
 
         # Route to the correct handler if the film shouldn't be skipped
         [cls.route(film) for film in films if not film.should_skip]
@@ -341,12 +346,13 @@ class _QueuedMoveOperation():
         return self.file.did_move
 
 class _AsyncLookup():
-    def __init__(self, films, max_workers=_max_workers):
+    def __init__(self, films, loop=None, max_workers=_max_workers):
         self.films = films
         # create a queue that only allows a maximum of _max_workers items
-        # asyncio.set_event_loop(asyncio.new_event_loop())
+        self.loop = loop
         self.max_workers = max_workers
 
+    @asyncio.coroutine
     async def do(self):
 
         q = asyncio.Queue()
@@ -358,7 +364,10 @@ class _AsyncLookup():
 
         # Append all lookup jobs to the queue
         for i in range(self.max_workers):
-            tasks.append(asyncio.create_task(self._worker(q, i)))
+            try:
+                tasks.append(asyncio.create_task(self._worker(q, i)))
+            except:
+                tasks.append(self.loop.create_task(self._worker(q, i)))
         
         # Wait for task completion
         await q.join()

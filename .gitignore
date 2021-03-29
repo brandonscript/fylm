@@ -9,9 +9,7 @@ fylm/tests/files
 .coverage*
 
 coverage.xml
-.vscode/settings.json
 *.code-workspace
-.vscode/.ropeproject/config.py
-.vscode/.ropeproject/objectdb
 env/*
 @eaDir/*
+.vscode/*

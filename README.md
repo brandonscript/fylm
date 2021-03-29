@@ -26,8 +26,8 @@ Fylm can:
 
 ### Installing
 
-Fylm is tested on 3.5, 3.6, 3.7, and 3.8 and will attempt to adapt as the Python language does.
-As of Python 2.7 end of life, 2.X is no longer supported.
+Fylm is tested on 3.6, 3.7, and 3.8 and will attempt to adapt as the Python language does.
+As of Python 2.7 end of life, 2.X is no longer supported. v0.3.1 is the last version to support Python 3.5.
 
 Installing dependencies is simple if you use [`pip`](https://pip.pypa.io/en/stable/installing/). Depending on your OS configuration, you may need to install packages with `sudo`:
 
