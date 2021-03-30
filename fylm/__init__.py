@@ -27,6 +27,8 @@ from builtins import *
 
 import os
 import sys
+import asyncio
+from contextlib import suppress
 
 import fylmlib.config as config
 from fylmlib.console import console
@@ -72,6 +74,11 @@ def main():
         console().print_exit(counter.count)
     
     except (KeyboardInterrupt, SystemExit):
+        loop = asyncio.get_event_loop()
+        with suppress(asyncio.CancelledError):
+            pending = asyncio.Task.all_tasks()
+            loop.run_until_complete(asyncio.gather(*pending))
+            loop.close()
         console().print_exit_early()
     except (IOError, OSError) as e:
         console().error(f'{type(e).__name__}: {e}')

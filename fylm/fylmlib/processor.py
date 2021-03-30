@@ -24,9 +24,9 @@ from __future__ import unicode_literals, print_function
 from builtins import *
 
 import os
+import sys
 from typing import List
 import asyncio
-from concurrent.futures import ProcessPoolExecutor
 
 from fylmlib.film import Film
 from fylmlib.console import console
@@ -41,7 +41,8 @@ import fylmlib.notify as notify
 import fylmlib.config as config
 
 _move_queue = []
-_max_workers = 50  # Number of concurrent requests
+MAX_WORKERS = 50  # Number of concurrent requests
+_sem = asyncio.Semaphore(MAX_WORKERS)
 
 class processor:
     """Main class for scanning for and processing films.
@@ -59,12 +60,7 @@ class processor:
 
         # Perform async lookup of films when not in interactive mode
         if not config.interactive and config.tmdb.enabled:
-            try:
-                films = asyncio.run(_AsyncLookup(films).do())
-            except:
-                loop = asyncio.get_event_loop()
-                films = loop.run_until_complete(
-                    asyncio.gather(*[_AsyncLookup(films, loop=loop).do()]))[0]
+            films = _AsyncLookup(films).do()
 
         # Route to the correct handler if the film shouldn't be skipped
         [cls.route(film) for film in films if not film.should_skip]
@@ -346,54 +342,24 @@ class _QueuedMoveOperation():
         return self.file.did_move
 
 class _AsyncLookup():
-    def __init__(self, films, loop=None, max_workers=_max_workers):
-        self.films = films
-        # create a queue that only allows a maximum of _max_workers items
-        self.loop = loop
-        self.max_workers = max_workers
+    """A handler class for asynchronous concurrent lookups from TMDb.
+    """
+    def __init__(self, films):
+        self.films = [film for film in films if not film.should_skip]
 
-    @asyncio.coroutine
-    async def do(self):
+    def do(self):
+        """Passthrough function to call _AsyncLookup.iter() asyncronously
+        """
+        loop = asyncio.get_event_loop()
+        tasks = asyncio.gather(*[
+            asyncio.ensure_future(self._worker(i, film))
+            for (i, film) in enumerate(self.films)
+        ])
+        return loop.run_until_complete(tasks)
 
-        q = asyncio.Queue()
-        tasks = []
-
-        # place all films on the queue
-        for film in self.films:
-            await q.put(film)
-
-        # Append all lookup jobs to the queue
-        for i in range(self.max_workers):
-            try:
-                tasks.append(asyncio.create_task(self._worker(q, i)))
-            except:
-                tasks.append(self.loop.create_task(self._worker(q, i)))
-        
-        # Wait for task completion
-        await q.join()
-
-        # Cancel any remaining tasks
-        for task in tasks:
-            task.cancel()
-
-        # Gather tasks and await
-        await asyncio.gather(*tasks, return_exceptions=True)
-        return self.films
-
-    async def _worker(self, q, i):
-        try:
-            while True:
-                film = await q.get()
-                try:
-                    if film.tmdb_id is not None or film.should_ignore:
-                        # this one is already done; simply return to exit
-                        q.task_done()
-                    console.debug(f'Fetch worker {i} is looking up a film: {film.title}')
-                    film.search_tmdb()
-                    q.task_done()
-                except Exception as e:
-                    raise
-                finally:
-                    q.task_done()
-        except asyncio.CancelledError:
-            raise
+    async def _worker(self, i, film):
+        async with _sem:  # semaphore limits num of simultaneous calls
+            console.debug(f">> Async worker {i} started - '{film.title}'")
+            await film.search_tmdb()
+            console.debug(f">> Async worker {i} done - '{film.title}'")
+            return film

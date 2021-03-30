@@ -24,19 +24,21 @@ from datetime import timedelta
 
 import pytest
 import requests_cache
-requests_cache.install_cache(f'.cache.fylm_test_py{sys.version_info[0]}', expire_after=timedelta(hours=120))
-requests_cache.core.remove_expired_responses()
 
 # Add the cwd to the path so we can load fylmlib modules and fylm app.
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-
 
 import fylm
 import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.operations as ops
 from make import make_mock_files
+
+
+if config.cache:
+    requests_cache.install_cache(f'.cache.fylm_test_py{sys.version_info[0]}', expire_after=timedelta(hours=120))
+    requests_cache.core.remove_expired_responses()
 
 # Set the filename that contains test files
 test_files = 'files.json'
@@ -180,5 +182,5 @@ def expected_path(expected, folder=True):
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):
-    # return
+    return
     cleanup_all()

@@ -23,7 +23,10 @@ from builtins import *
 
 import os
 import re
+import sys
 import itertools
+import asyncio
+import concurrent.futures
 
 from pymediainfo import MediaInfo
 
@@ -362,7 +365,7 @@ class Film:
         else:
             return False
 
-    def search_tmdb(self):
+    async def search_tmdb(self):
         """Performs a TMDb search on the existing film.
 
         Calls the tmdb.search() method, passing the current film
@@ -374,9 +377,10 @@ class Film:
         if config.tmdb.enabled is False:
             return
 
-        # Perform the search and save the first 10 sresults to the matches list. 
+        # Perform the search and save the first 10 sresults to the matches list.
         # If ID is not None, search by ID.
-        self.matches = (tmdb.search(self.tmdb_id) if (self.tmdb_id is not None) else tmdb.search(self.title, self.year))[:10]
+        self.matches = await tmdb.search(self.tmdb_id or self.title, None if self.tmdb_id else self.year)
+
         best_match = next(iter(self.matches or []), None)
         
         if best_match is not None:
@@ -385,6 +389,8 @@ class Film:
         else:
             # If not, we update the ignore_reason
             self.ignore_reason = 'No results found'
+        
+        return
 
 
     def update_with_match(self, match):

@@ -30,6 +30,8 @@ import re
 import copy
 import time
 import warnings
+import asyncio
+import functools
 warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
 import tmdbsimple as tmdb
@@ -237,7 +239,7 @@ class _TmdbSearchConstructor:
             (lambda: _recursive_rstrip_search(title, None), TmdbResult(title, None, year))
         ]
 
-def search(query, year=None):
+async def search(query, year=None):
     """Search TMDb for the specified string and year.
 
     This function proxies the query and year to functions
@@ -250,24 +252,25 @@ def search(query, year=None):
         year: (int) year to search for.
 
     Returns:
-        An array of function references.
+        An array of TmdbResult objects.
     """
 
     # If the search string is empty or None, abort.
     if query is None or query == '':
         return []
 
-    # If querying by ID, search immediately and return the result.
+    # If querying by ID (an int), search immediately and return the result.
     if isinstance(query, int):
-        result = TmdbResult(raw_result=_id_search(query))
-        return [result] if result else []
+        r = await _id_search(query)
+        console.debug(f'\nInitializing lookup by ID: {query}')
+        return [TmdbResult(raw_result=r)] if r else []
 
     # On macOS, we need to use a funky hack to replace / in a filename with :,
     # in order to output it correctly.
     # Credit: https://stackoverflow.com/a/34504896/1214800
     query = query.replace(r':', '-')
 
-    console.debug(f'\nInitializing search for "{query}" / {year}\n')
+    console.debug(f"\nInitializing search for '{query}' / {year}\n")
 
     # Initialize a array to store potential matches.
     potential_matches = []
@@ -279,7 +282,8 @@ def search(query, year=None):
     for search, tmdb_result in _TmdbSearchConstructor(query, year).searches:
 
         # Execute search() and iterate the raw JSON results.
-        for raw_result in search():
+        raw_results = await search()
+        for r in raw_results:
 
             # First, increment the counter, because we've performed a search
             # and will inspect the result.
@@ -288,7 +292,7 @@ def search(query, year=None):
             # Create a copy of the origin TmdbResult object, and map the raw
             # search result JSON to it.
             result = copy.deepcopy(tmdb_result)
-            result._merge(raw_result)
+            result._merge(r)
 
             # Check for an instant match first.
             if result.is_instant_match(count):
@@ -352,7 +356,7 @@ def search(query, year=None):
     # Return the sorted and filtered list
     return sorted_results
 
-def _id_search(tmdb_id):
+async def _id_search(tmdb_id):
     """Search TMDb by ID.
 
     Search TMDb for the specified ID.
@@ -371,9 +375,9 @@ def _id_search(tmdb_id):
     console.debug(f'Searching by ID: {tmdb_id}')
 
     # Build the search query and execute the search in the rate limit handler.
-    return _search_handler(tmdb_id=tmdb_id)
+    return await do_search(tmdb_id=tmdb_id)
 
-def _primary_year_search(query, year=None):
+async def _primary_year_search(query, year=None):
     """Search TMDb for a string and a primary release year.
 
     Search TMDb for the specified search string and year, using the
@@ -393,13 +397,13 @@ def _primary_year_search(query, year=None):
     console.debug(f'Searching: "{query}" / {year} - primary release year')
 
     # Build the search query and execute the search in the rate limit handler.
-    return _search_handler(
+    return await do_search(
         query=query, 
         primary_release_year=year,
         include_adult='true'
     )
 
-def _basic_search(query, year=None):
+async def _basic_search(query, year=None):
     """Search TMDb for a string and a general year.
 
     Search TMDb for the specified search string and year, using the
@@ -419,13 +423,13 @@ def _basic_search(query, year=None):
     console.debug(f'Searching: "{query}" / {year} - basic year')
 
     # Build the search query and execute the search in the rate limit handler.
-    return _search_handler(
+    return await do_search(
         query=query, 
         year=year,
         include_adult='true'
     )
 
-def _strip_articles_search(query, year=None):
+async def _strip_articles_search(query, year=None):
     """Strip 'the' and 'a' from the search string when searching TMDb.
 
     Strip 'the' or 'a' from the beginning of the search string
@@ -447,13 +451,13 @@ def _strip_articles_search(query, year=None):
     console.debug(f'Searching: "{query}" / {year} - strip articles, primary release year')
 
     # Build the search query and execute the search in the rate limit handler.
-    return _search_handler(
+    return await do_search(
         query=re.sub(patterns.strip_articles_search, '', query), 
         primary_release_year=year, 
         include_adult='true'
     )
 
-def _recursive_rstrip_search(query, year=None):
+async def _recursive_rstrip_search(query, year=None):
     """Recursively remove the last word when searching TMDb.
 
     Perform multiple searches, each time removing the last word
@@ -502,40 +506,25 @@ def _recursive_rstrip_search(query, year=None):
         # from the end of the search string. Then we forward a new
         # search to the primary year search method and return, and append
         # the search results.
-        raw_results += _primary_year_search(query.rsplit(' ', i)[0], year)
+        raw_results += await _primary_year_search(query.rsplit(' ', i)[0], year)
 
     # Return the raw results.
     return raw_results
 
-def _search_handler(**kwargs):
+async def do_search(**kwargs):
+    """Asynchronous caller for TMDb search.
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, functools.partial(_searcher, **kwargs))
 
+def _searcher(**kwargs):
+    """Asynchronous passthrough wrapper for TMDb search.
+    """
     # Instantiate a TMDb search object.
     search = tmdb.Search()
-    movie = None
-
-    # Disable the log
-    log.disable()
-    while True:
-        try:
-            # Build the search query and execute the search.
-            if 'tmdb_id' in kwargs:
-                movie = tmdb.Movies(kwargs['tmdb_id']).info()
-            else:
-                search.movie(**kwargs)
-            break
-        # Catch rate limiting errors
-        except Exception as e:
-            console.debug(e)
-            if re.search('^429', str(e)):
-                time.sleep(5.0)
-            else:
-                raise e
-        finally:
-            # If Travis is running, delay so we don't
-            # hit the rate limit.
-            if os.environ.get('TRAVIS') is not None:
-                time.sleep(0.5)
-
-    # Re-enable the log                
-    log.enable()
-    return movie if movie is not None else search.results
+    # Build the search query and execute the search.
+    if 'tmdb_id' in kwargs:
+        return tmdb.Movies(kwargs['tmdb_id']).info()
+    else:
+        search.movie(**kwargs)
+        return search.results
