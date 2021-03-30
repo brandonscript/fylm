@@ -365,6 +365,12 @@ class Film:
         else:
             return False
 
+    def search_tmdb_sync(self):
+        """A synchronous wrapper for search_tmdb().
+        """
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.search_tmdb())
+
     async def search_tmdb(self):
         """Performs a TMDb search on the existing film.
 
@@ -389,9 +395,6 @@ class Film:
         else:
             # If not, we update the ignore_reason
             self.ignore_reason = 'No results found'
-        
-        return
-
 
     def update_with_match(self, match):
         """Updates existing properties from a TmdbResult match

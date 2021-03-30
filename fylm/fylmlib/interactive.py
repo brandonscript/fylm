@@ -56,7 +56,7 @@ class interactive:
             return cls.handle_unknown_film(film)
         else:
             # Search TMDb for film details (if enabled).
-            film.search_tmdb()
+            film.search_tmdb_sync()
             return cls.verify_film(film)
 
     @classmethod
@@ -290,7 +290,7 @@ class interactive:
                 film.tmdb_id = int(search)
                 try:
                     # Search for the new film by ID.
-                    film.search_tmdb()
+                    film.search_tmdb_sync()
 
                     # Verify the search result.
                     return cls.verify_film(film)
@@ -322,7 +322,7 @@ class interactive:
         config.mock_input = _shift(config.mock_input)
         film.title = parser.get_title(query)
         film.year = parser.get_year(query)
-        film.search_tmdb()
+        film.search_tmdb_sync()
         return cls.choose_from_matches(film, query)
 
 

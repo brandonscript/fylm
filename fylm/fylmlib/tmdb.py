@@ -520,11 +520,17 @@ async def do_search(**kwargs):
 def _searcher(**kwargs):
     """Asynchronous passthrough wrapper for TMDb search.
     """
+    # Disable the log
+    log.disable()
     # Instantiate a TMDb search object.
     search = tmdb.Search()
     # Build the search query and execute the search.
+    res = None
     if 'tmdb_id' in kwargs:
-        return tmdb.Movies(kwargs['tmdb_id']).info()
+        res = tmdb.Movies(kwargs['tmdb_id']).info()
     else:
         search.movie(**kwargs)
-        return search.results
+        res = search.results
+    # Re-enable the log
+    log.enable()
+    return res

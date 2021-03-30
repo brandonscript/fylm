@@ -94,11 +94,6 @@ class processor:
             if interactive.lookup(film) is False:
                 return
         else:
-            # Search TMDb for film details (if enabled, and if it doesn't already
-            # have a TMDb id).
-            if film.tmdb_id is None:
-                film.search_tmdb()
-
             # If the film still should be ignored after looking up, skip.
             if film.should_ignore is True:
                 console().print_skip(film)

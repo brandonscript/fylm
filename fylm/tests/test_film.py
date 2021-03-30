@@ -40,7 +40,7 @@ class TestFilm(object):
 
         # Look up films by name from TMDb and update title
         for film in conftest.valid_films:
-            film.search_tmdb()
+            film.search_tmdb_sync()
 
             # Use this for debugging test matches
             # for f in conftest.all_test_films:
