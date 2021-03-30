@@ -98,7 +98,7 @@ class dirops:
 
         # If existing films has already been loaded and the list has
         # more than one film:
-        if cls._existing_films is not None and len(cls._existing_films) > 0:
+        if cls._existing_films is not None:
             return cls._existing_films
 
         # Import Film here to avoid circular import conflicts.
@@ -123,7 +123,7 @@ class dirops:
         for path in list(set(os.path.normpath(path) for _, path in paths.items())):
             if os.path.normpath(path) not in config.source_dirs:
                 xfs = [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
-                with Pool(processes=25) as pool:                    
+                with Pool(processes=50) as pool:                    
                     cls._existing_films += pool.map(Film, xfs)
 
         # Strip bad duplicates
