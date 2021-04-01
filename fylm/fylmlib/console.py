@@ -115,10 +115,10 @@ class console(object):
         return self
 
     def print(self, should_log=True, override_no_console=False):
-        if should_log:
-            log.info(self._pltxt.get())
         if config.no_console and not override_no_console:
             return
+        if should_log:
+            log.info(self._pltxt.get())
         if config.plaintext:
             print(patterns.ansi_escape.sub('', self._pltxt.get()))
         else:
