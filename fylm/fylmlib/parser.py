@@ -104,6 +104,9 @@ class parser:
         for keep_period_str in config.keep_period:
             title = re.sub(re.compile(r'\b' + re.escape(keep_period_str) + r'\b', re.I), keep_period_str, title)
 
+        # Remove trailing non-word characters like ' - '
+        title = formatter.strip_trailing_nonword_chars(title)
+
         # Remove extra whitespace from the edges of the title and remove repeating
         # whitespace.
         title = formatter.strip_extra_whitespace(title.strip())

@@ -250,6 +250,16 @@ def strip_illegal_chars(s):
     s = re.sub(r'\s?[' + patterns.illegal_chars + r']\s?', ' - ', s)
     return s
 
+def strip_trailing_nonword_chars(s):
+    """Remove specific non-word characters from the end of a title.
+
+    Args:
+        s (str, utf-8): original string to be stripped of bad chars.
+    Returns:
+        A string without those bad chars.
+    """
+    return re.sub(r'[\b\s]*[-_.:]\s*$', '', s)
+
 def strip_extra_whitespace(s):
     """Replace repeating whitespace chars in a string with a single space.
 
