@@ -114,9 +114,11 @@ class console(object):
         self.add(f'    → {s}')
         return self
 
-    def print(self, should_log=True):
+    def print(self, should_log=True, override_no_console=False):
         if should_log:
             log.info(self._pltxt.get())
+        if config.no_console and not override_no_console:
+            return
         if config.plaintext:
             print(patterns.ansi_escape.sub('', self._pltxt.get()))
         else:
@@ -144,7 +146,7 @@ class console(object):
         if config.duplicates.force_overwrite:
             c.yellow('\n★ Force overwrite mode enabled (all identically named existing files will be silently overwritten, regardless of size)')
         
-        c.print()
+        c.print(override_no_console=True)
 
     def print_exit(self, count):
         """Print and log the closing summary prior to exit.
@@ -161,7 +163,7 @@ class console(object):
             c.purple(f'\n(Test) {s}')
         else:
             c.pink(f"\n{s}")
-        c.print()
+        c.print(override_no_console=True)
 
     def print_exit_early(self):
         """Print the early exit message.
