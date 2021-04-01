@@ -73,7 +73,6 @@ class Config(object):
 
         # Generate a working dir path to config. (This is required for running tests from a
         # different working dir).
-        # TODO: Perhaps we can improve this fragile hack using __future__?
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.yaml')
 
         # Load the config file and map it to a 'Dict', a dot-notated dictionary.

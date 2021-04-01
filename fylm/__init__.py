@@ -59,8 +59,6 @@ def main():
         # Load duplicates before film processing begins.
         ops.dirops.get_existing_films(config.destination_dirs)
 
-        # TODO: add recursive searching inside poorly named folders
-
         # Verify that source path(s) exist.
         ops.dirops.verify_root_paths_exist(config.source_dirs)
 

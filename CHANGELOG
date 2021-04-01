@@ -2,6 +2,23 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.1-beta] 2021-03-27
+- Intelligent suggestions (upgrades & duplicate handling) in interactive mode
+- Quality-based upgrades (e.g., Bluray can upgrade WEBDL)
+- Improved duplicate checking and stability for duplicate removal
+- Support for HDR 4K files
+- Multiple duplicates support
+- Thanks to new intelligent upgrading, force override can better match its description
+- Improvements to console output, including source dir
+- Ability to hide skipped files in the console output now
+- Minimum file size can now be different per-resolution
+- Fylm is now published under Hippocratic License with additional fallback via GPLv3
+- Additional tests and bug fixes
+- Note: this will be the last release that supports Python 3.5, as it is nearing and of life. 
+  Future versions will also take of asynchronous eventing, which isn't supported very well in 3.5.
+- Breaking: Several config.yaml structural changes for duplicates, see config.yaml for an example. 
+  Recommend backing up your config.yaml before upgrading
+
 ## [0.3.0-beta] 2019-11-05
 - New support for files and folders using different naming template
 - New support for multiple copies of a film in the same parent folder

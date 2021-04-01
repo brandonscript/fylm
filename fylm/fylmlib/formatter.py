@@ -284,8 +284,6 @@ def pluralize(s, c):
     Take a singular form of a string, and append an s to pluralize the word
     if the count is <> 1.
 
-    TODO: Ensure this function accomodates English language exceptions.
-
     Args:
         s (str, utf-8): Singular form of a string to be pluralized.
         c (int): Count of item(s) to determine whether s should be pluralized.

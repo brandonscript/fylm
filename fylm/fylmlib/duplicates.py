@@ -155,8 +155,6 @@ class duplicates:
         a specific quality, e.g. a 1080p can be allowed upgrade a 720p, but a
         2160p cannot.
 
-        Todo: Add media-based upgrading.
-
         The return value of this method is an Enum, the result of which should
         incicate which action to take:
             - upgrade: the current file should upgrade the duplicate
