@@ -19,10 +19,10 @@ from builtins import *
 import pytest
 import os
 import itertools
-from timeit import default_timer as timer
 
 import fylm
 import fylmlib.config as config
+import fylmlib.operations as ops
 from fylmlib.film import Film
 import conftest
 
@@ -53,7 +53,7 @@ class TestApp(object):
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
         (moved, expected) = get('expect_no_lookup')
         for desired_path in expected:
-            assert(os.path.exists(desired_path))
+            assert(ops.fileops.exists_case_sensitive(desired_path))
         assert(len(list(set(moved))) == len(list(set(expected))))
 
         
@@ -80,7 +80,7 @@ class TestApp(object):
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
         (moved, expected) = get('expect')
         for desired_path in expected:
-            assert(os.path.exists(desired_path))
+            assert(ops.fileops.exists_case_sensitive(desired_path))
         assert(len(list(set(moved))) == len(list(set(expected))))
 
     # @pytest.mark.skip(reason="Slow")
@@ -104,7 +104,7 @@ class TestApp(object):
         # Assert that all of the films were moved successfully into the correct destination folders.
         (moved, expected) = get('expect', folders=False)
         for desired_path in expected:
-            assert(os.path.exists(desired_path))
+            assert(ops.fileops.exists_case_sensitive(desired_path))
         assert(len(list(set(moved))) == len(list(set(expected))))
 
         fylm.config.use_folders = True

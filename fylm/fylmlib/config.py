@@ -277,7 +277,7 @@ class Config(object):
         # For tests on Travis, set min_filesize to 0
         if os.environ.get('TRAVIS') is not None:
             self._defaults.min_filesize = 0
-            self._defaults.tmdb.key = os.environ.get('TMDB_KEY')
+            self._defaults.tmdb.key = self._defaults.tmdb.key or os.environ.get('TMDB_KEY')
 
         # Normalize the paths in source_dirs and remove duplicates.
         self._defaults.source_dirs = list(set([os.path.normpath(d) for d in self._defaults.source_dirs]))

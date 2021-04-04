@@ -399,6 +399,20 @@ class fileops:
         return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
+    def exists_case_sensitive(cls, path):
+        """Check if file exists, case sensitive.
+
+        Args:
+            path: (str, utf-8) path of file to check.
+        Returns:
+            True if the file exists, else False.
+        """
+        if not os.path.isfile(path):
+            return False
+        directory, filename = os.path.split(path)
+        return filename in os.listdir(directory)
+
+    @classmethod
     def is_acceptable_size(cls, file_path):
         """Determine if a file_path is an acceptable size.
 

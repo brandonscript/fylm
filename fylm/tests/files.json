@@ -131,13 +131,13 @@
         {
             "make": [ "FernGully The Last Rainforest 1992 1080p BluRay x264 HD4U/main.mkv" ],
             "expect": [ "FernGully - The Last Rainforest (1992)/FernGully - The Last Rainforest (1992) Bluray-1080p.mkv" ],
-            "expect_no_lookup": [ "FernGully The Last Rainforest (1992)/FernGully The Last Rainforest (1992) Bluray-1080p.mkv" ],
+            "expect_no_lookup": [ "Ferngully The Last Rainforest (1992)/Ferngully The Last Rainforest (1992) Bluray-1080p.mkv" ],
             "tmdb_id": 13225
         },
         {
             "make": [ "ferngully.the.last.rainforest.1992.1080-hd4u.mkv" ],
             "expect": [ "FernGully - The Last Rainforest (1992)/FernGully - The Last Rainforest (1992) 1080p.mkv" ],
-            "expect_no_lookup": [ "FernGully The Last Rainforest (1992)/FernGully The Last Rainforest (1992) 1080p.mkv" ],
+            "expect_no_lookup": [ "Ferngully The Last Rainforest (1992)/Ferngully The Last Rainforest (1992) 1080p.mkv" ],
             "tmdb_id": 13225
         },
         {
@@ -159,6 +159,7 @@
         {
             "make": [ "Jingle All The Way 1996 720p BluRay x264-SiNNERS/main.mkv" ],
             "expect": [ "Jingle All the Way (1996)/Jingle All the Way (1996) Bluray-720p.mkv" ],
+            "expect_no_lookup": [ "Jingle All The Way (1996)/Jingle All The Way (1996) Bluray-720p.mkv" ],
             "tmdb_id": 9279
         },
         {

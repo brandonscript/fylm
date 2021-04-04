@@ -28,7 +28,8 @@ import sys
 _roman_numerals = r'(?:(?=[MDCLXVI])M*(?:C[MD]|D?C{0,3})(?:X[CL]|L?X{0,3})(?:I[XV]|V?I{0,3}))'
 
 # A list of articles
-articles = ['a', 'an', 'of', 'the', 'is', 'and', '&', 'for', 'to', 'or', 'by', 'at']
+articles = ['&', 'a', 'an', 'and', 'as', 'at', 'by',
+            'for', 'in', 'is', 'of', 'or', 'the', 'to', 'with']
 
 # Compiled pattern that matches a 4-digit year between 1921 and 2159.
 # We ignore 2160 because it would conflict with 2160p, and we also

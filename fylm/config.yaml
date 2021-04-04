@@ -304,6 +304,7 @@ always_upper:
   - RV
   - ^IT$
   - BFG
+  - WALL·E
 
 # Array of valid video filetypes
 video_exts:
