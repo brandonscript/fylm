@@ -69,14 +69,7 @@ class parser:
         for prefix in config.strip_prefixes:
             if title.lower().startswith(prefix.lower()):
                 title = title[len(prefix):]
-
-        # For a title that properly begins with 'The' (which was previously
-        # converted to append ', The' instead), we need to put it back to its
-        # original state both for lookup validation, and so that we don't
-        # end up with multiple ', the' suffixes.
-        if re.search(r', the', title, re.I):
-            title = f"The {re.sub(r', the', '', title, flags=re.I)}"
-
+        
         # Use the 'strip_from_title' regular expression to replace unwanted
         # characters in a title with a space.
         title = re.sub(patterns.strip_from_title, ' ', title)
@@ -99,10 +92,19 @@ class parser:
         # only the left-hand portion.
         title = title.split(str(cls.get_year(source_path)))[0]
 
+        # If a title ends with , The, we need to remove it and prepend it to the
+        # start of the title.
+        if re.search(patterns.begins_with_or_comma_the, title):
+            title = f"The {re.sub(patterns.begins_with_or_comma_the, '', title)}"
+
         # Add back in . to titles or strings we know need to to keep periods.
         # Looking at you, S.W.A.T and After.Life.
-        for keep_period_str in config.keep_period:
-            title = re.sub(re.compile(r'\b' + re.escape(keep_period_str) + r'\b', re.I), keep_period_str, title)
+        for k in config.keep_period:
+            q = k.replace('.', '[ .]')
+            rx = re.compile(r'\b' + q + r'?', re.I)
+            if re.search(rx, title):
+                title = re.sub(rx, k + ' ', title)
+                break
 
         # Remove trailing non-word characters like ' - '
         title = formatter.strip_trailing_nonword_chars(title)
@@ -111,6 +113,15 @@ class parser:
         # whitespace.
         title = formatter.strip_extra_whitespace(title.strip())
 
+        # Correct the case of the title
+        title = formatter.title_case(title)
+
+        # Always uppercase strings that are meant to be in all caps
+        for u in config.always_upper:
+            rx = re.compile(r'\b' + u + r'\b', re.I)
+            if re.search(rx, title):
+                title = re.sub(rx, u, title)
+        
         return title
 
     @classmethod
@@ -288,7 +299,7 @@ class parser:
         # Search for a matching part condition
         match = re.search(patterns.part, f'{folder}/{file}')
         
-        # If a match exists, convert it to lowercase.
+        # If a match exists, convert it to uppercase.
         return match.group('part').upper() if match else None
 
     @classmethod

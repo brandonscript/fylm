@@ -18,11 +18,13 @@ from builtins import *
 
 import re
 import os
+import pathlib
 
 import pytest
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
+import fylmlib.tmdb as tmdb
 import fylm
 import conftest
 from fylmlib.enums import Media
@@ -39,32 +41,20 @@ class TestFilm(object):
         assert(fylm.config.tmdb.enabled is True)
 
         # Look up films by name from TMDb and update title
-        for film in conftest.valid_films:
-            film.search_tmdb_sync()
+        for film in tmdb.dispatch_search_set(conftest.valid_films).run():
+            expected_path = os.path.join(
+                film.primary_file.new_foldername, film.primary_file.new_filename_and_ext)
+            match = next((tf for tf in conftest.made.good for f in tf.expect if f == expected_path), None)
 
-            # Use this for debugging test matches
-            # for f in conftest.all_test_films:
-            #     if f.expected_title == film.title:
-            #         print(f.acceptable_names, f.expected_title)
-
-            matching_tests = list(filter(lambda t: (t.expected_title == film.title and len(t.acceptable_names) > 0), conftest.all_test_films))
-
-            # Debugging helper
-            # print(f"Looking up '{film.title}' ({film.year}) for '{film.original_basename}'")
-
-            # Ensure that at least one matching test is found for the film
-            assert(len(matching_tests) > 0)
-            
-            # Get the first matching title in the tests map
-            test_film = matching_tests[0]
-
+            if match is None:
+                raise AssertionError(f'"{expected_path}" was expected but not found on the filesystem')
+                
             assert(film.title is not None)
-            assert(film.title == test_film.expected_title)
             assert(film.tmdb_id is not None)
-            assert(film.tmdb_id == test_film.expected_id)
+            assert(film.tmdb_id == match.tmdb_id)
             assert(film.year is not None)
 
-        for not_a_film in list(set(conftest.films) - set(conftest.valid_films)):
+        for not_a_film in list(set(conftest.all_films) - set(conftest.valid_films)):
             assert(not_a_film.tmdb_id is None)
 
     def test_title_the(self):
@@ -72,7 +62,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that films beginning with 'The' have it moved to the end, ', The'
-        for film in conftest.films:
+        for film in conftest.all_films:
             if not film.should_ignore and ', the' in film.title_the.lower():
                 assert(not film.title_the.lower().startswith('the '))
                 assert(film.title_the.lower().endswith(', the'))
@@ -82,7 +72,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that year is detected correctly
-        for film in conftest.films:
+        for film in conftest.all_films:
             if film.year is not None:
                 assert(film.year >= 1910)
                 assert(film.year < 2160)
@@ -95,7 +85,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that resolution is detected correctly
-        for film in conftest.films:
+        for film in conftest.all_films:
             for file in film.video_files:
                 if file.resolution is not None:
                     assert(file.resolution in ['720p', '1080p', '2160p'])
@@ -105,7 +95,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that media is detected correctly
-        for film in conftest.films:
+        for film in conftest.all_films:
             for file in film.video_files:
                 if file.media is not None and file.media is not Media.UNKNOWN:
                     assert(file.media in [Media.BLURAY, Media.WEBDL, Media.HDTV, Media.SDTV])
@@ -115,7 +105,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that media is detected correctly
-        for film in conftest.films:
+        for film in conftest.all_films:
             for file in film.video_files:
                 assert(file.is_hdr is True or file.is_hdr is False)
 
@@ -125,7 +115,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that proper is detected correctly
-        for film in conftest.films:
+        for film in conftest.all_films:
             for file in film.video_files:
                 assert(file.is_proper is True or file.is_proper is False)
 
@@ -134,7 +124,7 @@ class TestFilm(object):
         conftest._setup()
 
         # Check that editions, when detected, are set correctly and cleaned from original string
-        for film in conftest.films:
+        for film in conftest.all_films:
             for file in film.video_files:
                 for key, value in config.edition_map:
                     rx = re.compile(r'\b' + key + r'\b', re.I)
@@ -149,9 +139,8 @@ class TestFilm(object):
         conftest._setup()
 
         # Check file extensions to verify whether source is a file or a dir
-        for film in conftest.films:
+        for film in conftest.all_films:
             if film.is_file:
-                print([x.ext for x in film.all_valid_files])
                 assert(len(film.video_files) == 1)
                 assert(len(film.all_valid_files) == 1)
                 assert(film.all_valid_files[0].ext is not None and [film.all_valid_files[0].ext in config.video_exts + config.extra_exts])
@@ -163,6 +152,7 @@ class TestFilm(object):
 
         conftest._setup()
         
-        # Check that ignored films will be ignored
-        for ignored in conftest.ignored:
-            assert(ignored not in [os.path.basename(f.source_path) for f in conftest.valid_films])
+        # Check that bad films will be ignored
+        for tf in conftest.made.bad:
+            for f in tf.make:
+                assert(f not in [os.path.basename(f.source_path) for f in conftest.valid_films])

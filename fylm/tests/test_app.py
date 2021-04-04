@@ -18,9 +18,12 @@ from builtins import *
 
 import pytest
 import os
+import itertools
+from timeit import default_timer as timer
 
 import fylm
 import fylmlib.config as config
+from fylmlib.film import Film
 import conftest
 
 # Overwrite the app's pre-loaded config.
@@ -44,14 +47,16 @@ class TestApp(object):
         # Execute
         fylm.main()
 
-        # moved_films = conftest.moved_films()
-        # assert(len(moved_films) > 0)
+        # Make sure we have some test films
+        assert(len(conftest.made.good) > 0)
 
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
-        for expected in conftest.expected_no_lookup:
-            expected_path = conftest.expected_path(expected, folder=True).lower()
-            assert(os.path.exists(expected_path))
+        (moved, expected) = get('expect_no_lookup')
+        for desired_path in expected:
+            assert(os.path.exists(desired_path))
+        assert(len(list(set(moved))) == len(list(set(expected))))
 
+        
     # @pytest.mark.skip(reason="Slow")
     def test_app_use_folders_true(self):
 
@@ -69,12 +74,14 @@ class TestApp(object):
         # Execute
         fylm.main()
 
-        # moved_films = conftest.moved_films()
+        # Make sure we have some test films
+        assert(len(conftest.made.good) > 0)
 
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
-        for expected in conftest.expected:
-            expected_path = conftest.expected_path(expected, folder=True)
-            assert(os.path.exists(expected_path))
+        (moved, expected) = get('expect')
+        for desired_path in expected:
+            assert(os.path.exists(desired_path))
+        assert(len(list(set(moved))) == len(list(set(expected))))
 
     # @pytest.mark.skip(reason="Slow")
     def test_app_use_folders_false(self):
@@ -91,11 +98,34 @@ class TestApp(object):
         # Execute
         fylm.main()
 
-        # moved_films = conftest.moved_films()
+        # Make sure we have some test films
+        assert(len(conftest.made.good) > 0)
 
         # Assert that all of the films were moved successfully into the correct destination folders.
-        for expected in conftest.expected:
-            expected_path = conftest.expected_path(expected, folder=False)
-            assert(os.path.exists(expected_path))
+        (moved, expected) = get('expect', folders=False)
+        for desired_path in expected:
+            assert(os.path.exists(desired_path))
+        assert(len(list(set(moved))) == len(list(set(expected))))
 
         fylm.config.use_folders = True
+        assert(fylm.config.use_folders is True)
+
+def get(key, folders=True) -> ([], []):
+    expected = []
+    moved = []
+    # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
+    for tfilm in conftest.made.good:
+        ex = tfilm.expect if key == 'expect' else tfilm.expect_no_lookup
+        valid_paths = [p for p in ex if p is not None]
+        for path in valid_paths:
+            desired_path = conftest.desired_path(path, tfilm, folder=folders)
+            if desired_path:
+                expected.append(desired_path)
+
+    for t in conftest.films_dst_paths.values():
+        for r, _, files in os.walk(t):
+            for f in list(filter(lambda x: not x.startswith('.'), files)):
+                moved.append(os.path.join(r, f))
+
+    # Need to remove identical duplicates, as only one will exist on the filesystem
+    return (list(set(moved)), list(set(expected)))

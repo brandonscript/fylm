@@ -20,6 +20,7 @@ import os
 import sys
 import shutil
 import itertools
+from pathlib import Path
 from datetime import timedelta
 
 import pytest
@@ -33,8 +34,7 @@ import fylm
 import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.operations as ops
-from make import make_mock_files
-
+from make import make_all_mock_files, MakeFilmsResult
 
 if config.cache:
     requests_cache.install_cache(f'.cache.fylm_test_py{sys.version_info[0]}', expire_after=timedelta(hours=120))
@@ -42,8 +42,8 @@ if config.cache:
 
 # Set the filename that contains test files
 test_files = 'files.json'
-if os.environ.get('TRAVIS') is not None:
-    test_files = 'files_no_unicode.json'
+# if os.environ.get('TRAVIS') is not None:
+#     test_files = 'files_no_unicode.json'
 
 def full_path(path):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), path).strip()
@@ -61,12 +61,9 @@ films_dst_paths = {
     'default': full_path('files/SD')
 }
 
-all_test_films = []
-expected = []
-expected_no_lookup = []
-ignored = []
+made: MakeFilmsResult
 
-films = []
+all_films = []
 valid_films = []
 
 @pytest.fixture(scope="session", autouse=True)
@@ -74,64 +71,52 @@ def setup():
     _setup()
 
 def _setup():
-    global all_test_films
-    global expected
-    global ignored
-    global films
+    global made
+    global all_films
     global valid_films
-    global films_src_path
-    global films_dst_paths
+    # global films_src_path
+    # global films_dst_paths
 
-    config.reload()
+    fylm.config.reload()
 
     cleanup_all()
 
     make_empty_dirs()
 
-    make_result = make_mock_files(test_files, films_src_path)
+    made = make_all_mock_files(test_files, films_src_path)
+    
+    # Debugging
+    fylm.config.debug = False
 
-    all_test_films = make_result.all_test_films
-    expected = make_result.expected
-    expected_no_lookup = make_result.expected_no_lookup
-    ignored = make_result.ignored
-
-    # Enable debugging
-    config.debug = False
+    # Console output
+    fylm.config.no_console = True
 
     # Set dirs
-    config.source_dirs = [films_src_path]
-    config.destination_dirs = films_dst_paths
+    fylm.config.source_dirs = [films_src_path]
+    fylm.config.destination_dirs = films_dst_paths
 
     # Set default rename mask
     fylm.config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full} {hdr}'
     fylm.config.rename_pattern.folder = r'{title} {(year)}'
 
     # Load films and filter them into valid films.
-    films = ops.dirops.get_new_films([films_src_path])
-    valid_films = list(filter(lambda film: not film.should_ignore, films))
+    all_films = ops.dirops.get_new_films([films_src_path])
+    valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
     if os.environ.get('DEBUG') is not None: 
-        config.debug = True if os.environ.get('DEBUG') == 'True' else False
+        fylm.config.debug = True if os.environ.get('DEBUG') == 'True' else False
 
-    # Set quiet
-    config.quiet = True
+    # Set quiet to suppress external notifications
+    fylm.config.quiet = True
 
 def make_empty_dirs():
     global films_src_path
     global films_src_path2
     global films_dst_paths
 
-    try:
-        os.makedirs(films_src_path)
-        os.makedirs(films_src_path2)
-    except Exception:
-        pass
+    paths = [films_src_path, films_src_path2] + list(set(films_dst_paths.values()))
 
-    for _, dr in films_dst_paths.items():
-        try:
-            os.makedirs(dr)
-        except Exception:
-            pass
+    [Path(dr).mkdir(parents=True, exist_ok=True) for dr in paths]
 
 def cleanup_src_files():
     global films_src_path
@@ -171,14 +156,10 @@ def moved_films():
         [ops.dirops.get_valid_files(dr) for _, dr in list(set(films_dst_paths.items()))]
     ))))
 
-def expected_path(expected, folder=True):
-    # Commenting this out because we would be introducing tests dependent on core functionality
-    #   from fylmlib.film import Film
-    #   film = Film(expected)
-    #   return os.path.join(config.destination_dirs[film.resolution or 'SD'], film.new_foldername if folder is True else '', expected)
-    # Tests should be isolated from app functionality
-    resolution = parser.get_resolution(expected)
-    return os.path.join(config.destination_dirs[resolution or 'SD'], expected if folder is True else os.path.basename(expected))
+def desired_path(path, test_film, folder=True):
+    assert(test_film.make is not None and path is not None)
+    resolution = parser.get_resolution(test_film.make[0])
+    return os.path.join(config.destination_dirs[resolution or 'SD'], path if folder else os.path.basename(path))
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):

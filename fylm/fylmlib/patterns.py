@@ -25,6 +25,11 @@ from builtins import *
 import re
 import sys
 
+_roman_numerals = r'(?:(?=[MDCLXVI])M*(?:C[MD]|D?C{0,3})(?:X[CL]|L?X{0,3})(?:I[XV]|V?I{0,3}))'
+
+# A list of articles
+articles = ['a', 'an', 'of', 'the', 'is', 'and', '&', 'for', 'to', 'or', 'by', 'at']
+
 # Compiled pattern that matches a 4-digit year between 1921 and 2159.
 # We ignore 2160 because it would conflict with 2160p, and we also
 # ensure that it isn't at the beginning of the string and that it's
@@ -37,7 +42,12 @@ year = re.compile(r'[^\/]+\b(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)\b')
 resolution = re.compile(r'\b(?P<resolution>(?:(?:72|108|216)0p?)|4K)\b', re.I)
 
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
-media = re.compile(r'\b(?:(?P<bluray>blu-?ray|bdremux|bdrip)|(?P<webdl>web-?dl|webrip|amzn|nf|hulu|dsnp|atvp)|(?P<hdtv>hdtv)|(?P<dvd>dvd)|(?P<sdtv>sdtv))\b', re.I)
+media = re.compile(r'\b(?:'
+                    r'(?P<bluray>blu-?ray|bdremux|bdrip)|'
+                    r'(?P<webdl>web-?dl|webrip|amzn|nf|hulu|dsnp|atvp)|'
+                    r'(?P<hdtv>hdtv)|'
+                    r'(?P<dvd>dvd)|'
+                    r'(?P<sdtv>sdtv))\b', re.I)
 
 # Compiled pattern that matches Proper, case insensitive.
 proper = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
@@ -46,13 +56,19 @@ proper = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
 hdr = re.compile(r'\b(?P<hdr>hdr)\b', re.I)
 
 # Compiled pattern that "Part n" where n is a number or roman numeral.
-part = re.compile(r'\bpart\W?(?P<part>(?:(\d+|M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))))', re.I)
+part = re.compile(r'\bpart\W?(?P<part>(?:\d+|' + _roman_numerals + r'))\b', re.I)
+
+# Retrieves tmdb_id in [XXXX] format from a string
+tmdb_id = re.compile(r'(?P<tmdb_id>\[\d+\])$')
+
+# Compiled pattern to match roman numerals
+roman_numerals = re.compile(r'\b(' + _roman_numerals + r')\b', re.I)
 
 # Compiled pattern that matches all unwanted characters that should be
 # stripped from a title:
 #   - From entire title: . (period) _ (underscore) and {}[]() (brackets/braces)
 #   - From the end of a string: non-word chars and whitespace
-strip_from_title = re.compile(r'([\._·\[\]{}\(\)]|[\s\W]+$)')
+strip_from_title = re.compile(r'([\._\[\]{}\(\)]|[\s\W]+$)')
 
 # Uncompiled pattern that matches illegal OS chars. Must remain uncompiled here.
 illegal_chars = r'/?<>\:*|"' if (sys.platform == "win32") else r':'
@@ -66,8 +82,22 @@ strip_articles_search = re.compile(r'(^(the|a)\s|, the$)', re.I)
 # TMDb matches.
 strip_when_comparing = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
 
-# Retrieves tmdb_id in [XXXX] format from a string
-tmdb_id = re.compile(r'(?P<tmdb_id>\[\d+\])$')
+# Beginning or end of string "The" or ", The", ignoring non-word characters
+# at the end of the string.
+begins_with_or_comma_the = re.compile(r'(^the\W+|, the\W*$)', re.I)
 
 # ANSI character escaping
 ansi_escape = re.compile(r'(^\s+|(\x9B|\x1B\[)[0-?]*[ -/]*[@-~])', re.I)
+
+# Intra-word special chars that we want to keep, and capitalize the following
+# letter.
+intra_word_special_chars = re.compile(r'(?<=[^\W])([:\-_•·.])(?=[^\W])', re.I)
+
+# Non-word chars to strip from the end of a title
+trailing_nonword_chars = re.compile(r'[\b\s]*[-_:]\s*$', re.I)
+
+# Zero-width space
+zero_space = u'\u200c'
+
+# TV show
+tv_show = re.compile(r"\bS\d{2}(E\d{2})?\b", re.I)

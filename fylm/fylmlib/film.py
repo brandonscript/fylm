@@ -33,6 +33,7 @@ from pymediainfo import MediaInfo
 import fylmlib.config as config
 from fylmlib.parser import parser
 import fylmlib.formatter as formatter
+import fylmlib.patterns as patterns
 import fylmlib.tmdb as tmdb
 import fylmlib.operations as ops
 from fylmlib.enums import Should
@@ -155,7 +156,7 @@ class Film:
             name_path = source_path
 
         # Initialize remaining properties
-        self.title = formatter.title_case(parser.get_title(name_path))
+        self.title = parser.get_title(name_path)
         self.year = parser.get_year(name_path)
         self.overview = ''
         self.poster_path = None
@@ -183,14 +184,14 @@ class Film:
 
     @property
     def title_the(self):
-        if re.search(r'(^the\b|, the)', self.title, re.I):
+        if re.search(patterns.begins_with_or_comma_the, self.title):
             return f'{formatter.strip_the(self.title)}, The'
         else:
             return self.title
 
     @property
     def is_tv_show(self):
-        return bool(re.search(r"\bS\d{2}(E\d{2})?\b", self.original_basename, re.I))
+        return bool(re.search(patterns.tv_show, self.original_basename))
 
     @property
     def is_file(self):
@@ -232,9 +233,6 @@ class Film:
         
         Returns:
             Array of Film.File objects that are valid video files."""
-
-        # if self.original_basename == 'Cinderfella.1960.720p.WEB-DL.AAC2.0.H264-FGT':
-        #     print(self.source_path, ops.dirops.get_valid_files(self.source_path))
         
         return list(filter(lambda f:
             f.is_video and (f.year is not None or f.resolution is not None or f.media is not None),
@@ -411,13 +409,7 @@ class Film:
         self.poster_path = match.poster_path
         self.tmdb_id = match.tmdb_id
         self.year = match.proposed_year
-        self.title_similarity = match.title_similarity
-
-        # Add part at the end of title if part exists in the filename, but not the found 
-        # title. Used for rate cases where a film is broken into two parts (looking at
-        # you, Dragon Tattoo)
-        if not parser.get_part(self.title) and self.part:
-            self.title += ', Part ' + self.part    
+        self.title_similarity = match.title_similarity  
 
     class File:
         """An object that identifies an individual film file and its attributes.

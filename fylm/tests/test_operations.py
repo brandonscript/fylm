@@ -86,10 +86,10 @@ class TestDirOperations(object):
         valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
         # Assert that we're getting the expected number of films.
-        assert(len(all_films) == len(conftest.all_test_films))
+        assert(len(all_films) == len(conftest.made.all))
 
         # Assert that we're getting the expected number of valid films.
-        assert(len(valid_films) == len(conftest.expected))
+        assert(len(valid_films) == len(conftest.made.good))
 
     def test_get_new_films_multiple_dirs(self):
 
@@ -111,10 +111,10 @@ class TestDirOperations(object):
         valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
         # Assert that we're getting the expected number of films. (+2 for the 2 we added)
-        assert(len(all_films) == len(conftest.all_test_films) + 2)
+        assert(len(all_films) == len(conftest.made.all) + 2)
 
         # Assert that we're getting the expected number of valid films. (+2 for the 2 we added)
-        assert(len(valid_films) == len(conftest.expected) + 2)
+        assert(len(valid_films) == len(conftest.made.good) + 2)
 
         # Assert that the list is sorted alphabetically (case insensitive is fine)
         assert(all(valid_films[i].title.lower() <= valid_films[i+1].title.lower()

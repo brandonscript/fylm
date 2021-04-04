@@ -45,6 +45,9 @@ import fylmlib.formatter as formatter
 if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key
 
+MAX_WORKERS = 50  # Number of concurrent requests
+_sem = asyncio.Semaphore(MAX_WORKERS)
+
 class TmdbResult:
     """An internal class for handling a TMDb search result object.
 
@@ -236,6 +239,31 @@ class _TmdbSearchConstructor:
             (lambda: _recursive_rstrip_search(title, year), TmdbResult(title, year)),
             (lambda: _recursive_rstrip_search(title, None), TmdbResult(title, None, year))
         ]
+
+
+class dispatch_search_set():
+    """A handler class for asynchronous concurrent lookups from TMDb.
+    """
+
+    def __init__(self, films):
+        self.films = [film for film in films if not film.should_skip]
+
+    def run(self):
+        """Generate a set of tasks and dispatch asyncronously
+        """
+        loop = asyncio.get_event_loop()
+        tasks = asyncio.gather(*[
+            asyncio.ensure_future(self._worker(i, film))
+            for (i, film) in enumerate(self.films)
+        ])
+        return loop.run_until_complete(tasks)
+
+    async def _worker(self, i, film):
+        async with _sem:  # semaphore limits num of simultaneous calls
+            console.debug(f">> Async worker {i} started - '{film.title}'")
+            await film.search_tmdb()
+            console.debug(f">> Async worker {i} done - '{film.title}'")
+            return film
 
 async def search(query, year=None):
     """Search TMDb for the specified string and year.

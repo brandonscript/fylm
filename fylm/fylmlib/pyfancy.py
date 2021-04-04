@@ -115,7 +115,7 @@ class pyfancy:
 
     # Adds new text without changing the styling
     def add(self,addition):
-        self.out += addition;
+        self.out += addition
         return self
 
     def read(self,file):

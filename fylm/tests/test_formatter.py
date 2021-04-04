@@ -44,6 +44,40 @@ def do_every(src):
 # @pytest.mark.skip()
 class TestFormatter(object):
 
+    def test_title_case(self):
+
+        # Placeholder
+        # s = "stAr waRs ePISOde vi a new hope and a tauntaun"
+        # Nausicaä of the Valley of the Wind
+        # ['Face:off']
+        # ['Face-off']
+        # Somethign with &
+        # WALL E
+        # The Good Bad, & the Ugly
+        # Mack the Knife
+        # Kingsman the Golden Circle
+        # Crush the Skull
+        # Rogue One A Star Wars Story
+        # Harry Potter 1 and the Philospher's Stone
+        # The Chronicles of Narnia 1 The Lion Witch and the Wardrobe
+        # V for Vendetta
+        # This Should:Only capitalize the letter if it is not an-the article
+        # The Chronicles of Narnia The Lion, the Witch and the Wardrobe
+
+        # Test dot replace
+        # 'L A'
+        # 'L.A.'
+        # 'L A '
+        # 'L A Confidential'
+        # 'L.A.Confidential'
+        # 'Liar Liar'
+        # 'Liar'
+        # 'S W A T'
+        # 'S.W.A.T.'
+        # 'S W A T '
+
+        return
+
     def test_title_year(self):
 
         src = os.path.join(

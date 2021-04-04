@@ -21,13 +21,22 @@ human-readable information to the console/log.
 """
 
 from __future__ import unicode_literals, print_function
+import fylmlib.config as config
+import fylmlib.patterns as patterns
 from builtins import *
 
 import re
 import copy
+import nltk
+from nltk.corpus import wordnet as wn
 
-import fylmlib.config as config
-import fylmlib.patterns as patterns
+try:
+    nltk.data.find('wordnet')
+except LookupError:
+    nltk.download('wordnet', quiet=True)
+    
+import inflect
+p = inflect.engine()
 
 def build_new_basename(file, type="file"):
     r"""Build a new file or folder name from the specified renaming pattern.
@@ -53,17 +62,18 @@ def build_new_basename(file, type="file"):
     # each mapped to its associated film property. These need to
     # be ordered such that the most restrictive comes before the
     # most flexible match.
-    
     quality = '-'.join(filter(None, [file.media.display_name if file.media else None, file.resolution or None]))
-
+    
+    part = f', Part {file.parent_film.part}' if file.parent_film.part and type == 'file' else ""
+    
     pattern_map = [
-        ["title-the", file.parent_film.title_the],
-        ["title", file.parent_film.title],
+        ["title-the", file.parent_film.title_the + part],
+        ["title", file.parent_film.title + part],
         ["edition", file.edition],
         ["year", file.parent_film.year],
         ["quality-full", f'{quality}{" Proper" if file.is_proper else ""}'],
-        ["hdr", " HDR" if file.is_hdr else ""],
-        ["quality", f'{quality}']
+        ["quality", f'{quality}'],
+        ["hdr", " HDR" if file.is_hdr else ""]
     ]
 
     # Enumerate the pattern map
@@ -83,7 +93,8 @@ def build_new_basename(file, type="file"):
         # in the original match. This allows for conditional chars to be added to
         # the template string, so that `{ - edition}` will be replaced with
         # ` - Director's Cut` *only* if film.edition isn't blank.
-        replacement = f'{match.groups()[0]}{value}{match.groups()[1]}' if match and match.groups() is not None else value
+        replacement = f'{match.groups()[0]}{value}{match.groups()[1]}' if (
+            match and match.groups() is not None) else value
 
         # Update the template by replacing the original template match (e.g. `{title}`)
         # with the replacement (e.g. `Furngully The Last Rainforest`).
@@ -227,7 +238,7 @@ def strip_the(s):
     Returns:
         A string without `The` at the beginning or end.
     """
-    return re.sub(r'(^the\W+|, the)', '', s, flags=re.I)
+    return re.sub(patterns.begins_with_or_comma_the, '', s)
 
 def strip_illegal_chars(s):
     """Remove all illegal characters from a title.
@@ -248,6 +259,10 @@ def strip_illegal_chars(s):
     # If it terminates another word, e.g. Mission: Impossible, we replace it
     # with space-dash-space. Duplicate whitespace will be removed later.
     s = re.sub(r'\s?[' + patterns.illegal_chars + r']\s?', ' - ', s)
+
+    # Strip zero-width spaces
+    s = s.lstrip(u'\u200c')
+
     return s
 
 def strip_trailing_nonword_chars(s):
@@ -258,7 +273,7 @@ def strip_trailing_nonword_chars(s):
     Returns:
         A string without those bad chars.
     """
-    return re.sub(r'[\b\s]*[-_.:]\s*$', '', s)
+    return re.sub(patterns.trailing_nonword_chars, '', s)
 
 def strip_extra_whitespace(s):
     """Replace repeating whitespace chars in a string with a single space.
@@ -274,19 +289,54 @@ def strip_extra_whitespace(s):
     return ' '.join(s.split()).strip()
 
 def title_case(s):
-    """Convert a string to title case, with some grammatical exceptions.
+    """Convert a film's title string to title case, with some grammatical and
+    roman numeral exceptions.
 
     Args:
         s (str, utf-8): original string to be Title Cased.
     Returns:
         A Title Cased string.
     """
-    articles = ['a', 'an', 'of', 'the', 'is']
-    word_list = re.split(' ', s)
-    final = [word_list[0].capitalize()]
-    for word in word_list[1:]:
-        final.append(word if word in articles else word.capitalize())
-    return " ".join(final)
+    word_list = s.split(' ')
+    title = [word_list[0].capitalize()]
+    for prev, current in zip(word_list[0:], word_list[1:]):
+
+        # If it's a roman numeral, uppercase it
+        if is_roman_numeral(current):
+            title.append(current.upper())
+        # If the word is an article, and preceded by a regular word, lowercase it
+        elif (current.lower() in patterns.articles):
+            l = current.lower()
+            # There are some exceptions for when we need to re-capitalize it
+            # If the current is not 'and'
+            # and previous wasn't an article
+            # and the previous wasn't the beginning of the title
+            # and the previous word didn't end with a comma ,
+            # and...
+            #    the previous wasn't alphabetical, numerical, or a roman numeral
+            #    (however, the roman numeral can't be the first word in the title)
+            #    it's not 'a' or 'the' preceded by a possible verb
+            # then we should capitalize the article.
+            # (e.g., Make The Knife vs. The Chronicles of Narnia The Lion the Witch, and the Wardrobe)
+            if (not current.lower() == 'and' 
+                and not prev.lower() in patterns.articles 
+                and not prev.endswith(',') 
+                and (
+                    not prev.rstrip(',').isalpha()
+                    or is_number(prev)
+                    or (is_roman_numeral(prev) and not prev.lower() == title[0].lower())
+                    or (current.lower() in ['a', 'the'] and not is_possible_verb(prev))
+                )
+            ):
+                l = l.capitalize()
+            title.append(l)
+
+        # Otherwise it's just regular
+        else:
+            title.append(current.capitalize())
+
+    title = list(map(capitalize_if_special_chars, title))
+    return ' '.join(title)
 
 def pluralize(s, c):
     """Pluralizes a string if count <> 1.
@@ -300,4 +350,56 @@ def pluralize(s, c):
     Returns:
         s, or {s}s if c <> 1
     """
-    return s if c == 1 else f"{s}s"
+    return s if c == 1 else p.plural(s)
+
+def is_number(s):
+    """Tests if string is likely numeric, or numberish
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        True if the string is a number, otherwise False
+    """
+    try:
+        float(s)
+        return True
+    except:
+        pass
+    return any([s.isnumeric(), s.isdigit()])
+
+def is_roman_numeral(s):
+    """Tests if string is exactly a roman numeral
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        True if the string is a roman numeral, otherwise False
+    """
+    match = re.search(patterns.roman_numerals, s)
+    return True if (match and match.group(1)) else False
+
+def is_possible_verb(s):
+    """Tests if string is a possible verb
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        True if the string is a verb, otherwise False
+    """
+    return 'v' in set(s.pos() for s in wn.synsets(s))
+
+def capitalize_if_special_chars(s):
+    """Tests if string contains a non-word char, then
+    splits and capitalizes each. Important for hyphenated
+    and colon-separated strings.
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        A split string, uppercased on the non-word char
+        e.g. face:off --> Face:Off
+    """
+    m = re.compile(patterns.intra_word_special_chars)
+    return ''.join(
+        [t.capitalize() for t in re.split(m, s)]
+    ) if re.search(m, s) else s

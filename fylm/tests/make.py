@@ -22,6 +22,7 @@ import re
 import shutil
 import json
 import random
+from pathlib import Path
 
 # For tests on Travis, miniaturize filesizes.
 # To force this in local tests, do:
@@ -35,26 +36,61 @@ mb = kb * 1024
 gb = mb * 1024
 
 class MockFilm:
-    def __init__(self, expected_title, expected_id, acceptable_names):
-        self.expected_title = expected_title
-        self.expected_id = expected_id
-        self.acceptable_names = acceptable_names
+    def __init__(self, test_film):
+        self.tmdb_id = test_film["tmdb_id"] if 'tmdb_id' in test_film else None
+        self.make = test_film["make"]
+        self.expect = []
+        self.expect_no_lookup = []
+        self.sizes = []
+
+        size_2160p = random.randrange(int(18 * gb), int(26 * gb))
+        size_1080p = random.randrange(int(7 * gb), int(15 * gb))
+        size_720p = random.randrange(int(3 * gb), int(7 * gb))
+        size_sd = random.randrange(int(750 * mb), int(1300 * mb))
+        size_sample = random.randrange(10 * mb, 50 * mb)
+
+
+        if 'expect' in test_film and test_film['expect'] is not None:
+            self.expect = test_film['expect']
+            self.expect_no_lookup = test_film['expect']
+        if 'expect_no_lookup' in test_film and test_film['expect_no_lookup'] is not None:
+            self.expect_no_lookup = test_film['expect_no_lookup']
+
+        for file in test_film["make"]:
+            if (re.search(re.compile(r'\bsample', re.I), file)
+                or os.path.basename(file) == 'junk.mp4'):
+                self.sizes.append(size_sample)
+            elif re.search(re.compile(r'\b720p?\b', re.I), file):
+                self.sizes.append(size_720p)
+            elif re.search(re.compile(r'\b1080p?\b', re.I), file):
+                self.sizes.append(size_1080p)
+            elif re.search(re.compile(r'\b(2160p?|\b4K)\b', re.I), file):
+                self.sizes.append(size_2160p)
+            elif os.path.splitext(file)[1] in ['.avi', '.mp4']:
+                self.sizes.append(size_sd)
+            else:
+                self.sizes.append(size_1080p)
+
+    @property
+    def acceptable_names(self):
+        if self.expect_no_lookup is not None:
+            return self.expect + self.expect_no_lookup
+        elif self.expect is not None:
+            return self.expect
+        else:
+            return []
+            
 
 class MakeFilmsResult:
-    def __init__(self, all_test_films, expected, expected_no_lookup, ignored):
-        self.all_test_films = all_test_films
-        self.expected = expected
-        self.expected_no_lookup = expected_no_lookup
-        self.ignored = ignored
+    def __init__(self, good, bad):
+        self.all = good + bad
+        self.good = good
+        self.bad = bad
 
 def make_mock_file(path, size):
-    # Create an empty file that appears to the system to be the size of `size`.
-    try:
-        # Try to create the folder structure for the path just in case it doesn't exist
-        os.makedirs(os.path.dirname(path))
-    except Exception as e:
-        pass
-
+    
+    Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
+    
     # Force size to be an integer
     size = int(round(size))
 
@@ -63,14 +99,12 @@ def make_mock_file(path, size):
     f.write(b'\0')
     f.close()
 
-def make_mock_files(json_path, files_path):
+def make_all_mock_files(json_path, files_path):
     global gb
     global mb
 
-    all_test_films = []
-    expected = []
-    expected_no_lookup = []
-    ignored = []
+    good = []
+    bad = []
 
     search_dir = os.path.join(os.path.dirname(__file__), files_path)
     json_path = os.path.join(os.path.dirname(__file__), os.path.basename(json_path))
@@ -81,66 +115,22 @@ def make_mock_files(json_path, files_path):
     except Exception:
         pass
 
-    try:
-        os.makedirs(search_dir)
-    except Exception:
-        pass
-
     with io.open(json_path, mode="r", encoding="utf-8") as json_data:
-        test_films = json.load(json_data)['test_films']
-        for test_film in test_films:
+        test_films = list(sorted(json.load(json_data)[
+                          'test_films'], key=lambda k: re.sub(re.compile(r'^the\W*', re.I), '', k['make'][0].lower())))
 
-            # Skip this test film if the skip property is set
-            if 'skip' in test_film and test_film['skip'] is True:
-                continue
-                
-            if 'dir' in test_film:
-                os.makedirs(os.path.join(search_dir, test_film['dir']))
-            
-            acceptable_names = []
+        for tf in [MockFilm(f) for f in test_films if 'skip' not in f]:
 
-            for tf in test_film['files']:
-                parent_dir = test_film['dir'] if 'dir' in test_film else ''
-                file = os.path.join(search_dir, parent_dir, tf['filename'])
-                if 'expect_no_lookup' in tf:
-                    # Add the expected filename to expected_no_lookup[]:
-                    expected_no_lookup.append(tf['expect_no_lookup'])
-                    acceptable_names.append(tf['expect_no_lookup'])
-                if 'expect' in tf and tf['expect'] is not None:
-                    # Add the expected filename to expected[] and ..no_lookup[]:
-                    expected.append(tf['expect'])
-                    expected_no_lookup.append(tf['expect'])
-                    acceptable_names.append(tf['expect'])
-                else:
-                    ignored.append(tf['filename'])
-                
-                size_2160p = random.randrange(int(35 * gb), int(55 * gb))
-                size_1080p = random.randrange(int(7 * gb), int(15 * gb))
-                size_720p = random.randrange(int(4 * gb), int(8 * gb))
-                size_sd = random.randrange(int(750 * mb), int(1300 * mb))
-                size_sample = random.randrange(10 * mb, 50 * mb)
+            for i, file in enumerate(tf.make):
+                file = os.path.join(search_dir, file)
+                make_mock_file(file, tf.sizes[i])
 
-                if (re.search(re.compile(r'\bsample', re.I), file) 
-                    or os.path.basename(file) == 'ETRG.mp4'):
-                    size = size_sample
-                elif re.search(re.compile(r'720p?', re.I), file):
-                    size = size_720p
-                elif re.search(re.compile(r'1080p?', re.I), file):
-                    size = size_1080p
-                elif re.search(re.compile(r'(2160p?|\b4K)', re.I), file):
-                    size = size_2160p
-                elif os.path.splitext(file)[1] in ['.avi', '.mp4']:
-                    size = size_sd
-                else:
-                    size = size_1080p
-                # Create an empty file that appears to the system to be 
-                # a random size akin to the qulity of the film.
-                make_mock_file(file, size)
-            tmdb_id = test_film['tmdb_id'] if 'tmdb_id' in test_film else None
-            title = test_film['title'] if 'title' in test_film else None
-            all_test_films.append(MockFilm(title, tmdb_id, acceptable_names))
-
-        return MakeFilmsResult(all_test_films, expected, expected_no_lookup, ignored)
+            if len(tf.expect) > 0 and tf.tmdb_id is not None:
+                good.append(tf)
+            else:
+                bad.append(tf)
+                            
+        return MakeFilmsResult(good, bad)
 
 if __name__ == '__main__':
-    make_mock_files('files.json', 'files/#new/')
+    make_all_mock_files('files.json', 'files/#new/')

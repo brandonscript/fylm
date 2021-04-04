@@ -291,6 +291,19 @@ keep_period:
   - L.A.
   - S.W.A.T.
   - After.Life
+  - E.T.
+  - D.A.R.Y.L.
+  - B.C.
+  - A.I.
+  - G.I.
+
+# Words in this list will remain uppercase
+# Because this is a regular expression, we can support movie titles like 'IT'
+always_upper:
+  - TRON
+  - RV
+  - ^IT$
+  - BFG
 
 # Array of valid video filetypes
 video_exts:

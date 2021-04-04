@@ -39,10 +39,9 @@ import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
 import fylmlib.config as config
+import fylmlib.tmdb as tmdb
 
 _move_queue = []
-MAX_WORKERS = 50  # Number of concurrent requests
-_sem = asyncio.Semaphore(MAX_WORKERS)
 
 class processor:
     """Main class for scanning for and processing films.
@@ -60,7 +59,9 @@ class processor:
 
         # Perform async lookup of films when not in interactive mode
         if not config.interactive and config.tmdb.enabled:
-            films = _AsyncLookup(films).do()
+
+            # Dispatch an async search for all films
+            films = tmdb.dispatch_search_set(films).run()
 
         # Route to the correct handler if the film shouldn't be skipped
         [cls.route(film) for film in films if not film.should_skip]
@@ -335,26 +336,3 @@ class _QueuedMoveOperation():
             duplicates.delete_upgraded(self.file.parent_film)
 
         return self.file.did_move
-
-class _AsyncLookup():
-    """A handler class for asynchronous concurrent lookups from TMDb.
-    """
-    def __init__(self, films):
-        self.films = [film for film in films if not film.should_skip]
-
-    def do(self):
-        """Passthrough function to call _AsyncLookup.iter() asyncronously
-        """
-        loop = asyncio.get_event_loop()
-        tasks = asyncio.gather(*[
-            asyncio.ensure_future(self._worker(i, film))
-            for (i, film) in enumerate(self.films)
-        ])
-        return loop.run_until_complete(tasks)
-
-    async def _worker(self, i, film):
-        async with _sem:  # semaphore limits num of simultaneous calls
-            console.debug(f">> Async worker {i} started - '{film.title}'")
-            await film.search_tmdb()
-            console.debug(f">> Async worker {i} done - '{film.title}'")
-            return film
