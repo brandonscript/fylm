@@ -42,8 +42,6 @@ if config.cache:
 
 # Set the filename that contains test files
 test_files = 'files.json'
-# if os.environ.get('TRAVIS') is not None:
-#     test_files = 'files_no_unicode.json'
 
 def full_path(path):
     return os.path.join(os.path.abspath(os.path.dirname(__file__)), path).strip()
