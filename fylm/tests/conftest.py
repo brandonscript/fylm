@@ -23,18 +23,26 @@ import itertools
 from pathlib import Path
 from datetime import timedelta
 
+# Add the cwd to the path so we can load fylmlib modules and fylm app.
+sys.path.append(str(Path().cwd().joinpath('fylm')))
+
 import pytest
 import requests_cache
+from addict import Dict
 
-# Add the cwd to the path so we can load fylmlib modules and fylm app.
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-sys.path.append(os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-
-import fylm
-import fylmlib.config as config
-from fylmlib.parser import parser
-import fylmlib.operations as ops
+import fylm.fylmlib.config as config
+import fylm.fylmlib.operations as ops
 from make import make_all_mock_files, MakeFilmsResult
+
+if os.getenv('_PYTEST_RAISE', "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        raise excinfo.value
 
 if config.cache:
     requests_cache.install_cache(f'.cache.fylm_test_py{sys.version_info[0]}', expire_after=timedelta(hours=120))
@@ -64,7 +72,8 @@ made: MakeFilmsResult
 all_films = []
 valid_films = []
 
-@pytest.fixture(scope="session", autouse=True)
+# TODO: Do not commit without re-enabling this.
+# @pytest.fixture(scope="session", autouse=True)
 def setup():
     _setup()
 
@@ -88,6 +97,15 @@ def _setup():
 
     # Console output
     fylm.config.no_console = True
+    
+    # Set default file sizes
+    config.min_filesize = Dict({
+        '720p': 50,
+        '1080p': 100,
+        '2160p': 200,
+        'SD': 20,
+        'default': 20
+    })
 
     # Set dirs
     fylm.config.source_dirs = [films_src_path]
@@ -98,7 +116,7 @@ def _setup():
     fylm.config.rename_pattern.folder = r'{title} {(year)}'
 
     # Load films and filter them into valid films.
-    all_films = ops.dirops.get_new_films([films_src_path])
+    all_films = ops.dirops.find_new_films([films_src_path])
     valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
     if os.environ.get('DEBUG') is not None: 
@@ -156,8 +174,9 @@ def moved_films():
 
 def desired_path(path, test_film, folder=True):
     assert(test_film.make is not None and path is not None)
-    resolution = parser.get_resolution(test_film.make[0])
-    return os.path.join(config.destination_dirs[resolution or 'SD'], path if folder else os.path.basename(path))
+    from fylmlib.film import Film
+    film = Film(test_film.make[0])
+    return os.path.join(Film.Utils.destination_root_dir(film.main_file), path if folder else os.path.basename(path))
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):

@@ -27,8 +27,8 @@ import readline
 import os
 
 import fylmlib.config as config
-from fylmlib.parser import parser
-from fylmlib.console import console
+from fylmlib.parser import Parser
+from fylmlib.console import console, debug
 from fylmlib.duplicates import duplicates
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
@@ -296,10 +296,10 @@ class interactive:
                     return cls.verify_film(film)
                 except Exception as e:
                     console().print_interactive_error("Hrm, that ID doesn't exist")
-                    console.debug(e)
+                    debug(e)
             except Exception as e:
                 console().print_interactive_error("A TMDb ID must be a number")
-                console.debug(e)
+                debug(e)
 
     @classmethod
     def search_by_name(cls, film):
@@ -320,8 +320,9 @@ class interactive:
             f"{film.title or ''}{' ' if film.title else ''}{film.year or ''}", 
             mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
-        film.title = parser.get_title(query)
-        film.year = parser.get_year(query)
+        p = Parser(query)
+        film.title = p.title
+        film.year = p.year
         film.search_tmdb_sync()
         return cls.choose_from_matches(film, query)
 

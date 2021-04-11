@@ -25,7 +25,7 @@ rename_pattern:
   folder: '{title} {(year)}'
 
 # Sort files into individual subfolders when moving them, e.g. /Volumes/Films/HD/The Last Starfighter (1984)/{files go here}.
-# If set to false, the folder rename_pattern above is ignored.
+# If set to false, all files are added to the main destination folder, and the folder rename_pattern above is ignored.
 use_folders: true
 
 # Remove unwanted files from source folders after the important files have been copied.
@@ -45,9 +45,9 @@ min_filesize:
 # Path Where history.log will be written.
 log_path: ./
 
-# --hide-skipped
-# Hide skipped files from the console output.
-hide_skipped: true
+# --hide-ignored
+# Hide ignored films from the console output.
+hide_ignored: true
 
 # --interactive
 # Prompt to confirm or correct TMDb matches.

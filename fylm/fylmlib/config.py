@@ -34,6 +34,8 @@ from yaml import Loader, SafeLoader
 from addict import Dict
 import requests_cache
 
+from fylmlib.operations import FilmPath
+
 def construct_yaml_str(self, node):
     """Hijack the yaml module loader to return unicode.
 
@@ -165,14 +167,14 @@ class Config(object):
             dest="force_move",
             help='Force move behavior for folders that appear to be (but are not) on different partitions')
 
-        # --hide-skipped
-        # This option will hide skipped files from the console output.
+        # --hide-ignored
+        # This option will hide ignored films from the console output.
         parser.add_argument(
-            '--hide-skipped',
+            '--hide-ignored',
             action="store_true",
-            default=self._defaults.hide_skipped,
-            dest="hide_skipped",
-            help='Hide skipped files from the console output')
+            default=self._defaults.hide_ignored,
+            dest="hide_ignored",
+            help='Hide ignored films from the console output')
 
         # -i, --interactive
         # This option enables prompts to confirm or correct TMDb matches.
@@ -276,11 +278,14 @@ class Config(object):
 
         # For tests on Travis, set min_filesize to 0
         if os.environ.get('TRAVIS') is not None:
-            self._defaults.min_filesize = 0
             self._defaults.tmdb.key = self._defaults.tmdb.key or os.environ.get('TMDB_KEY')
 
-        # Normalize the paths in source_dirs and remove duplicates.
-        self._defaults.source_dirs = list(set([os.path.normpath(d) for d in self._defaults.source_dirs]))
+        # Map paths in source_dirs to FilmPath and remove duplicates.
+        # self._defaults.source_dirs = list(set(map(FilmPath, self._defaults.source_dirs)))
+                                          
+        # Map paths in destination_dirs to FilmPath.
+        # for k, v in self._defaults.destination_dirs:
+        #     self._defaults.destination_dirs[k]=map(FilmPath, v)
 
         # Create placeholder var for mock inputs in interactive mode.
         self._defaults.mock_input = None

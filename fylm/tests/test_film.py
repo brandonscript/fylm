@@ -90,6 +90,10 @@ class TestFilm(object):
                 if file.resolution is not None:
                     assert(file.resolution in ['720p', '1080p', '2160p'])
 
+    def test_mediainfo(self):
+
+        
+
     def test_media(self):
 
         conftest._setup()

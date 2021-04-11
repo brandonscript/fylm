@@ -300,7 +300,7 @@ class processor:
 
         if config.remove_source and film.original_path != film.destination_path:
             console().dark_gray().indent().add('Removing parent folder').print()
-            console.debug(f'Deleting {film.original_path}')
+            debug(f'Deleting {film.original_path}')
 
             # Delete the source dir and its contents
             ops.dirops.delete_dir_and_contents(film.original_path, max_size=1000)

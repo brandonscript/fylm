@@ -29,6 +29,7 @@ import re
 import copy
 import nltk
 from nltk.corpus import wordnet as wn
+from fylmlib.enums import Rename
 
 try:
     nltk.data.find('wordnet')
@@ -38,7 +39,7 @@ except LookupError:
 import inflect
 p = inflect.engine()
 
-def build_new_basename(file, type="file"):
+class new_basename:
     r"""Build a new file or folder name from the specified renaming pattern.
 
     Using regular expressions and a { } templating syntax, construct
@@ -54,68 +55,80 @@ def build_new_basename(file, type="file"):
     Returns:
         A new filename/foldername based on config.rename_pattern.(file|folder).
     """
-
-    # Create a mutable copy of the original renaming pattern
-    template = copy.copy(config.rename_pattern.file if type == 'file' else config.rename_pattern.folder)
-
-    # Generate a key-value map of available template properties,
-    # each mapped to its associated film property. These need to
-    # be ordered such that the most restrictive comes before the
-    # most flexible match.
-    quality = '-'.join(filter(None, [file.media.display_name if file.media else None, file.resolution or None]))
     
-    part = f', Part {file.parent_film.part}' if file.parent_film.part and type == 'file' else ""
+    def __init__(self, file: 'Film.File', build_for: Rename):
+        """Initialize the new_basename instance
+
+        Args:
+            file (Film.File): [description]
+            build_for (Rename): [description]
+        """
+        self.file = file
+        self.build_for = build_for
     
-    pattern_map = [
-        ["title-the", file.parent_film.title_the + part],
-        ["title", file.parent_film.title + part],
-        ["edition", file.edition],
-        ["year", file.parent_film.year],
-        ["quality-full", f'{quality}{" Proper" if file.is_proper else ""}'],
-        ["quality", f'{quality}'],
-        ["hdr", " HDR" if file.is_hdr else ""]
-    ]
+    def build(self):
 
-    # Enumerate the pattern map
-    for key, value in pattern_map:
+        # Create a mutable copy of the original renaming pattern
+        template = copy.copy(config.rename_pattern.file if build_for == Rename.FILE else config.rename_pattern.folder)
 
-        # Generate a regular expression that suppports the keyword inside { }
-        # and uses capture groups to preserve additional formatting characters.
-        # The expression matches `{<anything>key<anything>}`, except where
-        # { } are escaped with backslashes, i.e. \{ and \}.
-        rx = re.compile(r'\{([^\{]*)' + key + r'([^\}]*)\}', re.I)
+        # Generate a key-value map of available template properties,
+        # each mapped to its associated film property. These need to
+        # be ordered such that the most restrictive comes before the
+        # most flexible match.
+        quality = '-'.join(filter(None, [file.media.display_name if file.media else None, file.resolution or None]))
+        
+        part = f', Part {file.parent_film.part}' if file.parent_film.part and build_for == Rename.FILE else ""
+        
+        pattern_map = [
+            ["title-the", file.parent_film.title_the + part],
+            ["title", file.parent_film.title + part],
+            ["edition", file.edition],
+            ["year", file.parent_film.year],
+            ["quality-full", f'{quality}{" Proper" if file.is_proper else ""}'],
+            ["quality", f'{quality}'],
+            ["hdr", " HDR" if file.is_hdr else ""]
+        ]
 
-        # Check for a match
-        match = re.search(rx, template)
+        # Enumerate the pattern map
+        for key, value in pattern_map:
 
-        # Replace the template key in the pattern and strip the surrounding { }.
-        # We add capture groups back in here to preserve extraneous chars that were
-        # in the original match. This allows for conditional chars to be added to
-        # the template string, so that `{ - edition}` will be replaced with
-        # ` - Director's Cut` *only* if film.edition isn't blank.
-        replacement = f'{match.groups()[0]}{value}{match.groups()[1]}' if (
-            match and match.groups() is not None) else value
+            # Generate a regular expression that suppports the keyword inside { }
+            # and uses capture groups to preserve additional formatting characters.
+            # The expression matches `{<anything>key<anything>}`, except where
+            # { } are escaped with backslashes, i.e. \{ and \}.
+            rx = re.compile(r'\{([^\{]*)' + key + r'([^\}]*)\}', re.I)
 
-        # Update the template by replacing the original template match (e.g. `{title}`)
-        # with the replacement (e.g. `Furngully The Last Rainforest`).
-        template = re.sub(rx, str(replacement) if value is not None else '', template)
+            # Check for a match
+            match = re.search(rx, template)
 
-    # Convert escaped template characters to un-escaped plain { }.
-    template = template.replace(r'\{', '{')
-    template = template.replace(r'\}', '}')
+            # Replace the template key in the pattern and strip the surrounding { }.
+            # We add capture groups back in here to preserve extraneous chars that were
+            # in the original match. This allows for conditional chars to be added to
+            # the template string, so that `{ - edition}` will be replaced with
+            # ` - Director's Cut` *only* if film.edition isn't blank.
+            replacement = f'{match.groups()[0]}{value}{match.groups()[1]}' if (
+                match and match.groups() is not None) else value
 
-    # Strip illegal chars
-    template = strip_illegal_chars(template)
+            # Update the template by replacing the original template match (e.g. `{title}`)
+            # with the replacement (e.g. `Furngully The Last Rainforest`).
+            template = re.sub(rx, str(replacement) if value is not None else '', template)
 
-    # Hack macOS titles that read / from the filesystem as :. If we don't do this,
-    # we end up with the app trying to create folders for any title that contains
-    # a /. Looking at you, Face/Off.
-    template = template.replace(r'/', '-')
+        # Convert escaped template characters to un-escaped plain { }.
+        template = template.replace(r'\{', '{')
+        template = template.replace(r'\}', '}')
 
-    # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
-    # `Dude Where's My Car`).
+        # Strip illegal chars
+        template = strip_illegal_chars(template)
 
-    return strip_extra_whitespace(template)
+        # Hack macOS titles that read / from the filesystem as :. If we don't do this,
+        # we end up with the app trying to create folders for any title that contains
+        # a /. Looking at you, Face/Off.
+        template = template.replace(r'/', '-')
+
+        # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
+        # `Dude Where's My Car`).
+
+        return strip_extra_whitespace(template)
 
 def pretty_size(size_in_bytes=0, measure=None):
     """Pretty format filesize/size_in_bytes into human-readable strings.

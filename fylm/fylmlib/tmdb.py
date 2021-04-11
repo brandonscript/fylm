@@ -197,7 +197,7 @@ class TmdbResult:
             and self.year_deviation <= config.tmdb.max_year_diff
             and initial_chars_match
             and i < 3):
-            console.debug(f'Instant match: {self.proposed_title} ({self.proposed_year})')
+            debug(f'Instant match: {self.proposed_title} ({self.proposed_year})')
             return True
         else:
             return False
@@ -260,9 +260,9 @@ class dispatch_search_set():
 
     async def _worker(self, i, film):
         async with _sem:  # semaphore limits num of simultaneous calls
-            console.debug(f">> Async worker {i} started - '{film.title}'")
+            debug(f">> Async worker {i} started - '{film.title}'")
             await film.search_tmdb()
-            console.debug(f">> Async worker {i} done - '{film.title}'")
+            debug(f">> Async worker {i} done - '{film.title}'")
             return film
 
 async def search(query, year=None):
@@ -288,7 +288,7 @@ async def search(query, year=None):
     # If querying by ID (an int), search immediately and return the result.
     if isinstance(query, int):
         r = await _id_search(query)
-        console.debug(f'\nInitializing lookup by ID: {query}')
+        debug(f'\nInitializing lookup by ID: {query}')
         return [TmdbResult(raw_result=r)] if r else []
 
     # On macOS, we need to use a funky hack to replace / in a filename with :,
@@ -296,7 +296,7 @@ async def search(query, year=None):
     # Credit: https://stackoverflow.com/a/34504896/1214800
     query = query.replace(r':', '-')
 
-    console.debug(f"\nInitializing search for '{query}' / {year}\n")
+    debug(f"\nInitializing search for '{query}' / {year}\n")
 
     # Initialize a array to store potential matches.
     potential_matches = []
@@ -335,9 +335,9 @@ async def search(query, year=None):
     # If no instant match was found, we need to figure out which are the most likely matches
 
     # Debug helper to show all results after disqualified ones have been removed:
-    # console.debug("\nAll matches found:")
+    # debug("\nAll matches found:")
     # for r in potential_matches:
-    #     console.debug(f"   > {r.proposed_title}" \
+    #     debug(f"   > {r.proposed_title}" \
     #                   f" ({r.proposed_year}), " \
     #                   f"   T_{r.title_similarity}, " \
     #                   f"Y_{r.year_deviation}, " \
@@ -371,9 +371,9 @@ async def search(query, year=None):
     ))
 
     # Debug helper to show all results after disqualified ones have been removed:
-    console.debug("\nFiltered matches found:")
+    debug("\nFiltered matches found:")
     for r in sorted_results:
-        console.debug(f"   > {r.proposed_title}" \
+        debug(f"   > {r.proposed_title}" \
                       f" ({r.proposed_year}), " \
                       f"   T_{r.title_similarity}, " \
                       f"Y_{r.year_deviation}, " \
@@ -398,7 +398,7 @@ async def _id_search(tmdb_id):
     # Example API call:
     #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
 
-    console.debug(f'Searching by ID: {tmdb_id}')
+    debug(f'Searching by ID: {tmdb_id}')
 
     # Build the search query and execute the search in the rate limit handler.
     return await do_search(tmdb_id=tmdb_id)
@@ -420,7 +420,7 @@ async def _primary_year_search(query, year=None):
     # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY&include_adult=true
 
-    console.debug(f'Searching: "{query}" / {year} - primary release year')
+    debug(f'Searching: "{query}" / {year} - primary release year')
 
     # Build the search query and execute the search in the rate limit handler.
     return await do_search(
@@ -446,7 +446,7 @@ async def _basic_search(query, year=None):
     # Example API call:
     #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY&include_adult=true
 
-    console.debug(f'Searching: "{query}" / {year} - basic year')
+    debug(f'Searching: "{query}" / {year} - basic year')
 
     # Build the search query and execute the search in the rate limit handler.
     return await do_search(
@@ -474,7 +474,7 @@ async def _strip_articles_search(query, year=None):
     # Example API call:
     #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY&include_adult=true
 
-    console.debug(f'Searching: "{query}" / {year} - strip articles, primary release year')
+    debug(f'Searching: "{query}" / {year} - strip articles, primary release year')
 
     # Build the search query and execute the search in the rate limit handler.
     return await do_search(
@@ -523,7 +523,7 @@ async def _recursive_rstrip_search(query, year=None):
     # Strip articles here, so that by the end, we aren't searching for 'The'.
     query = re.sub(patterns.strip_articles_search, '', query)
 
-    console.debug(f'Searching: "{query}" / {year} - recursively remove the last word of title')
+    debug(f'Searching: "{query}" / {year} - recursively remove the last word of title')
 
     # Iterate over each word in the search string.
     for i, _ in enumerate(query.split()):

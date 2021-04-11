@@ -65,7 +65,7 @@
             "expect": null
         },
         {
-            "make": [ "Bridesmaids.2011.2160p.Bluray.x264-TWiZTED/main.mkv" ],
+            "make": [ "#4K/#deep/Bridesmaids.2011.2160p.Bluray.x264-TWiZTED/main.mkv" ],
             "expect": [ "Bridesmaids (2011)/Bridesmaids (2011) Bluray-2160p.mkv" ],
             "tmdb_id": 55721
         },
@@ -124,7 +124,7 @@
             "tmdb_id": 374720
         },
         {
-            "make": [ "Eight Below 2006 BDRemux HDR 2160p/main.mkv" ],
+            "make": [ "#4K/#deep/Eight Below 2006 BDRemux HDR 2160p/main.mkv" ],
             "expect": [ "Eight Below (2006)/Eight Below (2006) Bluray-2160p HDR.mkv" ],
             "tmdb_id": 9036
         },
@@ -207,7 +207,7 @@
             "tmdb_id": 433471
         },
         {
-            "make": [ "Mad Max Fury Road 2015 UltraHD BluRay 2160p HDR HEVC BT2020 TrueHD 7 1 Atmos-HDLeader/byBjaG9vc2UgYSBzZXQgb2YgNjQgY2hhcmFjdGV.mkv" ],
+            "make": [ "#4K/Mad Max Fury Road 2015 UltraHD BluRay 2160p HDR HEVC BT2020 TrueHD 7 1 Atmos-HDLeader/byBjaG9vc2UgYSBzZXQgb2YgNjQgY2hhcmFjdGV.mkv" ],
             "expect": [ "Mad Max - Fury Road (2015)/Mad Max - Fury Road (2015) Bluray-2160p HDR.mkv" ],
             "expect_no_lookup": [ "Mad Max Fury Road (2015)/Mad Max Fury Road (2015) Bluray-2160p HDR.mkv" ],
             "tmdb_id": 76341
@@ -280,7 +280,7 @@
             "tmdb_id": 11884
         },
         {
-            "make": [ "The.Last.Starfighter.25th.A.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm/The.Last.Starfighter.25th.Ann.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm.mp4" ],
+            "make": [ "#4K/The.Last.Starfighter.25th.A.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm/The.Last.Starfighter.25th.Ann.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm.mp4" ],
             "expect": [ "The Last Starfighter (1984)/The Last Starfighter (1984) [25th Anniversary Edition] Bluray-2160p HDR.mp4" ],
             "tmdb_id": 11884
         },
@@ -464,7 +464,7 @@
             "tmdb_id": 9477
         },
         {
-            "make": [ "King.Arthur.2004.Extended.Directors.Cut.DTS-HD.DTS.MULTISUBS.2160p.BluRay.x264.HQ-TUSAHD/main.mkv" ],
+            "make": [ "#4K/King.Arthur.2004.Extended.Directors.Cut.DTS-HD.DTS.MULTISUBS.2160p.BluRay.x264.HQ-TUSAHD/main.mkv" ],
             "expect": [ "King Arthur (2004)/King Arthur (2004) [Extended Director's Cut] Bluray-2160p.mkv" ],
             "tmdb_id": 9477
         },
@@ -657,12 +657,12 @@
             "tmdb_id": 1992
         },     
         {
-            "make": [ "Face:Off 2160p (1997).mkv" ],
+            "make": [ "#4K/Face:Off 2160p (1997).mkv" ],
             "expect": [ "Face-Off (1997)/Face-Off (1997) 2160p.mkv" ],
             "tmdb_id": 754
         },
         {
-            "make": [ "Face-Off 2160p (1997) HDR.mkv" ],
+            "make": [ "#4K/Face-Off 2160p (1997) HDR.mkv" ],
             "expect": [ "Face-Off (1997)/Face-Off (1997) 2160p HDR.mkv" ],
             "tmdb_id": 754
         },
@@ -676,7 +676,7 @@
             "expect": null
         },
         {
-            "make": [ "Rogue.One.A.Star.Wars.Story.2016.4K.BluRay.HDR.10bit.DTS.HD.MA-PlUSh.mp4" ],
+            "make": [ "#4K/Rogue.One.A.Star.Wars.Story.2016.4K.BluRay.HDR.10bit.DTS.HD.MA-PlUSh.mp4" ],
             "expect": [ "Rogue One - A Star Wars Story (2016)/Rogue One - A Star Wars Story (2016) Bluray-2160p HDR.mp4" ],
             "expect_no_lookup": [ "Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-2160p HDR.mp4" ],
             "tmdb_id": 330459

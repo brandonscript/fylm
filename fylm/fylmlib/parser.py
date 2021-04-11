@@ -28,42 +28,61 @@ from builtins import *
 import os
 import re
 
+from lazy import lazy
+from typing import Union
+
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
-from fylmlib.enums import Media
+from fylmlib.tools import last
+from fylmlib.enums import Media, Resolution
 
-class parser:
-    """Main class for film parser.
-
-    All methods are class methods, thus this class should never be instantiated.
+class Parser(object):
+    """A collection of string parsing utilities to apply regular 
+    expressions and extract critical information from a path. 
+    Instantiate Parser with your path, then call properties on it.
+    
+    Attributes:
+    
+        path ()
+    Args:
+        path (str, Path, or FilmPath): Relative or absolute path to a film file
+    
     """
-    @classmethod
-    def get_title(cls, source_path):
+    def __init__(self, path: Union[str, 'Path', 'FilmPath'], mediainfo=None):
+        
+        if type(path) is str:
+            self._p = path    
+        else:
+            from fylmlib.operations import FilmPath
+            f = FilmPath(path)
+            try:
+                self._p = str(f) if f == f.filmroot else str(f.relative_to(f.filmroot))
+            except:
+                self._p = str(f)
+            
+        self.mediainfo = mediainfo
+    
+    @lazy
+    def title(self) -> str:
         """Get title from full path of file or folder.
 
         Use regular expressions to strip, clean, and format a file
         or folder path into a more pleasant film title.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A clean and well-formed film title.
         """
 
-        # Ensure source_path is a str
-        source_path = str(source_path)
-
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
-
         # Determine whether to use the file or its containing folder
-        # to determine the title by parsing for year and resolution
-        title = folder if cls.get_year(folder) is not None or cls.get_resolution(folder) is not None else file
+        # to determine the title by checking for year and resolution
+        title = self.dir if self.year or self.resolution else self.file
 
         # Remove the file extension.
-        title = os.path.splitext(title)[0]
+        title = Path(title).stem
 
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
@@ -79,8 +98,8 @@ class parser:
         # we don't need it to appear, duplicated, in the title. Because
         # `_edition_map` returns a (key, value) tuple, we check for the search
         # key here and replace it (not the value).
-        if cls._edition_map(source_path)[0] is not None:
-            title = re.sub(cls._edition_map(source_path)[0], '', title)
+        if self._edition_map[0] is not None:
+            title = re.sub(self._edition_map[0], '', title)
 
         # Strip all resolution and media tags from the title.
         title = re.sub(patterns.media, '', title)
@@ -90,7 +109,7 @@ class parser:
         # and the rest of the file. Therefore we can assume we only care about
         # the first part of the string, and so we split on the year value, and keep
         # only the left-hand portion.
-        title = title.split(str(cls.get_year(source_path)))[0]
+        title = title.split(str(self.year))[0]
 
         # If a title ends with , The, we need to remove it and prepend it to the
         # start of the title.
@@ -124,8 +143,8 @@ class parser:
         
         return title
 
-    @classmethod
-    def get_year(cls, source_path):
+    @lazy
+    def year(self) -> int:
         """Get year from full path of file or folder.
 
         Use regular expressions to identity a year value between 1910 and 2159,
@@ -134,31 +153,23 @@ class parser:
         or filename.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A 4-digit integer representing the release year, or None if
             no year could be determined.
         """
-
-        # Ensure source_path is a str
-        source_path = str(source_path)
-
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
-
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and
         # no one will use python anymore). Also convert the matches iterator
         # to a list.
-        matches = list(re.finditer(patterns.year, f'{folder}/{file}'))
-
+        m = last(re.finditer(patterns.year, self._p), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
-        return int(matches[-1].group('year')) if matches else None
+        return int(m.group('year')) if m else None
 
-    @classmethod
-    def get_edition(cls, source_path):
+    @lazy
+    def edition(self) -> str:
         """Get and correct special edition from full path of file or folder.
 
         Iterate a map of strings (or, more aptly, regular expressions) to
@@ -166,70 +177,75 @@ class parser:
         config.edition_map.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A corrected string representing the film's edition, or None.
         """
 
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
-
         # Because _edition_map returns a (key, value) tuple, we need to
         # return the second value in the tuple which represents the corrected
         # string value of the edition.
-        return cls._edition_map(f'{folder}/{file}')[1] or None
+        return self._edition_map[1] or None
 
-    @classmethod
-    def get_resolution(cls, source_path):
-        """Get resolution from full path of file or folder.
-
-        Use a regular expression to retrieve release resolutions from the source path
-        (e.g. 720p, 1080p, or 2160p).
-
+    @lazy
+    def resolution(self) -> str:
+        """Parse resolution from a path string using a regular expression,
+        or optionally from a provided mediainfo object.
+        
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path (str): Relative path for a file (file.ext or dir/file.ext)
 
         Returns:
-            A corrected string representing the film's resolution, or None.
+            A an Enum representing the file's resolution, or None.
         """
-
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
+        
+        if self.mediainfo:
+            try:
+                if self.mediainfo.width == 3840:
+                    return Resolution.UHD_2160P
+                elif self.mediainfo.width == 1920:
+                    return Resolution.HD_1080P
+                elif self.mediainfo.width == 1280:
+                    return Resolution.HD_720P
+                elif self.mediainfo.width == 1024:
+                    return Resolution.SD_576P
+                elif self.mediainfo.width == 852:
+                    return Resolution.SD_480P
+            except:
+                pass
 
         # Search for any of the known qualities.
-        match = re.search(patterns.resolution, f'{folder}/{file}')
+        match = re.search(patterns.resolution, self.relpath)
 
         # If a match exists, convert it to lowercase.
         resolution = match.group('resolution').lower() if match else None
+        if resolution == '4k' or resolution.startswith('2160'):
+            return Resolution.UHD_2160P
+        elif resolution.startswith('1080'):
+            return Resolution.HD_1080P
+        elif resolution.startswith('720'):
+            return Resolution.HD_720P
+        elif resolution.startswith('576'):
+            return Resolution.SD_576P
+        elif resolution.startswith('480'):
+            return Resolution.SD_480P
+        return Resolution.UNKNOWN
 
-        # Manual fix for 4K files
-        if resolution == '4k':
-            resolution = '2160p'
-
-        # If the resolution doesn't end in p, append p.
-        if resolution is not None and 'p' not in resolution:
-            resolution += 'p'
-            
-        return resolution
-
-    @classmethod
-    def get_media(cls, source_path) -> Media:
+    @lazy
+    def media(self) -> str:
         """Get media from full path of file or folder.
 
         Use regular expressions to identity the original media of the file.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path (str): Relative path of file or folder/file.
 
         Returns:
             An enum representing the media found.
         """
 
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
-
-        match = re.search(patterns.media, f'{folder}/{file}')
+        match = re.search(patterns.media, self.relpath)
         if match and match.group('bluray'):
             return Media.BLURAY
         elif match and match.group('webdl'):
@@ -240,86 +256,74 @@ class parser:
             return Media.DVD
         elif match and match.group('sdtv'):
             return Media.SDTV
-        else:
-            return Media.UNKNOWN
+        return Media.UNKNOWN
 
-    @classmethod
-    def is_hdr(cls, source_path) -> bool:
+    @lazy
+    def is_hdr(self) -> str:
         """Determine whether the media is an HDR file.
 
         Use regular expressions to identity whether the media is HDR or not.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A bool representing the HDR status of the media.
         """
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
 
-        match = re.search(patterns.hdr, f'{folder}/{file}')
+        match = re.search(patterns.hdr, str(self.relpath))
         return True if (match and match.group('hdr')) else False
 
-    @classmethod
-    def is_proper(cls, source_path) -> bool:
+    @lazy
+    def is_proper(self) -> str:
         """Determine whether the media is a proper rip.
 
         Use regular expressions to identity whether the file is a proper or not.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A bool representing the proper state of the media.
         """
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
 
-        match = re.search(patterns.proper, f'{folder}/{file}')
+        match = re.search(patterns.proper, str(self.relpath))
         return True if (match and match.group('proper')) else False
 
-    @classmethod
-    def get_part(cls, source_path):
+    @lazy
+    def part(self) -> str:
         """Get part # from full path of file or folder.
 
         Use regular expressions to identity the part # of the file.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A string representing the part # of the title, or None, if no
             match is found.
         """
 
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
-
         # Search for a matching part condition
-        match = re.search(patterns.part, f'{folder}/{file}')
+        match = re.search(patterns.part, str(self.relpath))
         
         # If a match exists, convert it to uppercase.
         return match.group('part').upper() if match else None
 
-    @classmethod
-    def _edition_map(cls, source_path):
-        """Internal method to search for special edition strings in a source_path.
+    def _edition_map(self) -> (str, str):
+        """Internal method to search for special edition strings in a path.
 
         This method iterates through config.edition_map, generates regular
         expressions for each potential match, then returns a (key, value)
         tuple containing the first matching regular expression.
 
         Args:
-            source_path: (str, utf-8) full path of file or folder.
+            path: (str, utf-8) full path of file or folder.
 
         Returns:
             A (key, value) tuple containing either a matching regular expression and its
             corrected counterpart, or (None, None).
         """
-
-        folder = os.path.basename(os.path.dirname(source_path))
-        file = os.path.basename(source_path)
 
         # Iterate over the edition map.
         for key, value in config.edition_map:
@@ -329,7 +333,7 @@ class parser:
             
             # Because this map is in a specific order, of we find a suitable match, we
             # want to return it right away.
-            result = re.search(rx, f'{folder}/{file}')
+            result = re.search(rx, str(self.relpath))
             if result:
                 # Return a tuple containing the matching compiled expression and its
                 # corrected value after performing a capture group replace, then break 

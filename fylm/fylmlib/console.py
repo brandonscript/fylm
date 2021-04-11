@@ -33,8 +33,8 @@ import itertools
 from colors import color
 
 from fylmlib.pyfancy import *
+import fylmlib.log as log
 import fylmlib.config as config
-from fylmlib.log import log
 from fylmlib.ansi import ansi
 import fylmlib.patterns as patterns
 import fylmlib.formatter as formatter
@@ -369,27 +369,26 @@ class console(object):
 
         # Clear line.
         sys.stdout.write("\033[K")
+    
+def debug(s: str=''):
+    """Print debugging details, if config.debug is enabled.
 
-    @classmethod
-    def debug(cls, s):
-        """Print debugging details, if config.debug is enabled.
+    Args:
+        s: (str, utf-8) String to print
+    """
+    if config.debug is True:
+        # TODO: Debug shouldn't also be printing info
+        log.debug(s)
+        console().bold().debug(s).print()
 
-        Args:
-            s: (str, utf-8) String to print
-        """
-        if config.debug is True:
-            log.debug(s)
-            console().bold().debug(s).print()
+def error(s: str='', x=Exception):
+    """Print error details.
 
-    @classmethod
-    def error(cls, s, x=Exception):
-        """Print error details.
-
-        Args:
-            s: (str, utf-8) String to print
-            x: (Exception)
-        """
-        log.error(s)
-        console().bold().error(s).print()
-        if x:
-            x(s)
+    Args:
+        s: (str, utf-8) String to print
+        x: (Exception)
+    """
+    log.error(s)
+    console().bold().error(s).print()
+    if x:
+        x(s)

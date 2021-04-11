@@ -63,6 +63,7 @@ class TestFormatter(object):
         # V for Vendetta
         # This Should:Only capitalize the letter if it is not an-the article
         # The Chronicles of Narnia The Lion, the Witch and the Wardrobe
+        # 'S.W.A.T.' not S.W..T
 
         # Test dot replace
         # 'L A'

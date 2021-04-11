@@ -28,7 +28,6 @@ import logging
 import datetime
 
 from fylmlib.pyfancy import *
-import fylmlib.config as config
 
 # Define some pretty console output constants
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -42,6 +41,9 @@ class log:
     def config(cls):
         """Configure the logger. In test mode, it is disabled.
         """
+        
+        import fylmlib.config as config
+        
         if config.test:
             cls.disable()
         else:

@@ -56,12 +56,12 @@ class duplicates:
         # DANGER ZONE: With check_for_duplicates disabled and force_overwrite enabled, any files
         # with the same name at the destination will be silently overwritten.
         if config.duplicates.enabled is False or config.rename_only is True:
-            console.debug('Duplicate checking is disabled, skipping.')
+            debug('Duplicate checking is disabled, skipping.')
             return []
 
         existing_films = ops.dirops.get_existing_films(config.destination_dirs)
 
-        console.debug(f'Checking list of duplicates for "{film.new_basename}"')
+        debug(f'Checking list of duplicates for "{film.new_basename}"')
         # Filter the existing_films cache array to titles beginning with the first letter of the
         # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.
@@ -86,7 +86,7 @@ class duplicates:
            existing_films))
 
         duplicate_videos = list(itertools.chain(*[d.video_files for d in duplicates]))
-        console.debug(f'Total duplicate copies of this film found: {len(duplicate_videos)}')
+        debug(f'Total duplicate copies of this film found: {len(duplicate_videos)}')
 
         for v in film.video_files:
             for d in duplicate_videos:

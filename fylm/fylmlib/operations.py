@@ -29,118 +29,645 @@ from builtins import *
 import os
 import shutil
 import sys
+import re
 import unicodedata
 import itertools
-from itertools import islice
+from itertools import islice, chain
 from multiprocessing import Pool
+from pathlib import Path, PurePath
+from typing import Union, Iterable
 
-import fylmlib.config as config
+from lazy import lazy
+
 from fylmlib.console import console
 from fylmlib.cursor import cursor
 import fylmlib.formatter as formatter
+import fylmlib.patterns as patterns
+import fylmlib.parser as Parser
+from fylmlib.tools import *
+
+class FilmPath(Path):
+    """A collection of paths used to construct filenames, parseable strings, and locate 
+    files. It tries to follow the os.walk() model as best as possible. FilmPath can 
+    represent both a file and a dir, depending on whether it was initialized with a 
+    file or dir path.
+    
+    Attributes:
+        
+        origin (Path):              Origin path originally passed to find_deep, likely 
+                                    provided by config or -s, e.g.
+                                    
+                                     - /volumes/downloads
+                                    
+        container (FilmPath):       The nearest parent that contains one more films, e.g.
+                                    
+                                     - /volumes/downloads
+                                     - /volumes/downloads/#done
+                                     
+                                    A container can also be a film candidate, if it tests
+                                    true for `maybe_film`, meaning all its contents belong to
+                                    a single a single title.
+                                    
+        branch (Filmpath):          A container that is not a film, as it contains multiple films.
+           
+        filmrel (Filmpath):             Relative path between branch and self, e.g.
+
+                                     - Avatar.2009.BluRay.1080p/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+                                     - Avatar.2009.BluRay.1080p.x264-Scene/av.bluray.1080p.mkv
+                                     - Avatar.2009.BluRay.1080p.x264-Scene.mkv
+                                     
+        filmroot (FilmPath):        The root path of a file or film container whose contents
+                                    belong to a single title.
+                                     
+        files ([FilmPath]):         List of all files in the dir, or a list of one, if path is a 
+                                    file. Does not return deeply nested files.
+                                            
+        video_files ([FilmPath]):   Subset of files that are valid video files.
+        
+        dirs ([FilmPath]):          List of subdirectories in this path object.
+                                    
+        siblings ([FilmPath]):      List of all files or dirs that are adjacent to the current path.
+        
+        descendents ([FilmPath]):   List of all files or dirs contained within the specified dir.
+                                    Default (even for files) is an empty list.
+        
+        is_origin (bool):           Returns True if the path matches the origin.
+                                    
+        is_container (bool):        Returns True if the path contains multiple films and should 
+                                    be investigated recursively.
+                                    
+        is_branch (bool):           Returns True if the path is container, but not a film.  
+        
+        filename (str or None):     Filename, if this path is a file, or None
+        
+        year (int or None):         Year detected in .name.
+              
+        has_ignored_string (bool):  Returns True if this Path contains any ignored strings.
+        
+        is_video_file (bool):       True if the path is a file with a suffix matching video_exts.
+        
+        is_terminus (bool):         True if the path is the last in a tree, i.e. is a file, or is a 
+                                    directory but contains no dirs or files, or if we can safely determine 
+                                    that all its files or subdirs belong to a single title.
+                                    
+        is_empty (bool):            True if the path does not contain any files or dirs. Exludes system files
+                                    like 'thumbs.db' and '.DS_Store'.
+                                    
+        is_filelike (bool):         True if the path is file-like, without calling is_file() and checking 
+                                    the filesystem. Checks if a path has a suffix.
+                                    
+        is_filelike (bool):         True if the path is dir-like, without calling is_dir() and checking 
+                                    the filesystem. Checks if a path does not have a suffix.                                    
+        
+        maybe_film (bool):          Returns True if the path is a valid candidate for a possible 
+                                    Film object. A candidate must either be a file immediately after
+                                    a root path, or a dir containing at least one video file, and
+                                    not nested dirs containing additional video files.
+                                    
+    """
+    
+    _flavour = type(Path())._flavour
+   
+    def __init__(self, *args, origin: 'FilmPath'=None, dirs: []=None, files: []=None):
+        """Initialize FilmPath object.
+
+        Args:
+            origin (WalkPath):      Origin top level path, inherited from args[0] if possible,
+                                    or self.
+                                        
+            dirs (list):            Dirs provided by os.walk(), defauls to []
+                                         
+            files (list):           Files provided by os.walk(), defaults to []
+        """
+        super().__init__()
+        
+        try:
+            self._o = origin or args[0].origin
+        except:
+            self._o = self
+                    
+        self._dirs: [FilmPath] = list(map(FilmPath, dirs)) if dirs else None
+        self._files: [FilmPath] = list(map(FilmPath, files)) if files else None
+
+    # @overrides(joinpath)
+    def joinpath(self, path) -> 'FilmPath':
+        joined = FilmPath(super().joinpath(path), origin=self.origin)
+        self.__dict__ = joined.__dict__.copy()
+        return joined
+    
+    # @overrides(relative_to)
+    def relative_to(self, path) -> 'FilmPath':
+        rel = FilmPath(super().relative_to(path), origin=self.origin)
+        self.__dict__ = rel.__dict__.copy()
+        return rel
+    
+    # @overrrides(parent)
+    @property
+    def parent(self) -> 'FilmPath':
+        return FilmPath(super().parent, origin=self.origin)
+    
+    # @overrrides(parents)
+    @property
+    def parents(self) -> ['FilmPath']:
+        return [FilmPath(p, origin=self.origin) for p in super().parents]
+    
+    @property
+    def origin(self) -> 'FilmPath':
+        return self._o
+    
+    @property
+    def dirs(self) -> ['FilmPath']:
+        self._dirs = (self._dirs or 
+                      [FilmPath(d) for d in self.iterdir() if d.is_dir()] 
+                      if self.is_absolute() and self.is_dir() else [])
+        return self._dirs
+    
+    @lazy
+    def siblings(self) -> ['FilmPath']:
+        return [x for x in self.parent.dirs + self.parent.files if x != self]
+    
+    @property
+    def descendents(self) -> Iterable['FilmPath']:
+        # Note that this is an expensive call, but intentionally performs a scan
+        # each time it is called so that we always have a current list of descendents. 
+        if self.is_filelike:
+            return []
+        for d in Find.deep_sorted(self):
+            d._o = self.origin
+            if d != self:
+                yield d
+    
+    @property
+    def files(self) -> ['FilmPath']:
+        self._files = (self._files or 
+                       [FilmPath(f) for f in self.iterdir() if f.is_file()] 
+                       if self.is_absolute() and self.is_dir() else [])
+        return self._files
+    
+    @lazy
+    def container(self) -> 'FilmPath':
+        return first(self.parents, where=lambda p: (p.is_origin 
+                       or self.origin == p 
+                       or p.is_container), 
+                     default=self if self.is_origin else self.origin)
+            
+    @lazy
+    def filmrel(self) -> 'FilmPath':
+        return self.relative_to(self.branch)
+    
+    @lazy
+    def filmroot(self) -> ('FilmPath', 'FilmPath'):
+        
+        # If this isn't a film, it can't have a filmroot.
+        if not self.maybe_film:
+            return
+        
+        # Walk up the parent list to find the first index doesn't have a year
+        i = self.parents.index(
+            first(self.parents, where=lambda x: not x.year, default=None)
+        )
+        
+        # If no results were found (or the first parent is not a film),
+        # but this film has a year, it's its own filmroot.
+        if (not i or i == 0) and self.maybe_film:
+            return self
+        
+        # Otherwise, check the nearest parent to see if the years match
+        if i > 0:
+            
+            fr = self.parents[i - 1]
+
+            # If this doesn't have a year, or it does and it 
+            # matches the parent, that's the root.
+            if not self.year or self.year == fr.year:
+                # Return the delta between the root and self
+                return fr
+            
+        return None
+    
+    @lazy
+    def branch(self) -> 'FilmPath':
+        # A branch is almost certainly the first parent above a 
+        # filmroot isn't a film.
+        if self.filmroot and not self.filmroot.parent.maybe_film:
+            return self.filmroot.parent
+        else:
+            return self.container
+                   
+    @property
+    def video_files(self) -> ['FilmPath']:
+        return [self] if self.is_video_file else list(filter(lambda f: 
+            Utils.is_video_file, 
+            self.resolve().rglob("*")))
+    
+    @lazy
+    def is_video_file(self) -> bool:
+        return Utils.is_video_file(self)
+    
+    @lazy
+    def year(self) -> int:
+        return Parser(self.name).year
+    
+    @property
+    def has_ignored_string(self) -> bool:
+        return Utils.has_ignored_string(self)
+    
+    @lazy
+    def is_empty(self) -> bool:
+        return not self.dirs and not self.files
+    
+    @lazy
+    def is_filelike(self) -> bool:
+        return self.suffix
+    
+    @lazy
+    def is_dirlike(self) -> bool:
+        return not self.suffix
+        
+    @lazy
+    def is_origin(self) -> bool:
+        return self == self._o
+    
+    @lazy
+    def is_container(self) -> bool:
+        # It's not the origin, it's a file or empty, it cannot be a container.
+        if not self.is_origin and (self.is_filelike or self.is_empty):
+            return False
+        
+        # Otherwise it's probably a container
+        return True
+    
+    @lazy
+    def is_branch(self) -> bool:
+        return all([self.is_container, 
+                    not self.maybe_film, 
+                    not self.is_terminus])
+    
+    @lazy 
+    def is_terminus(self) -> bool:
+        # if it's a file or empty, it's a terminus.
+        if self.is_filelike or self.is_empty:
+            return True
+        
+        # Lambda: from all objects in x, create a list of years
+        get_years = lambda x: [o.year for o in x if o is not None]
+
+        # Lambda: compare a list and see if they all match
+        all_match = lambda x: all(y == x[0] for y in x)
+        
+        # If it contains more than one video file with different years, or 
+        # folders with multiple years, it cannot be a terminus (it's a container)
+        y = get_years(self.video_files)
+        if len(y) > 0 and not all_match(y):
+            return False
+        
+        # Return True if all of its subdirs are empty
+        return self.dirs and all(d.is_empty for d in self.dirs)
+        
+    @lazy
+    def maybe_film(self) -> bool:
+        # It's an empty dir 
+        if ((self.is_dirlike and self.is_empty) 
+            # Or it's a file, but not a video
+            or (self.is_filelike and not self.is_video_file)):
+            return False
+        
+        # Origin cannot be a film
+        if self.is_origin:
+            return False
+        
+        # If it has a year, it's quite possibly a film, even though it might be
+        # empty. We return false positives here so that `branch` is strictly not
+        # potential film containers.
+        if self.year:
+            return True
+
+        # It's a video, and either it or its parent have a year, e.g.
+        #  - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene/a-x264.mkv
+        #                                                           ----------
+        if self.is_video_file and (self.year or self.parent.year):
+            return True
+
+        # or it's a video file with a year, and its parent does not e.g.
+        #  - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+        #                       ---------------------------------------
+        #  - /volumes/downloads/#done/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+        #                             ---------------------------------------
+        if self.is_video_file and self.year and not self.parent.year:
+            return True
+
+        # or it's a dir with a year in its name, and contains at least one
+        # video file, e.g.
+        #  - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene/a-x264.mkv
+        #                       -----------------------------------
+        if self.is_dirlike and self.year and self.video_files:
+            return True
+
+        # If it's a terminus, it's the end of the line, maybe it's a film?
+        return self.is_terminus
+        
+class Find:
+
+    @staticmethod
+    def deep(path: Union[str, Path, 'FilmPath'], 
+             hide_sys_files=True) -> Iterable['FilmPath']:
+        """Deeply search the specified path and return all files and dirs 
+        (using os.walk), mapped to FilmPath objects that maintain a 
+        hierarchical matrix of pathlib.Path objects. Note: the original 
+        path root will always be included in this list. If sorting 
+        alphabetically, use [1:] to remove the first element (root).
+        If path provided is a single file, return a list with it.
+
+        Args:
+            path (str or Path): Root path to search for files.
+            sort_key (lambda, optional): Sort function, defaults 
+                                            to alpha case-insensitive.
+            hide_sys_files (bool): Hide system files. Default is True.
+            
+        Returns:
+            A filtered list of files or an empty list.
+        """
+        
+        origin = FilmPath(path)
+        if origin.is_file(): 
+            return [origin]
+        
+        for root,dirs,files in os.walk(origin):
+            
+            if hide_sys_files:
+                files = filter(lambda f: not is_sys_file(f), files)
+            
+            this = FilmPath(root, origin=origin)
+            
+            this._dirs = [this.joinpath(d) for d in dirs]
+            this._files = [this.joinpath(f) for f in files]
+            
+            dirs = this.dirs
+            files = this.files
+                        
+            yield this
+            yield from files
+            
+    @staticmethod
+    def deep_sorted(path: Union[str, Path, 'FilmPath'], 
+                    sort_key=lambda p: str(p).lower(),
+                    hide_sys_files=True) -> Iterable['FilmPath']:
+        yield from sorted(Find.deep(FilmPath(path), 
+                                    hide_sys_files=hide_sys_files), 
+                                    key=sort_key)
+        
+    @staticmethod
+    def shallow(path: Union[str, Path, 'FilmPath'],
+                sort_key=lambda p: str(p).lower(),
+                hide_sys_files=True) -> Iterable['FilmPath']:
+        """Return a list of all files and dirs contained in a path,
+        one-level deep, mapped to FilmPath objects. Note: the original
+        path root will always be included in this list. If sorting 
+        alphabetically, use [1:] to remove the first element (root).
+        If path provided is a single file, return a list with it.
+
+        Args:
+            path (str or Path): Root path to search for files.
+            sort_key (lambda, optional): Sort function, defaults 
+                                            to alpha case-insensitive.
+            hide_sys_files (bool): Hide system files. Default is True.
+            
+        Returns:
+            A filtered list of files or an empty list.
+        """
+        origin = FilmPath(path)
+        if origin.is_file(): 
+            return [origin]
+        
+        for p in sorted(origin.iterdir(), key=sort_key):
+            if hide_sys_files and is_sys_file(p):
+                continue
+            yield FilmPath(p, origin=origin)
+
+    _existing_films = None
+    @classmethod
+    def existing_films(cls, 
+                       paths: Union[str, Path, 'FilmPath']=None) -> ['FilmPath']:
+        """Get a list of existing films.
+
+        Scan one level deep of the target paths to get a list of existing films.
+        # TODO: Took dupe checking ignoring calling this out of this method
+
+        Returns:
+            A list of existing films mapped to FilmPath objects.
+        """
+
+        # If existing films has already been loaded and the list has
+        # more than one film:
+        if not cls._existing_films:
+            return cls._existing_films
+        
+        # If paths is none or empty, there's nothing to search for.
+        if not paths:
+            return
+        
+        import fylmlib.config as config
+
+        debug('Scanning for existing films...')
+
+        cls._existing_films = []
+        
+        # Coerce str path objects to FilmPath
+        _paths = paths or config.destination_dirs.values()
+        if any(type(p) is str for p in _paths):
+            _paths = list(map(FilmPath, _paths))
+            
+        found = itertools.chain([p for p in _paths])
+        
+        with Pool(processes=50) as pool:
+            cls._existing_films += pool.map(lambda x: x.maybe_film, found)
+            
+        debug(
+            f'Loaded {len(cls._existing_films)} existing Film objects from destination dirs.')
+
+        # Sort the existing films alphabetically, case-insensitive, and return.
+        return sorted(cls._existing_films, key=lambda s: s.title.lower())
+        
+class Utils:
+    """Utilities and helper functions for FilmPath"""
+    
+    @staticmethod
+    def is_video_file(path: Union[str, Path, 'FilmPath']) -> bool:
+        """Returns true if the specified path is a video file from
+        config.video_exts.
+
+        Args:
+            path (str, Path, or FilmPath): Path to check
+
+        Returns:
+            bool: True if it's a video file, otherwise False
+        """
+        import fylmlib.config as config
+        
+        # Coerce to a standard path object
+        p = Path(path)
+        return p.is_file() and p.suffix and p.suffix.lower() in config.video_exts
+    
+    @staticmethod
+    def has_ignored_string(path: Union[str, Path, 'FilmPath']) -> bool:
+        """Returns true if the specified path has an invalid string from
+        config.ignore_strings.
+
+        Args:
+            path (str, Path, or FilmPath): Path to check
+
+        Returns:
+            bool: True if it contains an ignored string, otherwise False
+        """
+        import fylmlib.config as config
+        
+        # Coerce to a str
+        any(word.lower() in str(path).lower() for word in config.ignore_strings)
+            
+    @staticmethod
+    def paths_exist(paths: [], quiet: bool = False) -> bool:
+        """Verified that a list of paths exist on the filesystem.
+
+        Args:
+            paths [(str, Path, or FilmPath)]: List of paths to check
+            quiet (bool): Do not print an error to the console (default is False)
+
+        Returns:
+            bool: True if all paths exist, otherwise false
+        """
+        checked = [Path(p) for p in paths if not p.exists()]
+        for p in checked:
+            console.error(f"'{d}' does not exist.")
+                
+        return all(checked) 
+    
+    @staticmethod
+    def same_partition(path1, path2):
+        """Determine if path1 and path2 are on the same partition.
+
+        Args:
+            path1 (str or Pathlike): First path to check
+            path2 (str or Pathlike): Second path to check
+            
+        Returns:
+        # TODO: Separate the business logic (force_move) from this function
+            True, if path1 and path2 are on the same parition, otherwise False
+        """
+        
+        p1 = Path(path1)
+        p2 = Path(path2)
+        
+        err = lambda x: f"Tried to get the mount point for a path that does not exist '{x}'."
+        
+        if not p1.exists(): raise OSError(err(path1))
+        if not p2.exists(): raise OSError(err(path2))
+        
+        return p1.stat().st_dev == p2.stat().st_dev
+        
 
 class dirops:
     """Directory-related class method operations.
     """
 
-    _existing_films = None
+    # @classmethod
+    # def verify_root_paths_exist(cls, paths):
+    #     """Verifies that the specified paths (array) exist.
 
-    @classmethod
-    def verify_root_paths_exist(cls, paths):
-        """Verifies that the specified paths (array) exist.
+    #     Loops through an array of paths to check that each one exists. If any do not,
+    #     raise an Exception. Primarily used at app initiation time to verify that source
+    #     and destination paths are in working order.
 
-        Loops through an array of paths to check that each one exists. If any do not,
-        raise an Exception. Primarily used at app initiation time to verify that source
-        and destination paths are in working order.
+    #     Args:
+    #         paths: (list) paths to verify existence.
+    #     """
+    #     for d in (d for d in paths if not os.path.exists(d)):
+    #         console.error(f"'{d}' does not exist; check source path in config.yaml")
 
-        Args:
-            paths: (list) paths to verify existence.
-        """
-        for d in (d for d in paths if not os.path.exists(d)):
-            console.error(f"'{d}' does not exist; check source path in config.yaml")
+    # @classmethod
+    # def is_same_partition(cls, path1, path2):
+    #     """Determine if path1 and path2 are on the same partition.
 
-    @classmethod
-    def is_same_partition(cls, f1, f2):
-        """Determine if f1 and f2 are on the same partition.
+    #     Args:
+    #         f1: (str, utf-8) path of source file/folder
+    #         f2: (str, utf-8) path of destination file/folder
+    #     Returns:
+    #     # TODO: Separate the business logic (force_move) from this function
+    #         True, if f1 and f2 are on the same parition, or force_move is True, else False.
+    #     """
 
-        Args:
-            f1: (str, utf-8) path of source file/folder
-            f2: (str, utf-8) path of destination file/folder
-        Returns:
-            True, if f1 and f2 are on the same parition, or force_move is True, else False.
-        """
+    #     if config.force_move is True:
+    #         return True
 
-        if config.force_move is True:
-            return True
+    #     while not os.path.exists(f1):
+    #         f1 = os.path.dirname(f1)
 
-        while not os.path.exists(f1):
-            f1 = os.path.dirname(f1)
+    #     while not os.path.exists(f2):
+    #         f2 = os.path.dirname(f2)
 
-        while not os.path.exists(f2):
-            f2 = os.path.dirname(f2)
+    #     return os.stat(os.path.dirname(f1)).st_dev == os.stat(os.path.dirname(f2)).st_dev
 
-        return os.stat(os.path.dirname(f1)).st_dev == os.stat(os.path.dirname(f2)).st_dev
 
-    @classmethod
-    def get_existing_films(cls, paths):
-        """Get a list of existing films.
+    # TODO: REFACTOR
+    # @classmethod
+    # def find_existing_films(cls, paths):
+    #     """Get a list of existing films.
 
-        Scan one level deep of the target paths to get a list of existing films. Since
-        this is used exclusively for duplicate checking, this method is skipped when
-        duplicate checking is disabled.
+    #     Scan one level deep of the target paths to get a list of existing films. Since
+    #     this is used exclusively for duplicate checking, this method is skipped when
+    #     duplicate checking is disabled.
 
-        Args:
-            paths: (dict) a set of unicode paths to search for existing films.
-                   Must be passed in the form of: { "<quality>": "<path>" }
-        Returns:
-            A list of existing Film objects.
-        """
+    #     Args:
+    #         paths: (dict) a set of unicode paths to search for existing films.
+    #                Must be passed in the form of: { "<quality>": "<path>" }
+    #     Returns:
+    #         A list of existing Film objects.
+    #     """
 
-        # If existing films has already been loaded and the list has
-        # more than one film:
-        if cls._existing_films is not None:
-            return cls._existing_films
+    #     # If existing films has already been loaded and the list has
+    #     # more than one film:
+    #     if cls._existing_films is not None:
+    #         return cls._existing_films
 
-        # Import Film here to avoid circular import conflicts.
-        from fylmlib.film import Film
+    #     # Import Film here to avoid circular import conflicts.
+    #     from fylmlib.film import Film
 
-        # If check_for_duplicates is disabled, we don't care about duplicates, and
-        # don't need to spend cycles processing duplicates. Return an empty array.
-        if config.duplicates.enabled is False:
-            return []
+    #     # If check_for_duplicates is disabled, we don't care about duplicates, and
+    #     # don't need to spend cycles processing duplicates. Return an empty array.
+    #     if config.duplicates.enabled is False:
+    #         return []
 
-        # Fix paths being a str
-        if isinstance(paths, str):
-            paths = { 'default': paths }
+    #     # Fix paths being a str
+    #     if isinstance(paths, str):
+    #         paths = { 'default': paths }
 
-        # Enumerate the destination directory and check for duplicates.
-        console.debug('Loading existing films from disk...')
+    #     # Enumerate the destination directory and check for duplicates.
+    #     debug('Loading existing films from disk...')
 
-        cls._existing_films = []
+    #     cls._existing_films = []
 
-        # Map a list of valid and sanitized files to Film objects by iterating
-        # over paths for 720p, 1080p, 4K, and SD qualities.
-        for path in list(set(os.path.normpath(path) for _, path in paths.items())):
-            if os.path.normpath(path) not in config.source_dirs:
-                xfs = [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
-                with Pool(processes=50) as pool:                    
-                    cls._existing_films += pool.map(Film, xfs)
+    #     # Map a list of valid and sanitized files to Film objects by iterating
+    #     # over paths for 720p, 1080p, 4K, and SD qualities.
+    #     for path in list(set(os.path.normpath(path) for _, path in paths.items())):
+    #         if os.path.normpath(path) not in config.source_dirs:
+    #             xfs = [os.path.normpath(os.path.join(path, file)) for file in cls.sanitize_dir_list(os.listdir(path))]
+    #             with Pool(processes=50) as pool:                    
+    #                 cls._existing_films += pool.map(Film, xfs)
 
-        # Strip bad duplicates
-        cls._existing_films = list(filter(lambda x: x.should_ignore is False, cls._existing_films))
+    #     # Strip bad duplicates
+    #     cls._existing_films = list(filter(lambda x: x.should_ignore is False, cls._existing_films))
 
-        files_count = list(itertools.chain(*[f.video_files for f in cls._existing_films]))
-        console.debug(f'Loaded {len(cls._existing_films)} existing unique Film objects containing {len(files_count)} video files')
+    #     files_count = list(itertools.chain(*[f.video_files for f in cls._existing_films]))
+    #     debug(f'Loaded {len(cls._existing_films)} existing unique Film objects containing {len(files_count)} video files')
 
-        # Uncomment for verbose debugging. This can get quite long.
-        # for f in sorted(cls._existing_films, key=lambda s: s.title.lower()):
-        #     console.debug(f' - {f.source_path} {f.all_valid_films}')
+    #     # Uncomment for verbose debugging. This can get quite long.
+    #     # for f in sorted(cls._existing_films, key=lambda s: s.title.lower()):
+    #     #     debug(f' - {f.source_path} {f.all_valid_films}')
         
-        # Sort the existing films alphabetically, case-insensitive, and return.
-        return sorted(cls._existing_films, key=lambda s: s.title.lower())
+    #     # Sort the existing films alphabetically, case-insensitive, and return.
+    #     return sorted(cls._existing_films, key=lambda s: s.title.lower())
 
     @classmethod
-    def get_new_films(cls, paths):
+    def find_new_films(cls, paths):
         """Get a list of new potenial films we want to tidy up.
 
         Scan one level deep of the target path to get a list of potential new files/folders.
@@ -153,6 +680,7 @@ class dirops:
 
         # Import Film here to avoid circular import conflicts.
         from fylmlib.film import Film
+        import fylmlib.config as config
 
         films = []
 
@@ -180,96 +708,6 @@ class dirops:
         # Sort the resulting list of files alphabetically, case-insensitive.
         films.sort(key=lambda x: x.title.lower())
         return list(films)
-
-    @classmethod
-    def get_valid_files(cls, path) -> [str]:
-        """Get a list valid files inside the specified path.
-
-        Scan deeply in the specified path to get a list of valid files, as
-        determined by the config.video_exts and config.extra_exts properties.
-
-        Args:
-            path: (str, utf-8) path to search for valid files.
-        Returns:
-            An array of valid file paths.
-        """
-
-        # Call dirops.find_deep to search for files within the specified path.
-        # Filter the results using a lambda function.
-        valid_files = cls.find_deep(path, lambda x:
-
-            # A valid file must have a valid extension
-            fileops.has_valid_ext(x)
-
-            # It must not contain an ignored string (e.g. 'sample')
-            and not fileops.contains_ignored_strings(x)
-
-            # And it must be at least a certain filesize if it is a film,
-            # or not 0 bytes if it's a supplementary file.
-            and fileops.is_acceptable_size(x))
-
-        # If debugging, print the resulting list of files and sizes.
-        # This is a very noisy output, so is commented out.
-
-        # if config.debug is True:
-        #     import inspect
-            # for f in list(set(valid_files)):
-            #     console.debug(f'\n`{inspect.stack()[0][3]}`' \
-            #                   f' found "{os.path.basename(f)}"' \
-            #                   f' ({formatter.pretty_size(size(f))})' \
-            #                   f' \nin {path}')
-
-        return sorted(valid_files, key=os.path.getsize, reverse=True)
-
-
-    @classmethod
-    def get_invalid_files(cls, path):
-        """Get a list of invalid files inside the specified dir.
-
-        Scan deeply in the specified dir to get a list of invalid files, as
-        determined by the config.video_exts and config.extra_exts properties.
-        We do not check filesize here, because while we may not want to
-        rename and move vide/extra files that are too small, we probably
-        don't want to delete them.
-
-        Args:
-            path: (str, utf-8) path to search for invalid files.
-        Returns:
-            An array of invalid files.
-        """
-
-        # Call dir.find_deep to search for files within the specified dir.
-        # Filter the results using a lambda function.
-        return cls.find_deep(path, lambda x:
-
-            # An invalid file might contain an ignored string (e.g. 'sample')
-            fileops.contains_ignored_strings(x)
-
-            # Or it may not have a valid file extension
-            or not fileops.has_valid_ext(x)
-
-            # Or if it does, it might not be large enough
-            or not fileops.is_acceptable_size(x))
-
-    @classmethod
-    def sanitize_dir_list(cls, files):
-        """Sanitize a directory listing using unicode normalization and by
-        omitting system files.
-
-        On macOS, unicode normalization must take place for loading files with
-        unicode chars. This method correctly normalizes these strings.
-        It also will remove .DS_Store and Thumbs.db from the list, since we
-        don't ever care to count, or otherwise observe, these system files.
-
-        Args:
-            files: (str, utf-8) list of files in dir.
-        Returns:
-            A sanitized, unicode-ready array of files.
-        """
-        return list(filter(lambda f: 
-            not any([f.lower() in map(lambda x: x.lower(), config.ignore_strings)])
-            and not f.endswith('.DS_Store') and not f.endswith('Thumbs.db'),
-            [unicodedata.normalize('NFC', file) for file in files]))
         
     @classmethod
     def create_deep(cls, path):
@@ -289,31 +727,68 @@ class dirops:
             # If the path exists, there's no point in trying to create it.
             if not os.path.exists(path):
                 try:
-                    console.debug(f'Creating destination {path}')
+                    debug(f'Creating destination {path}')
                     os.makedirs(path)
                 # If the dir creation fails, raise an Exception.
                 except OSError as e:
                     console.error(f'Unable to create {path}', OSError)
 
-    @classmethod
-    def find_deep(cls, root_dir, func=None):
-        """Deeply search the specified dir and return all files.
+    # @staticmethod
+    # def find_deep(path: Union[str, Path, 'FilmPath'], 
+    #               origin: Union[str, Path, 'FilmPath'] = None) -> ['FilmPath']:
+    #     """Deeply search the specified dir and return all files and subdirs.
+    #     If path passed is a file, return a list with that single file.
 
-        Using recursion, search the specified path for files.
-        Pass an optional function to filter results.
+    #     Args:
+    #         path (str or Path): Root path to search for files.
+            
+    #     Returns:
+    #         A filtered list of files or an empty list.
+    #     """
+
+    #     _path = Utils.coerce_type(path)
+    #     _origin = Utils.coerce_type(origin) if origin else _path
+    #     if _path.is_file():
+    #         return [FilmPath(_path, origin=_origin)]
+
+    #     # Use os.walk() to recursively search the dir and return full path of each file.
+    #     # paths = [os.path.join(root, f) for root, dirs, files in os.walk(path) for f in files]
+    #     for root, dirs, files in os.walk(path):
+    #         fp = FilmPath(root, origin=_origin, container=root, dirs=dirs, files=files)
+    #         for d in fp.dirs_abs:
+    #             # print(d)
+    #             yield FilmPath(d, origin=_origin, container=root)
+    #             dirops.find_deep(d, origin=_origin)
+    #             # [paths.append(f) for f in dirops.find_deep(d, origin=_origin)]
+    #         for f in fp.files_abs:
+    #             yield FilmPath(f, origin=_origin, container=root)
+                
+    #     # return sorted(paths, key=lambda p: str(p).lower())
+    #     # Sanitize the list to remove system fils and normalize unicode chars
+    #     # return list(filter(lambda f: not f.endswith('.DS_Store') and not f.endswith('Thumbs.db'),
+    #     #                    [unicodedata.normalize('NFC', path) for path in paths]))
+        
+    # TODO: DEPRECATED
+    @classmethod
+    def sanitize_dir_list(cls, files):
+        """Sanitize a directory listing using unicode normalization and by
+        omitting system files.
+
+        On macOS, unicode normalization must take place for loading files with
+        unicode chars. This method correctly normalizes these strings.
+        It also will remove .DS_Store and Thumbs.db from the list, since we
+        don't ever care to count, or otherwise observe, these system files.
 
         Args:
-            root_path: (str, utf-8) path to search for files.
-            func: (function) user-defined or lambda function to use as a filter.
+            files: (str, utf-8) list of files in dir.
         Returns:
-            A filtered list of files.
+            A sanitized, unicode-ready array of files.
         """
-
-        # Use os.walk() to recursively search the dir and return full path of each file.
-        results = [os.path.join(root, f) for root, dirs, files in os.walk(root_dir) for f in files]
-
-        # Sanitize the resulting file list, then call the (optional) filter function that was passed.
-        return list(filter(func, cls.sanitize_dir_list(results)))
+        return list(filter(lambda f:
+                           not any(
+                               [f.lower() in map(lambda x: x.lower(), config.ignore_strings)])
+                           and not f.endswith('.DS_Store') and not f.endswith('Thumbs.db'),
+                           [unicodedata.normalize('NFC', file) for file in files]))
 
     @classmethod
     def delete_dir_and_contents(cls, path, max_size=50*1024):
@@ -333,7 +808,7 @@ class dirops:
         # First we ensure the dir is less than the max_size threshold, otherwise abort.
         if _size_dir(path) < max_size or max_size == -1 or files_count == 0:
 
-            console.debug(f'Recursively deleting {path}')
+            debug(f'Recursively deleting {path}')
 
             # An emergency safety check in case there's an attempt to delete / (root!) or one of the source_paths.
             if dir == '/' or dir in config.source_dirs:
@@ -375,7 +850,7 @@ class dirops:
             # Only delete unwanted files if enabled in config
             if config.remove_unwanted_files:
                 # Search for invalid files, enumerate them, and delete them.
-                for f in [f for f in cls.get_invalid_files(path) if os.path.isfile(f)]:
+                for f in [f for f in cls.find_invalid_files(path) if os.path.isfile(f)]:
                     # Increment deleted_files if deletion was successful.
                     # `fileops.delete` has test check built in, so
                     # no need to check here.
@@ -385,18 +860,6 @@ class dirops:
 class fileops:
     """File-related class method operations.
     """
-    @classmethod
-    def has_valid_ext(cls, path):
-        """Check if file has a valid extension.
-
-        Check the specified file's extension against config.video_exts and config.extra_exts.
-
-        Args:
-            path: (str, utf-8) path of file to check.
-        Returns:
-            True if the file has a valid extension, else False.
-        """
-        return any([path.endswith(ext) for ext in config.video_exts + config.extra_exts])
 
     @classmethod
     def exists_case_sensitive(cls, path):
@@ -411,49 +874,6 @@ class fileops:
             return False
         directory, filename = os.path.split(path)
         return filename in os.listdir(directory)
-
-    @classmethod
-    def is_acceptable_size(cls, file_path):
-        """Determine if a file_path is an acceptable size.
-
-        Args:
-            file: (str, utf-8) path to file.
-        Returns:
-            True, if the file is an acceptable size, else False.
-        """
-        s = size(file_path)
-        min = cls.min_filesize_for_resolution(file_path)
-        is_video = any([file_path.endswith(ext) for ext in config.video_exts])
-        is_extra = any([file_path.endswith(ext) for ext in config.extra_exts])
-
-        return ((s >= min * 1024 * 1024 and is_video)
-                or (s >= 0 and is_extra))
-
-    @classmethod
-    def min_filesize_for_resolution(cls, file_path):
-        """Determine the minimum filesize for the resolution for file path.
-
-        Args:
-            file: (str, utf-8) path to file.
-        Returns:
-            int: The minimum file size, or default if resolution could not be determined
-        """
-        min = config.min_filesize
-        if isinstance(min, int):
-            return min
-
-        # If the min filesize is not an int, we assume
-        # that it is an AttrMap of resolutions.
-        from fylmlib.parser import parser
-        res = parser.get_resolution(file_path)
-        if res is None:
-            return min.default
-        if res == '720p' or res == '1080p' or res == '2160p':
-            return min[res]
-        elif res.lower() == 'sd' or res.lower() == 'sdtv':
-            return min.SD
-        else:
-            return min.default
 
     @classmethod
     def safe_move(cls, src: str, dst: str, ok_to_upgrade = False):
@@ -481,14 +901,14 @@ class fileops:
 
         # Silently abort if the src and dst are the same.
         if src == dst:
-            console.debug('Source and destination are the same, nothing to move')
+            debug('Source and destination are the same, nothing to move')
             return False
 
         # Try to create destination folders if they do not exist.
         dirops.create_deep(os.path.dirname(dst))
 
-        console.debug(f"\n  Moving: '{src}'")
-        console.debug(f"      To: '{dst}'\n")
+        debug(f"\n  Moving: '{src}'")
+        debug(f"      To: '{dst}'\n")
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
@@ -563,7 +983,7 @@ class fileops:
 
             # Catch exception and soft warn in the console (don't raise Exception).
             console().red().indent(f'Failed to move {src} to {dst}')
-            console.debug(e)
+            debug(e)
             print(e)
 
             # If we're overwriting and a duplicate was created, undo its renaming
@@ -686,8 +1106,8 @@ class fileops:
             console().red().indent(f'Unable to rename {dst} (identical file already exists)')
             return
 
-        console.debug(f'Renaming: {src}')
-        console.debug(f'      To: {dst}')
+        debug(f'Renaming: {src}')
+        debug(f'      To: {dst}')
 
         # Only perform destructive changes if we're in live mode.
         if not config.test:
@@ -698,31 +1118,17 @@ class fileops:
             os.rename(src, dst)
 
     @classmethod
-    def contains_ignored_strings(cls, path):
-        """Determines of a file contains any of the ignored substrings (e.g. 'sample').
-
-        Checks a path string and determines if it contains any of the forbidden substrins.
-        A word of caution: if you add anything common to the config, you may prevent some
-        files from being moved.
-
-        Args:
-            path: (str, utf-8) full path (including filename) of file to check for ignored strings.
-        Returns:
-            True if any of the ignored strings are found in the file path, else False.
-        """
-        return any(word.lower() in path.lower() for word in config.ignore_strings)
-
-    @classmethod
-    def delete(cls, file):
-        """Deletes a file.
-
-        Attempts to delete the specified file, and returns a number that can be used to
+    def delete(cls, file) -> int:
+        """Attempts to delete the specified file, and returns a number that can be used to
         increment a counter if the deletion was successful.
 
         Args:
-            file: (str, utf-8) full path (including filename) of file to check for ignored strings.
+            file (str): Full path (including filename) of file to check for ignored strings.
+        
+        Returns:
+             1 if the delete was successful, 0 otherwise.
         """
-        console.debug(f"Deleting file {file}")
+        debug(f"Deleting file {file}")
 
         # If we're running in test mode, return a mock success (we assume the deletion
         # would have been successful had it actually run).
@@ -740,97 +1146,21 @@ class fileops:
             # Return 0 because we don't want a success counter to increment.
             return 0
 
-def largest_video(path):
-    """Determine the largest video file in dir.
-
-    Args:
-        path: (str, utf-8) file or folder to determine size of video file.
-    Returns:
-        Path of largest video file, or None if path does not exist.
-    """
-
-    # First check that the path actually exists before we try to determine its size.
-    if os.path.exists(path):
-
-        # If it's a directory, we need to find the largest video file, recursively.
-        if os.path.isdir(path):
-            
-            try:
-                video_files = list(filter(lambda f: os.path.splitext(f)[1] in config.video_exts, dirops.get_valid_files(path)))
-
-                # Re-populate list with (filename, size) tuples
-                for i, file in enumerate(video_files):
-                    video_files[i] = (file, os.path.getsize(file))
-
-                # Sort list by file size from largest to smallest and return the first file.
-                video_files.sort(key=lambda v: v[1], reverse=True)
-
-                # Return path (first value -- second value is size) of first file in sorted array.
-                return video_files[0][0]
-
-            # If an out of range error is encountered, something went wrong and the file
-            # probably doesn't exist.
-            except IndexError:
-                return None
-
-        # If it's a file, return the path.
-        else:
-            return path
-
-    # If the path doesn't exist, we return None
-    else:
-        return None
-
-def size(path) -> int:
+def size(path: str or Path) -> int:
     """Determine the size of a file or dir.
 
     Args:
-        path: (str, utf-8) file or folder to determine size.
+        path (str): File or folder to determine size.
     Returns:
-        Size of file or folder, in bytes (B), or None if path does not exist.
+        Size of file or folder, in bytes (B), or 0.
     """
+    p = Path(path)
+    if not p.exists():
+        raise Exception(f'Cannot calculate size for a path that does not exist ({path})')
 
-    # First check that the path actually exists before we try to determine its size.
-    if path is not None:
-        if not os.path.exists(path):
-            raise Exception(f'Cannot calculate size for a path that does not exist ({path})')
-
-        # If it's a directory, we need to call the _size_dir func to recursively get
-        # the size of each file inside.
-        if os.path.isdir(path):
-            return _size_dir(path)
-
-        # If it's a file, we simply call getsize().
-        else:
-            return os.path.getsize(path)
-
-    # If the path doesn't exist, we return None
+    # If it's a directory, we need to call the _size_dir func to recursively get
+    # the size of each file inside.
+    if p.is_dir():
+        return sum(f.stat().st_size for f in p.rglob('*'))
     else:
-        return None
-
-def _size_dir(path):
-    """Determine the total size of a directory.
-
-    Determine the size of directory at the specified path by recursively calculating
-    the size of each file contained within.
-
-    Args:
-        path: (str, utf-8) folder to determine size.
-    Returns:
-        Combined size of folder, in bytes (B), or None if dir does not exist.
-    """
-    if not os.path.exists(path):
-        return None
-
-    # Start with a dir size of 0 bytes
-    dir_size = 0
-
-    # Call os.walk() to get all files, recursively in the dir, then add up the file
-    # size for each file.
-    for root, dirs, files in os.walk(path):
-        for f in files:
-            fp = os.path.join(root, f)
-            dir_size += (os.path.getsize(fp) if os.path.isfile(fp) else 0)
-
-    # Return the total calculated size of the directory.
-    return dir_size
+        return p.stat().st_size

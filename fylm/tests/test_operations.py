@@ -18,16 +18,63 @@ from builtins import *
 
 import os
 import sys
+from time import time
 
 import pytest
 
 import fylmlib.config as config
 import fylmlib.operations as ops
+from fylmlib.operations import FilmPath
 import conftest
 import fylm
 import make
+from pathlib import Path
 
 t = 100 if os.environ.get('TRAVIS') else 1
+
+class TestFilmPath(object):
+
+    def test_init(self):
+
+        conftest.make_empty_dirs()
+        
+        path = conftest.full_path('files/#new')
+
+        made = conftest.make_all_mock_files(
+            'files.json', path)
+        
+        paths = list(ops.Find.existing_films(path))
+        print()
+        # for p in paths:
+        #     print(p.origin, p)
+        
+        # for d in paths[3].descendents:
+        #     print(d)
+                
+        for p in paths:
+            
+            # print(p, p.container.name, len(p.dirs))
+            # t1 = time()
+            if p.is_file():
+                print(
+                    # p.filmrel if p.maybe_film else p.branch.name
+                    #   p.relpath 
+                    p.relative_to(p.origin)
+                    , 'BRANCH' if p.is_branch else ''
+                    , 'CONTAINER' if p.is_container else ''
+                    , 'TERMINUS' if p.is_terminus else ''
+                    , 'FILM' if p.maybe_film else ''
+                    , 'EMPTY' if p.is_empty else ''
+                )
+                # if not p.year:
+                #     p
+            # t2 = time()
+            # print(f'Elapsed time is {t2 - t1} seconds.')
+            # if not p.is_origin and p.maybe_film:
+            #     print(p)
+
+        
+        # FilmPath
 
 # @pytest.mark.skip()
 class TestDirOperations(object):
@@ -78,11 +125,11 @@ class TestDirOperations(object):
         assert(len(ops.dirops.get_existing_films(conftest.films_dst_paths)) == 4)
         assert(ops.dirops._existing_films is not None and len(ops.dirops._existing_films) == 4)
 
-    def test_get_new_films(self):
+    def test_find_new_films(self):
 
         conftest._setup()
 
-        all_films = ops.dirops.get_new_films([conftest.films_src_path])
+        all_films = ops.dirops.find_new_films([conftest.films_src_path])
         valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
         # Assert that we're getting the expected number of films.
@@ -91,7 +138,7 @@ class TestDirOperations(object):
         # Assert that we're getting the expected number of valid films.
         assert(len(valid_films) == len(conftest.made.good))
 
-    def test_get_new_films_multiple_dirs(self):
+    def test_find_new_films_multiple_dirs(self):
 
         conftest._setup()
 
@@ -107,7 +154,7 @@ class TestDirOperations(object):
             conftest.films_src_path2, 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE/All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE.mkv'), 
             7354 * make.mb * t)
 
-        all_films = ops.dirops.get_new_films(fylm.config.source_dirs)
+        all_films = ops.dirops.find_new_films(fylm.config.source_dirs)
         valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
         # Assert that we're getting the expected number of films. (+2 for the 2 we added)
@@ -151,7 +198,7 @@ class TestDirOperations(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb * t)
         
         # Assert that there is only one test film identified at the source
-        assert(len(ops.dirops.get_new_films([conftest.films_src_path])) == 1)
+        assert(len(ops.dirops.find_new_films([conftest.films_src_path])) == 1)
 
         valid_files = ops.dirops.get_valid_files(
             os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
@@ -194,7 +241,7 @@ class TestDirOperations(object):
         make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb * t)
         
         # Assert that there is only one test film identified at the source
-        assert(len(ops.dirops.get_new_films(conftest.films_src_path)) == 1)
+        assert(len(ops.dirops.find_new_films(conftest.films_src_path)) == 1)
 
         invalid_files = ops.dirops.get_invalid_files(
             os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')

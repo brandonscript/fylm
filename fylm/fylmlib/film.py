@@ -27,338 +27,266 @@ import sys
 import itertools
 import asyncio
 import concurrent.futures
+from functools import partial
+from pathlib import Path, PurePath
+from typing import Union
 
 from pymediainfo import MediaInfo
+from lazy import lazy
 
 import fylmlib.config as config
-from fylmlib.parser import parser
+from fylmlib.parser import Parser
 import fylmlib.formatter as formatter
 import fylmlib.patterns as patterns
 import fylmlib.tmdb as tmdb
 import fylmlib.operations as ops
-from fylmlib.enums import Should
+from fylmlib.enums import Should, Media, Resolution, Rename, IgnoreReason
 
 class Film:
-    """An object that identifies and processes film attributes.
-
-    Using a combination of regular expressions and intelligent
-    algorithms, determine the most likely attributes that
-    pertain to a film. Also supports a passthrough lookup method
-    for searching TMDb.
+    """A Film object contains basic details about the a film, references to the individual 
+    File objects it contains (or just one, if it's a single file). Using regular expressions 
+    and themoviedb.org APIs, it can intelligently identify key attributes of a film from 
+    a standard file naming convention.
 
     Attributes:
-        title:              Film title.
 
-        title_the:          For titles that begin with 'The', move it
-                            to the end of the title: ', The'.
+        original_path (str):        Original (immutable) abs source path of film's root dir,
+                                    or file, if it's a file, e.g.
+                                     - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene
 
-        tmdb_id:            TMDb ID for film.
+        original_basename (str):    Original (immutable) basname of film's root dir,
+                                    or file, if it's a file, e.g.
+                                     - Avatar.2009.BluRay.1080p.x264-Scene or
+                                     - Avatar.2009.BluRay.1080p.x264-Scene.mkv
 
-        tmdb_verified:      Is set to True once a TMDb result is verified in
-                            interactive mode.
+        current_path (str):         Current abs source path of film's root dir,
+                                    or file, if it's a file, e.g.
+                                     - /volumes/movies/HD/Avatar (2009) or
+                                     - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene
 
-        matches:            A list of possible TmdbResults, ordered most to
-                            least likely to match.
+        destination_path (str):     Desired abs path to this film's new root dir, 
+                                    or file, if using file-based naming, e.g.
+                                     - /volumes/movies/HD/Avatar (2009) or
+                                     - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
-        year:               Primary release year.
+        title (str):                Title of the film.
 
-        overview:           A short description of the film.
+        title_the (str):            For titles that begin with 'The', move it to the
+                                    end of the title, e.g. 'Chronicles of Narnia, The'.
 
-        poster_path:        URL for the film poster.
+        year (int):                 Primary release year.
 
-        part:               Part number of the original film, either
-                            either a number or roman numeral
+        tmdb_id (int):              TMDb ID for film.
 
-        title_similarity:   Similarity between parsed title and TMDb
-                            title.
+        tmdb_verified (bool):       Set to True once a TMDb result is verified in interactive mode.
 
-        source_path:        Current source path of film.
+        tmdb_similarity (float):    Float value between 0 and 1 representing the Levenshtein 
+                                    distance similarity between parsed title and proposed title.
 
-        destination_path:   Parent (root) dir where we assume all files will be
-                            moved, based on quality-based sorting defined
-                            in config.destination_dirs. Occassionally this could
-                            be out of sync with some of a film's files, depending
-                            on the destination path configuration.      
+        tmdb_matches (list):        A list of TmdbResult possible matches from TMDb, 
+                                    ordered most to least likely to match.
 
-        original_path:      (Immutable) original path of film.
+        overview (str):             A short description of the film from TMDb.
 
-        original_basename:  Original folder name (or filename without
-                            extension) before it was renamed.
+        poster_url (str):           URL for the TMDb film poster.
 
-        size:               Size of file or folder contents belonging
-                            to the film.
+        size (int):                 Size of film (file or dir) in bytes.
 
-        new_basename:       Uses the configured templating pattern to
-                            generate a new base object name.
+        is_file (bool):             Returns True if the path loaded is a file.
 
-        is_tv_show:         Returns true if the film is actually a
-                            TV show.
+        is_dir (bool):              Returns True if the path loaded is a dir.
 
-        is_file:            Returns true if the film was loaded from
-                            a file. If true, the all_valid_files will contain
-                            exactly one file, at position 0.
+        exists (bool):              Returns True if the path loaded exists, otherwise sets 
+                                    the ignore_reason and returns False.
 
-        is_folder:          Returns true if the film was loaded from
-                            a folder.
+        main_file (Film.File):      Returns the largest wanted file in a Film folder (or if there 
+                                    is only a single file, that file). In most cases, this will be
+                                    the primary video file
+                                    Be careful when using this, as a folder could
+                                    have multiple versions of the same film.
 
-        # is_video_file:      Returns true if the film is a file and
-        #                     has a valid video file extension.
+        all_files (list):           A list of all Film.File objects in the film's folder, or a
+                                    list of exactly one if it's a file.
 
-        all_valid_files:    If the film is a dir, returns a list of
-                            all valid FilmFile objects. Invalid files 
-                            are omitted.
+        wanted_files (list):        A subset of all_files that have wanted file extensions.
 
-        video_files:        A subset of all_valid_files that contains a
-                            list of unique film versions, as determined
-                            by comparing media, resolution, format, and
-                            edition.
+        video_files (list):          A subset of all_files that have a valid video extension.
 
-        primary_file:       The primary video file in folder, defined as
-                            the largest file in the list of video_files.
+        bad_files (list):           A subset of all_files that are not wanted.
 
-        duplicates:         Get a list of duplicates from the cached
-                            list of existing films.
+        duplicate_files (list):     A list of Film objects from the cached list of 
+                                    existing films that are duplicates of this film.
 
-        should_ignore:      Returns true if the film should be ignored,
-                            and sets the ignore_reason.
+        should_ignore (bool):       Returns True if this film should be ignored and Updates
+                                    ignore_reason with an explanation, if necessary.
 
-        should_skip:        Return true if the film should be skipped
-                            when printing to the console.
+        ignore_reason (str):        If applicable, a reason describing why this film was ignored.
 
-        ignore_reason:      If applicable, the reason why this film
-                            was ignored.
+        should_hide (bool):         Return True if this Film should be hidden
+                                    when printing to the console.
     """
 
-    def __init__(self, source_path):
-        self.source_path = source_path
+    def __init__(self, current_path: Union[str, Path, 'FilmPath']):        
+        self._original_path = current_path
+        self.current_path = current_path
+        self._title = None
+        self._year = None
+        self.tmdb_id: int = None
+        self.tmdb_verified: bool = False
+        self.tmdb_similarity: float = 0
+        self.tmdb_matches: [tmdb.TmdbResult] = []
+        self.overview: str = ''
+        self.poster_url: str = None
+        self._ignore_reason: IgnoreReason = None
+        self.parser = Parser(self.main_file.current_path)
 
-        # Internal setter for `duplicates`.
-        self._duplicate_files = None
+    # title needs a getter and setter, because a TMDb search can update it
+    @property
+    def title(self) -> str:
+        if not self._title:
+            self._title = self.parser.title
+        return self._title
 
-        # Internal setter for `metadata`.
-        self._metadata = None
-
-         # Internal setter for `size`.
-        self._size = None
-
-        # Internal setter for `valid_files`.
-        self._all_valid_files = None
-
-        # Internal setter for (immutable) `original_path`.
-        # Do not change even if the file is renamed, moved, or copied.
-        self._original_path = source_path
-
-        # Initialize remaining properties
-        
-        try:
-            name_path = self.all_valid_files[0].source_path
-        except IndexError:
-            name_path = source_path
-
-        # Initialize remaining properties
-        self.title = parser.get_title(name_path)
-        self.year = parser.get_year(name_path)
-        self.overview = ''
-        self.poster_path = None
-        self.part = parser.get_part(name_path)
-        self.tmdb_id = None
-        self.tmdb_verified = False
-        self.matches = []
-        self.title_similarity = 0
-        self.ignore_reason = None
-        self.should_ignore
+    @title.setter
+    def title(self, value: str):
+        self._title = value
 
     @property
-    def original_path(self):
+    def title_the(self) -> str:
+        return (f'{formatter.strip_the(self.title)}, The'
+                if re.search(patterns.begins_with_or_comma_the, self.title) else self.title)
+
+    # year needs a getter and setter, because a TMDb search can update it
+    @property
+    def year(self) -> int:
+        if not self._year:
+            self._year = self.parser.year
+        return self._year
+    
+    @year.setter
+    def year(self, value: str) -> int:
+        self._year = value
+
+    @property
+    def original_path(self) -> str:
         return self._original_path
 
-    @property
-    def original_basename(self):
-        return os.path.basename(os.path.splitext(self.source_path)[0] if os.path.isfile(self.source_path) else self.source_path)
+    @lazy
+    def original_basename(self) -> str:
+        return Path(self.current_path).name
 
     @property
-    def size(self):
-        if not self._size:
-            self._size = ops.size(self.source_path)
-        return self._size
+    def destination_path(self) -> str:
+        # If 'rename_only' is enabled, we need to override the configured
+        # destination dir with the source dir.
+        if config.rename_only is True:
+            return self.original_path
+        return os.path.normpath(os.path.join(
+            Film.Utils.destination_root_dir(self.main_file), 
+            self.main_file.new_dirname if config.use_folders else None))
+    
+    @lazy
+    def size(self) -> int:
+        return ops.size(self.current_path)
+
+    @lazy
+    def is_file(self) -> bool:
+        return Path(self.current_path).is_file()
+
+    @lazy
+    def is_dir(self) -> bool:
+        return Path(self.current_path).is_dir()
 
     @property
-    def title_the(self):
-        if re.search(patterns.begins_with_or_comma_the, self.title):
-            return f'{formatter.strip_the(self.title)}, The'
-        else:
-            return self.title
-
+    def exists(self) -> bool:
+        # This should be called after should_ignore and before a file operation is performed,
+        # but it is kept separate, because it is an expensive function.
+        if not Path(self.current_path).exists():
+            self._ignore_reason = IgnoreReason.NO_LONGER_EXISTS
+            return False
+        return True
+ 
     @property
-    def is_tv_show(self):
-        return bool(re.search(patterns.tv_show, self.original_basename))
+    def main_file(self) -> 'Film.File':
+        try:
+            assert(self.all_files)
+        except:
+            raise AssertionError(f"'{self.current_path}'\ndoes not have any files.")
+        return self.all_files[0]
 
-    @property
-    def is_file(self):
-        return os.path.isfile(self.source_path)
-
-    @property
-    def is_folder(self):
-        return os.path.isdir(self.source_path)
-
-    # @property
-    # def is_video_file(self):
-    #     return any([self.all_valid_files[0].ext in config.video_exts]) if self.is_file else False
-
-    @property
-    def all_valid_files(self) -> ['Film.File']:
-        if self._all_valid_files is None:
-            # Initialize an empty array, just in case there are no valid files
-            self._all_valid_files = []
-            if self.is_file:
-                # It's a file, we can just return an array with the file as its only value
-                self._all_valid_files = [Film.File(self.source_path, self)]
-            else:
-                # Get all valid files
-                self._all_valid_files = list(Film.File(path, self) for path in ops.dirops.get_valid_files(self.source_path))
-                # Sort by size, inversely so that the largest file is first in the list
-                self._all_valid_files.sort(key=lambda f: f.size, reverse=True)
-
-        return self._all_valid_files
+    @property    
+    def all_files(self) -> ['Film.File']:
+        # Get all files, map them to File(), then sort by size
+        # inversely so that the largest file is first in the list
+        # TODO: This size calc/map can be replaced completely with FilmPath
+        found = [Film.File(p, self) for p in ops.dirops.find_deep(self.current_path)]
+        return list(self.Utils.sort_files(found))
 
     @property
     def video_files(self) -> ['Film.File']:
-        """For files that have already been moved and renamed (i.e., exist on
-        the target filesystem), we need to accomodate configurations supporting 
-        multiple versions of the same file under the same parent folder. 
-        These could be multiple editions of the same film, or different 
-        qualities or media of the same film. In all other cases, this will will be
-        an array of one at index 0 (the main video file). This excludes sample files
-        or others that have been poorly named.
-        
-        Returns:
-            Array of Film.File objects that are valid video files."""
-        
-        return list(filter(lambda f:
-            f.is_video and (f.year is not None or f.resolution is not None or f.media is not None),
-        self.all_valid_files))
+        return list(self.Utils.video_files(self.wanted_files))
 
     @property
-    def primary_file(self) -> 'Film.File':
-        """Returns the largest video file in a Film folder (or if there is only
-        a single file, that file).
-        
-        Returns:
-            The largest video file in the Film object, or None if there are no valid files"""
-
-        return self.video_files[0] if len(self.video_files) > 0 else None
+    def wanted_files(self) -> ['Film.File']:
+        return list(self.Utils.wanted_files(self.all_files))
 
     @property
+    def bad_files(self) -> ['Film.File']:
+        return list(self.Utils.bad_files(self.all_files))
+
+    @lazy
     def duplicate_files(self) -> ['Film.File']:
-        """An array of duplicate files in existing films.
-
-        Returns:
-            An array of duplicate films file objects.
-        """
         # Import duplicates here to avoid circular imports.
-        from fylmlib.duplicates import duplicates
-
-        if self._duplicate_files is None:
-            self._duplicate_files = duplicates.find(self)
-        
-        return self._duplicate_files
+        import fylmlib.duplicates.find as find
+        return find(self)
 
     @property
-    def verified_duplicate_files(self) -> ['Film.File']:
-        """An array of duplicate files in existing films that are 
-        verified to exist on the filesystem.
-
-        Returns:
-            A an array of duplicate films file objects.
-        """
-        return list(filter(lambda d: os.path.exists(d.source_path), self.duplicate_files))
-
-    @property
-    def new_basename(self):
-        r"""Build a new path name from the specified renaming pattern.
-
-        If using a folder-based file structure, this will be the base
-        folder for all files for this film, and will use the 
-        rename_pattern.folder config. If using file-based structure, 
-        this will derive from rename_pattern.file.
-
-        Use regular expressions and a { } templating syntax to construct
-        a new filename by mapping available properties to config.rename_pattern.
-
-        # Permitted rename pattern objects:
-        # {title}, {title-the}, {year}, {edition}, {quality}, {quality-full}. For
-        # using other characters with pattern objects, place chars inside {}
-        # e.g. { - edition}. For escaping templating characters, use \{ \},
-        # e.g. {|{edition\}}.
-
-        Returns:
-            A new new path name based on config.rename_pattern.
-        """
-        return formatter.build_new_basename(self.primary_file, 'file' if self.is_file else 'folder')
-
-    @property
-    def destination_path(self):
-        # If 'rename_only' is enabled, we need to override the configured
-        # destination dir with the source dir.
-        
-        root_dst_folder = ''
-        if config.rename_only is True:
-            root_dst_folder = os.path.dirname(self.source_path)
-        else:
-            try:
-                root_dst_folder = config.destination_dirs[self.primary_file.resolution] if self.primary_file.resolution else config.destination_dirs['SD']
-            except KeyError:
-                root_dst_folder = config.destination_dirs['default']
-        film_folder = formatter.build_new_basename(self.primary_file, 'folder') if config.use_folders else ''
-        return os.path.normpath(os.path.join(root_dst_folder, film_folder))
-
-    @property
-    def should_ignore(self):
+    def should_ignore(self) -> bool:
         if re.search('^_UNPACK_', self.original_basename):
-            self.ignore_reason = 'Unpacking'
+            self._ignore_reason = IgnoreReason.UNPACKING
 
-        elif ops.fileops.contains_ignored_strings(self.original_basename):
-            self.ignore_reason = 'Ignored string'
+        elif ops.FilmPath.Utils.has_ignored_string(self.original_path):
+            self._ignore_reason = IgnoreReason.IGNORED_STRING
 
-        elif not os.path.exists(self.source_path):
-            self.ignore_reason = 'Path no longer exists'
+        elif bool(re.search(patterns.tv_show, self.original_basename)):
+            self._ignore_reason = IgnoreReason.TV_SHOW
 
-        elif self.is_file and len(self.video_files) == 0:
-            self.ignore_reason = 'File does not a valid file extension'
+        elif self.is_file and not self.main_file.is_video:
+            self._ignore_reason = IgnoreReason.INVALID_EXT
 
-        elif self.is_tv_show:
-            self.ignore_reason = 'Appears to be a TV show'
+        elif self.is_dir and not self.video_files:
+            self._ignore_reason = IgnoreReason.NO_VIDEO_FILES
 
-        elif self.is_folder and len(self.video_files) == 0:
-            self.ignore_reason = 'No video files found in this folder'
+        elif bool(re.search(patterns.tv_show, self.original_basename)):
+            self._ignore_reason = IgnoreReason.TV_SHOW
 
         elif self.title is None:
-            self.ignore_reason = 'Unknown title'
+            self._ignore_reason = IgnoreReason.UNKNOWN_TITLE
 
         elif self.year is None and (config.force_lookup is False or config.tmdb.enabled is False):
-            self.ignore_reason = 'Unknown year'
+            self._ignore_reason = IgnoreReason.UNKNOWN_YEAR
 
-        elif len(self.video_files) > 0 and self.size < ops.fileops.is_acceptable_size(self.primary_file.source_path):
-            self.ignore_reason = f'{formatter.pretty_size(self.size)} is too small'
+        elif len(self.video_files) > 0 and self.size < Film.Utils.is_acceptable_size(self.main_file):
+            self._ignore_reason = IgnoreReason.SIZE_TOO_SMALL
 
-        return self.ignore_reason is not None
+        return self._ignore_reason is not None
 
     @property
-    def should_skip(self):
-        """Determines whether the film should be processed
-        or be suppressed (including console suppression).
+    def ignore_reason(self) -> Union[str, None]:
+        if self._ignore_reason is IgnoreReason.SIZE_TOO_SMALL:
+            return f"{self._ignore_reason.str} - {formatter.pretty_size(self.size)}"
+        return self._ignore_reason.str if self._ignore_reason else None
 
-        Args:
-            film: (Film) Film object to check for ignore_reason
-        Returns:
-            bool: True if the file/folder should be skipped, otherwise False
-        """
+    @property
+    def should_hide(self) -> bool:
         if (self.should_ignore is True and config.interactive is True
-            and not self.ignore_reason.startswith("Unknown")
-            and not self.ignore_reason == "Appears to be a TV show"
-                and not self.ignore_reason.endswith("small")):
+                # In interactive mode, these three exceptions should be ignored because the
+                # user may want to manually match them anyway.
+                and not self.ignore_reason is IgnoreReason.UNKNOWN_TITLE
+                and not self.ignore_reason is IgnoreReason.UNKNOWN_YEAR
+                and not self.ignore_reason is IgnoreReason.SIZE_TOO_SMALL):
             return True
-        elif self.should_ignore is True and config.interactive is False and config.hide_skipped is True:
+        elif self.should_ignore is True and config.interactive is False and config.hide_ignored is True:
             return True
         else:
             return False
@@ -383,273 +311,385 @@ class Film:
 
         # Perform the search and save the first 10 sresults to the matches list.
         # If ID is not None, search by ID.
-        self.matches = await tmdb.search(self.tmdb_id or self.title, None if self.tmdb_id else self.year)
-
-        best_match = next(iter(self.matches or []), None)
-        
+        self.tmdb_matches = await tmdb.search(self.tmdb_id or self.title, None if self.tmdb_id else self.year)
+        best_match = next(iter(self.tmdb_matches or []), None)
         if best_match is not None:
-            # If we find a result, update title, tmdb_id, year, and the title_similarity.
+            # If we find a result, update title, tmdb_id, year, and the tmdb_similarity.
             self.update_with_match(best_match)
         else:
             # If not, we update the ignore_reason
-            self.ignore_reason = 'No results found'
+            self._ignore_reason = IgnoreReason.NO_TMDB_RESULTS
 
-    def update_with_match(self, match):
-        """Updates existing properties from a TmdbResult match
-
-        Updates all of a film's properties from a TmdbResult
-        match object.
+    def update_with_match(self, match: 'TmdbResult'):
+        """Updates all of this film's properties witch those 
+        from a TmdbResult match object.
 
         Args:
-            match: (TmdbResult) Search result as a TmdbResult object.
+            match (TmdbResult): Search result as a TmdbResult object.
         """
-
         self.title = match.proposed_title
-        self.overview = match.overview
-        self.poster_path = match.poster_path
-        self.tmdb_id = match.tmdb_id
         self.year = match.proposed_year
-        self.title_similarity = match.title_similarity  
+        self.overview = match.overview
+        self.poster_url = match.poster_url
+        self.tmdb_id = match.tmdb_id
+        self.tmdb_similarity = match.tmdb_similarity  
 
     class File:
-        """An object that identifies an individual film file and its attributes.
+        """A Film object contains specific details about a Film file, including detailed information 
+        like file type, media info, and other details that may differentiate a file from others 
+        along side it in the same folder. This is a critical separation of roles from Film, in that a 
+        Film folder may contain multiple versions of the same film, each with unique properties.
 
-        Using a combination of regular expressions and intelligent
-        algorithms, determine the most likely attributes that
-        pertain to a film.
+        For example:
+            /volumes/Movies/Avatar (2009) may contain both:
+                - Avatar (2009) Bluray-2160p HDR.mp4
+                - Avatar (2009) Bluray-1080p.mkv
+
+        All File objects bound to the same Film object must share at least the same destination_root_dir
+        path, title, year, and tmdb_id. 
+
+        Invalid or unwanted files can still be mapped to a File object, but self.is_valid will return False.
 
         Attributes:
-            title:              Title of the parent film.
+        
+            title (str):                Title of the parent Film object.
 
-            title_the:          Title, The of the  parent film.
+            title_the (str):            Title, The of the parent Film object.
 
-            year:               Year of the  parent film.
+            year (str):                 Year of the parent Film object.
 
-            edition:            Special edition.
+            edition (str):              Special edition.
 
-            media:              Original release media, e.g. Bluray, WEBDL, HDTV, None (unknown)
+            media (Media):              Original release media (see enums.Media)
             
-            resolution:         Original pixel depth: SD, 720p, 1080p, or 2160p.
+            resolution (Resolution):    Original pixel depth (see enums.Resolution)
 
-            is_hdr:             Bool to indicate whether this version is HDR.
+            is_hdr (bool):              Indicates whether this version is HDR.
 
-            is_proper:          Bool to indicate whether this version is a proper release.
+            is_proper (bool):           Indicates whether this version is a proper release.
 
-            parent_film:        Parent film containing the file.
+            parent_film:                Parent Film containing the file.
 
-            source_path:        Current source path of file.
+            original_path (str):        Original (immutable) abs source path of file, e.g.
+                                         - /volumes/downloads/Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
 
-            destination_folder: Parent (root) dir where this file will be
-                                moved, based on quality-based sorting defined
-                                in config.destination_dirs.
+            original_rel_path (str):    Original (immutable) relative source path of file, e.g.
+                                         - Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
 
-            destination_path:   Full folder+file destination of the new file after
-                                being renamed.
+            original_filename (str):    Original (immutable) filename of file, e.g.
+                                         - Avatar.2009.BluRay.1080p.x264-Scene.mkv
 
-            original_path:      (Immutable) original path of file.
+            current_path (str):         Current abs source path of file, e.g.
+                                         - /volumes/movies/HD/Avatar (2009)/Avatar (2009) Bluray-1080p.mkv or
+                                         - /volumes/downloads/Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
 
-            original_basename:  Original filename before it was renamed.
+            destination_path (str):     Desired abs path to this file should exist when moved
+                                        renamed, e.g.
+                                         - /volumes/movies/HD/Avatar (2009)/Avatar (2009) Bluray-1080p.mkv
 
-            ext:                File extension.
+            destination_root_dir (str): Desired root path based on the file's resolution, e.g.
+                                         - /volumes/movies/HD 
+                                         - /volumes/movies/SD
 
-            size:               Size of file, in bytes.
+            destination_rel_path (str): Desired renamed path to file relative to destination_root_dir. This may be
+                                        If config.use_folders is True, this will be in the form of {folder}/{file}. 
+                                        If False, it will be just the new filename (and equal to new_filename).
+                                         - Avatar (2009)/Avatar (2009) Bluray-1080p.mkv
+                                         - Avatar (2009) Bluray-1080p.mkv
 
-            metadata:           Media metadata derived from libmediainfo
+            new_filename (str):         New filename generated using the defined templating pattern
+                                        in config.rename_pattern.file. Supports an overload to force a different
+                                        file extension.
 
-            new_filename:       New filename generated using the defined templating pattern
-                                in config.rename_pattern.file.
+            new_dirname (str):          New dirname generated using the defined templating pattern
+                                        in config.rename_pattern.folder.
 
-            new_foldername:     New foldername generated using the defined templating pattern
-                                in config.rename_pattern.folder.
+            new_filename_stem (str):    Returns the new file name, excluding the file extension.
 
-            new_filename_and_ext: 
-                                Returns the new file name including file extension. Supports
-                                an optinal second param to override ext.
+            ext (str):                  File extension.
 
-            has_valid_ext:      Returns true if the film is a file and
-                                has a valid file extension.
+            size (int):                 Size of file, in bytes.
 
-            is_file:            Returns true if the film was loaded from
-                                a file.
+            mediainfo (libmediainfo):   mediainfo derived from libmediainfo
 
-            is_video_file:      Returns true if the film is a file and
-                                has a valid video file extension.
+            is_valid (bool):            Returns True if the file is valid and wanted.
 
-            is_subtitle_file:   Returns ture if the file is a subtitle.
+            is_video (bool):            Returns True if the film is a file and has a valid video file extension.
 
-            is_duplicate:       Returns true if the file is marked as a duplicate.
+            is_subtitle (bool):         Returns True if the file is a subtitle.
 
-            duplicate:          Returns None, or one of Should enum (UPGRADE, IGNORE, KEEP_BOTH, DELETE)
+            is_duplicate (bool):        Returns True if this file is marked as a duplicate of another.
 
-            upgrade_reason:     Returns the reason this file should be upgraded, or an empty string.
+            duplicate (Should or None): Returns None, or one of Should enum to describe what should happen when
+                                        this file encounters a duplicate.
+
+            upgrade_reason (str):       Returns the reason this file should be upgraded, or an empty string.
             
-            did_move:           Returns true when the file has been successfully moved.
+            did_move (bool):            Returns true when the file has been successfully moved.
         """
 
-        def __init__(self, source_path, parent_film: 'Film'):
-            self.source_path = source_path
-            self.parent_film = parent_film
-            self.did_move = False
-            self.is_duplicate = False
-            self.duplicate = None
-            self.upgrade_reason = ''
-
-            # Internal setter for `ext`.
-            # We use this because at times `source_path` is overwritten.
-            self._ext = None
-
-            # Internal setter for `metadata`.
-            self._metadata = None
-
-            # Internal setter for `size`.
-            self._size = None
-
-            # Internal setter for `source_path`.
-            self._source_path = source_path
-
-            # Internal setter for (immutable) `original_path`.
-            # Does not change even if the file is renamed, moved, or copied.
-            self._original_path = source_path
-
-            # Internal setter for `resolution`.
-            self._resolution = None
-
-            # Parse quality
-            self.edition = parser.get_edition(self.source_path)
-            self.media = parser.get_media(self.source_path)
-            self.is_hdr = parser.is_hdr(self.source_path)
-            self.is_proper = parser.is_proper(self.source_path)
-
+        def __init__(self, current_path: str, parent_film: 'Film'):
+            self._original_path: str = current_path
+            self.current_path: str = current_path
+            self.parent_film: Film = parent_film
+            self.did_move: bool = False
+            self.is_duplicate: bool = False
+            self.duplicate: Should or None = None
+            self.upgrade_reason: str = ''
+            
         @property
-        def title(self):
+        def title(self) -> str:
             return self.parent_film.title
 
         @property
-        def title_the(self):
+        def title_the(self) -> str:
             return self.parent_film.title_the
 
         @property
-        def year(self):
+        def year(self) -> int:
             return self.parent_film.year
+        
+        @lazy
+        def edition(self) -> str:
+            return self.parent_film.parser.edition
+
+        @lazy
+        def media(self) -> Media:
+            return self.parent_film.parser.media
+        
+        @lazy
+        def is_hdr(self) -> bool:
+            return self.parent_film.parser.is_hdr
+        
+        @lazy
+        def is_proper(self) -> bool:
+            return self.parent_film.parser.is_proper
+
+        @lazy
+        def mediainfo(self) -> Union['Track', None]:
+            if not self.is_video:
+                return None
+
+            media_info = MediaInfo.parse(self.current_path, library_file=str(PurePath(
+                Path(__file__).resolve().parent,
+                'libmediainfo.0.dylib')))
+
+            for track in media_info.tracks:
+                if track.track_type == 'Video':
+                    return track
+                
+        @lazy
+        def resolution(self) -> Resolution:
+            if not self.parent_film.parser.mediainfo:
+                self.parent_film.parser.mediainfo = self.mediainfo
+            return self.parser.resolution
 
         @property
-        def resolution(self):
-            if self._resolution is None:
-                self._resolution = parser.get_resolution(self.source_path)
-            if self._resolution is None:
-                # Try using the film's actual metadata
-                try:
-                    if self.metadata.width == 1920:
-                        self._resolution = '1080p'
-                    elif self.metadata.width == 1280:
-                        self._resolution = '720p'
-                    elif self.metadata.width == 3840:
-                        self._resolution = '2160p'
-                except Exception:
-                    pass
-            return self._resolution
-
-        @property
-        def original_basename(self):
-            return os.path.basename(os.path.splitext(self.source_path)[0] if os.path.isfile(self.source_path) else self.source_path)
-
-        @property
-        def original_path(self):
+        def original_path(self) -> str:
             return self._original_path
+        
+        @lazy
+        def original_filename(self) -> str:
+            return Path(self.original_path).name
+
+        @lazy
+        def original_rel_path(self) -> str:
+            return str(PurePath(Path(self.original_filename).parent.name, Path(self.original_filename).name))
 
         @property
-        def ext(self):
-            if not self._ext:
-                self._ext = os.path.splitext(self.source_path)[1].replace('.', '') if os.path.isfile(self.source_path) else None
-            return self._ext
+        def new_filename(self, ext: str = None) -> str:
+            """Builds a new filename for this file.
+
+            Args:
+                ext (str, optional): Overload the extension of this file. Defaults to ''.
+                                     Must be preceded by a ., e.g. '.mkv'
+
+            Returns:
+                str: The new filename.
+            """
+            # Ensure the passed ext string always starts with a single .
+            ext = '.' + ext.lstrip('.') if ext else self.ext
+            return Path(formatter.new_basename(self, Rename.FILE).build()).with_suffix(ext)._str
+        
+        @property
+        def new_filename_stem(self) -> str:
+            return Path(self.new_filename).stem
 
         @property
-        def size(self):
-            if not self._size:
-                self._size = ops.size(self.source_path)
-            return self._size
+        def new_dirname(self) -> str:
+            return formatter.new_basename(self, Rename.DIR).build()
 
         @property
-        def metadata(self):
-            if not self._metadata and self.is_video:
-                media_info = MediaInfo.parse(self.source_path, 
-                    library_file=os.path.join(os.path.abspath(os.path.dirname(__file__)), 'libmediainfo.0.dylib'))
-                for track in media_info.tracks:
-                    if track.track_type == 'Video':
-                        self._metadata = track
-            return self._metadata
+        def destination_path(self) -> str:
+            # If 'rename_only' is enabled, we need to override the configured
+            # destination dir with the source dir.
+            return str(PurePath(
+                self.original_path if config.rename_only else Film.Utils.destination_root_dir(self), 
+                self.destination_rel_path))
 
         @property
-        def has_valid_ext(self):
-            return ops.fileops.has_valid_ext(self.source_path) if self.is_file else False
+        def destination_rel_path(self) -> str:
+            return self.new_filename if config.use_folders is False else str(PurePath(
+                self.new_dirname, self.new_filename))
+
+        @lazy
+        def ext(self) -> str:
+            return Path(self.current_path).suffix if self.is_file else None
+
+        @lazy
+        def size(self) -> int:
+            return ops.size(self.current_path)
+
+        @lazy
+        def is_file(self) -> bool:
+            return Path(self.current_path).is_file()
+            
+        @lazy
+        def is_valid(self) -> bool:
+            # A valid file must have a valid extension
+            return (Film.Utils.has_valid_ext(self)
+
+            # It must not contain an ignored string (e.g. 'sample')
+            and not ops.FilmPath.Utils.has_ignored_string(self.original_path)
+
+            # It must be large enough
+            and Film.Utils.is_acceptable_size(self))
 
         @property
-        def is_file(self):
-            return os.path.isfile(self.source_path)
-
-        @property
-        def is_video(self):
-            return any([self.ext in [x.replace('.', '') for x in config.video_exts]])
+        def is_video(self) -> bool:
+            return self.is_file and any([self.ext in config.video_exts])
 
         @property
         def is_subtitle(self):
-            return self.ext == 'srt' or self.ext == 'sub'
+            return self.ext == '.srt' or self.ext == '.sub'
 
-        @property
-        def new_filename(self):
-            r"""Build a new file name from the specified renaming pattern.
-
-            Use regular expressions and a { } templating syntax to construct
-            a new filename by mapping available properties to config.rename_pattern.
-
-            # Permitted rename pattern objects:
-            # {title}, {title-the}, {year}, {edition}, {quality}, {quality-full}. For
-            # using other characters with pattern objects, place chars inside {}
-            # e.g. { - edition}. For escaping templating characters, use \{ \},
-            # e.g. {|{edition\}}.
+    class Utils:
+        """A collection of helper functions for Film objects."""
+        
+        @classmethod
+        def sort_files(cls, files: ['Film.File']) -> ['Film.File']:
+            """Sort a list of files by size, reverse
 
             Returns:
-                A new filename based on config.rename_pattern.file, excluding file ext
+                A sorted list of files.
             """
-            return formatter.build_new_basename(self, 'file')
+            return sorted(files, key=lambda f: f.size, reverse=True)
 
-        @property
-        def new_foldername(self):
-            """Build a new folder name from the specified renaming pattern.
+        @classmethod
+        def wanted_files(cls, files: ['Film.File']) -> ['Film.File']:
+            """Filter valid files from a list of files.
 
-            This will be the same as new_filename, but deriving itself from 
-            rename_pattern.folder instead.
-
+            Args:
+                files: [(Film.File)]
             Returns:
-                A new foldername based on config.rename_pattern.folder.
+                A list of valid files.
             """
-            return formatter.build_new_basename(self, 'folder')
 
-        @property
-        def new_filename_and_ext(self, ext=''):
-            """Return the new filemname plus ext.
-            Supports an optional override for ext value.
+            # Sort by file size, in reverse, so the largest file is first
+            return filter(lambda f: f.is_valid, files)
 
-            Returns:
-                A new filename.ext based on new_filename method.
-            """
-            return f'{self.new_filename}.{(self.ext or ext).replace(".", "")}'
-
-        @property
-        def destination_folder(self):
-            # If 'rename_only' is enabled, we need to override the configured
-            # destination dir with the source dir.
+        @classmethod
+        def video_files(cls, files: ['Film.File']) -> ['Film.File']:
+            """Filter all valid feature film files from the list of films.
             
-            dst = ''
-            if config.rename_only is True:
-                dst = os.path.dirname(self.source_path)
-            else:
-                try:
-                    dst = config.destination_dirs[self.resolution] if self.resolution else config.destination_dirs['SD']
-                except KeyError:
-                    dst = config.destination_dirs['default']
-            return os.path.normpath(os.path.join(dst, self.new_foldername)) if config.use_folders else dst
+            Returns:
+                Array of Film.File objects that are valid video files."""
 
-        @property
-        def destination_path(self):
-            return os.path.normpath(os.path.join(self.destination_folder, self.new_filename_and_ext))
+            return filter(lambda f: f.is_video, files)
+            
+            # TODO: Do we need this functionality somewhere else? Or is this covered by
+            # ignore reason?
+            # return list(filter(lambda f: f.is_video and (
+            #         f.year is not None 
+            #         or f.resolution is not None 
+            #         or f.media is not None), files))
+
+        @classmethod
+        def bad_files(cls, files: ['Film.File']) -> ['Film.File']:
+            """Filter a list of invalid files from a list of files.
+
+            Args:
+                files: [(Film.File)]
+            Returns:
+                A list of invalid files.
+            """
+            print('bad_files', files)
+            return filter(lambda f: not f.is_valid, files)
+
+        @classmethod
+        def has_valid_ext(cls, file: 'Film.File') -> bool:
+            """Check if file has a valid extension.
+
+            Check the specified file's extension against config.video_exts and config.extra_exts.
+
+            Args:
+                file: (Film.File)
+            Returns:
+                True if the file has a valid extension, else False.
+            """
+            return file.is_file and (file.ext.lower() in 
+                        config.video_exts + config.extra_exts)
+
+        @classmethod
+        def is_acceptable_size(cls, file: 'Film.File') -> bool:
+            """Determine if a file_path is an acceptable size.
+
+            Args:
+                file: (Film.File)
+            Returns:
+                True, if the file is an acceptable size, else False.
+            """
+            return file.size >= cls.min_filesize(file)
+
+        @classmethod
+        def min_filesize(cls, file: 'Film.File') -> int:
+            """Determine the minimum filesize for the resolution for file path.
+
+            Args:
+                file: (str, utf-8) path to file.
+            Returns:
+                int: The minimum file size in bytes, or default in bytes
+                     if resolution could not be determined.
+            """
+
+            # If the file is valid but not a video, we can't expect 
+            # it to be too large (e.g., .srt)
+            if not file.is_video:
+                return 10
+            
+            # If the config is simple, just an int, return that in MB
+            min = config.min_filesize
+            if isinstance(min, int):
+                return min
+
+            # If the min filesize is not an int, we assume
+            # that it is an Addict of resolutions.
+            size = min.default
+            
+            if file.resolution is None:
+                size = min.default
+            elif file.resolution.value > 3: # 3 and higher are SD res
+                size = min.SD
+            else:
+                size = min[file.resolution.display_name]                
+
+            # If we're running tests, files are in MB instead of GB
+            t = 1 if 'pytest' in sys.argv[0] else 1024
+            return size * 1024 * t
+
+        @classmethod
+        def destination_root_dir(cls, file: 'Film.File') -> str:
+            """Returns the destination root path based on the file's resolution.
+
+            Args:
+                file (Film.File): File to check
+
+            Returns:
+                str: A root path string, e.g. /volumes/movies/HD or /volumes/movies/SD
+            """
+            try:
+                # Resolution Enum values > 3 are all SD
+                res_key = 'SD' if file.resolution.value > 3 else file.resolution.display_name
+                return config.destination_dirs[res_key]
+            except:
+                return config.destination_dirs.default
