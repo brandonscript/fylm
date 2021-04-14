@@ -1,28 +1,29 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Console output and log proxy handler for Fylm.
 
 This module handles all the console output for the app, and proxies some
 output to the log module.
 
-    console: the main class exported by this module.
+    Console: the main class exported by this module.
 """
-
-from __future__ import unicode_literals, print_function
-from builtins import *
 
 import datetime
 import os
@@ -32,21 +33,18 @@ import itertools
 
 from colors import color
 
-from fylmlib.pyfancy import *
-import fylmlib.log as log
 import fylmlib.config as config
+from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
-import fylmlib.patterns as patterns
-import fylmlib.formatter as formatter
-import fylmlib.progress as progress
-from fylmlib.enums import Should
+from fylmlib.enums import *
+from fylmlib import patterns, Log, Format, Progress
 
-class console(object):
+class Console(object):
     """Main class for console output methods.
 
     All public methods should chain together to form a builder pattern, e.g.:
 
-    console()
+    Console()
         .white('white')
         .blue(' blue')
         .red(' red')
@@ -118,13 +116,13 @@ class console(object):
         if config.no_console and not override_no_console:
             return
         if should_log:
-            log.info(self._pltxt.get())
+            Log.info(self._pltxt.get())
         if config.plaintext:
             print(patterns.ansi_escape.sub('', self._pltxt.get()))
         else:
             self._fmtxt.output()
 
-    """Helper methods for console class.
+    """Helper methods for Console class.
     """
 
     def print_welcome(self):
@@ -135,7 +133,7 @@ class console(object):
         log.info(f'{("-"*40)} {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {("-"*40)}')
         
         dirs = '\n                 '.join(config.source_dirs)
-        c = console().pink(f"\nFylm is scanning {dirs}")
+        c = Console().pink(f"\nFylm is scanning {dirs}")
 
         if config.test or config.force_lookup or config.duplicates.force_overwrite:
             c.bold().add('\n')
@@ -158,7 +156,7 @@ class console(object):
         s = f"Successfully {'renamed' if config.rename_only else 'moved'}" \
                 f" {count} {formatter.pluralize('film', count)}" if count > 0 else "No films moved"
         
-        c = console()
+        c = Console()
         if config.test is True:
             c.purple(f'\n(Test) {s}')
         else:
@@ -168,7 +166,7 @@ class console(object):
     def print_exit_early(self):
         """Print the early exit message.
         """
-        console().pink('\n\nThat\'s it, I quit.').print()
+        Console().pink('\n\nThat\'s it, I quit.').print()
 
     def print_film_header(self, film):
         """When a film is loaded, print a title header.
@@ -179,15 +177,15 @@ class console(object):
         """
         
         # Print blank line to separate from previous film
-        console().print()
+        Console().print()
         # Print original filename and size.
-        c = console().bold(' ')
+        c = Console().bold(' ')
         if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
             c.red()
         c.add(film.original_basename)
         c.reset().dark_gray(f' ({formatter.pretty_size(film.size)})')
         c.print()
-        console().dark_gray().indent(f'in {film.original_path}').print()
+        Console().dark_gray().indent(f'in {film.original_path}').print()
 
 
     def print_search_result(self, film):
@@ -200,12 +198,12 @@ class console(object):
         # Only print lookup results if TMDb searching is enabled.
         if config.tmdb.enabled is True:
             if film.tmdb_id is not None:
-                c = console().indent()
+                c = Console().indent()
                 c.green(f'✓ {film.title} ({film.year})')
                 c.dark_gray(f' [{film.tmdb_id}] {formatter.percent(film.title_similarity)}% match')
                 c.print()
             else:
-                console().red().indent(f'× {film.title} ({film.year})').print()
+                Console().red().indent(f'× {film.title} ({film.year})').print()
    
     def print_skip(self, film):
         """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
@@ -214,10 +212,10 @@ class console(object):
             film: (Film) Film that was skipped.
         """
 
-        console().red().dim().indent().red().dim(film.ignore_reason).print()
+        Console().red().dim().indent().red().dim(film.ignore_reason).print()
 
     def print_duplicates(self, film: 'Film'):
-        """Print any duplicates found to the console.
+        """Print any duplicates found to the Console.
 
         Args:
             film: (Film) Inbound film for which one or more duplicates has been detected.
@@ -230,7 +228,7 @@ class console(object):
 
         if duplicate_count > 0:
             
-            c = console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found")
+            c = Console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found")
 
             if config.interactive is True:
                 c.add(' for ').light_blue(f'{film.all_valid_files[0].new_filename_and_ext}')
@@ -260,7 +258,7 @@ class console(object):
                 pretty_size = formatter.pretty_size(d.size)
                 should = d.duplicate
 
-                c = console()
+                c = Console()
                 r = "" 
                 p = "  "
                 if config.interactive:
@@ -301,7 +299,7 @@ class console(object):
         Args:
             s: (str, utf-8) String to print/log.
         """
-        console().yellow().indent().add(s).print()
+        Console().yellow().indent().add(s).print()
 
     def print_interactive_error(self, s):
         """Print an interactive error.
@@ -309,12 +307,12 @@ class console(object):
         Args:
             s: (str, utf-8) String to print/log.
         """
-        console().red(f'      {s}').print()
+        Console().red(f'      {s}').print()
 
     def print_interactive_skipped(self):
         """Print an interactive skip message.
         """
-        console().dark_gray('      Skipped').print()
+        Console().dark_gray('      Skipped').print()
 
     def print_choice(self, idx, choice):
         """Print a question choice.
@@ -324,7 +322,7 @@ class console(object):
             choice: (str, utf-8) Choice to print/log.
         """
 
-        c = console().gray(f'      {idx})')
+        c = Console().gray(f'      {idx})')
         if choice.startswith('['):
             c.dark_gray(f' {choice}')
         else:
@@ -341,7 +339,7 @@ class console(object):
             return
 
         from fylmlib.operations import dirops
-        console().gray().indent(
+        Console().gray().indent(
             f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
             f" '{os.path.basename(dst)}' to {os.path.dirname(dst)}"
         ).print()
@@ -370,25 +368,27 @@ class console(object):
         # Clear line.
         sys.stdout.write("\033[K")
     
-def debug(s: str=''):
-    """Print debugging details, if config.debug is enabled.
+    @classmethod
+    def debug(cls, s: str=''):
+        """Print debugging details, if config.debug is enabled.
 
-    Args:
-        s: (str, utf-8) String to print
-    """
-    if config.debug is True:
-        # TODO: Debug shouldn't also be printing info
-        log.debug(s)
-        console().bold().debug(s).print()
+        Args:
+            s: (str, utf-8) String to print
+        """
+        if config.debug is True:
+            # TODO: Debug shouldn't also be printing info
+            log.debug(s)
+            Console().bold().debug(s).print()
 
-def error(s: str='', x=Exception):
-    """Print error details.
+    @classmethod
+    def error(cls, s: str='', x=Exception):
+        """Print error details.
 
-    Args:
-        s: (str, utf-8) String to print
-        x: (Exception)
-    """
-    log.error(s)
-    console().bold().error(s).print()
-    if x:
-        x(s)
+        Args:
+            s: (str, utf-8) String to print
+            x: (Exception)
+        """
+        log.error(s)
+        Console().bold().error(s).print()
+        if x:
+            x(s)

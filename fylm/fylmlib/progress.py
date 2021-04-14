@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Progress bar handling for long-running operations.
 
@@ -20,71 +24,72 @@ This module generates a progress bar from a percentage and width.
     console: the main class exported by this module.
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 from colors import color
 
 from fylmlib.ansi import ansi
 import fylmlib.config as config
 
-def progress_bar(percentage, width=50):
-    """Generates a progress bar for writing to console.
+class Progress:
 
-    Args:
-        percentage: (float) percent complete of long-running operation.
-        width: (int) width of terminal/progress bar
-    Returns:
-        A compiled progress bar for outputting to console.
-    """
+    def bar(percentage, width=50):
+        """Generates a progress bar for writing to console.
 
-    if config.plaintext:
-        FULL_BLOCK = "X"
-        INCOMPLETE_BLOCK_GRAD = ["-", "-", "="]
-    else:
-        FULL_BLOCK = color('█', fg=ansi.pink)
-        INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), color('▒', fg=ansi.dark_gray), color('▓', fg=ansi.dark_gray)]
+        Args:
+            percentage: (float) percent complete of long-running operation.
+            width: (int) width of terminal/progress bar
+        Returns:
+            A compiled progress bar for outputting to console.
+        """
 
-    assert(isinstance(percentage, float) or isinstance(percentage, int))
-    assert(0. <= percentage <= 100.)
-    # progress bar is block_widget separator perc_widget : ####### 30%
-    max_perc_widget = '100%' # 100% is max
-    separator = ' '
-    blocks_widget_width = width - len(separator) - len(max_perc_widget)
-    assert(blocks_widget_width >= 10) # not very meaningful if not
-    perc_per_block = 100.0/blocks_widget_width
+        if config.plaintext:
+            FULL_BLOCK = "X"
+            INCOMPLETE_BLOCK_GRAD = ["-", "-", "="]
+        else:
+            FULL_BLOCK = color('█', fg=ansi.pink)
+            INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), 
+                                     color('▒', fg=ansi.dark_gray), 
+                                     color('▓', fg=ansi.dark_gray)]
 
-    # Epsilon is the sensitivity of rendering a gradient block.
-    epsilon = 1e-6
+        assert(isinstance(percentage, float) or isinstance(percentage, int))
+        assert(0. <= percentage <= 100.)
+        # progress bar is block_widget separator perc_widget : ####### 30%
+        max_perc_widget = '100%' # 100% is max
+        separator = ' '
+        blocks_widget_width = width - len(separator) - len(max_perc_widget)
+        assert(blocks_widget_width >= 10) # not very meaningful if not
+        perc_per_block = 100.0/blocks_widget_width
 
-    # Number of blocks that should be represented as complete.
-    full_blocks = int((percentage + epsilon)/perc_per_block)
+        # Epsilon is the sensitivity of rendering a gradient block.
+        epsilon = 1e-6
 
-    # The rest are incomplete.
-    empty_blocks = blocks_widget_width - full_blocks
+        # Number of blocks that should be represented as complete.
+        full_blocks = int((percentage + epsilon)/perc_per_block)
 
-    # Build blocks widget.
-    blocks_widget = ([FULL_BLOCK] * full_blocks)
-    blocks_widget.extend([INCOMPLETE_BLOCK_GRAD[0]] * empty_blocks)
+        # The rest are incomplete.
+        empty_blocks = blocks_widget_width - full_blocks
 
-    # Calculate remainder due to how granular our blocks are.
-    remainder = percentage - full_blocks * perc_per_block
-    
-    # Epsilon needed for rounding errors (check would be != 0.)
-    # based on reminder modify first empty block shading, depending 
-    # on remainder.
-    if remainder > epsilon:
-        grad_index = int((len(INCOMPLETE_BLOCK_GRAD) * remainder)/perc_per_block)
-        blocks_widget[full_blocks] = INCOMPLETE_BLOCK_GRAD[grad_index]
+        # Build blocks widget.
+        blocks_widget = ([FULL_BLOCK] * full_blocks)
+        blocks_widget.extend([INCOMPLETE_BLOCK_GRAD[0]] * empty_blocks)
 
-    # Build percentage widget
-    str_perc = f'{percentage:.1f}'
+        # Calculate remainder due to how granular our blocks are.
+        remainder = percentage - full_blocks * perc_per_block
+        
+        # Epsilon needed for rounding errors (check would be != 0.)
+        # based on reminder modify first empty block shading, depending 
+        # on remainder.
+        if remainder > epsilon:
+            grad_index = int((len(INCOMPLETE_BLOCK_GRAD) * remainder)/perc_per_block)
+            blocks_widget[full_blocks] = INCOMPLETE_BLOCK_GRAD[grad_index]
 
-    # Subtract 1 because the percentage sign is not included.
-    perc_widget = f'{str_perc.ljust(len(max_perc_widget) - 3)}%'
+        # Build percentage widget
+        str_perc = f'{percentage:.1f}'
 
-    # Generate progress bar
-    progress_bar = f"{''.join(blocks_widget)}{separator}{perc_widget}"
+        # Subtract 1 because the percentage sign is not included.
+        perc_widget = f'{str_perc.ljust(len(max_perc_widget) - 3)}%'
 
-    # Return the progress bar as string.
-    return ''.join(progress_bar)
+        # Generate progress bar
+        progress_bar = f"{''.join(blocks_widget)}{separator}{perc_widget}"
+
+        # Return the progress bar as string.
+        return ''.join(progress_bar)

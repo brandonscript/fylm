@@ -1,20 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
 
-from __future__ import unicode_literals, print_function, absolute_import
-from builtins import *
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 import os
 import sys
@@ -30,8 +31,9 @@ import pytest
 import requests_cache
 from addict import Dict
 
-import fylm.fylmlib.config as config
-import fylm.fylmlib.operations as ops
+import fylmlib.config as config
+
+from fylmlib import dirops
 from make import make_all_mock_files, MakeFilmsResult
 
 if os.getenv('_PYTEST_RAISE', "0") != "0":

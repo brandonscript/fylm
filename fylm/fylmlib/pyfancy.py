@@ -1,4 +1,5 @@
-# -*- coding: future_fstrings -*-
+#!/usr/bin/env python
+
 # MIT License
 
 # Copyright (c) 2017 Cosmic Open Source Projects
@@ -47,9 +48,6 @@ style so no new text will have unwanted styling.
 
     pyfancy: the main class exported by this module.
 """
-
-from __future__ import unicode_literals, print_function
-from builtins import *
 
 class pyfancy:
     def __str__(self): return self.get()

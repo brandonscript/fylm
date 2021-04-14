@@ -1,20 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
 
-from __future__ import unicode_literals, print_function, absolute_import
-from builtins import *
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 import os
 import sys
@@ -24,7 +25,6 @@ import pytest
 
 import fylmlib.config as config
 import fylmlib.operations as ops
-from fylmlib.operations import FilmPath
 import conftest
 import fylm
 import make
@@ -43,35 +43,38 @@ class TestFilmPath(object):
         made = conftest.make_all_mock_files(
             'files.json', path)
         
-        paths = list(ops.Find.existing_films(path))
-        print()
+        paths = ops.Find.existing_films('/volumes/Films/HD')
+        paths = ops.Find.sync_attrs(paths, ['maybe_film'])
+        # paths = ops.Find.existing_films('/Users/brandonscript/Dev/fylm/fylm/tests/files/#new/#4K')
+        # print()
         # for p in paths:
         #     print(p.origin, p)
         
         # for d in paths[3].descendents:
         #     print(d)
-                
+        # if False:    
         for p in paths:
             
             # print(p, p.container.name, len(p.dirs))
             # t1 = time()
-            if p.is_file():
-                print(
-                    # p.filmrel if p.maybe_film else p.branch.name
-                    #   p.relpath 
-                    p.relative_to(p.origin)
-                    , 'BRANCH' if p.is_branch else ''
-                    , 'CONTAINER' if p.is_container else ''
-                    , 'TERMINUS' if p.is_terminus else ''
-                    , 'FILM' if p.maybe_film else ''
-                    , 'EMPTY' if p.is_empty else ''
-                )
-                # if not p.year:
-                #     p
-            # t2 = time()
-            # print(f'Elapsed time is {t2 - t1} seconds.')
-            # if not p.is_origin and p.maybe_film:
-            #     print(p)
+            # if p.is_file():
+            print(
+                # p.filmrel if p.maybe_film else p.branch.name
+                #   p.relpath 
+                p.relative_to(p.origin)
+                # , 'DID_SYNC' if p._did_sync else 'X'                
+                # , 'BRANCH' if p.is_branch else ''
+                # , 'CONTAINER' if p.is_container else ''
+                # , 'TERMINUS' if p.is_terminus else ''
+                # , 'FILM' if p.maybe_film else ''
+                # , 'EMPTY' if p.is_empty else ''
+            )
+                    # if not p.year:
+                    #     p
+                # t2 = time()
+                # print(f'Elapsed time is {t2 - t1} seconds.')
+                # if not p.is_origin and p.maybe_film:
+                #     print(p)
 
         
         # FilmPath

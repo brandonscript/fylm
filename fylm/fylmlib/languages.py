@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Loads languages from a json file into a consumable format.
 
@@ -22,34 +26,41 @@ map file.
 
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 import os
 import json
 
-class _Languages:
+from lazy import lazy
+
+class Languages:
     """An array of Language objects, loaded from language.json.
     """
     def __init__(self):
+        pass
+    
+    class Language:
+        """A language objects to handle raw language descriptors.
+
+        Attributes:
+            code:           ISO-639-1 code of the language.
+            primary_name:   Primary written name of the language.
+            names:          Written names of associated languages.
+        """
+
+        def __init__(self, code, names):
+            self.code = code
+            self.names = [n.strip() for n in names.split(',')]
+            self.primary_name = self.names[0]
+
+    @lazy
+    def languages(self) -> ['Language']:
+        
         # Load json from languages.json
+        # TODO: Pathify
         data = json.load(open(os.path.join(os.path.dirname(__file__), 'languages.json')))
 
         # Map raw language objects to Language class objects
-        self.languages = sorted(map(lambda l: Language(l['code'], l['name']), data), key=lambda l: l.primary_name.lower())
+        return sorted(map(lambda l: self.Language(
+            l['code'], l['name']), data), key=lambda l: l.primary_name.lower())
 
-class Language:
-    """A language objects to handle raw language descriptors.
-
-    Attributes:
-        code:           ISO-639-1 code of the language.
-        primary_name:   Primary written name of the language.
-        names:          Written names of associated languages.
-    """
-    def __init__(self, code, names):
-        self.code = code
-        self.names = [n.strip() for n in names.split(',')]
-        self.primary_name = self.names[0]
-
-languages = _Languages().languages
-
+    def get(self) -> ['Language']:
+        return self.languages

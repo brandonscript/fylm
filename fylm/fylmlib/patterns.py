@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """A set of regular expression patterns.
 
@@ -19,16 +23,13 @@ This module exports a set of regular expressions used for matching values
 in file/folder paths.
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 import re
 import sys
 
-_roman_numerals = r'(?:(?=[MDCLXVI])M*(?:C[MD]|D?C{0,3})(?:X[CL]|L?X{0,3})(?:I[XV]|V?I{0,3}))'
+_ROMAN_NUMERALS = r'(?:(?=[MDCLXVI])M*(?:C[MD]|D?C{0,3})(?:X[CL]|L?X{0,3})(?:I[XV]|V?I{0,3}))'
 
 # A list of articles
-articles = ['&', 'a', 'an', 'and', 'as', 'at', 'by',
+ARTICLES = ['&', 'a', 'an', 'and', 'as', 'at', 'by',
             'for', 'in', 'is', 'of', 'or', 'the', 'to', 'with']
 
 # Compiled pattern that matches a 4-digit year between 1921 and 2159.
@@ -37,13 +38,13 @@ articles = ['&', 'a', 'an', 'and', 'as', 'at', 'by',
 # preceded by a word boundary. (Looking at you, 2001 and BT2020). We 
 # also ignore 1920 because of 1920x1080 resolution. It also cannot be 
 # at the start of the input string or after a /.
-year = re.compile(r'(?<![\/])(?!^)\b(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)\b')
+YEAR = re.compile(r'(?<![\/])(?!^)\b(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)\b')
 
 # Compiled pattern that matches 720p, 1080p, or 2160p, case insensitive.
-resolution = re.compile(r'\b(?P<resolution>(?:(?:72|108|216)0p?)|4K)\b', re.I)
+RESOLUTION = re.compile(r'\b(?P<resolution>(?:(?:72|108|216)0p?)|4K)\b', re.I)
 
 # Compiled pattern that matches BluRay, WEB-DL, or HDTV, case insensitive.
-media = re.compile(r'\b(?:'
+MEDIA = re.compile(r'\b(?:'
                     r'(?P<bluray>blu-?ray|bdremux|bdrip)|'
                     r'(?P<webdl>web-?dl|webrip|amzn|nf|hulu|dsnp|atvp)|'
                     r'(?P<hdtv>hdtv)|'
@@ -51,54 +52,54 @@ media = re.compile(r'\b(?:'
                     r'(?P<sdtv>sdtv))\b', re.I)
 
 # Compiled pattern that matches Proper, case insensitive.
-proper = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
+PROPER = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
 
 # Compiled pattern that matches HDR.
-hdr = re.compile(r'\b(?P<hdr>hdr)\b', re.I)
+HDR = re.compile(r'\b(?P<hdr>hdr)\b', re.I)
 
 # Compiled pattern that "Part n" where n is a number or roman numeral.
-part = re.compile(r'\bpart\W?(?P<part>(?:\d+|' + _roman_numerals + r'))\b', re.I)
+PART = re.compile(r'\bpart\W?(?P<part>(?:\d+|' + _ROMAN_NUMERALS + r'))\b', re.I)
 
 # Retrieves tmdb_id in [XXXX] format from a string
-tmdb_id = re.compile(r'(?P<tmdb_id>\[\d+\])$')
+TMDB_ID = re.compile(r'(?P<tmdb_id>\[\d+\])$')
 
 # Compiled pattern to match roman numerals
-roman_numerals = re.compile(r'\b(' + _roman_numerals + r')\b', re.I)
+ROMAN_NUMERALS = re.compile(r'\b(' + _ROMAN_NUMERALS + r')\b', re.I)
 
 # Compiled pattern that matches all unwanted characters that should be
 # stripped from a title:
 #   - From entire title: . (period) _ (underscore) and {}[]() (brackets/braces)
 #   - From the end of a string: non-word chars and whitespace
-strip_from_title = re.compile(r'([\._\[\]{}\(\)]|[\s\W]+$)')
+STRIP_FROM_TITLE = re.compile(r'([\._\[\]{}\(\)]|[\s\W]+$)')
 
 # Uncompiled pattern that matches illegal OS chars. Must remain uncompiled here.
-illegal_chars = r'/?<>\:*|"' if (sys.platform == "win32") else r':'
+ILLEGAL_CHARS = r'/?<>\:*|"' if (sys.platform == "win32") else r':'
 
 # Compiled pattern of chars/articles to remove when using the _strip_articles
 # TMDb search option.
-strip_articles_search = re.compile(r'(^(the|a)\s|, the$)', re.I)
+STRIP_WHEN_SEARCHING = re.compile(r'(^(the|a)\s|, the$)', re.I)
 
 # Compiled pattern that matches articles 'the' and 'a' from the beginning, and
 # ', the' from the end of a string. Used for comparing local titles to potential
 # TMDb matches.
-strip_when_comparing = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
+STRIP_WHEN_COMPARING = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
 
 # Beginning or end of string "The" or ", The", ignoring non-word characters
 # at the end of the string.
-begins_with_or_comma_the = re.compile(r'(^the\W+|, the\W*$)', re.I)
+BEGINS_WITH_OR_COMMA_THE = re.compile(r'(^the\W+|, the\W*$)', re.I)
 
 # ANSI character escaping
-ansi_escape = re.compile(r'(^\s+|(\x9B|\x1B\[)[0-?]*[ -/]*[@-~])', re.I)
+ANSI_ESCAPE = re.compile(r'(^\s+|(\x9B|\x1B\[)[0-?]*[ -/]*[@-~])', re.I)
 
 # Intra-word special chars that we want to keep, and capitalize the following
 # letter.
-intra_word_special_chars = re.compile(r'(?<=[^\W])([:\-_•·.])(?=[^\W])', re.I)
+INTRA_WORD_SPECIAL_CHARS = re.compile(r'(?<=[^\W])([:\-_•·.])(?=[^\W])', re.I)
 
 # Non-word chars to strip from the end of a title
-trailing_nonword_chars = re.compile(r'[\b\s]*[-_:]\s*$', re.I)
+TRAILING_NONWORD_CHARS = re.compile(r'[\b\s]*[-_:]\s*$', re.I)
 
 # Zero-width space
-zero_space = u'\u200c'
+ZERO_SPACE = u'\u200c'
 
 # TV show
-tv_show = re.compile(r"\bS\d{2}(E\d{2})?\b", re.I)
+TV_SHOW = re.compile(r"\bS\d{2}(E\d{2})?\b", re.I)

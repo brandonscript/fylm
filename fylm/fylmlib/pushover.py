@@ -1,4 +1,5 @@
-# -*- coding: future_fstrings -*-
+#!/usr/bin/env python
+
 # pushover 0.3
 #
 # Copyright (C) 2013-2016  Thibaut Horel <thibaut.horel@gmail.com>
@@ -15,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import time
 from configparser import RawConfigParser, NoSectionError
 from argparse import ArgumentParser, RawDescriptionHelpFormatter

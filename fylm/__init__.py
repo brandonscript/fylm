@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here: 
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Fylm is a simple command line app for renaming and filing films.
 
@@ -22,25 +26,26 @@ Because it runs solely in the command line (and autonomously), you can
 easily wire it up as a post script for services like SABnzbd.
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 import os
 import sys
 import asyncio
 from contextlib import suppress
 
 import fylmlib.config as config
-from fylmlib.console import console
-from fylmlib.processor import processor
-import fylmlib.operations as ops
-import fylmlib.notify as notify
+from fylmlib import Console
+from fylmlib import Processor
+# from fylmlib import
+from fylmlib import Notify
 import fylmlib.counter as counter
+from fylmlib import Cursor
 
-__version__ = '0.3.0-beta'
+__version__ = '0.4.0-beta'
 
 def main():
     """Main program."""
+    
+    # Load config the first time
+    config.load()
 
     try:
         # Initialize the success counter.
@@ -90,7 +95,6 @@ def main():
             traceback.print_exc()
     finally:
         # Don't leave the cursor hidden
-        from fylmlib.cursor import cursor
         cursor.show()
 
 if __name__ == "__main__":

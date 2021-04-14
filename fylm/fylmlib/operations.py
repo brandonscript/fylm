@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """File/directory and size utilities for Fylm operations
 
@@ -23,28 +27,29 @@ get, move, rename, and delete. Also includes filesize detector methods.
     size: file and dir size calculator
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 import os
 import shutil
 import sys
 import re
 import unicodedata
 import itertools
-from itertools import islice, chain
-from multiprocessing import Pool
+import pickle
+from itertools import islice, chain, repeat
+import multiprocessing as mp
 from pathlib import Path, PurePath
 from typing import Union, Iterable
 
 from lazy import lazy
 
-from fylmlib.console import console
-from fylmlib.cursor import cursor
-import fylmlib.formatter as formatter
+import fylmlib.config as config
 import fylmlib.patterns as patterns
-import fylmlib.parser as Parser
 from fylmlib.tools import *
+from fylmlib import Console
+from fylmlib import Parser
+from fylmlib import Cursor
+from fylmlib import Format
+
+_EXISTING_FILMS = None
 
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate 
@@ -98,6 +103,8 @@ class FilmPath(Path):
                                     
         is_branch (bool):           Returns True if the path is container, but not a film.  
         
+        is_filmroot (bool):         Returns True if the path is the filmroot.
+        
         filename (str or None):     Filename, if this path is a file, or None
         
         year (int or None):         Year detected in .name.
@@ -111,13 +118,7 @@ class FilmPath(Path):
                                     that all its files or subdirs belong to a single title.
                                     
         is_empty (bool):            True if the path does not contain any files or dirs. Exludes system files
-                                    like 'thumbs.db' and '.DS_Store'.
-                                    
-        is_filelike (bool):         True if the path is file-like, without calling is_file() and checking 
-                                    the filesystem. Checks if a path has a suffix.
-                                    
-        is_filelike (bool):         True if the path is dir-like, without calling is_dir() and checking 
-                                    the filesystem. Checks if a path does not have a suffix.                                    
+                                    like 'thumbs.db' and '.DS_Store'.                             
         
         maybe_film (bool):          Returns True if the path is a valid candidate for a possible 
                                     Film object. A candidate must either be a file immediately after
@@ -128,38 +129,70 @@ class FilmPath(Path):
     
     _flavour = type(Path())._flavour
    
-    def __init__(self, *args, origin: 'FilmPath'=None, dirs: []=None, files: []=None):
+    def __init__(self, *args, origin: 'Path'=None, dirs: []=None, files: []=None):
         """Initialize FilmPath object.
 
         Args:
-            origin (WalkPath):      Origin top level path, inherited from args[0] if possible,
-                                    or self.
+            origin (Path):      Origin top level path, inherited from args[0] if possible,
+                                or self.
                                         
-            dirs (list):            Dirs provided by os.walk(), defauls to []
+            dirs (list):        Dirs provided by os.walk(), defauls to []
                                          
-            files (list):           Files provided by os.walk(), defaults to []
+            files (list):       Files provided by os.walk(), defaults to []
         """
         super().__init__()
         
-        try:
-            self._o = origin or args[0].origin
-        except:
-            self._o = self
+        if origin:
+            self.origin = Path(origin)
+        elif len(args) > 0:
+            try:
+                self.origin = Path(args[0].origin) or Path(args[0])
+            except:
+                self.origin = Path(self)
+
+        if not self.origin:
+            raise AttributeError(
+                f"Could not infer 'origin' when initializing 'FilmPath' for path '{args[0]}'")
                     
         self._dirs: [FilmPath] = list(map(FilmPath, dirs)) if dirs else None
         self._files: [FilmPath] = list(map(FilmPath, files)) if files else None
+        
+    # @overrides(__reduce__)
+    def __reduce__(self):
+
+        # From super()
+
+        # Using the parts tuple helps share internal path parts
+        # when pickling related paths.
+        
+        # return (self.__class__, tuple(self._parts))
+
+        # This override passes its parts to a Path object (which
+        # natively pickles), then serializes and applies 
+        # its remaining attributes.
+        
+        args = {**{'_parts': self._parts}, **self.__dict__}
+        return (self.__class__._from_kwargs, tuple(args.items()))
+
+    @classmethod
+    def _from_kwargs(cls, *args):
+        kwargs = dict(args)
+        new = cls(super().__new__(cls, 
+                                  *kwargs['_parts']),
+                                  origin=kwargs['origin'])
+        new.__dict__ = {**new.__dict__, **kwargs}
+        return new
 
     # @overrides(joinpath)
     def joinpath(self, path) -> 'FilmPath':
         joined = FilmPath(super().joinpath(path), origin=self.origin)
-        self.__dict__ = joined.__dict__.copy()
+        # TODO: I think we don't actually want this here.
+        # self.__dict__ = joined.__dict__.copy()
         return joined
     
     # @overrides(relative_to)
     def relative_to(self, path) -> 'FilmPath':
-        rel = FilmPath(super().relative_to(path), origin=self.origin)
-        self.__dict__ = rel.__dict__.copy()
-        return rel
+        return FilmPath(super().relative_to(path), origin=self.origin)
     
     # @overrrides(parent)
     @property
@@ -172,11 +205,9 @@ class FilmPath(Path):
         return [FilmPath(p, origin=self.origin) for p in super().parents]
     
     @property
-    def origin(self) -> 'FilmPath':
-        return self._o
-    
-    @property
     def dirs(self) -> ['FilmPath']:
+        if self._dirs:
+            return self._dirs
         self._dirs = (self._dirs or 
                       [FilmPath(d) for d in self.iterdir() if d.is_dir()] 
                       if self.is_absolute() and self.is_dir() else [])
@@ -190,7 +221,7 @@ class FilmPath(Path):
     def descendents(self) -> Iterable['FilmPath']:
         # Note that this is an expensive call, but intentionally performs a scan
         # each time it is called so that we always have a current list of descendents. 
-        if self.is_filelike:
+        if self.is_file():
             return []
         for d in Find.deep_sorted(self):
             d._o = self.origin
@@ -199,24 +230,27 @@ class FilmPath(Path):
     
     @property
     def files(self) -> ['FilmPath']:
+        if self._dirs:
+            return self._files
         self._files = (self._files or 
                        [FilmPath(f) for f in self.iterdir() if f.is_file()] 
                        if self.is_absolute() and self.is_dir() else [])
         return self._files
     
     @lazy
-    def container(self) -> 'FilmPath':
-        return first(self.parents, where=lambda p: (p.is_origin 
-                       or self.origin == p 
-                       or p.is_container), 
-                     default=self if self.is_origin else self.origin)
+    def container(self) -> 'Path':
+        return Path(first(self.parents, where=lambda p: (
+                        p.is_origin 
+                        or self.origin == p 
+                        or p.is_container), 
+                     default=self if self.is_origin else self.origin))
             
     @lazy
     def filmrel(self) -> 'FilmPath':
         return self.relative_to(self.branch)
     
     @lazy
-    def filmroot(self) -> ('FilmPath', 'FilmPath'):
+    def filmroot(self) -> 'Path':
         
         # If this isn't a film, it can't have a filmroot.
         if not self.maybe_film:
@@ -230,7 +264,8 @@ class FilmPath(Path):
         # If no results were found (or the first parent is not a film),
         # but this film has a year, it's its own filmroot.
         if (not i or i == 0) and self.maybe_film:
-            return self
+            self.is_filmroot = True
+            return Path(self)
         
         # Otherwise, check the nearest parent to see if the years match
         if i > 0:
@@ -241,18 +276,18 @@ class FilmPath(Path):
             # matches the parent, that's the root.
             if not self.year or self.year == fr.year:
                 # Return the delta between the root and self
-                return fr
+                return Path(fr)
             
         return None
     
     @lazy
-    def branch(self) -> 'FilmPath':
+    def branch(self) -> 'Path':
         # A branch is almost certainly the first parent above a 
         # filmroot isn't a film.
-        if self.filmroot and not self.filmroot.parent.maybe_film:
-            return self.filmroot.parent
+        if self.filmroot and not WalkPath(self.filmroot.parent).maybe_film:
+            return Path(self.filmroot.parent)
         else:
-            return self.container
+            return Path(self.container)
                    
     @property
     def video_files(self) -> ['FilmPath']:
@@ -268,30 +303,22 @@ class FilmPath(Path):
     def year(self) -> int:
         return Parser(self.name).year
     
-    @property
+    @lazy
     def has_ignored_string(self) -> bool:
         return Utils.has_ignored_string(self)
     
     @lazy
     def is_empty(self) -> bool:
         return not self.dirs and not self.files
-    
-    @lazy
-    def is_filelike(self) -> bool:
-        return self.suffix
-    
-    @lazy
-    def is_dirlike(self) -> bool:
-        return not self.suffix
         
     @lazy
     def is_origin(self) -> bool:
-        return self == self._o
+        return Path(self) == self.origin
     
     @lazy
     def is_container(self) -> bool:
         # It's not the origin, it's a file or empty, it cannot be a container.
-        if not self.is_origin and (self.is_filelike or self.is_empty):
+        if not self.is_origin and (self.is_file() or self.is_empty):
             return False
         
         # Otherwise it's probably a container
@@ -302,11 +329,15 @@ class FilmPath(Path):
         return all([self.is_container, 
                     not self.maybe_film, 
                     not self.is_terminus])
+        
+    @lazy
+    def is_filmroot(self) -> bool:
+        return self.maybe_film and Path(self) == self.filmroot
     
     @lazy 
     def is_terminus(self) -> bool:
         # if it's a file or empty, it's a terminus.
-        if self.is_filelike or self.is_empty:
+        if self.is_file() or self.is_empty:
             return True
         
         # Lambda: from all objects in x, create a list of years
@@ -322,20 +353,21 @@ class FilmPath(Path):
             return False
         
         # Return True if all of its subdirs are empty
-        return self.dirs and all(d.is_empty for d in self.dirs)
+        return not self.dirs or all(d.is_empty for d in self.dirs)
         
     @lazy
     def maybe_film(self) -> bool:
-        # It's an empty dir 
-        if ((self.is_dirlike and self.is_empty) 
-            # Or it's a file, but not a video
-            or (self.is_filelike and not self.is_video_file)):
-            return False
         
+        # It's an empty dir
+        if ((self.is_dir() and self.is_empty)
+            # Or it's a file, but not a video
+                or (self.is_file() and not self.is_video_file)):
+            return False
+
         # Origin cannot be a film
         if self.is_origin:
             return False
-        
+
         # If it has a year, it's quite possibly a film, even though it might be
         # empty. We return false positives here so that `branch` is strictly not
         # potential film containers.
@@ -343,29 +375,51 @@ class FilmPath(Path):
             return True
 
         # It's a video, and either it or its parent have a year, e.g.
-        #  - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene/a-x264.mkv
+        #  - /volumes/downloads/Avatar.2009.BluRay.1080self.x264-Scene/a-x264.mkv
         #                                                           ----------
         if self.is_video_file and (self.year or self.parent.year):
             return True
 
         # or it's a video file with a year, and its parent does not e.g.
-        #  - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+        #  - /volumes/downloads/Avatar.2009.BluRay.1080self.x264-Scene.mkv
         #                       ---------------------------------------
-        #  - /volumes/downloads/#done/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+        #  - /volumes/downloads/#done/Avatar.2009.BluRay.1080self.x264-Scene.mkv
         #                             ---------------------------------------
         if self.is_video_file and self.year and not self.parent.year:
             return True
 
         # or it's a dir with a year in its name, and contains at least one
         # video file, e.g.
-        #  - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene/a-x264.mkv
+        #  - /volumes/downloads/Avatar.2009.BluRay.1080self.x264-Scene/a-x264.mkv
         #                       -----------------------------------
-        if self.is_dirlike and self.year and self.video_files:
+        if self.is_dir() and self.year and self.video_files:
             return True
 
         # If it's a terminus, it's the end of the line, maybe it's a film?
         return self.is_terminus
-        
+    
+    @staticmethod
+    def sync(fp: 'FilmPath', attrs):
+        """Syncronize lazy-loaded attributes to the provided FilmPath object.
+
+        Args:
+            fp (FilmPath): FilmPath to sync slow properties
+
+        Returns:
+            FilmPath: The passed FilmPath object with lazy loaded properties.
+        """
+        default = [
+            'is_origin',
+            'is_terminus',
+            'is_container',
+            'is_branch',
+            'is_filmroot',
+            'maybe_film'
+        ]
+        for a in (attrs or default):
+            fp.__dict__[a] = getattr(fp, a)
+        return fp
+            
 class Find:
 
     @staticmethod
@@ -392,7 +446,7 @@ class Find:
         if origin.is_file(): 
             return [origin]
         
-        for root,dirs,files in os.walk(origin):
+        for root,dirs,files in os.walk(path):
             
             if hide_sys_files:
                 files = filter(lambda f: not is_sys_file(f), files)
@@ -412,7 +466,7 @@ class Find:
     def deep_sorted(path: Union[str, Path, 'FilmPath'], 
                     sort_key=lambda p: str(p).lower(),
                     hide_sys_files=True) -> Iterable['FilmPath']:
-        yield from sorted(Find.deep(FilmPath(path), 
+        yield from sorted(Find.deep(path, 
                                     hide_sys_files=hide_sys_files), 
                                     key=sort_key)
         
@@ -443,11 +497,10 @@ class Find:
             if hide_sys_files and is_sys_file(p):
                 continue
             yield FilmPath(p, origin=origin)
-
-    _existing_films = None
+    
     @classmethod
     def existing_films(cls, 
-                       paths: Union[str, Path, 'FilmPath']=None) -> ['FilmPath']:
+                       paths: Union[str, list, Path, 'FilmPath']=None) -> ['FilmPath']:
         """Get a list of existing films.
 
         Scan one level deep of the target paths to get a list of existing films.
@@ -456,44 +509,66 @@ class Find:
         Returns:
             A list of existing films mapped to FilmPath objects.
         """
+        
+        global _EXISTING_FILMS
 
         # If existing films has already been loaded and the list has
         # more than one film:
-        if not cls._existing_films:
-            return cls._existing_films
+        if _EXISTING_FILMS:
+            return _EXISTING_FILMS
         
         # If paths is none or empty, there's nothing to search for.
         if not paths:
             return
-        
-        import fylmlib.config as config
 
-        debug('Scanning for existing films...')
-
-        cls._existing_films = []
+        Console.debug('Scanning for existing films...')
+       
+        # Coerce single str path to list
+        if not type(paths) is list:
+            _paths = [paths]
         
         # Coerce str path objects to FilmPath
-        _paths = paths or config.destination_dirs.values()
+        _paths = _paths or config.destination_dirs.values()
         if any(type(p) is str for p in _paths):
             _paths = list(map(FilmPath, _paths))
             
-        found = itertools.chain([p for p in _paths])
+        # Shallow scan the target dirs, then sort alphabetically
+        _EXISTING_FILMS = sorted(itertools.chain.from_iterable(
+            Find.shallow(p) for p in _paths), key=lambda s: s.name.lower())
         
-        with Pool(processes=50) as pool:
-            cls._existing_films += pool.map(lambda x: x.maybe_film, found)
-            
-        debug(
-            f'Loaded {len(cls._existing_films)} existing Film objects from destination dirs.')
-
         # Sort the existing films alphabetically, case-insensitive, and return.
-        return sorted(cls._existing_films, key=lambda s: s.title.lower())
+        return _EXISTING_FILMS
+    
+    @staticmethod
+    def sync_attrs(paths_iter: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
+        with mp.Pool(mp.cpu_count()) as pool:
+            yield from pool.starmap(FilmPath.sync, zip(paths_iter, repeat(attrs)))
         
+    # @staticmethod
+    # def maybe_film(path: Union[str, Path, 'FilmPath'], origin: Path = None) -> bool:
+    #     """Determines if the specified path is maybe a film file.
+
+    #     Args:
+    #         path (str, path, or FilmPath): Path to check
+
+    #     Returns:
+    #         bool: Returns True if the path is maybe a film, otherwise False
+    #     """
+        
+    # Coerce to a FilmPath object
+        # if type(path).__name__ != 'FilmPath':
+        #     p = FilmPath(path, origin=origin)
+        # else:
+        #     p = path
+
+        # assert(p.origin)
+           
 class Utils:
     """Utilities and helper functions for FilmPath"""
     
     @staticmethod
     def is_video_file(path: Union[str, Path, 'FilmPath']) -> bool:
-        """Returns true if the specified path is a video file from
+        """Determines if the specified path is a video file from
         config.video_exts.
 
         Args:
@@ -502,9 +577,8 @@ class Utils:
         Returns:
             bool: True if it's a video file, otherwise False
         """
-        import fylmlib.config as config
         
-        # Coerce to a standard path object
+        # Coerce to a standard Path object
         p = Path(path)
         return p.is_file() and p.suffix and p.suffix.lower() in config.video_exts
     
@@ -519,8 +593,7 @@ class Utils:
         Returns:
             bool: True if it contains an ignored string, otherwise False
         """
-        import fylmlib.config as config
-        
+       
         # Coerce to a str
         any(word.lower() in str(path).lower() for word in config.ignore_strings)
             
@@ -727,7 +800,7 @@ class dirops:
             # If the path exists, there's no point in trying to create it.
             if not os.path.exists(path):
                 try:
-                    debug(f'Creating destination {path}')
+                    Console.debug(f'Creating destination {path}')
                     os.makedirs(path)
                 # If the dir creation fails, raise an Exception.
                 except OSError as e:
@@ -808,7 +881,7 @@ class dirops:
         # First we ensure the dir is less than the max_size threshold, otherwise abort.
         if _size_dir(path) < max_size or max_size == -1 or files_count == 0:
 
-            debug(f'Recursively deleting {path}')
+            Console.debug(f'Recursively deleting {path}')
 
             # An emergency safety check in case there's an attempt to delete / (root!) or one of the source_paths.
             if dir == '/' or dir in config.source_dirs:
@@ -901,14 +974,14 @@ class fileops:
 
         # Silently abort if the src and dst are the same.
         if src == dst:
-            debug('Source and destination are the same, nothing to move')
+            Console.debug('Source and destination are the same, nothing to move')
             return False
 
         # Try to create destination folders if they do not exist.
         dirops.create_deep(os.path.dirname(dst))
 
-        debug(f"\n  Moving: '{src}'")
-        debug(f"      To: '{dst}'\n")
+        Console.debug(f"\n  Moving: '{src}'")
+        Console.debug(f"      To: '{dst}'\n")
 
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
@@ -983,7 +1056,7 @@ class fileops:
 
             # Catch exception and soft warn in the console (don't raise Exception).
             console().red().indent(f'Failed to move {src} to {dst}')
-            debug(e)
+            Console.debug(e)
             print(e)
 
             # If we're overwriting and a duplicate was created, undo its renaming
@@ -1106,8 +1179,8 @@ class fileops:
             console().red().indent(f'Unable to rename {dst} (identical file already exists)')
             return
 
-        debug(f'Renaming: {src}')
-        debug(f'      To: {dst}')
+        Console.debug(f'Renaming: {src}')
+        Console.debug(f'      To: {dst}')
 
         # Only perform destructive changes if we're in live mode.
         if not config.test:
@@ -1128,7 +1201,7 @@ class fileops:
         Returns:
              1 if the delete was successful, 0 otherwise.
         """
-        debug(f"Deleting file {file}")
+        Console.debug(f"Deleting file {file}")
 
         # If we're running in test mode, return a mock success (we assume the deletion
         # would have been successful had it actually run).

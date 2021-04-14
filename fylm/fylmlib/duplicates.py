@@ -1,44 +1,43 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Duplicate handling for films.
 
 This module handles all the duplicate checking and handling logic for Fylm.
 """
-from __future__ import unicode_literals, print_function
-from builtins import *
 
 import os
 import itertools
 
+from fylmlib.enums import *
 import fylmlib.config as config
-from fylmlib.console import console
-from fylmlib.film import Film
-import fylmlib.compare as compare
-import fylmlib.operations as ops
-from fylmlib.enums import Should
-from fylmlib.enums import ComparisonResult
+from fylmlib.operations import fileops, dirops
+from fylmlib import Console, Compare
 
-class duplicates:
+class Duplicates:
     """Class for handling duplicate checking and governance.
 
     All methods are class methods, thus this class should never be instantiated.
     """
 
     @classmethod
-    def find(cls, film: Film) -> [Film.File]:
+    def find(cls, film: 'Film') -> ['Film.File']:
         """From a list of existing films, return those that contain
         one or more duplicate files.
 
@@ -59,7 +58,7 @@ class duplicates:
             debug('Duplicate checking is disabled, skipping.')
             return []
 
-        existing_films = ops.dirops.get_existing_films(config.destination_dirs)
+        existing_films = dirops.get_existing_films(config.destination_dirs)
 
         debug(f'Checking list of duplicates for "{film.new_basename}"')
         # Filter the existing_films cache array to titles beginning with the first letter of the
@@ -102,7 +101,7 @@ class duplicates:
         return duplicate_videos if not config.interactive else duplicate_videos[::-1]
 
     @classmethod
-    def find_exact(cls, film: Film) -> [Film.File]:
+    def find_exact(cls, film: 'Film') -> ['Film.File']:
         """Retrieves exact duplicates File object for a film.
 
         If no exact duplicate is detected, returns an empty list.
@@ -121,7 +120,7 @@ class duplicates:
         return [d for v in film.video_files for d in film.duplicate_files if compare.is_exact_duplicate(v, d)]
 
     @classmethod
-    def find_lower_quality(cls, film: Film) -> [Film.File]:
+    def find_lower_quality(cls, film: 'Film') -> ['Film.File']:
         """Retrieves all File objects for a film that are a lesser quality.
         Size is not compared here, only quality attributes.
         If none are found, returns an empty list.
@@ -137,7 +136,7 @@ class duplicates:
         return [d for v in film.video_files for d in film.duplicate_files if compare.quality(d, v) == ComparisonResult.LOWER]
 
     @classmethod
-    def find_upgradable(cls, film: Film):
+    def find_upgradable(cls, film: 'Film'):
         """Finds duplicates on the destination dirs that will be upgraded.
         
         Args:
@@ -148,7 +147,7 @@ class duplicates:
         return [d for v in film.video_files for d in film.duplicate_files if cls.should(v, d) == Should.UPGRADE]
 
     @classmethod
-    def should(cls, current: Film.File, duplicate: Film.File) -> Should:
+    def should(cls, current: 'Film.File', duplicate: 'Film.File') -> Should:
         """Determines how to handle the current file when a duplicate is detected.
 
         Config settings govern whether a duplicate can be upgraded if it is of
@@ -237,7 +236,7 @@ class duplicates:
         return cls._mark(duplicate, Should.IGNORE, ignore_reason)
 
     @classmethod
-    def _mark(cls, d: Film.File, should: Should, reason: str='') -> Should:
+    def _mark(cls, d: 'Film.File', should: Should, reason: str='') -> Should:
         """Marks a duplicate file with the result of a should() call,
         then returns the original should() value. This can appear to be a little
         backwards, but if it is set to Should.UPGRADE, that means it is marked for upgrade.
@@ -253,7 +252,7 @@ class duplicates:
         return should
 
     @classmethod
-    def rename_unwanted(cls, film: Film, unwanted = None):
+    def rename_unwanted(cls, film: 'Film', unwanted = None):
         """Rename duplicates on the destination dirs that will be upgraded.
 
         If duplicates are found and the inbound film should replace them,
@@ -274,10 +273,10 @@ class duplicates:
                 # Skip if it's already been renamed (edge case for when
                 # there are multiple copies of the same film being moved)
                 continue
-            ops.fileops.rename(d.source_path, f'{os.path.basename(d.source_path)}.dup')
+            fileops.rename(d.source_path, f'{os.path.basename(d.source_path)}.dup')
 
     @classmethod
-    def delete_upgraded(cls, film: Film):
+    def delete_upgraded(cls, film: 'Film'):
         """Delete upgraded duplicates on the destination dirs.
 
         If duplicates are found and the inbound film should replace them,
@@ -290,7 +289,7 @@ class duplicates:
 
         # Loop through each duplicate that should be replaced and delete it.
         for d in [u for u in film.duplicate_files if Should.UPGRADE == u.duplicate]:
-            ops.fileops.delete(f'{d.source_path}.dup')
+            fileops.delete(f'{d.source_path}.dup')
 
         # Delete empty duplicate container folders
         cls.delete_leftover_folders(film)
@@ -299,7 +298,7 @@ class duplicates:
         film._duplicate_files = list(filter(lambda d: os.path.exists(d.source_path) or os.path.exists(f'{d.source_path}.dup'), film._duplicate_files))
 
     @classmethod
-    def delete_leftover_folders(cls, film: Film):
+    def delete_leftover_folders(cls, film: 'Film'):
         """Delete empty duplicate folders on the destination dirs.
 
         If duplicates are found and the inbound film should replace them,
@@ -312,6 +311,6 @@ class duplicates:
 
         # Delete empty duplicate container folders
         for dup_film in [f.parent_film for f in film.duplicate_files]:
-            if dup_film.is_folder and len(ops.dirops.find_deep(dup_film.source_path)) == 0:
+            if dup_film.is_folder and len(dirops.find_deep(dup_film.source_path)) == 0:
                 # Delete the parent film dir and any hidden contents if it is less than 1 KB.
-                ops.dirops.delete_dir_and_contents(dup_film.source_path, max_size=1000)
+                dirops.delete_dir_and_contents(dup_film.source_path, max_size=1000)

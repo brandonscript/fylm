@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full s is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full s is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Logging handler for Fylm.
 
@@ -20,75 +24,71 @@ This module handles all the log output for the app.
     log: the main class exported by this module.
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 import sys
 import logging
 import datetime
 
 from fylmlib.pyfancy import *
+from fylmlib import config
 
-# Define some pretty console output constants
+# Set date output format
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-class log:
+class Log:
     """Main class for log writing methods.
 
     All methods are class methods, thus this class should never be instantiated.
     """
-    @classmethod
-    def config(cls):
+    @staticmethod
+    def config():
         """Configure the logger. In test mode, it is disabled.
         """
         
-        import fylmlib.config as config
-        
         if config.test:
-            cls.disable()
+            Log.disable()
         else:
             logging.basicConfig(format = '%(message)s', filename = config.log_path + 'history.log', level = logging.DEBUG)
 
-    @classmethod
-    def disable(cls):
+    @staticmethod
+    def disable():
         """Disable logging. Cannot be called in debug mode.
         """
         if not config.debug:
             logging.disable(sys.maxsize)
 
-    @classmethod
-    def enable(cls):
+    @staticmethod
+    def enable():
         """Enable logging. Only can be executed in live mode, since there
         is no logging in test mode.
         """
         if not config.test:
             logging.disable(logging.NOTSET)
 
-    @classmethod
-    def indent(cls, text):
+    @staticmethod
+    def indent(s):
         """Convenience method to write info to log with an indent and prefix.
         """
-        log.info(f'\t{text}')
+        log.info(f'\t{s}')
 
-    @classmethod
-    def info(cls, text):
+    @staticmethod
+    def info(s):
         """Write info to log.
         """
-        logging.info(f'{NOW}::{text}')
+        logging.info(f'{NOW}::{s}')
 
-    @classmethod
-    def error(cls, text):
+    @staticmethod
+    def error(s):
         """Write an error to the log.
         """
-        text = f'{NOW} - Error: {text}'
-        logging.error(text)
+        s = f'{NOW} - Error: {s}'
+        logging.error(s)
 
-    @classmethod
-    def debug(cls, text):
-        """Write debug text to the log.
+    @staticmethod
+    def debug(s):
+        """Write debug s to the log.
         """
-        text = f'{NOW} - Debug: {text}'
-        logging.debug(text)
+        s = f'{NOW} - Debug: {s}'
+        logging.debug(s)
 
 # Configure the logger when this module is loaded.
-log.config()
+Log.config()

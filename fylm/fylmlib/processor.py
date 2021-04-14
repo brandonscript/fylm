@@ -1,17 +1,21 @@
-# -*- coding: future_fstrings -*-
-# Copyright 2018 Brandon Shelley. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+#!/usr/bin/env python
+
+# Fylm
+# Copyright 2021 github.com/brandoncript
+
+# This program is bound to the Hippocratic License 2.1
+# Full text is available here:
+# https: // firstdonoharm.dev/version/2/1/license
+
+# Further to adherence to the Hippocratic Licenese, this program is
+# free software: you can redistribute it and / or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version. Full text is avaialble here:
+# http: // www.gnu.org/licenses
+
+# Where a conflict or dispute would arise between these two licenses, HLv2.1
+# shall take precedence.
 
 """Main application logic.
 
@@ -20,37 +24,33 @@ This module scans for and processes films.
     processor: the main class exported by this module.
 """
 
-from __future__ import unicode_literals, print_function
-from builtins import *
-
 import os
 import sys
 from typing import List
 import asyncio
 
-from fylmlib.film import Film
-from fylmlib.console import console
-from fylmlib.subtitle import Subtitle
-from fylmlib.duplicates import duplicates
-from fylmlib.interactive import interactive
+import fylmlib.config as config
+import fylmlib.console as Console
+import fylmlib.subtitle as Subtitle
+import fylmlib.duplicates as Duplicates
+import fylmlib.interactive as interactive
 from fylmlib.enums import Should
 import fylmlib.formatter as formatter
 import fylmlib.operations as ops
 import fylmlib.counter as counter
 import fylmlib.notify as notify
-import fylmlib.config as config
 import fylmlib.tmdb as tmdb
 
 _move_queue = []
 
-class processor:
+class Processor:
     """Main class for scanning for and processing films.
 
     All methods are class methods, thus this class should never be instantiated.
     """
 
     @classmethod
-    def iterate(cls, films: [Film]):
+    def iterate(cls, films: ['Film']):
         """Main entry point for processor, iterates a list of films.
 
         Args:
@@ -80,7 +80,7 @@ class processor:
             cls.process_move_queue()
 
     @classmethod
-    def route(cls, film: Film):
+    def route(cls, film: 'Film'):
         """Route film processing to the correct handler.
 
         Args:
@@ -187,7 +187,7 @@ class processor:
         _move_queue = []
 
     @classmethod
-    def prepare_file(cls, film: Film):
+    def prepare_file(cls, film: 'Film'):
         """Process a single file film object.
 
         Args:
@@ -216,7 +216,7 @@ class processor:
         _move_queue.append((film, [_QueuedMoveOperation(film.all_valid_files[0])]))
 
     @classmethod
-    def prepare_folder(cls, film: Film):
+    def prepare_folder(cls, film: 'Film'):
         """Process a directory film object containing one or more files.
 
         Args:
@@ -273,7 +273,7 @@ class processor:
         _move_queue.append(move_constructor)
 
     @classmethod
-    def cleanup_dir(cls, film: Film):
+    def cleanup_dir(cls, film: 'Film'):
         """Clean up a directory film object after it has been moved.
 
         Args:
@@ -311,7 +311,7 @@ class _QueuedMoveOperation():
     Each move operation contains a source and destination path that are passed
     as args to ops.fileops.safe_move()
     """
-    def __init__(self, file: Film.File, dst: str=None):
+    def __init__(self, file: 'Film.File', dst: str=None):
         self.file = file
         self.dst = dst or file.destination_path
     
