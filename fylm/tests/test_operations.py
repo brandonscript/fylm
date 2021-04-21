@@ -36,22 +36,60 @@ from pathlib import Path
 # Multipy any size measurement by T to get an actual size
 T = 1024 if os.environ.get('TRAVIS') else 1
     
-def is_alphabetical(l: [Path]):
+def is_alphabetical_name(l: [Path]):
     return all(l[i].name.lower() <= l[i+1].name.lower()
                for i in range(len(l)-1))
 
-
 SRC = conftest.src_path
+SRC2 = conftest.src_path2
 
 ALITA = 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE'
 ATMITW = 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE'
 AVATAR = 'Avatar.2009.BluRay.2160p.HDR.x265-xWinG'
 DEEP = '#deep'
+ROGUE = 'Rogue.One.2016.1080p.BluRay.DTS.x264-group'
 STARLORD = 'Starlord.2022.1080p/Starlord.mkv'
 TTOP = '2001.A.Space.Odyssey.1968.1080p'
 ZELDA = 'Zelda.A.Link.To.The.Past.1991.1080p.Bluray.mkv'
 ZORG = 'Zorg.2.1989.1080p.Bluray.mkv'
 
+class TestCreate(object):
+    
+    def test_create_dirs(self):
+        
+        conftest.cleanup_all()
+        assert(not SRC.exists())
+        Create.dirs(SRC)
+        assert(SRC.is_dir())
+        
+    def test_create_dirs_multi(self):
+
+        conftest.cleanup_all()
+        assert(not SRC.exists())
+        Create.dirs(SRC / 'Curie',
+                    SRC / 'Curie',
+                    SRC / 'Seager')
+        assert(SRC.is_dir())
+        assert((SRC / 'Curie').is_dir())
+        assert((SRC / 'Seager').is_dir())
+        
+    def test_create_dirs_testmode(self):
+        
+        conftest.cleanup_all()
+        config.test = True
+        assert(config.test is True)
+        assert(not SRC.exists())
+        Create.dirs(SRC)
+        assert(not SRC.exists())
+        
+    @pytest.mark.xfail(raises=PermissionError)
+    def test_create_dirs_not_writable(self):
+
+        if sys.platform == "win32":
+            Create.dirs('C:\\Windows\\System32\\ShouldNotBeWritable')
+        else:
+            Create.dirs('/bin/ShouldNotBeWritable')
+            
 class TestDelete(object):
     
     def test_delete_dir(self):
@@ -181,43 +219,6 @@ class TestDelete(object):
     def test_delete_file(self):
         pass    
 
-class TestCreate(object):
-    
-    def test_create_dirs(self):
-        
-        conftest.cleanup_all()
-        assert(not SRC.exists())
-        Create.dirs(SRC)
-        assert(SRC.is_dir())
-        
-    def test_create_dirs_multi(self):
-
-        conftest.cleanup_all()
-        assert(not SRC.exists())
-        Create.dirs(SRC / 'Curie',
-                    SRC / 'Curie',
-                    SRC / 'Seager')
-        assert(SRC.is_dir())
-        assert((SRC / 'Curie').is_dir())
-        assert((SRC / 'Seager').is_dir())
-        
-    def test_create_dirs_testmode(self):
-        
-        conftest.cleanup_all()
-        config.test = True
-        assert(config.test is True)
-        assert(not SRC.exists())
-        Create.dirs(SRC)
-        assert(not SRC.exists())
-        
-    @pytest.mark.xfail(raises=PermissionError)
-    def test_create_dirs_not_writable(self):
-
-        if sys.platform == "win32":
-            Create.dirs('C:\\Windows\\System32\\ShouldNotBeWritable')
-        else:
-            Create.dirs('/bin/ShouldNotBeWritable')
-
 class TestFilmPath(object):
     
     # Init
@@ -280,7 +281,7 @@ class TestFilmPath(object):
     
     def test_init_from_kwargs(self):
     
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'), origin=SRC)
+        alita = FilmPath((SRC / ALITA / f'{ALITA}.mkv'), origin=SRC)
         
         args = {**{'_parts': alita._parts}, **alita.__dict__}
         clone = FilmPath._from_kwargs(tuple(args.items()))
@@ -332,7 +333,7 @@ class TestFilmPath(object):
     def test_origin(self):
         assert(FilmPath(f'/{STARLORD}').origin == Path(f'/{STARLORD}'))
         assert(FilmPath(SRC).origin == SRC)
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         assert(alita.origin == alita)
 
     def test_branch(self):
@@ -346,16 +347,16 @@ class TestFilmPath(object):
         Make.mock_files(SRC / DEEP / ZELDA)
         Make.mock_files(SRC / DEEP / ZORG)
             
-        found = Find.new(SRC)
+        found = Find.new(SRC, sort_key=lambda x: str(x).lower())
         
-        for i in range(4, 7):
+        for i in range(3, 7):
             assert(found[i].branch == SRC)
             
+        assert(found[1].branch == SRC / DEEP)
         assert(found[2].branch == SRC / DEEP)
-        assert(found[3].branch == SRC / DEEP)
         
-        Make.mock_files(FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv')))
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        Make.mock_files(FilmPath(SRC / ALITA / f'{ALITA}.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         assert(alita.branch == SRC)
         
         zelda = FilmPath(SRC) / DEEP / ZELDA
@@ -379,10 +380,10 @@ class TestFilmPath(object):
         Make.all_mock_files()
         
         found = list(Find.shallow(SRC))
-        dirs = list(filter(lambda x: x.is_dir() and not x == SRC, found))
+        dirs = list(filter(lambda x: x.is_dir(), found))
         
-        assert(found[0].dirs)
-        assert(len(found[0].dirs) == len(dirs))
+        assert(FilmPath(SRC).dirs)
+        assert(len(FilmPath(SRC).dirs) == len(dirs))
 
     def test_files(self):
         Make.all_mock_files()
@@ -390,12 +391,12 @@ class TestFilmPath(object):
         found = list(Find.shallow(SRC))
         files = list(filter(lambda x: x.is_file() and not x == SRC, found))
 
-        assert(found[0].files)
-        assert(len(found[0].files) == len(files))
+        assert(FilmPath(SRC).files)
+        assert(len(FilmPath(SRC).files) == len(files))
 
     def test_filmrel(self):
         
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
         avatar = FilmPath(SRC / '#4K' / AVATAR)
         empty = FilmPath(SRC / '#empty' / 'empty_dir')
@@ -413,7 +414,7 @@ class TestFilmPath(object):
                         zelda)
         
         assert(not FilmPath(SRC).filmrel)
-        assert(alita.filmrel == Path(ALITA) / Path(ALITA).with_suffix('.mkv'))
+        assert(alita.filmrel == Path(ALITA) / Path(f'{ALITA}.mkv'))
         assert(alita.parent.filmrel == Path(ALITA))
         assert(atmitw.filmrel == Path(ATMITW) / Path(ATMITW).with_suffix('.mkv'))
         assert(atmitw.parent.filmrel == Path(ATMITW))
@@ -426,7 +427,7 @@ class TestFilmPath(object):
 
     def test_filmroot(self):
         
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
         avatar = FilmPath(SRC / '#4K' / AVATAR)
         empty = FilmPath(SRC / '#empty' / 'empty_dir')
@@ -500,9 +501,7 @@ class TestFilmPath(object):
         
         Make.all_mock_files()
         found = Find.deep(SRC)
-        one = first(found)
-        assert(one == SRC and one.is_origin)
-        for f in found: # For the remainder of the generator
+        for f in found:
             assert(f != SRC and not f.is_origin and f.origin == SRC)
 
     def test_is_branch(self):
@@ -521,7 +520,7 @@ class TestFilmPath(object):
 
     def test_is_filmroot(self):
         
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
         avatar = FilmPath(SRC / '#4K' / AVATAR)
         empty = FilmPath(SRC / '#empty' / 'empty_dir')
@@ -556,8 +555,8 @@ class TestFilmPath(object):
 
     def test_is_terminus(self):
         
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
-        alita4k = FilmPath((SRC / '#4K' / ALITA).with_suffix('.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        alita4k = FilmPath((SRC / '#4K' / f'{ALITA}.mkv'))
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
         avatar = FilmPath(SRC / '#4K' / AVATAR)
         empty = FilmPath(SRC / '#empty' / 'empty_dir')
@@ -589,8 +588,8 @@ class TestFilmPath(object):
         assert(not FilmPath(SRC / '#notes' / 'my_note.txt').is_video_file)
         assert(not FilmPath(SRC / '#notes').is_video_file)
         assert(FilmPath(SRC / STARLORD).is_video_file)
-        assert(FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv')).is_video_file)
-        assert(FilmPath((Path(ALITA) / ALITA).with_suffix('.mkv')).is_video_file)
+        assert(FilmPath(SRC / ALITA / f'{ALITA}.mkv').is_video_file)
+        assert(FilmPath((Path(ALITA) / f'{ALITA}.mkv')).is_video_file)
 
     def test_has_ignored_string(self):
         assert(not FilmPath('dir/A.File.1080p.bluray.x264-scene.mkv').has_ignored_string)
@@ -625,7 +624,7 @@ class TestFilmPath(object):
 
     def test_maybe_film(self):
         
-        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
         avatar = FilmPath(SRC / '#4K' / AVATAR)
         empty = FilmPath(SRC / '#empty' / 'empty_dir')
@@ -670,10 +669,10 @@ class TestFilmPath(object):
     def test_siblings(self):
         
         files = [
-            FilmPath(ALITA) / Path(ALITA).with_suffix('.mkv'),
+            FilmPath(ALITA) / Path(f'{ALITA}.mkv'),
             FilmPath(ATMITW) / Path(ATMITW).with_suffix('.mkv'),
             FilmPath(ATMITW) / STARLORD,
-            FilmPath(ATMITW) / Path(ALITA).with_suffix('.mkv'),
+            FilmPath(ATMITW) / Path(f'{ALITA}.mkv'),
             FilmPath(ATMITW) / ZELDA,
             FilmPath(ATMITW) / ZORG,
         ]
@@ -727,7 +726,7 @@ class TestFilmPath(object):
 
     def test_sync(self):
         
-        f = FilmPath(SRC / ALITA) / Path(ALITA).with_suffix('.mkv')
+        f = FilmPath(SRC / ALITA) / Path(f'{ALITA}.mkv')
         Make.mock_file(f)
         
         assert(not 'filmrel' in f.__dict__)
@@ -798,8 +797,8 @@ class TestFind(object):
 
         assert(len(found) == len(made))
         
-        # Assert that the list is sorted alphabetically (case insensitive)
-        assert(is_alphabetical(found))
+        # Assert that the list is sorted alphabetically by name (case insensitive)
+        assert(is_alphabetical_name(found))
     
     def test_find_existing(self):
 
@@ -813,12 +812,12 @@ class TestFind(object):
         Make.mock_dst_files(files)
 
         assert(Find._EXISTING is None)
-        assert(len(Find.existing()) == 4)
+        assert(iterlen(Find.existing()) == 4)
         assert(Find._EXISTING and len(Find._EXISTING) == 4)
         
         # Test caching
         conftest.cleanup_dst()
-        assert(len(Find.existing()) == 4)
+        assert(iterlen(Find.existing()) == 4)
     
     def test_find_new(self):
 
@@ -831,8 +830,6 @@ class TestFind(object):
         new = [x for x in Find.new(SRC) if x.is_file()]
 
         end = timer()
-
-        assert(new == SRC)
 
         assert(end - start < 3)
         assert(len(new) == len(made))
@@ -848,7 +845,7 @@ class TestFind(object):
         
         # Try again after removing src, to test caching.
         conftest.cleanup_src()
-        new = [x for x in Find.new(SRC) if x.is_file()]
+        new = [x for x in Find.new(SRC) if x.is_video_file]
         assert(len(new) == len(made))
 
     def test_find_new_multi(self):
@@ -866,8 +863,7 @@ class TestFind(object):
 
         assert(Find._NEW is None)
         
-        new = [x for x in Find.new(SRC, 
-                                   SRC2) if x.is_file()]
+        new = [x for x in Find.new(SRC, SRC2, sort_key=lambda x: x.name.lower()) if x.is_file()]
 
         # Assert that we're getting the expected number of films, + 2
 
@@ -883,11 +879,31 @@ class TestFind(object):
         # assert(len(valid_films) == len(conftest.made.good))
 
         # Assert that the list is sorted alphabetically (case insensitive)
-        assert(is_alphabetical(new))
+        assert(is_alphabetical_name(new))
         
-    @pytest.mark.skip()
     def test_find_shallow(self):
-        pass
+        
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
+        avatar = FilmPath(SRC / '#4K' / AVATAR)
+        empty = FilmPath(SRC / '#empty' / 'empty_dir')
+        notes = FilmPath(SRC / '#notes' / 'my_note.txt')
+        starlord = FilmPath(SRC / DEEP / STARLORD)
+        ttop = FilmPath((SRC / DEEP / TTOP / TTOP).with_suffix('.mkv'))
+        zelda = FilmPath(SRC / ZELDA)
+        zorg = FilmPath(SRC / ZORG)
+
+        Create.dirs(avatar, empty)
+        Make.mock_files(alita,
+                        atmitw,
+                        notes,
+                        starlord,
+                        ttop,
+                        zelda,
+                        zorg)
+        
+        found = Find.shallow(SRC)
+        assert(iterlen(found) == 8)
         
     def test_sync_attrs(self):
         
@@ -919,7 +935,7 @@ class TestFind(object):
         config.min_filesize = 50 # min filesize in MB
         assert(config.min_filesize == 50)
 
-        name = Path('Rogue.One.2016.1080p.BluRay.DTS.x264-group')
+        name = Path(ROGUE)
         files = [
             name / name.with_suffix('.mkv'), # good
             name / name.with_suffix('.sample.mkv'),
@@ -966,13 +982,13 @@ class TestFind(object):
         assert(config.min_filesize == 50)
 
         files = [
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sample.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/GROUP.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/subs-english.srt',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.nfo',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sfv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Cover.jpg'
+            f'{ROGUE}/{ROGUE}.mkv',
+            f'{ROGUE}/{ROGUE}.sample.mkv',
+            f'{ROGUE}/GROUP.mkv',
+            f'{ROGUE}/subs-english.srt',
+            f'{ROGUE}/{ROGUE}.nfo',
+            f'{ROGUE}/{ROGUE}.sfv',
+            f'{ROGUE}/Cover.jpg'
         ]
 
         conftest.cleanup_all()
@@ -991,7 +1007,7 @@ class TestFind(object):
         assert(len(ops.dirops.find_new(SRC)) == 1)
 
         invalid_files = ops.dirops.get_invalid_files(
-            os.path.join(SRC, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
+            os.path.join(SRC, ROGUE)
         )
 
         # Assert that of the 8 files presented, 6 are invalid
@@ -1068,32 +1084,31 @@ class TestFind(object):
 class TestInfo(object):
     
     def test_is_video_file(self):
-        name = 'test-1080p.mkv'
+        mkv = 'test-1080p.mkv'
+        bad = 'test.txt'
         
-        assert(not Info.is_video_file(name))
-        assert(not Info.is_video_file(Path(name)))
-        assert(not Info.is_video_file(FilmPath(name)))
+        assert(Info.is_video_file(mkv))
+        assert(Info.is_video_file(Path(mkv)))
+        assert(Info.is_video_file(FilmPath(mkv)))
         
-        Make.mock_src_files(name)
+        assert(not Info.is_video_file(bad))
+        assert(not Info.is_video_file(Path(bad)))
+        assert(not Info.is_video_file(FilmPath(bad)))
         
-        assert(Info.is_video_file(os.path.normpath(str(SRC) + '/' + name)))
-        assert(Info.is_video_file(SRC / Path(name)))
-        assert(Info.is_video_file(SRC / FilmPath(name)))
+        Make.mock_src_files(mkv)
+        
+        assert(Info.is_video_file(os.path.normpath(str(SRC) + '/' + mkv)))
+        assert(Info.is_video_file(SRC / Path(mkv)))
+        assert(Info.is_video_file(SRC / FilmPath(mkv)))
         
         conftest.cleanup_all()
         Make.empty_dirs()
         
         funkyname = 'tEsT-1080p.MKV'
 
-        assert(not Info.is_video_file(name))
-        assert(not Info.is_video_file(Path(name)))
-        assert(not Info.is_video_file(FilmPath(name)))
-
-        Make.mock_src_files(funkyname)
-
-        assert(Info.is_video_file(os.path.normpath(str(SRC) + '/' + name)))
-        assert(Info.is_video_file(SRC / Path(name)))
-        assert(Info.is_video_file(SRC / FilmPath(name)))
+        assert(Info.is_video_file(funkyname))
+        assert(Info.is_video_file(Path(funkyname)))
+        assert(Info.is_video_file(FilmPath(funkyname)))
         
         # Test relpath
         assert(Info.is_video_file(STARLORD))

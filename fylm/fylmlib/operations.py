@@ -472,7 +472,7 @@ class FilmPath(Path):
 
     @lazy
     def is_empty(self) -> bool:
-        if self.is_file():
+        if not self.is_dir():
             raise NotADirectoryError(f"'is_empty' failed for '{self}', it is not a dir.")
         return not first(self.iterdir(), where=lambda x: not is_sys_file(x))
 
@@ -557,6 +557,10 @@ class FilmPath(Path):
     @lazy
     def maybe_film(self) -> bool:
         
+        # If it's not absolute, we can only check for year and video ext.
+        if not self.is_absolute() and (self.is_video_file or self.year):
+            return True
+        
         # It's a video file and its parent is a branch
         if self.is_video_file and self.parent.is_branch:
             return True
@@ -618,7 +622,7 @@ class FilmPath(Path):
 
     @property
     def video_files(self) -> Iterable['FilmPath']:
-        if self.is_file():
+        if not self.is_dir():
             raise NotADirectoryError(
                 f"'video_files' failed for '{self}', it is not a dir.")
         return filter(lambda f: Info.is_video_file(f), self.resolve().rglob("*"))
@@ -675,8 +679,9 @@ class Find:
         """
         
         origin = FilmPath(path)
-        if origin.is_file(): 
-            yield origin
+        if not origin.is_dir():
+            raise NotADirectoryError(
+                f"Cannot use Find.deep on '{self}', it is not a dir.")
         else:
             for root,dirs,files in os.walk(path):
                 
@@ -690,25 +695,31 @@ class Find:
                 
                 dirs = this.dirs
                 files = this.files
-                            
-                yield this
+                
+                if not this == origin:            
+                    yield this
                 yield from files or []
             
     @staticmethod
     def deep_sorted(path: Union[str, Path, 'FilmPath'], 
                     sort_key=lambda p: p.name.lower(),
                     hide_sys_files=True) -> Iterable['FilmPath']:
-        yield from sorted(Find.deep(path, 
-                                    hide_sys_files=hide_sys_files), 
-                                    key=sort_key)
+        found = Find.deep(path, hide_sys_files=hide_sys_files)
+        if sort_key:
+            yield from sorted(found, key=sort_key)
+        else:
+            yield from found
         
     @staticmethod
     def deep_files(path: Union[str, Path, 'FilmPath'],
                    sort_key=lambda p: p.name.lower(),
                    hide_sys_files=True) -> Iterable['FilmPath']:
-        yield from sorted(filter(lambda x: x.is_file(), Find.deep(path,
-                                    hide_sys_files=hide_sys_files)),
-                          key=sort_key)
+        found = filter(lambda x: x.is_file(), 
+                       Find.deep(path, hide_sys_files=hide_sys_files))
+        if sort_key:
+            yield from sorted(found, key=sort_key)
+        else:
+            yield from found
         
     @staticmethod
     def shallow(path: Union[str, Path, 'FilmPath'],
@@ -730,17 +741,22 @@ class Find:
             A filtered list of files or an empty list.
         """
         origin = FilmPath(path)
-        if origin.is_file(): 
-            yield [origin]
+        if not origin.is_dir(): 
+            raise NotADirectoryError(
+                f"Cannot use Find.shallow on '{self}', it is not a dir.")
         else:
-            yield origin # Include the root just like Find.deep
-            for p in sorted(origin.iterdir(), key=sort_key):
+            found = origin.iterdir()
+            if sort_key:
+                found = sorted(found, key=sort_key)
+            for p in found:
                 if hide_sys_files and is_sys_file(p):
                     continue
                 yield FilmPath(p, origin=origin)
     
     @classmethod
-    def existing(cls, *paths) -> ['FilmPath']:
+    def existing(cls, 
+                 *paths,
+                 sort_key=None) -> ['FilmPath']:
         """Get a list of existing films from destination dirs.
 
         Scan one level deep of the target paths to get a list of existing films.
@@ -748,6 +764,7 @@ class Find:
         
         Args:
             paths (str, Path, or FilmPath): Path or paths to search for existing films.
+            sort_key (lambda, optional): Sort function, defaults to None
 
         Returns:
             A list of existing films mapped to FilmPath objects.
@@ -767,19 +784,24 @@ class Find:
             config.destination_dirs.values())))
         
         # Shallow scan the target dirs
-        found_iter = itertools.chain.from_iterable(Find.shallow(p) for p in _paths)
+        found_iter = itertools.chain.from_iterable(
+            Find.shallow(p, sort_key=sort_key) for p in _paths)
             
-        # Then sort alphabetically and set the class var
-        cls._EXISTING = sorted(found_iter, key=lambda s: s.name.lower())
+        # Set the class var
+        cls._EXISTING = list(found_iter)
         
         return cls._EXISTING
     
     @classmethod
-    def new(cls, *paths) -> ['FilmPath']:
+    def new(cls, 
+            *paths,
+            sort_key=lambda p: p.name.lower()) -> ['FilmPath']:
         """Get a list of potential new films from source dirs.
 
         Args:
             Paths (str, Path, or FilmPath): Path or paths to search for new films.
+            sort_key (lambda, optional): Sort function, defaults 
+                                         to name alpha case-insensitive.
             
         Returns:
             A list of potential new films mapped to FilmPath objects.
@@ -800,10 +822,11 @@ class Find:
         paths = set(list(map(Path, paths if paths else config.source_dirs)))
 
         # Shallow scan the target dirs, then sync the maybe_film attr.
-        found_iter = itertools.chain.from_iterable(Find.deep_sorted(p) for p in paths)
+        found_iter = itertools.chain.from_iterable(
+            Find.deep_sorted(p, sort_key=sort_key) for p in paths)
         
-        # Then sort alphabetically and set the class var
-        cls._NEW = sorted(found_iter, key=lambda s: str(s).lower())
+        # Set the class var
+        cls._NEW = list(found_iter)
 
         return cls._NEW
     

@@ -145,9 +145,9 @@ class Make:
         global MB
         
         src_path = src_path or conftest.src_path
-        for f in files:
-            assert(not f.is_absolute())
-            (name, size) = f if type(f) is tuple else (f, 0)
+        for p in [Path(f) for f in files]:
+            assert(not p.is_absolute())
+            (name, size) = p if type(p) is tuple else (p, 0)
             Make.mock_file(src_path / name, size * MB)
     
     @staticmethod
