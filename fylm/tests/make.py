@@ -24,6 +24,8 @@ import shutil
 import json
 import random
 from pathlib import Path
+import conftest
+from typing import Union
 
 # For tests on Travis, miniaturize filesizes.
 # To force this in local tests, do:
@@ -32,24 +34,18 @@ from pathlib import Path
 # To unset these:
 #   unset TRAVIS
 
-kb = 1 if os.environ.get('TRAVIS') is not None else 1024
-mb = kb * 1024
-gb = mb * 1024
+KB = 1 if os.environ.get('TRAVIS') is not None else 1024
+MB = KB * 1024
+GB = MB * 1024
 
 class MockFilm:
     def __init__(self, test_film):
+        
         self.tmdb_id = test_film["tmdb_id"] if 'tmdb_id' in test_film else None
         self.make = test_film["make"]
         self.expect = []
         self.expect_no_lookup = []
         self.sizes = []
-
-        size_2160p = random.randrange(int(18 * gb), int(26 * gb))
-        size_1080p = random.randrange(int(7 * gb), int(15 * gb))
-        size_720p = random.randrange(int(3 * gb), int(7 * gb))
-        size_sd = random.randrange(int(750 * mb), int(1300 * mb))
-        size_sample = random.randrange(10 * mb, 50 * mb)
-
 
         if 'expect' in test_film and test_film['expect'] is not None:
             self.expect = test_film['expect']
@@ -57,20 +53,8 @@ class MockFilm:
         if 'expect_no_lookup' in test_film and test_film['expect_no_lookup'] is not None:
             self.expect_no_lookup = test_film['expect_no_lookup']
 
-        for file in test_film["make"]:
-            if (re.search(re.compile(r'\bsample', re.I), file)
-                or os.path.basename(file) == 'junk.mp4'):
-                self.sizes.append(size_sample)
-            elif re.search(re.compile(r'\b720p?\b', re.I), file):
-                self.sizes.append(size_720p)
-            elif re.search(re.compile(r'\b1080p?\b', re.I), file):
-                self.sizes.append(size_1080p)
-            elif re.search(re.compile(r'\b(2160p?|\b4K)\b', re.I), file):
-                self.sizes.append(size_2160p)
-            elif os.path.splitext(file)[1] in ['.avi', '.mp4']:
-                self.sizes.append(size_sd)
-            else:
-                self.sizes.append(size_1080p)
+        for f in test_film["make"]:
+            self.sizes.append(Make.size(f))
 
     @property
     def acceptable_names(self):
@@ -83,55 +67,123 @@ class MockFilm:
             
 
 class MakeFilmsResult:
-    def __init__(self, good, bad):
-        self.all = good + bad
-        self.good = good
-        self.bad = bad
+    def __init__(self, good: ['MockFilm'], bad: ['MockFilm']):
+        self.all: ['MockFilm'] = good + bad
+        self.good: ['MockFilm'] = good
+        self.bad: ['MockFilm'] = bad
+        
+    @property
+    def all_files(self) -> ['MockFilm']:
+        return sorted([x for m in self.all for x in m.make if x],
+                       key=lambda x: Path(x).name.lower())
 
-def make_mock_file(path, size):
+class Make:
+
+    @staticmethod
+    def size(path: Union[str, Path]) -> int:
+
+        global KB
+        global MB
+        global GB
+
+        path = Path(path)
+
+        # 720p mkv
+        if re.search(r'\b720p?\b', str(path), re.I):
+            return random.randrange(int(3 * GB), int(7 * GB))
+        
+        # 1080p mkv
+        elif re.search(r'\b1080p?\b', str(path), re.I):
+            return random.randrange(int(7 * GB), int(15 * GB))
+        
+        # 4K mkv
+        elif re.search(r'\b(2160p?|4k)\b', str(path), re.I):
+            return random.randrange(int(18 * GB), int(26 * GB))
+        
+        # .avi or SD mkv
+        elif (path.suffix.lower() == ['.avi'] 
+              or re.search(r'\b(DVD?|HDTV)\b', str(path), re.I)):
+            return random.randrange(int(750 * MB), int(1300 * MB))
+        
+        # junk file
+        elif path.suffix.lower() in ['.mkv', '.mp4']:
+            return random.randrange(10 * MB, 50 * MB)
+        
+        # Something else
+        else:
+            return random.randrange(int(5 * KB), int(150 * KB))
     
-    Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
+    @staticmethod
+    def empty_dirs():
+        paths = [conftest.src_path, conftest.src_path2] + list(set(conftest.dst_paths.values()))
+        [Path(dr).mkdir(parents=True, exist_ok=True) for dr in paths]
+
+    @staticmethod
+    def mock_file(path, size=0):
+        
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        
+        # Force size to be an integer
+        size = int(round(size)) if size and size > 0 else Make.size(path)
+
+        f = open(path, 'wb')
+        f.seek(size-1)
+        f.write(b'\0')
+        f.close()
+        
+    @staticmethod
+    def mock_files(*paths: Union[str, list]):
+        global MB
+        
+        for f in paths:
+            (path, size) = f if type(f) is tuple else (f, 0)
+            assert(path.is_absolute())
+            Make.mock_file(path, size * MB)
+
+    @staticmethod
+    def mock_src_files(*files: Union[str, list], src_path: str = None):
+        global MB
+        
+        src_path = src_path or conftest.src_path
+        for f in files:
+            assert(not f.is_absolute())
+            (name, size) = f if type(f) is tuple else (f, 0)
+            Make.mock_file(src_path / name, size * MB)
     
-    # Force size to be an integer
-    size = int(round(size))
+    @staticmethod
+    def mock_dst_files(files: dict):
+        global MB
+        
+        for k, v in files.items():
+            (name, size) = v if type(v) is tuple else (v, 0)
+            Make.mock_file(conftest.dst_paths[k] / name, size * MB)
 
-    f = open(path, 'wb')
-    f.seek(size)
-    f.write(b'\0')
-    f.close()
+    @staticmethod
+    def all_mock_files() -> MakeFilmsResult:
+        good: ['MockFilm'] = []
+        bad: ['MockFilm'] = []
 
-def make_all_mock_files(json_path, files_path):
-    global gb
-    global mb
+        # Clean up first
+        try:
+            shutil.rmtree(conftest.src_path)
+        except Exception:
+            pass
 
-    good = []
-    bad = []
+        with io.open(conftest.files_root / 'files.json', mode="r", encoding="utf-8") as json_data:
+            test_films = sorted(json.load(json_data)['test_films'], 
+                                key=lambda k: re.sub(r'^the\W*', '', k['make'][0].lower(), flags=re.I))
 
-    search_dir = os.path.join(os.path.dirname(__file__), files_path)
-    json_path = os.path.join(os.path.dirname(__file__), os.path.basename(json_path))
+            for tf in [MockFilm(f) for f in test_films if 'skip' not in f]:
 
-    # Clean up first
-    try:
-        shutil.rmtree(search_dir)
-    except Exception:
-        pass
+                for i, file in enumerate(tf.make):
+                    Make.mock_file(Path(conftest.src_path) / file, tf.sizes[i])
 
-    with io.open(json_path, mode="r", encoding="utf-8") as json_data:
-        test_films = list(sorted(json.load(json_data)[
-                          'test_films'], key=lambda k: re.sub(re.compile(r'^the\W*', re.I), '', k['make'][0].lower())))
+                if len(tf.expect) > 0 and tf.tmdb_id is not None:
+                    good.append(tf)
+                else:
+                    bad.append(tf)
+                                
+            return MakeFilmsResult(good, bad)
 
-        for tf in [MockFilm(f) for f in test_films if 'skip' not in f]:
-
-            for i, file in enumerate(tf.make):
-                file = os.path.join(search_dir, file)
-                make_mock_file(file, tf.sizes[i])
-
-            if len(tf.expect) > 0 and tf.tmdb_id is not None:
-                good.append(tf)
-            else:
-                bad.append(tf)
-                            
-        return MakeFilmsResult(good, bad)
-
-if __name__ == '__main__':
-    make_all_mock_files('files.json', 'files/#new/')
+# if __name__ == '__main__':
+#     make_all_mock_files('files.json', 'files/#new/')

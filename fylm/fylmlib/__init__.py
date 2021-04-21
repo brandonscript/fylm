@@ -39,7 +39,7 @@ from fylmlib.cursor import Cursor
 from fylmlib.duplicates import Duplicates
 from fylmlib.film import Film
 from fylmlib.interactive import Interactive
-from fylmlib.operations import FilmPath, Find, dirops, fileops
+from fylmlib.operations import *
 from fylmlib.notify import Notify
 # TODO: deprecate all dirops, fileops
 from fylmlib.processor import Processor

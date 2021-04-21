@@ -25,9 +25,10 @@ human-readable information to the console/log.
 """
 
 import re
-import copy
 import nltk
+from copy import copy
 from nltk.corpus import wordnet as wn
+from typing import Union
 
 from fylmlib.enums import *
 import fylmlib.config as config
@@ -44,7 +45,7 @@ p = inflect.engine()
 class Format:
 
     class Rename:
-        r"""Build a new file or folder name from the specified renaming pattern.
+        r"""Build a new file and folder name object from the specified renaming pattern.
 
         Using regular expressions and a { } templating syntax, construct
         a new filename by mapping available properties to config.rename_pattern.
@@ -55,12 +56,9 @@ class Format:
 
         Args:
             A Film.File object to build a path from.
-
-        Returns:
-            A new filename/foldername based on config.rename_pattern.(file|folder).
         """
 
-        def __init__(self, file: 'Film.File', build_for: RenameStyle):
+        def __init__(self, file: 'Film.File'):
             """Initialize the new_basename instance
 
             Args:
@@ -68,13 +66,61 @@ class Format:
                 build_for (RenameStyle): [description]
             """
             self.file = file
-            self.build_for = build_for
+            self.filename = None
+            self.dirname = None
 
-        def build(self):
+        def build(self) -> 'Rename':
+            """Builds a string representation of a new path"""
+            
+            # Make sure file is set
+            try:
+                assert(self.file and type(self.file).name == 'Film.File')
+            except AttributeError:
+                raise AssertionError("Called 'build' but 'file' wasn't set.")
+                
+            # Create mutable copies of the original renaming patterns
+            file_template = copy(config.rename_pattern.file)
+            dir_template = copy(config.rename_pattern.folder)
+            
+            self.filename = self._map_template(file_template)
+            self.dirname = self._map_template(dir_template)
+            
+        @property
+        def filmrel(self) -> 'Path':
+            """Generates a Path object from the given string.
 
-            # Create a mutable copy of the original renaming pattern
-            template = copy.copy(config.rename_pattern.file if build_for ==
-                                RenameStyle.FILE else config.rename_pattern.folder)
+            Returns:
+                Path: A Path object from the given string.
+            """
+            if not self.filename:
+                raise AttributeError(
+                    f"Could not build path for '{self.file.filename}'; 'filename' attribute is missing.\n"
+                    f"You must initalize Rename then call build() before accessing 'filmrel'.")
+                
+            if config.use_folders and not self.dirname:
+                raise AttributeError(
+                    f"Could not build path for '{self.file.filename}'; 'dirname' attribute is missing.\n"
+                    f"You must initalize Rename then call build() before accessing 'filmrel'.")
+                
+            # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
+            # Credit: https://stackoverflow.com/a/34504896/1214800
+            if sys.platform == 'darwin' and re.search(r'/', self.filename):
+                self.filename - self.filename.replace(r'/', '-')
+            
+            if config.use_folders:
+                return Path(self.dirname).joinpath(self.filename)
+            else:
+                return Path(self.filename)
+            
+        def _map_template(self, template: str) -> str:
+            """Maps a pattern to a string given the template mask provided.
+            
+            Args:
+                template (str): The template.
+
+            Returns:
+                str: Name derived from the template.
+            """
 
             # Generate a key-value map of available template properties,
             # each mapped to its associated film property. These need to
@@ -119,7 +165,7 @@ class Format:
                 # Update the template by replacing the original template match (e.g. `{title}`)
                 # with the replacement (e.g. `Furngully The Last Rainforest`).
                 template = re.sub(rx, str(replacement)
-                                if value is not None else '', template)
+                                  if value is not None else '', template)
 
             # Convert escaped template characters to un-escaped plain { }.
             template = template.replace(r'\{', '{')
@@ -138,8 +184,47 @@ class Format:
 
             return strip_extra_whitespace(template)
 
+    def pretty_size(bytes: Union[int, float], units: Units = None, precision: int = None) -> str:
+        """Returns a human readable string representation of bytes.
+
+        Args:
+            bytes (int, float): bytes, or passed multiple of bytes from a recursive call.
+            units (Units, optional): Specific Units type to format to. Defaults to None.
+            precision (int, optional): Decimal places. Default is 2 for GB, 1 for MB, otherwise 0.
+
+        Returns:
+            str: A human readable string representation of bytes, e.g. 4.12 GiB or 210.2 MB.
+        """
+        
+        if units and 'i' in units.name or not units and config.size_units_ibi:
+            sizes = ['B', 'KiB', 'MiB', 'GiB']
+            cutoff = 1024
+        else:
+            sizes = ['B', 'KB', 'MB', 'GB']
+            cutoff = 1000
+            
+        units = units if type(units) is list else [units.name] if units else sizes
+                
+        p = lambda x, u: x if x is not None else (2 if 'G' in u else 
+                                               1 if 'M' in u else 0)
+        
+        i = 0
+        u = units
+        prec = 0
+        while bytes > cutoff:
+            bytes /= cutoff
+            i += 1
+            u = u[1:] if len(u) > 1 else u
+            want = u[i] if len(u) > i else u[-1]
+            current = sizes[i]
+            prec = p(precision, current)
+            if current == want:
+                break
+            
+        return f'{bytes:,.{prec}f} {u[0]}'
+
     @staticmethod
-    def pretty_size(size_in_bytes=0, measure=None):
+    def pretty_size_old(size_in_bytes=0, ):
         """Pretty format filesize/size_in_bytes into human-readable strings.
 
         Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,
@@ -148,46 +233,46 @@ class Format:
 
         Args:
             size_in_bytes (int): file size in bytes
-            measure (str, utf-8): (optional) key value for the pretty_size_map to force
-                            formatting to a specific measurement.
+            measure (enums.Size, optional): Key value for the pretty_size_map to 
+                                   force formatting to a specific measurement.
         Returns:
             A human-readable formatted filesize string.
         """
 
         # Force size_in_bytes to be an integer
-        size_in_bytes = size_in_bytes or 0
+        b = size_in_bytes or 0
 
         # Map out the math required to re-calculate bytes into human-readable formats.
         pretty_size_map = {
 
             # Do not round.
-            "B": size_in_bytes,
+            "B": b,
 
             # Round to nearest whole number.
-            "KB": round(size_in_bytes / 1000.0, 0),
-            "KiB": round(size_in_bytes / 1024.0, 0),
+            "KB": round(b / 1000.0, decimal_places or 0),
+            "KiB": round(b / 1024.0, decimal_places or 0),
 
             # Round to one decimal place.
-            "MB": round(size_in_bytes / 1000.0 / 1000.0, 1),
-            "MiB": round(size_in_bytes / 1024.0 / 1024.0, 1),
+            "MB": round(b / 1000.0 / 1000.0, decimal_places or 1),
+            "MiB": round(b / 1024.0 / 1024.0, decimal_places or 1),
 
             # Round to two decimal places.
-            "GB": round(size_in_bytes / 1000.0 / 1000.0 / 1000.0, 2),
-            "GiB": round(size_in_bytes / 1024.0 / 1024.0 / 1024.0, 2)
+            "GB": round(b / 1000.0 / 1000.0 / 1000.0, decimal_places or 2),
+            "GiB": round(b / 1024.0 / 1024.0 / 1024.0, decimal_places or 2)
         }
 
         # If measure was specified, format and return. This is usually used when calling
         # this function recursively, but can be called manually.
         if measure:
-            return f'{pretty_size_map[measure]} {measure}'
-        elif pretty_size_map['GiB'] > 1:
-            return pretty_size(size_in_bytes, 'GiB')
+            return f'{pretty_size_map[measure.value]} {measure.value}'
+        elif pretty_size_map[Size.GiB] > 1:
+            return Format.pretty_size(b, 'GiB')
         elif pretty_size_map['MiB'] > 1:
-            return pretty_size(size_in_bytes, 'MiB')
+            return Format.pretty_size(b, 'MiB')
         elif pretty_size_map['KiB'] > 1:
-            return pretty_size(size_in_bytes, 'KiB')
+            return Format.pretty_size(b, 'KiB')
         else:
-            return f'{size_in_bytes:,.0f} B'
+            return f'{b:,.0f} B'
 
     @staticmethod
     def pretty_size_diff(left: str, right: str):

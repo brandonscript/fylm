@@ -20,6 +20,7 @@
 """A set of general use helper functions"""
 
 from typing import Iterable, Union
+import itertools
 
 from fylmlib.constants import *
 
@@ -50,8 +51,22 @@ def last(iterable: Iterable, where=None, default=None):
         *_, last = ((x for x in iterable if where(x)) 
                     if where else iterable)
         return last
-    except:
+    except (StopIteration, ValueError):
         return default
+    
+def iterunshift(*prepend, to: Iterable):
+    """Uses itertools.chain to prepend an object or list 
+    to the beginining of an iterator.
+    
+    Args:
+        prepend (object or list): An object or list to prepend.
+        to (Iterable): The iterable to prepend to."""
+    
+    for p in prepend:
+        if not type(p) is list:
+            p = [p]
+        to = itertools.chain(p, to)
+    return to
 
 def iterempty(iterable: Iterable) -> bool:
     """Checks if an iterable is empty.
@@ -63,6 +78,19 @@ def iterempty(iterable: Iterable) -> bool:
         bool: True if the iterable is empty.
     """
     return any(True for _ in iterator)
+
+
+def iterlen(iterable: Iterable) -> int:
+    """Counts the number of items in the iterator.
+    
+    Args:
+        iterable (Iterable): Iterable to count.
+        
+    Returns:
+        int: Counts the number of items in the iterator.
+    """
+
+    return sum(1 for _ in iterable)
 
 def is_sys_file(path: Union[str, 'Path', 'FilmPath']) -> bool:
     """Checks to see if the path provided is a system file.
@@ -81,4 +109,3 @@ def is_sys_file(path: Union[str, 'Path', 'FilmPath']) -> bool:
         
     return (x.lower().startswith('.') 
             or x.lower() in [sys.lower() for sys in SYS_FILES])
-    

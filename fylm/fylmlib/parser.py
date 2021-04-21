@@ -52,16 +52,7 @@ class Parser:
     """
     def __init__(self, path: Union[str, 'Path', 'FilmPath'], mediainfo=None):
         
-        if type(path) is str:
-            self._p = path    
-        else:
-            from fylmlib.operations import FilmPath
-            f = FilmPath(path)
-            try:
-                self._p = str(f) if f == f.filmroot else str(f.relative_to(f.filmroot))
-            except:
-                self._p = str(f)
-            
+        self.path = str(path)
         self.mediainfo = mediainfo
     
     @lazy
@@ -162,9 +153,8 @@ class Parser:
         """
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and
-        # no one will use python anymore). Also convert the matches iterator
-        # to a list.
-        m = last(re.finditer(patterns.YEAR, self._p), default=None)
+        # no one will use python anymore).
+        m = last(re.finditer(patterns.YEAR, self.path), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
         return int(m.group('year')) if m else None

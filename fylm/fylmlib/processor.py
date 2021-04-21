@@ -324,10 +324,10 @@ class _QueuedMoveOperation():
             return False
 
         # If an identically named duplicate exists, check the upgrade table to see if it is OK for upgrade
-        ok_to_upgrade = len(duplicates.find_exact(self.file.parent_film)) > 0 and len(duplicates.find_upgradable(self.file.parent_film)) > 0
+        should_upgrade = len(duplicates.find_exact(self.file.parent_film)) > 0 and len(duplicates.find_upgradable(self.file.parent_film)) > 0
 
         # Execute the move
-        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.file.destination_path, ok_to_upgrade)
+        self.file.did_move = ops.fileops.safe_move(self.file.source_path, self.file.destination_path, should_upgrade)
 
         # Clean up duplicates if all the files in the parent film have been moved
         if (len(self.file.parent_film.duplicate_files) > 0 

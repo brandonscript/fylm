@@ -377,18 +377,18 @@ class Console(object):
         """
         if config.debug is True:
             # TODO: Debug shouldn't also be printing info
-            log.debug(s)
-            Console().bold().debug(s).print()
+            Log.debug(s)
+            cls().bold().debug(s).print()
 
     @classmethod
-    def error(cls, s: str='', x=Exception):
+    def error(cls, s: str='', x: Exception=None):
         """Print error details.
 
         Args:
-            s: (str, utf-8) String to print
-            x: (Exception)
+            s (str): String to print.
+            x (Exception, optional): Exception to raise.
         """
-        log.error(s)
-        Console().bold().error(s).print()
+        Log.error(s)
+        cls().bold().error(s).print()
         if x:
-            x(s)
+            raise type(x)(s)

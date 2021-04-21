@@ -548,13 +548,7 @@ class Film:
         @lazy
         def is_valid(self) -> bool:
             # A valid file must have a valid extension
-            return (Film.Utils.has_valid_ext(self)
-
-            # It must not contain an ignored string (e.g. 'sample')
-            and not ops.FilmPath.Utils.has_ignored_string(self.original_path)
-
-            # It must be large enough
-            and Film.Utils.is_acceptable_size(self))
+            return Film.Utils.is_valid(self)
 
         @property
         def is_video(self) -> bool:
@@ -565,6 +559,7 @@ class Film:
             return self.ext == '.srt' or self.ext == '.sub'
 
     class Utils:
+        # TODO: Most of these should be in FilmPath or ops
         """A collection of helper functions for Film objects."""
         
         @classmethod
@@ -630,6 +625,25 @@ class Film:
             """
             return file.is_file and (file.ext.lower() in 
                         config.video_exts + config.extra_exts)
+            
+        @classmethod
+        def is_valid(cls, file: 'Film.File') -> bool:
+            """Check if the file is valid, according to valid film file criteria. To be valid, 
+            it must have a valid extension, no ignored strings, and be large enough.
+
+            Args:
+                file (Film.File): File to check its validity
+
+            Returns:
+                bool: True if the file is valid, otherwise False.
+            """
+            return (Film.Utils.has_valid_ext(file)
+
+                    # It must not contain an ignored string (e.g. 'sample')
+                    and not ops.FilmPath.Utils.has_ignored_string(file.original_path)
+
+                    # It must be large enough
+                    and Film.Utils.is_acceptable_size(file))
 
         @classmethod
         def is_acceptable_size(cls, file: 'Film.File') -> bool:

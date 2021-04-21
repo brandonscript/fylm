@@ -19,314 +19,755 @@
 
 import os
 import sys
-from time import time
+from timeit import default_timer as timer
 
 import pytest
 
 import fylmlib.config as config
-import fylmlib.operations as ops
+from fylmlib.operations import *
+from fylmlib.tools import *
+from fylmlib.enums import *
 import conftest
 import fylm
-import make
+from make import Make, GB, MB, KB
 from pathlib import Path
 
-t = 100 if os.environ.get('TRAVIS') else 1
+# Travis override for mini file sizes
+# Multipy any size measurement by T to get an actual size
+T = 1024 if os.environ.get('TRAVIS') else 1
+    
+def is_alphabetical(l: [Path]):
+    return all(l[i].name.lower() <= l[i+1].name.lower()
+               for i in range(len(l)-1))
+
+
+SRC = conftest.src_path
+
+ALITA = 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE'
+ATMITW = 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE'
+AVATAR = 'Avatar.2009.BluRay.2160p.HDR.x265-xWinG'
+DEEP = '#deep'
+STARLORD = 'Starlord.2022.1080p/Starlord.mkv'
+TTOP = '2001.A.Space.Odyssey.1968.1080p'
+ZELDA = 'Zelda.A.Link.To.The.Past.1991.1080p.Bluray.mkv'
+ZORG = 'Zorg.2.1989.1080p.Bluray.mkv'
+
+class TestDelete(object):
+    
+    def test_delete_dir(self):
+        
+        conftest.remake_files()
+        
+        d = first(SRC.iterdir(), where=lambda x: x.is_dir())
+
+        assert(d.is_dir())
+        assert(Size.calc(d) > 1000)
+
+        # Make sure the dir is small enough to be deleted
+        for x in d.iterdir():
+            x.unlink()
+        assert(Size.calc(d) < config.min_filesize.default)
+        
+        Delete.dir(d)
+        assert(not d.is_dir())
+        
+    def test_delete_dir_testmode(self):
+
+        conftest.remake_files()
+        config.test = True
+        assert(config.test is True)
+        
+        d = first(SRC.iterdir(), where=lambda x: x.is_dir())
+
+        assert(d.is_dir())
+        assert(Size.calc(d) > 1000)
+
+        for x in d.iterdir():
+            x.unlink()
+            
+        # Make sure the dir is small enough to be deleted
+        assert(Size.calc(d) < config.min_filesize.default)
+        Delete.dir(d)
+        assert(d.is_dir())
+        
+        assert(SRC.exists())
+        Create.dirs(SRC)
+        assert(SRC.exists())
+        
+    def test_fail_delete_non_empty_dir(self):
+        
+        conftest.remake_files()
+        
+        d = first(SRC.iterdir(), where=lambda x: x.is_dir())
+        orig_size = Size.calc(d)
+        
+        assert(d.is_dir())
+        assert(Size.calc(d) > 1000)
+        Delete.dir(d)
+        # Test should not raise an error, but should silently not delete
+        assert(d.is_dir())
+        assert(Size.calc(d) == orig_size)
+        
+    def test_delete_min_filesize(self):
+
+        conftest.cleanup_all()
+        
+        main = SRC / 'Yates'
+        create_path = main / 'Gilbert/Holtzmann/Tolan'
+        
+        assert(config.min_filesize['720p'] == 50)
+        assert(config.min_filesize['1080p'] == 100)
+        assert(config.min_filesize['2160p'] == 200)
+        assert(config.min_filesize['SD'] == 20)
+        assert(config.min_filesize['default'] == 20)
+
+        files = [
+            'Yates/Abby.txt',
+            'Yates/Gilbert/Erin.txt',
+            'Yates/Gilbert/Holtzmann/Jillian.txt',
+            'Yates/Gilbert/Holtzmann/Tolan/Patty.txt'
+        ]
+        
+        # Test 1: Files do not exceed max_size
+        for f in files:
+            Make.mock_file(SRC / f, 4 * KB)
+
+        assert(iterlen(Find.deep_files(SRC)) == 4)
+
+        Delete.dir(main)
+
+        assert(iterlen(Find.deep_files(SRC)) == 0)
+        assert(not main.exists())
+                       
+        # Test 2: Files exceed max_size
+        conftest.cleanup_all()
+        
+        for f in files:
+            Make.mock_file(SRC / f, 40 * MB)
+
+        assert(iterlen(Find.deep_files(SRC)) == 4)
+
+        Delete.dir(main)
+
+        assert(iterlen(Find.deep_files(SRC)) == 4)
+        assert(main.exists())
+        
+    def test_fail_delete_force(self):
+
+        conftest.remake_files()
+
+        d = first(SRC.iterdir(), where=lambda x: x.is_dir())
+        orig_size = Size.calc(d)
+
+        assert(d.is_dir())
+        assert(Size.calc(d) > 1000)
+        Delete.dir(d, force=True)
+        # Test should not raise an error, but should silently delete
+        assert(not d.is_dir())
+    
+    @pytest.mark.xfail(raises=OSError)
+    def test_fail_delete_src_dir(self):
+
+        conftest.remake_files()
+
+        assert(SRC.is_dir())
+        assert(Size.calc(SRC) > 1000)
+        Delete.dir(SRC)
+        assert(SRC.is_dir())
+        
+    def test_delete_files(self):
+        pass
+    
+    def test_delete_file(self):
+        pass    
+
+class TestCreate(object):
+    
+    def test_create_dirs(self):
+        
+        conftest.cleanup_all()
+        assert(not SRC.exists())
+        Create.dirs(SRC)
+        assert(SRC.is_dir())
+        
+    def test_create_dirs_multi(self):
+
+        conftest.cleanup_all()
+        assert(not SRC.exists())
+        Create.dirs(SRC / 'Curie',
+                    SRC / 'Curie',
+                    SRC / 'Seager')
+        assert(SRC.is_dir())
+        assert((SRC / 'Curie').is_dir())
+        assert((SRC / 'Seager').is_dir())
+        
+    def test_create_dirs_testmode(self):
+        
+        conftest.cleanup_all()
+        config.test = True
+        assert(config.test is True)
+        assert(not SRC.exists())
+        Create.dirs(SRC)
+        assert(not SRC.exists())
+        
+    @pytest.mark.xfail(raises=PermissionError)
+    def test_create_dirs_not_writable(self):
+
+        if sys.platform == "win32":
+            Create.dirs('C:\\Windows\\System32\\ShouldNotBeWritable')
+        else:
+            Create.dirs('/bin/ShouldNotBeWritable')
 
 class TestFilmPath(object):
+    
+    # Init
 
     def test_init(self):
+        
+        fp = FilmPath('/') / STARLORD
+        assert(fp)
+        assert(fp.name == 'Starlord.mkv')
+        assert(fp.stem == 'Starlord')
+        assert(fp.suffix == '.mkv')
+    
+    def init_from_pathlib_path(self):
+        fp = FilmPath(SRC / STARLORD)
+        assert(fp)
+        assert(fp == Path(fp))
+        
+    def test_init_with_origin(self):
+        fp = FilmPath(SRC / STARLORD, origin=FilmPath(SRC))
+        assert(fp)
+        assert(fp == Path(fp))
+        assert(fp.origin == SRC)
+        
+    def test_init_without_origin(self):
+        fp = FilmPath(SRC / ALITA)
+        assert(fp == Path(fp))
+        assert(fp.origin == SRC / ALITA)
+        
+    def test_init_by_slash_operator(self):
+        fp1 = FilmPath(SRC) / ALITA
+        assert(fp1.origin == SRC)
+        fp2 = FilmPath(SRC / ALITA)
+        assert(fp2.origin == SRC / ALITA)
+        assert(FilmPath(SRC) / ALITA).origin == SRC
+        
+    def test_init_by_comma_operator(self):
+        fp1 = FilmPath(SRC, ALITA)
+        assert(fp1.origin == SRC / ALITA)
+        assert(FilmPath(SRC, ALITA).origin == SRC / ALITA)
+    
+    def test_init_with_dirs(self):
+        
+        Make.all_mock_files()
 
-        conftest.make_empty_dirs()
-        
-        path = conftest.full_path('files/#new')
-
-        made = conftest.make_all_mock_files(
-            'files.json', path)
-        
-        paths = ops.Find.existing_films('/volumes/Films/HD')
-        paths = ops.Find.sync_attrs(paths, ['maybe_film'])
-        # paths = ops.Find.existing_films('/Users/brandonscript/Dev/fylm/fylm/tests/files/#new/#4K')
-        # print()
-        # for p in paths:
-        #     print(p.origin, p)
-        
-        # for d in paths[3].descendents:
-        #     print(d)
-        # if False:    
-        for p in paths:
+        dirs = [d for d in SRC.iterdir() if d.is_dir()]
+        fp = FilmPath(SRC, dirs=dirs)
+        assert(fp)
+        assert(len(fp.dirs) == 59)
             
-            # print(p, p.container.name, len(p.dirs))
-            # t1 = time()
-            # if p.is_file():
-            print(
-                # p.filmrel if p.maybe_film else p.branch.name
-                #   p.relpath 
-                p.relative_to(p.origin)
-                # , 'DID_SYNC' if p._did_sync else 'X'                
-                # , 'BRANCH' if p.is_branch else ''
-                # , 'CONTAINER' if p.is_container else ''
-                # , 'TERMINUS' if p.is_terminus else ''
-                # , 'FILM' if p.maybe_film else ''
-                # , 'EMPTY' if p.is_empty else ''
-            )
-                    # if not p.year:
-                    #     p
-                # t2 = time()
-                # print(f'Elapsed time is {t2 - t1} seconds.')
-                # if not p.is_origin and p.maybe_film:
-                #     print(p)
-
+    def test_init_with_files(self):
         
-        # FilmPath
+        Make.all_mock_files()
 
-# @pytest.mark.skip()
-class TestDirOperations(object):
+        files = [d for d in SRC.iterdir() if d.is_file() and not is_sys_file(d)]
+        fp = FilmPath(SRC, files=files)
+        assert(fp)
+        assert(len(fp.files) == 65)
+    
+    # Internal
+    
+    def test_init_from_kwargs(self):
+    
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'), origin=SRC)
+        
+        args = {**{'_parts': alita._parts}, **alita.__dict__}
+        clone = FilmPath._from_kwargs(tuple(args.items()))
+        
+        assert(clone == alita)
+        assert(clone.origin == SRC)
+    
+    def test_pickle(self):
+        fp = FilmPath(SRC / STARLORD,
+                      origin=FilmPath(SRC))
+        d = pickle.dumps(fp)
+        r = pickle.loads(d)
+        assert(fp == r)
+        assert(fp.origin == r.origin)
+    
+    # Overrides
 
-    def test_verify_root_paths_exist(self):
+    def test_joinpath(self):
+        fp = FilmPath(SRC)
+        assert(fp == SRC)
+        fp.origin = '/'
+        assert(type(fp.origin) is type(Path()))
+        assert(fp.origin == Path('/'))
+        j = fp.joinpath(STARLORD)
+        assert(j == SRC / STARLORD)
+        assert(type(fp.origin) is type(Path()))
+        assert(fp.origin == Path('/'))
+        
+    def test_parent(self):
+        fp = FilmPath(SRC / STARLORD,
+                      origin=FilmPath(SRC))
+        assert(fp.parent.origin == SRC)
+        assert(fp.parent == Path(SRC) / Path(STARLORD).parent.name)
 
-        if sys.platform == "win32":
-            ops.dirops.verify_root_paths_exist(['C:\\'])
-        else:
-            ops.dirops.verify_root_paths_exist(['/bin'])
+    def test_parents(self):
+        assert(len(FilmPath(SRC / STARLORD).parents)
+               == len(Path(SRC / STARLORD).parents))
+        for p in FilmPath(SRC / STARLORD).parents:
+            assert(p.origin)
+            
+    def test_relative_to(self):
+        fp = FilmPath(SRC / STARLORD,
+                      origin=FilmPath(SRC))
+        assert(fp.relative_to(SRC) == Path(STARLORD))
+        assert(fp.relative_to(SRC).origin)
 
-    @pytest.mark.xfail(raises=(OSError, IOError))
-    def test_verify_root_paths_exist_err(self):
+    # Attributes
 
-        if sys.platform == "win32":
-            ops.dirops.verify_root_paths_exist(['C:\\__THERE_IS_NO_SPOON__'])
-        else:
-            ops.dirops.verify_root_paths_exist(['/__THERE_IS_NO_SPOON__'])
+    def test_origin(self):
+        assert(FilmPath(f'/{STARLORD}').origin == Path(f'/{STARLORD}'))
+        assert(FilmPath(SRC).origin == SRC)
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        assert(alita.origin == alita)
 
-    @pytest.mark.skip(reason='Cannot reliably test multiple partitions/mount points')
-    def test_is_same_partition(self):
-        pass
-
-    def test_get_existing_films(self):
-
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.duplicates.enabled is True)
-
-        files = {
-            '2160p': 'Rogue.One.A.Star.Wars.Story.2016.4K.2160p.DTS.mp4',
-            '1080p': 'Rogue.One.A.Star.Wars.Story.2016.1080p.BluRay.DTS.x264-group.mkv',
-            '720p': 'Rogue.One.A.Star.Wars.Story.2016.720p.DTS.x264-group.mkv',
-            'SD': 'Rogue.One.A.Star.Wars.Story.2016.avi'
-        }
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['2160p'], files['2160p']), 52234 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['1080p'], files['1080p']), 11234 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['720p'], files['720p']), 6590 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_dst_paths['SD'], files['SD']), 723 * make.mb * t)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
-
-        assert(ops.dirops._existing_films is None)
-        assert(len(ops.dirops.get_existing_films(conftest.films_dst_paths)) == 4)
-        assert(ops.dirops._existing_films is not None and len(ops.dirops._existing_films) == 4)
-
-    def test_find_new_films(self):
-
-        conftest._setup()
-
-        all_films = ops.dirops.find_new_films([conftest.films_src_path])
-        valid_films = list(filter(lambda film: not film.should_ignore, all_films))
-
-        # Assert that we're getting the expected number of films.
-        assert(len(all_films) == len(conftest.made.all))
-
-        # Assert that we're getting the expected number of valid films.
-        assert(len(valid_films) == len(conftest.made.good))
-
-    def test_find_new_films_multiple_dirs(self):
-
-        conftest._setup()
-
-        fylm.config.source_dirs.append(conftest.films_src_path2)
+    def test_branch(self):
+        
+        files = [ALITA, ATMITW]
 
         # Make files in alternate path
-
-        make.make_mock_file(os.path.join(
-            conftest.films_src_path2, 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE/Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE.mkv'),
-            8132 * make.mb * t)
-
-        make.make_mock_file(os.path.join(
-            conftest.films_src_path2, 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE/All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE.mkv'), 
-            7354 * make.mb * t)
-
-        all_films = ops.dirops.find_new_films(fylm.config.source_dirs)
-        valid_films = list(filter(lambda film: not film.should_ignore, all_films))
-
-        # Assert that we're getting the expected number of films. (+2 for the 2 we added)
-        assert(len(all_films) == len(conftest.made.all) + 2)
-
-        # Assert that we're getting the expected number of valid films. (+2 for the 2 we added)
-        assert(len(valid_films) == len(conftest.made.good) + 2)
-
-        # Assert that the list is sorted alphabetically (case insensitive is fine)
-        assert(all(valid_films[i].title.lower() <= valid_films[i+1].title.lower()
-                   for i in range(len(valid_films)-1)))
-
-    def test_get_valid_files(self):
-
-        conftest._setup()
-
-        fylm.config.min_filesize = 50 # min filesize in MB
-        assert(fylm.config.min_filesize == 50)
-
-        files = [
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sample.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/GROUP.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/RO-ad-scene-WATCHME.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/subs-english.srt',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.nfo',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sfv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Cover.jpg'
-        ]
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb * t)
+        for name in files:
+            Make.mock_files((SRC / name / name).with_suffix('.mkv'))
+            
+        Make.mock_files(SRC / DEEP / ZELDA)
+        Make.mock_files(SRC / DEEP / ZORG)
+            
+        found = Find.new(SRC)
         
-        # Assert that there is only one test film identified at the source
-        assert(len(ops.dirops.find_new_films([conftest.films_src_path])) == 1)
-
-        valid_files = ops.dirops.get_valid_files(
-            os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
-        )
-
-        # Assert that of the 8 files presented, only two are valid
-        #   Main video file and .srt
-        assert(len(valid_files) == 2)
-
-        assert(os.path.join(conftest.films_src_path, files[0]) in valid_files) # Main video file
-        assert(os.path.join(conftest.films_src_path, files[4]) in valid_files) # .srt
-
-    def get_invaild_files(self):
-
-        conftest._setup()
-
-        fylm.config.min_filesize = 50 # min filesize in MB
-        assert(fylm.config.min_filesize == 50)
-
-        files = [
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sample.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/GROUP.mkv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/subs-english.srt',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.nfo',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sfv',
-            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Cover.jpg'
-        ]
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),  134 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),   23 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  219 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),   14 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),    5 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    6 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[7]),    7 * make.mb * t)
+        for i in range(4, 7):
+            assert(found[i].branch == SRC)
+            
+        assert(found[2].branch == SRC / DEEP)
+        assert(found[3].branch == SRC / DEEP)
         
-        # Assert that there is only one test film identified at the source
-        assert(len(ops.dirops.find_new_films(conftest.films_src_path)) == 1)
+        Make.mock_files(FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv')))
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        assert(alita.branch == SRC)
+        
+        zelda = FilmPath(SRC) / DEEP / ZELDA
+        assert(zelda.branch == SRC / DEEP)
 
-        invalid_files = ops.dirops.get_invalid_files(
-            os.path.join(conftest.films_src_path, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
-        )
+    def test_descendents(self):
+        zelda = FilmPath(SRC / DEEP / ZELDA)
+        zorg = FilmPath(SRC / DEEP / ZORG)
+        Make.mock_files(zelda, zorg)
+        
+        deep = FilmPath(SRC / DEEP)
+        assert(len(list(deep.descendents)) == 2)
+        
+        for d in list(deep.descendents):
+            assert d.name == ZELDA or d.name == ZORG
+        assert(zelda.branch == SRC / DEEP)
+        assert(zorg.branch == SRC / DEEP)
 
-        # Assert that of the 8 files presented, 6 are invalid
-        assert(len(invalid_files) == 6)
+    def test_dirs(self):
+        
+        Make.all_mock_files()
+        
+        found = list(Find.shallow(SRC))
+        dirs = list(filter(lambda x: x.is_dir() and not x == SRC, found))
+        
+        assert(found[0].dirs)
+        assert(len(found[0].dirs) == len(dirs))
 
-        assert(os.path.join(conftest.films_src_path, files[0]) not in invalid_files) # Main video file
-        assert(os.path.join(conftest.films_src_path, files[4]) not in invalid_files) # .srt
+    def test_files(self):
+        Make.all_mock_files()
 
-    def test_sanitize_dir_list(self):
+        found = list(Find.shallow(SRC))
+        files = list(filter(lambda x: x.is_file() and not x == SRC, found))
 
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
+        assert(found[0].files)
+        assert(len(found[0].files) == len(files))
 
+    def test_filmrel(self):
+        
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
+        avatar = FilmPath(SRC / '#4K' / AVATAR)
+        empty = FilmPath(SRC / '#empty' / 'empty_dir')
+        notes = FilmPath(SRC / '#notes' / 'my_note.txt')
+        starlord = FilmPath(SRC / DEEP / STARLORD)
+        ttop = FilmPath((SRC / DEEP / TTOP / TTOP).with_suffix('.mkv'))
+        zelda = FilmPath(SRC / ZELDA)
+        
+        Create.dirs(avatar, empty)
+        Make.mock_files(alita,
+                        atmitw,
+                        notes,
+                        starlord,
+                        ttop,
+                        zelda)
+        
+        assert(not FilmPath(SRC).filmrel)
+        assert(alita.filmrel == Path(ALITA) / Path(ALITA).with_suffix('.mkv'))
+        assert(alita.parent.filmrel == Path(ALITA))
+        assert(atmitw.filmrel == Path(ATMITW) / Path(ATMITW).with_suffix('.mkv'))
+        assert(atmitw.parent.filmrel == Path(ATMITW))
+        assert(not avatar.filmrel)
+        assert(not empty.filmrel)
+        assert(not notes.filmrel)
+        assert(starlord.filmrel == Path(STARLORD))
+        assert(ttop.filmrel == Path(TTOP) / Path(TTOP).with_suffix('.mkv'))
+        assert(zelda.filmrel == Path(ZELDA))
+
+    def test_filmroot(self):
+        
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
+        avatar = FilmPath(SRC / '#4K' / AVATAR)
+        empty = FilmPath(SRC / '#empty' / 'empty_dir')
+        notes = FilmPath(SRC / '#notes' / 'my_note.txt')
+        starlord = FilmPath(SRC / DEEP / STARLORD)
+        ttop = FilmPath((SRC / DEEP / TTOP / TTOP).with_suffix('.mkv'))
+        zelda = FilmPath(SRC / ZELDA)
+
+        Create.dirs(avatar, empty)
+        Make.mock_files(alita,
+                        atmitw,
+                        notes,
+                        starlord,
+                        ttop,
+                        zelda)
+
+        assert(not FilmPath(SRC).filmroot)
+        assert(alita.filmroot == SRC / ALITA)
+        assert(alita.parent.filmroot == SRC / ALITA)
+        assert(atmitw.filmroot == SRC / ATMITW)
+        assert(atmitw.parent.filmroot == SRC / ATMITW)
+        assert(not avatar.filmroot)
+        assert(not empty.filmroot)
+        assert(not notes.filmroot)
+        assert(starlord.filmroot == starlord.parent)
+        assert(ttop.filmroot == ttop.parent)
+        assert(zelda.filmroot == zelda)
+
+    def test_is_empty(self):
+        
         files = [
-            '.DS_Store',
-            'Thumbs.db',
-            'sub/folder/.DS_Store',
-            'sub/folder/Thumbs.db',
-            'Amélie.avi',
-            'Nausicaä of the Valley of the Wind.avi',
-            'Hot Fuzz.avi'
+            'Yates/Abby.mkv',
+            'Yates/Gilbert/Erin.mkv',
+            'Yates/Gilbert/Holtzmann/Jillian.mkv',
+            'Yates/Gilbert/Holtzmann/Tolan/Patty.mkv',
+            'Yates/Thumbs.db',
+            'Roman/Nancy_Grace.mkv',
+            'Roman/Hamilton/Margaret.mkv',
+            'Roman/Hamilton/Ride/Sally.mkv',
+            'Roman/Hamilton/Ride/Jemison/Mae.mkv',
+            'Roman/.DS_Store'
         ]
 
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), (700 if f.endswith('.avi') else 1) * make.mb * t)
+            Make.mock_file(SRC / f)
 
-        loaded_files = ops.dirops.get_valid_files(conftest.films_src_path)
+        Create.dirs(SRC / 'Guinn', 
+                    SRC / 'Freese',
+                    SRC / 'Wu' / 'Vera')
+        
+        assert(not FilmPath(SRC / 'Yates').is_empty)
+        assert(not FilmPath(SRC / 'Yates/Gilbert').is_empty)
+        assert(not FilmPath(SRC / 'Yates/Gilbert/Holtzmann').is_empty)
+        assert(not FilmPath(SRC / 'Yates/Gilbert/Holtzmann/Tolan').is_empty)
+        assert(not FilmPath(SRC / 'Roman').is_empty)
+        assert(not FilmPath(SRC / 'Roman/Hamilton').is_empty)
+        assert(not FilmPath(SRC / 'Roman/Hamilton/Ride').is_empty)
+        assert(not FilmPath(SRC / 'Roman/Hamilton/Ride/Jemison').is_empty)
+        assert(not FilmPath(SRC / 'Wu').is_empty)
+        assert(FilmPath(SRC / 'Guinn').is_empty)
+        assert(FilmPath(SRC / 'Freese').is_empty)
+        assert(FilmPath(SRC / 'Wu' / 'Vera').is_empty)
 
-        assert(len(loaded_files) == 3)
-        assert('.DS_Store' not in loaded_files)
-        assert('Thumbs.db' not in loaded_files)
+    @pytest.mark.xfail(raises=NotADirectoryError)
+    def test_is_empty_file(self):
+        
+        Make.mock_file(SRC / 'Yates/Abby.mkv')        
+        assert(FilmPath(SRC / 'Yates/Abby.mkv').is_empty)
+        
+    def test_is_origin(self):
+        
+        Make.all_mock_files()
+        found = Find.deep(SRC)
+        one = first(found)
+        assert(one == SRC and one.is_origin)
+        for f in found: # For the remainder of the generator
+            assert(f != SRC and not f.is_origin and f.origin == SRC)
 
-    def test_create_deep(self):
+    def test_is_branch(self):
+        
+        Make.all_mock_files()
+        found = Find.deep(SRC)
+        for f in found:
+            if f == SRC:
+                assert(f.is_branch)
+            elif f == SRC / '#4K':
+                assert(f.is_branch)
+            elif f == SRC / '#4K' / DEEP:
+                assert(f.is_branch)
+            else:
+                assert(not f.is_branch)
 
-        conftest._setup()
-        fylm.config.test = False
-        assert(fylm.config.test is False)
-        conftest.cleanup_all()
+    def test_is_filmroot(self):
+        
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
+        avatar = FilmPath(SRC / '#4K' / AVATAR)
+        empty = FilmPath(SRC / '#empty' / 'empty_dir')
+        notes = FilmPath(SRC / '#notes' / 'my_note.txt')
+        starlord = FilmPath(SRC / DEEP / STARLORD)
+        zelda = FilmPath(SRC / ZELDA)
 
-        create_path = os.path.join(conftest.films_src_path, 'Yates/Gilbert/Holtzmann/Tolan')
+        Create.dirs(avatar, empty)
+        Make.mock_files(alita, 
+                        atmitw, 
+                        notes, 
+                        starlord, 
+                        zelda)
 
-        assert(not os.path.exists(conftest.films_src_path))
-        assert(not os.path.exists(create_path))
+        assert(not FilmPath(SRC).is_filmroot)
+        assert(not FilmPath(SRC / '#4K').is_filmroot)
+        assert(not FilmPath(SRC / DEEP).is_filmroot)
+        assert(not alita.is_filmroot)
+        assert(alita.parent.is_filmroot)
+        assert(not atmitw.is_filmroot)
+        assert(atmitw.parent.is_filmroot)
+        assert(not avatar.is_filmroot) # empty
+        assert(not avatar.parent.is_filmroot)
+        assert(not empty.is_filmroot)
+        assert(not empty.parent.is_filmroot)
+        assert(not notes.is_filmroot)
+        assert(not notes.parent.is_filmroot)
+        assert(not starlord.is_filmroot)
+        assert(starlord.parent.is_filmroot)
+        assert(zelda.is_filmroot)
+        assert(not zelda.parent.is_filmroot)
 
-        ops.dirops.create_deep(create_path)
+    def test_is_terminus(self):
+        
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        alita4k = FilmPath((SRC / '#4K' / ALITA).with_suffix('.mkv'))
+        atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
+        avatar = FilmPath(SRC / '#4K' / AVATAR)
+        empty = FilmPath(SRC / '#empty' / 'empty_dir')
+        notes = FilmPath(SRC / '#notes' / 'my_note.txt')
+        starlord = FilmPath(SRC / DEEP / STARLORD)
+        zelda = FilmPath(SRC / ZELDA)
 
-        assert(os.path.exists(conftest.films_src_path))
-        assert(os.path.exists(create_path))
+        Create.dirs(avatar, empty)
+        Make.mock_files(alita,
+                        alita4k,
+                        atmitw,
+                        notes,
+                        starlord,
+                        zelda)
+        
+        assert(not FilmPath(SRC).is_terminus)
+        assert(alita.is_terminus)
+        assert(alita.parent.is_terminus)
+        assert(avatar.is_terminus)
+        assert(FilmPath(SRC / '#4K').is_terminus)
+        assert(empty.is_terminus)
+        assert(notes.is_terminus)
+        assert(FilmPath(SRC / '#notes').is_terminus)
+        assert(FilmPath(SRC / DEEP / STARLORD).is_terminus)
+        assert(FilmPath(SRC / DEEP / STARLORD).parent.is_terminus)
 
-        conftest._setup()
-        fylm.config.test = True
-        assert(fylm.config.test is True)
-        conftest.cleanup_all()
+    def test_is_video_file(self):
+        
+        assert(not FilmPath(SRC / '#notes' / 'my_note.txt').is_video_file)
+        assert(not FilmPath(SRC / '#notes').is_video_file)
+        assert(FilmPath(SRC / STARLORD).is_video_file)
+        assert(FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv')).is_video_file)
+        assert(FilmPath((Path(ALITA) / ALITA).with_suffix('.mkv')).is_video_file)
 
-        ops.dirops.create_deep(create_path)
+    def test_has_ignored_string(self):
+        assert(not FilmPath('dir/A.File.1080p.bluray.x264-scene.mkv').has_ignored_string)
+        assert(FilmPath('sample').has_ignored_string)
+        assert(FilmPath('A.File.1080p.bluray.x264-scene.sample.mkv').has_ignored_string)
+        assert(FilmPath('SaMpLe').has_ignored_string)
+        assert(FilmPath('@eaDir').has_ignored_string)
+        assert(FilmPath('@EAdir').has_ignored_string)
+        assert(FilmPath('_UNPACK_a.file.named.something').has_ignored_string)
+        assert(FilmPath('_unpack_a.file.named.something').has_ignored_string)
 
-        assert(not os.path.exists(conftest.films_src_path))
-        assert(not os.path.exists(create_path))
+    def test_has_valid_ext(self):
+        
+        files = [
+            'Test.File.mkv',
+            'Test.File.avi',
+            'Test.File.srt',
+            'Test.File.mp4',
+            'Test.File.nfo',
+            'Test.File.jpg',
+        ]
 
-    @pytest.mark.xfail(raises=OSError)
-    def test_create_deep_err(self):
+        for f in files:
+            Make.mock_file(SRC / f)
 
-        fylm.config.test = False
-        assert(fylm.config.test is False)
+        assert(FilmPath(SRC / files[0]).has_valid_ext)
+        assert(FilmPath(SRC / files[1]).has_valid_ext)
+        assert(FilmPath(SRC / files[2]).has_valid_ext)
+        assert(FilmPath(SRC / files[3]).has_valid_ext)
+        assert(not FilmPath(SRC / files[4]).has_valid_ext)
+        assert(not FilmPath(SRC / files[5]).has_valid_ext)
 
-        if sys.platform == "win32":
-            ops.dirops.create_deep('C:\\Windows\\System32\\ShouldNotBeWritable')
-        else:
-            ops.dirops.create_deep('/bin/ShouldNotBeWritable')
+    def test_maybe_film(self):
+        
+        alita = FilmPath((SRC / ALITA / ALITA).with_suffix('.mkv'))
+        atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
+        avatar = FilmPath(SRC / '#4K' / AVATAR)
+        empty = FilmPath(SRC / '#empty' / 'empty_dir')
+        notes = FilmPath(SRC / '#notes' / 'my_note.txt')
+        starlord = FilmPath(SRC / DEEP / STARLORD)
+        ttop = FilmPath((SRC / DEEP / TTOP / TTOP).with_suffix('.mkv'))
+        zelda = FilmPath(SRC / ZELDA)
+        zorg = FilmPath(SRC / ZORG)
+        
+        Create.dirs(avatar, empty)
+        Make.mock_files(alita,
+                        atmitw,
+                        notes,
+                        starlord,
+                        ttop,
+                        zelda,
+                        zorg)
+        
+        assert(not FilmPath(SRC).maybe_film)
+        assert(not FilmPath(SRC / '#4K').maybe_film)
+        assert(not FilmPath(SRC / DEEP).maybe_film)
+        assert(alita.maybe_film)
+        assert(alita.parent.maybe_film)
+        assert(FilmPath(SRC / ALITA).maybe_film)
+        assert(atmitw.maybe_film)
+        assert(atmitw.parent.maybe_film)
+        assert(not avatar.maybe_film)
+        assert(not avatar.parent.maybe_film)
+        assert(not empty.maybe_film)
+        assert(not notes.maybe_film)
+        assert(not notes.parent.maybe_film)
+        assert(starlord.maybe_film)
+        assert(starlord.parent.maybe_film)
+        assert(ttop.maybe_film)
+        assert(ttop.parent.maybe_film)
+        assert(not ttop.parent.parent.maybe_film)
+        assert(zelda.maybe_film)
+        assert(not zelda.parent.maybe_film)
+        assert(zorg.maybe_film)
+        assert(not zorg.parent.maybe_film)
+        
+    def test_siblings(self):
+        
+        files = [
+            FilmPath(ALITA) / Path(ALITA).with_suffix('.mkv'),
+            FilmPath(ATMITW) / Path(ATMITW).with_suffix('.mkv'),
+            FilmPath(ATMITW) / STARLORD,
+            FilmPath(ATMITW) / Path(ALITA).with_suffix('.mkv'),
+            FilmPath(ATMITW) / ZELDA,
+            FilmPath(ATMITW) / ZORG,
+        ]
+        
+        for f in files:
+            Make.mock_file(SRC / f)
+            
+        assert(iterlen((FilmPath(SRC) / ALITA).siblings) == 1)
+        assert(first((FilmPath(SRC) / ALITA).siblings) == SRC / ATMITW)
+        assert(iterlen((FilmPath(SRC / ATMITW / STARLORD).parent).siblings) == 4)
+        assert(iterlen(FilmPath(SRC / ATMITW / STARLORD).siblings) == 0)
+        assert(iterlen(FilmPath(SRC / ATMITW / ZORG).siblings) == 4)
+        
+    @pytest.mark.xfail(raises=ValueError)
+    def test_siblings_not_abs(self):
 
+        assert(iterlen(FilmPath(ALITA).siblings) == 1)
+
+    def test_video_files(self):
+        
+        files = [
+            ALITA + '.mkv',
+            ALITA + '.avi',
+            ALITA + '.mp4',
+            ALITA + '.nfo',
+            'Thumbs.db',
+            ALITA + '.srt',
+            'Margaret/Margaret-2160p.mp4',
+            'Sally.txt',
+            '.DS_Store'
+        ]
+
+        for f in files:
+            Make.mock_file(SRC / ALITA / f)
+
+        assert(iterlen(FilmPath(SRC / ALITA).video_files) == 4)
+
+    def test_year(self):
+        
+        assert(FilmPath(ALITA).year == 2019)
+        assert(FilmPath(ATMITW).year == 2017)
+        assert(not FilmPath(DEEP).year)
+        assert(FilmPath(STARLORD).parent.year == 2022)
+        assert(FilmPath(STARLORD).filmrel.year == 2022)
+        assert(FilmPath(TTOP).year == 1968)
+        assert(not FilmPath('2001.A.Space.Odyssey.1080p.x264.mkv').year)
+        assert(FilmPath(ZELDA).year == 1991)
+        assert(FilmPath(ZORG).year == 1989)
+
+    # Methods
+
+    def test_sync(self):
+        
+        f = FilmPath(SRC / ALITA) / Path(ALITA).with_suffix('.mkv')
+        Make.mock_file(f)
+        
+        assert(not 'filmrel' in f.__dict__)
+        assert(not 'filmroot' in f.__dict__)
+        assert(not 'is_filmroot' in f.__dict__)
+        assert(not 'maybe_film' in f.__dict__)
+        
+        FilmPath.sync(f, ['filmrel', 
+                          'filmroot', 
+                          'is_filmroot', 
+                          'maybe_film'])
+        
+        assert('filmrel' in f.__dict__)
+        assert('filmroot' in f.__dict__)
+        assert('is_filmroot' in f.__dict__)
+        assert('maybe_film' in f.__dict__)
+
+class TestFind(object):
+    
     def test_find_deep(self):
+        
+        made = Make.all_mock_files().all_files
+        found = [x for x in Find.deep(SRC) if x.is_file()]
+        
+        assert(len(found) == len(made))
+        
+    def test_find_deep_files(self):
+        
+        made = Make.all_mock_files().all_files
+        found = list(Find.deep_files(SRC))
+        
+        assert(len(found) == len(made))
+    
+    def test_find_deep_ignore_sys_files(self):
 
-        conftest.cleanup_all()
+        create_path1 = SRC / 'Yates/Gilbert/Holtzmann/Tolan'
+        create_path2 = SRC / 'Roman/Hamilton/Ride/Jemison'
 
-        create_path1 = os.path.join(conftest.films_src_path, 'Yates/Gilbert/Holtzmann/Tolan')
-        create_path2 = os.path.join(conftest.films_src_path, 'Roman/Hamilton/Ride/Jemison')
-
-        ops.dirops.create_deep(create_path1)
-        ops.dirops.create_deep(create_path2)
+        Create.dirs(create_path1)
+        Create.dirs(create_path2)
 
         files = [
             'Yates/Abby.txt',
@@ -342,96 +783,230 @@ class TestDirOperations(object):
         ]
 
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 10 * make.kb * t)
+            Make.mock_file(SRC / f)
 
-        find = ops.dirops.find_deep(conftest.films_src_path)
+        found = [x for x in Find.deep(SRC) if x.is_file()]
 
-        assert(len(find) == 8)
-        assert(not os.path.join(conftest.films_src_path, files[4]) in find)
-        assert(not os.path.join(conftest.films_src_path, files[9]) in find)
+        assert(len(found) == 8)
+        assert(not str(SRC / files[4]) in found)
+        assert(not str(SRC / files[9]) in found)
+    
+    def test_find_deep_sorted(self):
+        
+        made = Make.all_mock_files().all_files
+        found = list(Find.deep_files(SRC))
 
-    def test_delete_dir_and_contents(self):
+        assert(len(found) == len(made))
+        
+        # Assert that the list is sorted alphabetically (case insensitive)
+        assert(is_alphabetical(found))
+    
+    def test_find_existing(self):
 
-        fylm.config.test = False
-        assert(fylm.config.test is False)
+        files = {
+            '2160p': 'Rogue.One.A.Star.Wars.Story.2016.4K.2160p.DTS.mp4',
+            '1080p': 'Rogue.One.A.Star.Wars.Story.2016.1080p.BluRay.DTS.x264-group.mkv',
+            '720p': 'Rogue.One.A.Star.Wars.Story.2016.720p.DTS.x264-group.mkv',
+            'SD': 'Rogue.One.A.Star.Wars.Story.2016.avi'
+        }
 
-        create_path = os.path.join(conftest.films_src_path, 'Yates/Gilbert/Holtzmann/Tolan')
+        Make.mock_dst_files(files)
 
-        ops.dirops.create_deep(create_path)
+        assert(Find._EXISTING is None)
+        assert(len(Find.existing()) == 4)
+        assert(Find._EXISTING and len(Find._EXISTING) == 4)
+        
+        # Test caching
+        conftest.cleanup_dst()
+        assert(len(Find.existing()) == 4)
+    
+    def test_find_new(self):
 
+        made = Make.all_mock_files().all_files
+
+        start = timer()
+
+        assert(Find._NEW is None)
+
+        new = [x for x in Find.new(SRC) if x.is_file()]
+
+        end = timer()
+
+        assert(new == SRC)
+
+        assert(end - start < 3)
+        assert(len(new) == len(made))
+
+        # valid_films = list(filter(lambda film: not film.should_ignore, new))
+
+        # Assert that we're getting the expected number of films.
+        assert(len(Find._NEW) > 1)
+        assert(len([x for x in Find._NEW if x.is_file()]) == len(made))
+
+        # Assert that we're getting the expected number of valid films.
+        # assert(len(valid_films) == len(conftest.made.good))
+        
+        # Try again after removing src, to test caching.
+        conftest.cleanup_src()
+        new = [x for x in Find.new(SRC) if x.is_file()]
+        assert(len(new) == len(made))
+
+    def test_find_new_multi(self):
+        
+        made = Make.all_mock_files().all_files
+        config.source_dirs.append(SRC2)
+        files = ['Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE',
+                 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE']
+        
+        # Make files in alternate path
+        for name in files:
+            Make.mock_src_files(
+                Path(name) / Path(name).with_suffix('.mkv'), 
+                src_path=SRC)
+
+        assert(Find._NEW is None)
+        
+        new = [x for x in Find.new(SRC, 
+                                   SRC2) if x.is_file()]
+
+        # Assert that we're getting the expected number of films, + 2
+
+        assert(len(new) == len(made) + 2)
+
+        # valid_films = list(filter(lambda film: not film.should_ignore, new))
+
+        # Assert that we're getting the expected number of films.
+        assert(len(Find._NEW) > 1)
+        assert(len([x for x in Find._NEW if x.is_file()]) == len(made) + 2)
+
+        # Assert that we're getting the expected number of valid films.
+        # assert(len(valid_films) == len(conftest.made.good))
+
+        # Assert that the list is sorted alphabetically (case insensitive)
+        assert(is_alphabetical(new))
+        
+    @pytest.mark.skip()
+    def test_find_shallow(self):
+        pass
+        
+    def test_sync_attrs(self):
+        
+        Make.all_mock_files()
+        found = list(Find.deep(SRC))
+        
+        for f in found:
+            assert(not 'filmrel' in f.__dict__)
+            assert(not 'filmroot' in f.__dict__)
+            assert(not 'is_filmroot' in f.__dict__)
+            assert(not 'maybe_film' in f.__dict__)
+            
+        synced = Find.sync_attrs(iter(found), attrs=['filmrel', 
+                                                     'filmroot', 
+                                                     'is_filmroot', 
+                                                     'maybe_film'])
+        
+        for f in synced:
+            assert('filmrel' in f.__dict__)
+            assert('filmroot' in f.__dict__)
+            assert('is_filmroot' in f.__dict__)
+            assert('maybe_film' in f.__dict__)
+
+    @pytest.mark.skip()
+    def test_get_valid_files(self):
+
+        conftest._setup()
+
+        config.min_filesize = 50 # min filesize in MB
+        assert(config.min_filesize == 50)
+
+        name = Path('Rogue.One.2016.1080p.BluRay.DTS.x264-group')
         files = [
-            'Yates/Abby.txt',
-            'Yates/Gilbert/Erin.txt',
-            'Yates/Gilbert/Holtzmann/Jillian.txt',
-            'Yates/Gilbert/Holtzmann/Tolan/Patty.txt'
+            name / name.with_suffix('.mkv'), # good
+            name / name.with_suffix('.sample.mkv'),
+            name / 'GROUP.mkv',
+            name / 'RO-ad-scene-WATCHME.mkv',
+            name / 'subs-english.srt', # good
+            name / name.with_suffix('.nfo'),
+            name / name.with_suffix('.sfv'),
+            name / 'Cover.jpg'
         ]
 
-        # Create files. Ensure that for this to pass, the total filesize of the test dir
-        # does not exceed this method's max_size default (50KB).
         conftest.cleanup_all()
+        conftest.make_empty_dirs()
+        
         for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb * t)
+            Make.mock_src_files(f)
 
-        before_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(before_contents) == 4)
+        # Make.mock_file(os.path.join(SRC, files[0]), 2354 * MB)
+        # Make.mock_file(os.path.join(SRC, files[1]),  134 * MB)
+        # Make.mock_file(os.path.join(SRC, files[2]),   23 * MB)
+        # Make.mock_file(os.path.join(SRC, files[3]),  219 * KB)
+        # Make.mock_file(os.path.join(SRC, files[4]),   14 * KB)
+        # Make.mock_file(os.path.join(SRC, files[5]),    5 * KB)
+        # Make.mock_file(os.path.join(SRC, files[6]),    6 * MB)
+        # Make.mock_file(os.path.join(SRC, files[7]),    7 * MB)
+        
+        # Assert that there is only one test film identified at the source
+        assert(len(Find.existing([SRC])) == 1)
 
-        ops.dirops.delete_dir_and_contents(conftest.films_src_path)
+        valid_files = Find.get_valid_files(SRC / name)
 
-        after_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(after_contents) == 0)
-        assert(not os.path.exists(conftest.films_src_path))
+        # Assert that of the 8 files presented, only two are valid
+        #   Main video file and .srt
+        assert(len(valid_files) == 2)
 
-        # Test that if file size exceeds the default max_size, we do not delete
-        conftest.cleanup_all()
-        for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 40 * make.mb * t)
+        assert(os.path.join(SRC, files[0]) in valid_files) # Main video file
+        assert(os.path.join(SRC, files[4]) in valid_files) # .srt
 
-        before_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(before_contents) == 4)
+    def get_invaild_files(self):
 
-        ops.dirops.delete_dir_and_contents(conftest.films_src_path)
+        conftest._setup()
 
-        after_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(after_contents) == 4)
-        assert(os.path.exists(conftest.films_src_path))
+        config.min_filesize = 50 # min filesize in MB
+        assert(config.min_filesize == 50)
 
-        # Test overwriting default max_size with -1, unlimited
-        conftest.cleanup_all()
-        for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 400 * make.mb * t)
-
-        before_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(before_contents) == 4)
-
-        ops.dirops.delete_dir_and_contents(conftest.films_src_path, max_size=-1)
-
-        after_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(after_contents) == 0)
-        assert(not os.path.exists(conftest.films_src_path))
-
-        # Test do not delete when test mode is enabled.
-        fylm.config.test = True
-        assert(fylm.config.test is True)
+        files = [
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sample.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/GROUP.mkv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/subs-english.srt',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.nfo',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Rogue.One.2016.1080p.BluRay.DTS.x264-group.sfv',
+            'Rogue.One.2016.1080p.BluRay.DTS.x264-group/Cover.jpg'
+        ]
 
         conftest.cleanup_all()
+        conftest.make_empty_dirs()
 
-        for f in files:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb * t)
+        Make.mock_file(os.path.join(SRC, files[0]), 2354 * MB)
+        Make.mock_file(os.path.join(SRC, files[1]),  134 * MB)
+        Make.mock_file(os.path.join(SRC, files[2]),   23 * MB)
+        Make.mock_file(os.path.join(SRC, files[3]),  219 * KB)
+        Make.mock_file(os.path.join(SRC, files[4]),   14 * KB)
+        Make.mock_file(os.path.join(SRC, files[5]),    5 * KB)
+        Make.mock_file(os.path.join(SRC, files[6]),    6 * MB)
+        Make.mock_file(os.path.join(SRC, files[7]),    7 * MB)
+        
+        # Assert that there is only one test film identified at the source
+        assert(len(ops.dirops.find_new(SRC)) == 1)
 
-        before_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(before_contents) == 4)
+        invalid_files = ops.dirops.get_invalid_files(
+            os.path.join(SRC, 'Rogue.One.2016.1080p.BluRay.DTS.x264-group')
+        )
 
-        ops.dirops.delete_dir_and_contents(conftest.films_src_path)
+        # Assert that of the 8 files presented, 6 are invalid
+        assert(len(invalid_files) == 6)
 
-        after_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(after_contents) == 4)
-        assert(os.path.exists(conftest.films_src_path))
+        assert(os.path.join(SRC, files[0]) not in invalid_files) # Main video file
+        assert(os.path.join(SRC, files[4]) not in invalid_files) # .srt
 
+
+    @pytest.mark.skip()
     def test_delete_unwanted_files(self):
 
         conftest.cleanup_all()
 
-        create_path = os.path.join(conftest.films_src_path, 'Yates/Gilbert/Holtzmann/Tolan')
+        create_path = os.path.join(SRC, 'Yates/Gilbert/Holtzmann/Tolan')
 
         ops.dirops.create_deep(create_path)
 
@@ -462,42 +1037,78 @@ class TestDirOperations(object):
         # Create files. Ensure that for this to pass, the total filesize of the test dir
         # does not exceed this method's max_size default (50KB).
         for f in files_nfo:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 4 * make.kb * t)
+             Make.mock_file(os.path.join(SRC, f), 4 * KB)
         for f in files_mkv:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7418 * make.mb * t)
+             Make.mock_file(os.path.join(SRC, f), 7418 * MB)
         for f in bad_files_mkv:
-             make.make_mock_file(os.path.join(conftest.films_src_path, f), 7 * make.kb * t)
+             Make.mock_file(os.path.join(SRC, f), 7 * KB)
 
-        before_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(before_contents) == 12)
+        before = ops.dirops.find_deep(SRC)
+        assert(len(before) == 12)
 
         config.test = True
         assert(config.test is True)
 
-        ops.dirops.delete_unwanted_files(conftest.films_src_path)
+        ops.dirops.delete_unwanted_files(SRC)
 
-        after_contents_t = ops.dirops.find_deep(conftest.films_src_path)
+        after_contents_t = ops.dirops.find_deep(SRC)
         assert(len(after_contents_t) == 12)
 
         config.test = False
         assert(config.test is False)
 
-        ops.dirops.delete_unwanted_files(conftest.films_src_path)
+        ops.dirops.delete_unwanted_files(SRC)
 
-        after_contents = ops.dirops.find_deep(conftest.films_src_path)
-        assert(len(after_contents) == 4)
+        after = ops.dirops.find_deep(SRC)
+        assert(len(after) == 4)
 
         config.min_filesize = 0
         assert(config.min_filesize == 0)
 
-# @pytest.mark.skip()
-class TestFileOperations(object):
+class TestInfo(object):
+    
+    def test_is_video_file(self):
+        name = 'test-1080p.mkv'
+        
+        assert(not Info.is_video_file(name))
+        assert(not Info.is_video_file(Path(name)))
+        assert(not Info.is_video_file(FilmPath(name)))
+        
+        Make.mock_src_files(name)
+        
+        assert(Info.is_video_file(os.path.normpath(str(SRC) + '/' + name)))
+        assert(Info.is_video_file(SRC / Path(name)))
+        assert(Info.is_video_file(SRC / FilmPath(name)))
+        
+        conftest.cleanup_all()
+        Make.empty_dirs()
+        
+        funkyname = 'tEsT-1080p.MKV'
+
+        assert(not Info.is_video_file(name))
+        assert(not Info.is_video_file(Path(name)))
+        assert(not Info.is_video_file(FilmPath(name)))
+
+        Make.mock_src_files(funkyname)
+
+        assert(Info.is_video_file(os.path.normpath(str(SRC) + '/' + name)))
+        assert(Info.is_video_file(SRC / Path(name)))
+        assert(Info.is_video_file(SRC / FilmPath(name)))
+        
+        # Test relpath
+        assert(Info.is_video_file(STARLORD))
+        
+    def test_has_ignored_string(self):
+        assert(not Info.has_ignored_string('dir/A.File.1080p.bluray.x264-scene.mkv'))
+        assert(Info.has_ignored_string('sample'))
+        assert(Info.has_ignored_string('A.File.1080p.bluray.x264-scene.sample.mkv'))
+        assert(Info.has_ignored_string('SaMpLe'))
+        assert(Info.has_ignored_string('@eaDir'))
+        assert(Info.has_ignored_string('@EAdir'))
+        assert(Info.has_ignored_string(Path('_UNPACK_a.file.named.something')))
+        assert(Info.has_ignored_string(Path('_unpack_a.file.named.something')))
 
     def test_has_valid_ext(self):
-
-        conftest._setup()
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
 
         files = [
             'Test.File.mkv',
@@ -508,19 +1119,105 @@ class TestFileOperations(object):
             'Test.File.jpg',
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),   10 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),  454 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    6 * make.mb * t)
+        for f in files:
+            Make.mock_file(SRC / f)
 
-        assert(    ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[0])))
-        assert(    ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[1])))
-        assert(    ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[2])))
-        assert(    ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[3])))
-        assert(not ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[4])))
-        assert(not ops.fileops.has_valid_ext(os.path.join(conftest.films_src_path, files[5])))
+        assert(Info.has_valid_ext(SRC / files[0]))
+        assert(Info.has_valid_ext(SRC / files[1]))
+        assert(Info.has_valid_ext(SRC / files[2]))
+        assert(Info.has_valid_ext(SRC / files[3]))
+        assert(not Info.has_valid_ext(SRC / files[4]))
+        assert(not Info.has_valid_ext(SRC / files[5]))
+    
+    def test_paths_exist(self):
+        # 2/2 valid paths
+        assert(Info.paths_exist([((Path('.').resolve()).anchor),
+                                     Path('.').resolve()]))
+        # 1/2 valid paths
+        assert(not Info.paths_exist([Path('/__THERE_IS_NO_SPOON__'),
+                                         Path('.').resolve()]))
+        # 0/1 valid paths
+        assert(not Info.paths_exist([Path('/__THERE_IS_NO_SPOON__')]))
+
+    def test_is_same_partition(self):
+        assert(Info.is_same_partition(Path().home(), Path().home().parent))
+        # Cannot reliably test if this function fails, we'll just have to trust 
+        # that when it's not on the same partition, it returns false.
+        
+    def test_exists_case_sensitive(self):
+        name = 'test-1080p.mkv'
+        funkyname = 'tEsT-fUnKy-1080p.MKV'
+        
+        Make.mock_src_files(name, funkyname)
+        
+        assert(Path(SRC / Path(name)).exists())
+        assert(Path(SRC / Path(funkyname)).exists())
+        assert(Info.exists_case_sensitive(Path(SRC / Path(name))))
+        assert(Info.exists_case_sensitive(Path(SRC / Path(funkyname))))
+        assert(not Info.exists_case_sensitive(Path(SRC / Path(name.upper()))))
+        assert(not Info.exists_case_sensitive(Path(SRC / Path(funkyname.lower()))))
+
+class TestMove(object):
+    pass
+
+class TestSize(object):
+    
+    def test_calc(self):
+
+        files =[
+            (SRC / 'Test.File.mkv', 10 * MB),
+            (SRC / 'Test.Dir/Test.File.mkv', 21 * MB),
+            (SRC / 'Test.Dir2/Test.File.mkv', 8 * MB),
+            (SRC / 'Test.Dir3/Test.File.jpg', 15 * KB),
+            (SRC / 'Test.Dir4/Test.File.avi', 2 * MB)
+        ]
+      
+        for f in files:
+            Make.mock_file(f[0], f[1])
+
+        # Assert file size matches definition
+        for f in files:
+            assert(abs(Size.calc(f[0]) - f[1]) == 0)
+
+        # Assert dir is at least the size of the file, probably larger
+        # because the folder itself takes up some space. Diff of 1 byte.
+        
+        for f in files[1:]: # slice the first one, because it is not in a dir
+            assert(abs(Size.calc(Path(f[0]).parent) - f[1] == 0))
+
+        # Test multiple files in dir to diff of 3 bytes
+        assert(abs(Size.calc(SRC) - sum(s for (_, s) in files) == 0))
+        
+    def test_pretty(self):
+        
+        # Multiply each of these by 1024 to bypass Travis
+        files = [
+            (SRC / 'Test.File1.mkv', 1500 * MB * T),
+            (SRC / 'Test.File2.mkv', 0.75 * GB * T),
+            (SRC / 'Test.File3.mkv', 10 * MB * T),
+            (SRC / 'Test.File4.mkv', 100),
+            (SRC / 'Test.File5.mkv', 1.25 * GB * T),
+            (SRC / 'Test.File6.mkv', 700 * MB * T)
+        ]
+
+        for f in files:
+            Make.mock_file(f[0], f[1])
+                        
+        assert(Size.pretty(files[0][0]) == '1.46 GiB')
+        assert(Size.pretty(files[0][0], units=Units.GB) == '1.57 GB')
+        assert(Size.pretty(files[0][0], precision=1) == '1.5 GiB')
+        assert(Size.pretty(files[0][0], precision=0) == '1 GiB')
+        assert(Size.pretty(files[0][0], units=Units.MiB) == '1,500.0 MiB')
+        assert(Size.pretty(files[0][0], units=Units.MB) == '1,572.9 MB')
+        assert(Size.pretty(files[1][0]) == '768.0 MiB')
+        assert(Size.pretty(files[2][0]) == '10.0 MiB')
+        assert(Size.pretty(files[3][0]) == '100 B')
+        assert(Size.pretty(files[4][0]) == '1.25 GiB')
+        assert(Size.pretty(files[5][0]) == '700.0 MiB')
+
+@pytest.mark.skip()
+class TestFileOperations(object):
+
 
     def test_is_acceptable_size(self):
 
@@ -540,17 +1237,17 @@ class TestFileOperations(object):
             'Test.File.nfo'
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]),  300 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]),    1 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),    4 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   54 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb * t)
+        Make.mock_file(os.path.join(SRC, files[0]),  300 * MB)
+        Make.mock_file(os.path.join(SRC, files[1]),    1 * MB)
+        Make.mock_file(os.path.join(SRC, files[2]),    4 * KB)
+        Make.mock_file(os.path.join(SRC, files[3]),   54 * MB)
+        Make.mock_file(os.path.join(SRC, files[4]),    4 * KB)
 
-        assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[0])))
-        assert(not ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[1])))
-        assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[2])))
-        assert(    ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[3])))
-        assert(not ops.fileops.is_acceptable_size(os.path.join(conftest.films_src_path, files[4])))
+        assert(    ops.fileops.is_acceptable_size(os.path.join(SRC, files[0])))
+        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[1])))
+        assert(    ops.fileops.is_acceptable_size(os.path.join(SRC, files[2])))
+        assert(    ops.fileops.is_acceptable_size(os.path.join(SRC, files[3])))
+        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[4])))
 
         config.min_filesize = 0 # min filesize back to 0
         assert(config.min_filesize == 0)
@@ -567,55 +1264,26 @@ class TestFileOperations(object):
         conftest.cleanup_all()
         conftest.make_empty_dirs()
 
-        file = os.path.join(conftest.films_src_path, 'Test.File.mkv')
+        file = os.path.join(SRC, 'Test.File.mkv')
 
-        make.make_mock_file(file, 2354 * make.mb * t)
+        Make.mock_file(file, 2354 * MB)
 
-        fylm.config.test = True
-        assert(fylm.config.test is True)
+        config.test = True
+        assert(config.test is True)
 
         ops.fileops.delete(file)
         assert(os.path.exists(file))
 
-        fylm.config.test = False
-        assert(fylm.config.test is False)
+        config.test = False
+        assert(config.test is False)
 
         ops.fileops.delete(file)
         assert(not os.path.exists(file))
 
 
-# @pytest.mark.skip()
+@pytest.mark.skip()
 class TestSizeOperations(object):
-    def test_size(self):
-
-        conftest._setup()
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        file = os.path.join(conftest.films_src_path, 'Test.File.mkv')
-        file_in_dir = os.path.join(conftest.films_src_path, 'Test.Dir/Test.File.mkv')
-        file_in_dir_a1 = os.path.join(conftest.films_src_path, 'Test.Dir2/Test.File.mkv')
-        file_in_dir_a2 = os.path.join(conftest.films_src_path, 'Test.Dir2/Test.File.jpg')
-        file_in_dir_a3 = os.path.join(conftest.films_src_path, 'Test.Dir2/Test.File.avi')
-
-        size = 2354 * make.mb
-
-        make.make_mock_file(file, size)
-        make.make_mock_file(file_in_dir, size)
-        make.make_mock_file(file_in_dir_a1, size)
-        make.make_mock_file(file_in_dir_a2, 10 * make.mb * t)
-        make.make_mock_file(file_in_dir_a3, 700 * make.mb * t)
-
-        # Assert file is the correct size within 1 byte
-        assert(abs(ops.size(file) - size) <= 1)
-
-        # Assert dir is at least the size of the file, probably larger
-        # because the folder itself takes up some space. Diff of 1 byte.
-        assert(abs(ops.size(os.path.dirname(file_in_dir)) - size) <= 1)
-
-        # Test multiple files in dir to diff of 3 bytes
-        assert(abs(ops.size(os.path.dirname(file_in_dir_a1)) - (size + (710 * make.mb * t))) <= 3)
+    
 
     def size_of_largest_video(self):
 
@@ -634,13 +1302,13 @@ class TestSizeOperations(object):
             'Test.File/Test.File.nfo'
         ]
 
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[0]), 2354 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[1]), 1612 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[2]),  280 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[3]),   10 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[4]),    4 * make.kb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[5]),  454 * make.mb * t)
-        make.make_mock_file(os.path.join(conftest.films_src_path, files[6]),    4 * make.kb * t)
+        Make.mock_file(os.path.join(SRC, files[0]), 2354 * MB)
+        Make.mock_file(os.path.join(SRC, files[1]), 1612 * MB)
+        Make.mock_file(os.path.join(SRC, files[2]),  280 * MB)
+        Make.mock_file(os.path.join(SRC, files[3]),   10 * MB)
+        Make.mock_file(os.path.join(SRC, files[4]),    4 * KB)
+        Make.mock_file(os.path.join(SRC, files[5]),  454 * MB)
+        Make.mock_file(os.path.join(SRC, files[6]),    4 * KB)
 
         # Test multiple files to diff of 1 byte
-        assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * make.mb * t)) <= 1)
+        assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * MB)) <= 1)

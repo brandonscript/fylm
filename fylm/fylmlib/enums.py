@@ -27,6 +27,7 @@ from enum import Enum
 Should = Enum('Should', 'UPGRADE IGNORE KEEP_BOTH DELETE')
 ComparisonResult = Enum('ComparisonResult', 'HIGHER EQUAL LOWER NOT_COMPARABLE')
 RenameStyle = Enum('RenameStyle', 'FILE DIR')
+Units = Enum('Units', 'B KiB MiB GiB KB MB GB')
 
 class Resolution(Enum):
     UHD_2160P = 1

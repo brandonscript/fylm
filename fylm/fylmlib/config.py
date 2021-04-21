@@ -149,24 +149,14 @@ class Config(object):
             help='Rename films in place without moving or copying them')
 
         # -c, --copy
-        # This option will force safe-copy behavior even when src and dst are on the same partition.
+        # This option will force copy behavior even when src and dst are on the same partition.
         parser.add_argument(
             '-c',
             '--copy',
             action="store_true",
-            default=self._defaults.safe_copy,
-            dest="safe_copy",
-            help='Force files on the same partition to be copied and verified')
-
-        # -m, --move
-        # This option will attempt to force move behavior for folders that appear to be (but are not) on different partitions.
-        parser.add_argument(
-            '-m',
-            '--move',
-            action="store_true",
-            default=self._defaults.force_move,
-            dest="force_move",
-            help='Force move behavior for folders that appear to be (but are not) on different partitions')
+            default=self._defaults.copy,
+            dest="copy",
+            help='Force files on the same partition to be copied instead of moved')
 
         # --hide-ignored
         # This option will hide ignored films from the console output.
@@ -282,11 +272,11 @@ class Config(object):
             self._defaults.tmdb.key = self._defaults.tmdb.key or os.environ.get('TMDB_KEY')
         
         # Map paths in source_dirs to Path and remove duplicates.
-        self._defaults.source_dirs = list(set(map(Path, self._defaults.source_dirs)))
+        self._defaults.source_dirs = set(map(Path, self._defaults.source_dirs))
                                           
         # Map paths in destination_dirs to Path.
         for k, v in self._defaults.destination_dirs.items():
-            self._defaults.destination_dirs[k]=map(Path, v)
+            self._defaults.destination_dirs[k]=Path(v)
 
         # Create placeholder var for mock inputs in interactive mode.
         self._defaults.mock_input = None
@@ -300,7 +290,8 @@ class Config(object):
         # Set up cache.
         if self._defaults.cache is True:
             cache_ttl = self._defaults.cache_ttl or 1
-            requests_cache.install_cache(f'.cache.fylm_py{sys.version_info[0]}', expire_after=timedelta(hours=cache_ttl))
+            requests_cache.install_cache(f'.cache.fylm_py{sys.version_info[0]}', 
+                                         expire_after=timedelta(hours=cache_ttl))
             requests_cache.core.remove_expired_responses()
 
         for k, v in self._defaults.items():

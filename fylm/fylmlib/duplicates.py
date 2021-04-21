@@ -27,7 +27,7 @@ import itertools
 
 from fylmlib.enums import *
 import fylmlib.config as config
-from fylmlib.operations import fileops, dirops
+# from fylmlib.operations import fileops, dirops
 from fylmlib import Console, Compare
 
 class Duplicates:

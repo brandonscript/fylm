@@ -12,4 +12,6 @@ coverage.xml
 *.code-workspace
 env/*
 @eaDir/*
-.vscode/*
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/.ropeproject/*
