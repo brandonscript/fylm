@@ -154,9 +154,9 @@ class Config(object):
             '-c',
             '--copy',
             action="store_true",
-            default=self._defaults.copy,
-            dest="copy",
-            help='Force files on the same partition to be copied instead of moved')
+            default=self._defaults.always_copy,
+            dest="always_copy",
+            help="Always copy instead of move files, even if they're on the same partition")
 
         # --hide-ignored
         # This option will hide ignored films from the console output.

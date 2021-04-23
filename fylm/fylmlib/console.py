@@ -348,8 +348,12 @@ class Console(object):
         """Print progress bar to terminal.
         """
         if not config.plaintext:
-            print('      ' + progress.progress_bar(100 * copied / total), end='\r')
-            sys.stdout.flush()
+            print('      ' + Progress.bar(100 * copied / total), end='\r')
+            # Catch stdout if None
+            try:
+                sys.stdout.flush()
+            except:
+                pass
 
     @classmethod
     def get_input(cls, prompt):
@@ -365,8 +369,11 @@ class Console(object):
         """Clears the current printed line.
         """
 
-        # Clear line.
-        sys.stdout.write("\033[K")
+        # Clear line, if stdout is not None
+        try:
+            sys.stdout.write("\033[K")
+        except:
+            pass
     
     @classmethod
     def debug(cls, s: str=''):

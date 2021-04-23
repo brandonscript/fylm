@@ -50,6 +50,33 @@ from fylmlib import Parser
 from fylmlib import Cursor
 from fylmlib import Format
 
+class Create:
+    """Utilities for making files/dirs on the filesystem."""
+    
+    @staticmethod
+    def dirs(*paths: Union[str, Path, 'FilmPath']):
+        """Deeply create the specified path and any required parent paths.
+
+        Using recursion, create a directory tree as specified in the path
+        param.
+
+        Args:
+            path (str, Path, or FilmPath) path to create.
+        """
+
+        # Because this is a destructive action, we will not create the
+        # path tree if running in test mode.
+        if not config.test:
+
+            # If the path exists, there's no point in trying to create it.
+            try:
+                for path in paths:
+                    Console.debug(f"Creating dir '{path}'")
+                    Path(path).mkdir(parents=True, exist_ok=True)
+            # If the dir creation fails, raise an Exception.
+            except OSError as e:
+                Console.error(f"Unable to create '{path}'", e)
+                
 class Delete:
     """Utilities for deleting files/dirs on the filesystem."""
                 
@@ -139,7 +166,7 @@ class Delete:
             int: 1 if the file was deleted successfully, or 0.
         """
         
-        Console.debug(f"Deleting file '{file}'")
+        Console.debug(f"Deleting file '{path}'")
         
         try:
             p = Path(path)
@@ -151,37 +178,10 @@ class Delete:
                 # If successful, return 1 for a successful op.
                 return 1
         except Exception as e:
-            Console().error().indent(f"Unable to remove '{file}': {e}")
+            Console().error().indent(f"Unable to remove '{path}': {e}")
         
         # Default return 0
         return 0
-    
-class Create:
-    """Utilities for making files/dirs on the filesystem."""
-    
-    @staticmethod
-    def dirs(*paths: Union[str, Path, 'FilmPath']):
-        """Deeply create the specified path and any required parent paths.
-
-        Using recursion, create a directory tree as specified in the path
-        param.
-
-        Args:
-            path (str, Path, or FilmPath) path to create.
-        """
-
-        # Because this is a destructive action, we will not create the
-        # path tree if running in test mode.
-        if not config.test:
-
-            # If the path exists, there's no point in trying to create it.
-            try:
-                for path in paths:
-                    Console.debug(f"Creating dir '{path}'")
-                    Path(path).mkdir(parents=True, exist_ok=True)
-            # If the dir creation fails, raise an Exception.
-            except OSError as e:
-                Console.error(f"Unable to create '{path}'", e)
                          
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate 
@@ -532,18 +532,6 @@ class FilmPath(Path):
         # if it's a file or empty, it's a terminus.
         if self.is_file():
             return True
-        
-        """# Lambda: from all objects in x, create a list of years
-        def get_years(x): return [o.year for o in x if o is not None]
-
-        # Lambda: compare a list and see if they all match
-        def all_match(x): return all(y == x[0] for y in x if y)
-
-        # If it contains more than one video file with different years, or
-        # folders with multiple years, it cannot be a terminus (it's a container)
-        y = get_years(self.video_files)
-        if len(y) > 0 and not all_match(y):
-            return False"""
             
         if self.is_dir() and (not self.dirs or all(d.is_empty for d in self.dirs)):
             return True
@@ -571,39 +559,6 @@ class FilmPath(Path):
         
         # Otherwise it's not likely a film
         return False
-        
-        """# Origin and branches cannot be a film, but only if the path
-        # is absolute, otherwise FilmPath might have been init'd from a 
-        # relative path.
-        if self.is_absolute() and (self.is_origin or self.is_branch):
-            return False
-        
-        # It's a video, and either it or its parent have a year, e.g.
-        #  - /volumes/downloads/Avatar.2009.BluRay.1080self.x264-Scene/a-x264.mkv
-        #                                                              ----------
-        #  Works for relative paths, as well:
-        #  - Avatar.2009.BluRay.1080self.x264-Scene/a-x264.mkv
-        #                                                  ---
-        if self.is_video_file and (self.year or self.parent.year):
-            return True
-
-        # or it's a video file with a year, and its parent does not e.g.
-        #  - /volumes/downloads/Avatar.2009.BluRay.1080self.x264-Scene.mkv
-        #                       ---------------------------------------
-        #  - /volumes/downloads/#done/Avatar.2009.BluRay.1080self.x264-Scene.mkv
-        #                             ---------------------------------------
-        if self.is_video_file and self.year and not self.parent.year:
-            return True
-
-        # or it's a dir with a year in its name, and contains at least one
-        # video file, e.g.
-        #  - /volumes/downloads/Avatar.2009.BluRay.1080self.x264-Scene/a-x264.mkv
-        #                       -----------------------------------
-        if self.is_dir() and self.year and self.video_files:
-            return True
-
-        # If it's a terminus, it's the end of the line, maybe it's a film?
-        return self.is_terminus"""
 
     @property
     def origin(self) -> Path:
@@ -939,8 +894,11 @@ class Info:
         
         err = lambda x: f"Tried to get the mount point for a path that does not exist '{x}'."
         
-        if not p1.exists(): raise OSError(err(path1))
-        if not p2.exists(): raise OSError(err(path2))
+        while not p1.exists():
+            p1 = p1.parent
+            
+        while not p2.exists():
+            p2 = p2.parent
         
         return p1.stat().st_dev == p2.stat().st_dev
     
@@ -965,14 +923,14 @@ class Move:
     @staticmethod
     def safe(src: Union[str, Path, 'FilmPath'], 
                   dst: Union[str, Path, 'FilmPath'], 
-                  should_upgrade=False):
+                  overwrite=False):
         """Performs a 'safe' move operation, with some additional checks before moving 
         files. 
         
         Args:
             src (str, Path, or Filmpath): Path of file to move.
             dst (str, Path, or Filmpath): New path for this file.
-            should_upgrade: (Bool) True if this file is OK to replace an existing one
+            overwrite: (Bool) True if this file is OK to replace an existing one
                                   as determined by checking for identical duplicates
                                   that meet upgrade criteria.
 
@@ -987,33 +945,33 @@ class Move:
             raise OSError(f"Error moving '{src}', path does not exist.")
 
         # Silently abort if the src and dst are the same.
-        if src.samefile(dst):
+        if src == dst:
             Console.debug('Source and destination are the same, nothing to move')
             return False
 
-        # Try to create destination folders if they do not exist.
-        Create.dirs(dst)
+        # Try to create dst's container dirs if they do not exist.
+        Create.dirs(dst.parent)
 
         Console.debug(f"\n  Moving: '{src}'")
         Console.debug(  f"      To: '{dst}'\n")
-
+        
         # Check if a file already exists with the same name as the one we're moving.
         # By default, abort here (otherwise shutil.move would silently overwrite it)
         # and print a warning to the console. If force_overwrite is enabled,
         # proceed anyway, otherwise forcibly prevent accidentally overwriting files.
         # If we determined it's OK to upgrade the detination, we can skip this.
-        if dst.exists() and not should_upgrade:
+        if dst.exists() and not overwrite:
             # If force_overwrite is turned off, we can't overwrite this file.
             # If interactive is on, the user has some more flexibility and can choose to
             # overwrite, so we can skip this.
             if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                console().red().indent(
-                    f"Unable to move, a file named '{dst.name}' already exists in '{dst.parent}'.").print()
+                Console().red().indent(
+                    f"Unable to move, '{dst.name}' already exists in '{dst.parent}'.").print()
                 return False
 
             # File overwriting is enabled and not marked to upgrade, so warn but continue
-            console().yellow().indent(
+            Console().yellow().indent(
                 f"Replacing existing file in '{dst.parent}'.").print()
 
         # Only perform destructive changes if running in live mode, so we can short-circuit
@@ -1026,20 +984,20 @@ class Move:
         expected_size = Size.calc(src)
 
         # Do we need to copy, or move?
-        copy = config.copy is True or not Utils.is_same_partition(
+        copy = config.always_copy is True or not Info.is_same_partition(
             src, dst)
         
         # Generate a new filename using .partial~ to indicate the file
         # has not be completely copied.
-        dst_tmp = dst.parent / (dst.name + '.partial~')
+        dst_tmp = dst.parent / f'{dst.name}.partial~'
         
         # Do the same for dup
-        dst_dup = dst.parent / (dst.name + '.dup~')
+        dst_dup = dst.parent / f'{dst.name}.dup~'
             
         try:
             # If we're overwriting, first try and rename the existing (identical)
             # duplicate so we don't lose it if the move fails
-            if dst.exist():
+            if dst.exists():
                 dst.rename(dst_dup)
             
             # If copy is enabled, or if partition is not the same, copy with
@@ -1065,7 +1023,11 @@ class Move:
             size_diff = abs(dst_size - expected_size)
             
             # Verify that the file is within 10 bytes of the original.
-            if diff <= 10:
+            if size_diff <= 10:
+                
+                # If we're running a test, we need to delay the rename
+                if 'pytest' in sys.argv[0]:
+                    time.sleep(0.02)
                 
                 # Then rename the partial to the correct name
                 dst_tmp.rename(dst)
@@ -1088,7 +1050,7 @@ class Move:
         except (IOError, OSError) as e:
 
             # Catch exception and soft warn in the console (don't raise Exception).
-            console().red().indent(f"Failed to move '{src}'.")
+            Console().red().indent(f"Failed to move '{src}'.")
             Console.debug(e)
             print(e)
 
@@ -1134,7 +1096,7 @@ class Move:
             return
             
         # Silently abort if the src and dst are the same.
-        if src.samefile(dst):
+        if src == dst:
             Console.debug(
                 f"Source and destination are the same for '{src}', nothing to copy.")
             return
@@ -1162,7 +1124,7 @@ class Move:
             size = os.stat(src).st_size
             with open(src, 'rb') as fsrc:
                 with open(dst, 'wb') as fdst:
-                    cls._copyfileobj(fsrc, fdst, callback=console(
+                    Move._copyfileobj(fsrc, fdst, callback=Console(
                     ).print_copy_progress_bar, total=size)
 
         # Perform a low-level copy.
@@ -1225,13 +1187,13 @@ class Move:
         dst = src.parent / (Path(new_name).name)
 
         # Silently abort if the src and dst are the same.
-        if src.samefile(dst):
+        if src == dst:
             return
         
         # Check if a file already exists and abort.
         if dst.exists():
-            console().red().indent(
-                f"Unable to rename, a file named '{dst.name}' already exists in '{dst.parent}'.").print()
+            Console().red().indent(
+                f"Unable to rename, '{dst.name}' already exists in '{dst.parent}'.").print()
             return
 
         Console.debug(f"\n  Renaming: '{src}'")

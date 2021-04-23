@@ -20,6 +20,9 @@
 import os
 import sys
 from timeit import default_timer as timer
+import contextlib
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 import pytest
 
@@ -44,6 +47,8 @@ SRC = conftest.src_path
 SRC2 = conftest.src_path2
 
 ALITA = 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE'
+ALITA_DST = f'Alita Battle Angel (2019) Bluray-1080p/'\
+                f'Alita Battle Angel (2019) Bluray-1080p.mkv'
 ATMITW = 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE'
 AVATAR = 'Avatar.2009.BluRay.2160p.HDR.x265-xWinG'
 DEEP = '#deep'
@@ -231,7 +236,7 @@ class TestFilmPath(object):
         assert(fp.stem == 'Starlord')
         assert(fp.suffix == '.mkv')
     
-    def init_from_pathlib_path(self):
+    def test_init_from_pathlib_path(self):
         fp = FilmPath(SRC / STARLORD)
         assert(fp)
         assert(fp == Path(fp))
@@ -952,15 +957,6 @@ class TestFind(object):
         
         for f in files:
             Make.mock_src_files(f)
-
-        # Make.mock_file(os.path.join(SRC, files[0]), 2354 * MB)
-        # Make.mock_file(os.path.join(SRC, files[1]),  134 * MB)
-        # Make.mock_file(os.path.join(SRC, files[2]),   23 * MB)
-        # Make.mock_file(os.path.join(SRC, files[3]),  219 * KB)
-        # Make.mock_file(os.path.join(SRC, files[4]),   14 * KB)
-        # Make.mock_file(os.path.join(SRC, files[5]),    5 * KB)
-        # Make.mock_file(os.path.join(SRC, files[6]),    6 * MB)
-        # Make.mock_file(os.path.join(SRC, files[7]),    7 * MB)
         
         # Assert that there is only one test film identified at the source
         assert(len(Find.existing([SRC])) == 1)
@@ -974,7 +970,7 @@ class TestFind(object):
         assert(os.path.join(SRC, files[0]) in valid_files) # Main video file
         assert(os.path.join(SRC, files[4]) in valid_files) # .srt
 
-    def get_invaild_files(self):
+    def test_get_invaild_files(self):
 
         conftest._setup()
 
@@ -1172,8 +1168,271 @@ class TestInfo(object):
         assert(not Info.exists_case_sensitive(Path(SRC / Path(name.upper()))))
         assert(not Info.exists_case_sensitive(Path(SRC / Path(funkyname.lower()))))
 
+class FileExistsHandler(FileSystemEventHandler):
+    
+    def __init__(self, path: Union[str, Path, 'FilmPath']):
+        super().__init__()
+        
+        self.path = Path(path)
+        self.exists = self.path.exists()
+        
+    def on_modified(self, event):
+        while not self.path.exists():
+            pass
+        self.exists = True
+        return
+        
 class TestMove(object):
-    pass
+    
+    @pytest.mark.xfail(raises=OSError)
+    def test_safe_not_exists(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        assert(not src.exists())
+        Move.safe(src, dst)
+        assert(not src.exists())
+        assert(not dst.exists())
+    
+    def test_safe_src_eq_dst(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+
+        Make.mock_file(src)
+
+        assert(src.exists())
+        assert(dst.exists())
+        Move.safe(src, dst)
+        assert(src.exists())
+        assert(dst.exists())
+    
+    def test_safe_test_mode(self):
+        
+        config.test = True
+        assert(config.test)
+
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        Make.mock_file(src)
+
+        assert(src.exists())
+        assert(not dst.exists())
+        Move.safe(src, dst)
+        assert(src.exists())
+        assert(not dst.exists())
+    
+    def test_safe_exists_overwrite_arg_off(self):
+        
+        assert(not config.duplicates.force_overwrite)
+
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        Make.mock_files(src, dst)
+
+        assert(src.exists())
+        assert(dst.exists())
+        Move.safe(src, dst)
+        assert(src.exists())
+        assert(dst.exists())
+    
+    def test_safe_exists_overwrite_arg_on(self):
+        
+        assert(not config.duplicates.force_overwrite)
+
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        Make.mock_files(src, dst)
+
+        assert(src.exists())
+        assert(dst.exists())
+        Move.safe(src, dst, overwrite=True)
+        assert(not src.exists())
+        assert(dst.exists())
+    
+    def test_safe_exists_overwrite_force_on(self):
+        
+        config.duplicates.force_overwrite = True
+        assert(config.duplicates.force_overwrite)
+
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        Make.mock_files(src, dst)
+
+        assert(src.exists())
+        assert(dst.exists())
+        Move.safe(src, dst)
+        assert(not src.exists())
+        assert(dst.exists())
+    
+    def test_safe_check_for_partial(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+        partial = Path(f'{dst}.partial~')
+        
+        Create.dirs(dst.parent)
+        Make.mock_file(src)
+
+        event_handler = FileExistsHandler(partial)
+        observer = Observer()
+        observer.schedule(event_handler, path=partial.parent, recursive=False)
+        observer.start()
+        
+        assert(src.exists())
+        assert(not dst.exists())
+        
+        Move.safe(src, dst)
+        assert(event_handler.exists)
+        
+        assert(not src.exists())
+        assert(dst.exists())
+        
+        observer.stop()
+    
+    def test_safe_check_for_dup(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+        partial = Path(f'{dst}.dup~')
+
+        Create.dirs(dst.parent)
+        Make.mock_file(src)
+        Make.mock_file(dst)
+
+        event_handler = FileExistsHandler(partial)
+        observer = Observer()
+        observer.schedule(event_handler, path=partial.parent, recursive=False)
+        observer.start()
+
+        assert(src.exists())
+        assert(dst.exists())
+
+        Move.safe(src, dst, overwrite=True)
+        assert(event_handler.exists)
+
+        assert(not src.exists())
+        assert(dst.exists())
+
+        observer.stop()
+    
+    def test_safe_copy(self):
+        
+        config.always_copy = True
+        assert(config.always_copy)
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        Make.mock_file(src)
+
+        
+        assert(src.exists())
+        assert(not dst.exists())
+        with contextlib.redirect_stdout(None):
+            Move.safe(src, dst)
+        assert(not src.exists())
+        assert(dst.exists())
+    
+    def test_safe_move(self):
+        
+        assert(not config.always_copy)
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+        
+        Make.mock_file(src)
+        
+        assert(src.exists())
+        assert(not dst.exists())
+        Move.safe(src, dst)
+        assert(not src.exists())
+        assert(dst.exists())
+        
+    def test_rename(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = Path(FilmPath(ALITA_DST).name)
+        
+        Make.mock_file(src)
+
+        assert(src.exists())
+        Move.rename(src, dst.name)
+        assert(not src.exists())
+        assert((SRC / ALITA / dst).exists())
+    
+    def test_rename_abs(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC2 / ALITA_DST)
+        dst_proper = FilmPath((SRC / ALITA) / dst.name)
+
+        Make.mock_file(src)
+
+        assert(src.exists())
+        Move.rename(src, dst)
+        assert(not src.exists())
+        assert(not dst.exists())
+        assert(dst_proper.exists())
+        
+    @pytest.mark.xfail(raises=OSError)
+    def test_rename_not_exists(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        assert(not src.exists())
+        Move.rename(src, dst.name)
+        assert(not src.exists())
+        assert(not dst.exists())
+    
+    def test_rename_src_eq_dst(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+
+        Make.mock_file(src)
+
+        assert(src.exists())
+        assert(dst.exists())
+        Move.rename(src, dst.name)
+        assert(src.exists())
+        assert(dst.exists())
+    
+    def test_rename_dst_exists(self):
+        
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath((SRC / ALITA) / Path(ALITA_DST).name)
+
+        Make.mock_files(src, dst)
+
+        assert(src.exists())
+        assert(dst.exists())
+        Move.rename(src, dst.name)
+        assert(src.exists())
+        assert(dst.exists())
+    
+    def test_rename_test_mode(self):
+        
+        config.test = True
+        assert(config.test)
+
+        src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        dst = FilmPath(SRC / ALITA_DST)
+
+        Make.mock_file(src)
+
+        assert(src.exists())
+        assert(not dst.exists())
+        Move.rename(src, dst.name)
+        assert(src.exists())
+        assert(not dst.exists())
+        
 
 class TestSize(object):
     
@@ -1231,76 +1490,9 @@ class TestSize(object):
         assert(Size.pretty(files[5][0]) == '700.0 MiB')
 
 @pytest.mark.skip()
-class TestFileOperations(object):
-
-
-    def test_is_acceptable_size(self):
-
-        conftest._setup()
-
-        config.min_filesize = 5 # min filesize in MB
-        assert(config.min_filesize == 5)
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        files = [
-            'Test.File.mkv',
-            'Test.File.avi',
-            'Test.File.srt',
-            'Test.File.mp4',
-            'Test.File.nfo'
-        ]
-
-        Make.mock_file(os.path.join(SRC, files[0]),  300 * MB)
-        Make.mock_file(os.path.join(SRC, files[1]),    1 * MB)
-        Make.mock_file(os.path.join(SRC, files[2]),    4 * KB)
-        Make.mock_file(os.path.join(SRC, files[3]),   54 * MB)
-        Make.mock_file(os.path.join(SRC, files[4]),    4 * KB)
-
-        assert(    ops.fileops.is_acceptable_size(os.path.join(SRC, files[0])))
-        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[1])))
-        assert(    ops.fileops.is_acceptable_size(os.path.join(SRC, files[2])))
-        assert(    ops.fileops.is_acceptable_size(os.path.join(SRC, files[3])))
-        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[4])))
-
-        config.min_filesize = 0 # min filesize back to 0
-        assert(config.min_filesize == 0)
-
-    def test_contains_ignored_strings(self):
-
-        assert(ops.fileops.contains_ignored_strings('This.Is.A.sample.mkv'))
-        assert(not ops.fileops.contains_ignored_strings('This.Is.Not.mkv'))
-
-    def test_delete(self):
-
-        conftest._setup()
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        file = os.path.join(SRC, 'Test.File.mkv')
-
-        Make.mock_file(file, 2354 * MB)
-
-        config.test = True
-        assert(config.test is True)
-
-        ops.fileops.delete(file)
-        assert(os.path.exists(file))
-
-        config.test = False
-        assert(config.test is False)
-
-        ops.fileops.delete(file)
-        assert(not os.path.exists(file))
-
-
-@pytest.mark.skip()
-class TestSizeOperations(object):
+class TestSizeOperations_Deprecated(object):
     
-
-    def size_of_largest_video(self):
+    def test_size_of_largest_video(self):
 
         conftest._setup()
 
@@ -1327,3 +1519,36 @@ class TestSizeOperations(object):
 
         # Test multiple files to diff of 1 byte
         assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * MB)) <= 1)
+
+    def test_is_acceptable_size(self):
+
+        conftest._setup()
+
+        config.min_filesize = 5  # min filesize in MB
+        assert(config.min_filesize == 5)
+
+        conftest.cleanup_all()
+        conftest.make_empty_dirs()
+
+        files = [
+            'Test.File.mkv',
+            'Test.File.avi',
+            'Test.File.srt',
+            'Test.File.mp4',
+            'Test.File.nfo'
+        ]
+
+        Make.mock_file(os.path.join(SRC, files[0]),  300 * MB)
+        Make.mock_file(os.path.join(SRC, files[1]),    1 * MB)
+        Make.mock_file(os.path.join(SRC, files[2]),    4 * KB)
+        Make.mock_file(os.path.join(SRC, files[3]),   54 * MB)
+        Make.mock_file(os.path.join(SRC, files[4]),    4 * KB)
+
+        assert(ops.fileops.is_acceptable_size(os.path.join(SRC, files[0])))
+        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[1])))
+        assert(ops.fileops.is_acceptable_size(os.path.join(SRC, files[2])))
+        assert(ops.fileops.is_acceptable_size(os.path.join(SRC, files[3])))
+        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[4])))
+
+        config.min_filesize = 0  # min filesize back to 0
+        assert(config.min_filesize == 0)

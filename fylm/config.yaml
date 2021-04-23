@@ -42,6 +42,10 @@ min_filesize:
   SD: 20
   default: 20
 
+# Use KiB, MiB, and GiB (multiples of 1024) when calculating file sizes.
+# Set to false to use KB, MB, and GB (multiples of 1000)
+size_units_ibi: true
+
 # Path Where history.log will be written.
 log_path: ./
 
@@ -137,13 +141,10 @@ duplicates:
   # If false, edition must match to be considered eligible for upgrading.
   ignore_edition: false
 
-# Copy files to the destination, verify, and delete originals, instead of move, even if source and
-# destination are on the same partition. This is the default behavior when source and destination 
-# are on different partitions (or network).
-safe_copy: false
-
-# Force move behavior for folders that appear to be (but are not) on different partitions.
-force_move: false
+# Copy files to the destination instead of move, even if source and destination are on the 
+# same partition. Copy will always be used when the source and destination are on different 
+# partitions (or network).
+always_copy: false
 
 # --quiet
 # Do not send notifications or update Plex
