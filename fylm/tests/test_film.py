@@ -19,7 +19,7 @@
 
 import re
 import os
-import pathlib
+from pathlib import Path
 
 import pytest
 
@@ -28,58 +28,207 @@ import fylmlib.patterns as patterns
 import fylmlib.tmdb as tmdb
 import fylm
 import conftest
-from fylmlib.enums import Media
+from make import Make, GB, MB, KB
+from fylmlib import Film
+from fylmlib import Create
+from fylmlib import Move
+from fylmlib import TMDb
+from fylmlib.enums import Media, IgnoreReason
+
+SRC = conftest.src_path
+JEDI = 'Last Jedi, The (2017) Bluray-1080p'
+ROGUE = 'Rogue.One.2016.1080p.BluRay.DTS.x264-group'
+STARFIGHTER = 'The.Last.Starfighter.1984.1080p.BluRay.x264.DTS-HD/tls-score.mkv'
+STARLORD = 'Starlord.2022.1080p/Starlord.mkv'
+TTOP = '2001.A.Space.Odyssey.1968.1080p'
+ZELDA = 'Zelda.A.Link.To.The.Past.1991.1080p.Bluray.mkv'
 
 # @pytest.mark.skip()
 class TestFilm(object):
+    
+    def test_init(self):
+        
+        Make.mock_file(SRC / ROGUE / f'{ROGUE}.mkv')
+        
+        film = Film(SRC / ROGUE)
+        
+        assert(film == Path(film))
+        assert(film.origin == SRC / ROGUE)
+        assert(film.src == SRC / ROGUE)
 
-    # @pytest.mark.skip(reason="Slow")
+    def test_ignore_reason(self):
+
+        unpack = SRC / f'_UNPACK_{ROGUE}/'
+        sample = SRC / 'Test.File.sample.avi'
+        string = SRC / 'Test.File.fylmignore.avi'
+        tv = SRC / 'Test.Show.S01E12.mkv'
+        bad_ext = SRC / 'Test.File.nfo'
+        no_files = SRC / 'Test.Dir/note.txt'
+        no_year = SRC / 'A.Great.File.1080p.mkv'
+        small = SRC / 'Small.File.2003.1080p.mkv'
+        tmdb = SRC / 'A.Wayward.Sword.1941.1080p.Bluray.x264.mkv'
+        sys = SRC / '.DS_Store'
+        sys_ea = SRC / '@eaDir/'
+
+        Create.dirs(unpack)
+        Make.mock_file(sample)
+        Make.mock_file(string)
+        Make.mock_file(tv)
+        Make.mock_file(bad_ext)
+        Make.mock_file(no_files)
+        Make.mock_file(no_year)
+        Make.mock_file(small, 2 * MB)
+        Make.mock_file(tmdb)
+        Make.mock_file(sys)
+        Create.dirs(sys_ea)
+
+        assert(Film(unpack).ignore_reason == IgnoreReason.UNPACKING)
+        assert(Film(sample).ignore_reason == IgnoreReason.SAMPLE)
+        assert(Film(string).ignore_reason == IgnoreReason.IGNORED_STRING)
+        assert(Film(tv).ignore_reason == IgnoreReason.TV_SHOW)
+        assert(Film('No.Spoon.1999/').ignore_reason ==
+               IgnoreReason.DOES_NOT_EXIST)
+        assert(Film(bad_ext).ignore_reason == IgnoreReason.INVALID_EXT)
+        assert(Film(no_files.parent).ignore_reason ==
+               IgnoreReason.NO_VIDEO_FILES)
+        assert(Film(no_year).ignore_reason == IgnoreReason.UNKNOWN_YEAR)
+        assert(Film(SRC / small).ignore_reason == IgnoreReason.TOO_SMALL)
+        f = Film(SRC / tmdb)
+        f.search_tmdb_sync()
+        assert(f.ignore_reason == IgnoreReason.NO_TMDB_RESULTS)
+        assert(Film(sys).ignore_reason == IgnoreReason.SYS)
+        assert(Film(sys_ea).ignore_reason == IgnoreReason.SYS)
+
+    def test_main_file(self):
+
+        Make.mock_files(
+            SRC / ROGUE / 'sith.txt',
+            SRC / ROGUE / f'{ROGUE}.en.srt',
+            SRC / ROGUE / f'{ROGUE}.mkv',
+            SRC / ROGUE / f'{ROGUE}.sample.mkv'
+        )
+
+        film = Film(SRC / ROGUE)
+
+        assert(film.main_file == SRC / ROGUE / f'{ROGUE}.mkv')
+    
+    def test_title(self):
+        
+        Make.mock_files(
+            SRC / JEDI / f'{JEDI}.mkv',
+            SRC / ROGUE / f'{ROGUE}.mkv',
+            SRC / STARFIGHTER
+        )
+
+        assert(Film(SRC / JEDI).title == 'The Last Jedi')
+        assert(Film(SRC / ROGUE).title == 'Rogue One')
+        assert(Film(SRC / STARFIGHTER).title == 'The Last Starfighter')
+        
+    def test_title_the(self):
+               
+        Make.mock_files(
+            SRC / STARFIGHTER,
+            SRC / JEDI / f'{JEDI}.mkv',
+        )
+
+        assert(Film(SRC / JEDI).title == 'The Last Jedi')
+        assert(Film(SRC / STARFIGHTER).title == 'The Last Starfighter')
+        assert(Film(SRC / JEDI).title_the == 'Last Jedi, The')
+        assert(Film(SRC / STARFIGHTER).title_the == 'Last Starfighter, The')
+        
+    def test_year(self):
+                
+        jedi = Film(SRC / JEDI / f'{JEDI}.mkv')
+        rogue = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        starfighter = Film(SRC / STARFIGHTER)
+        starlord = Film(SRC / STARLORD)
+        string = Film(SRC / 'String.Theory.Documentary.mkv')
+        ttop = Film(SRC / TTOP / f'{TTOP}.mkv')
+        zelda = Film(SRC / ZELDA)
+        
+        Make.mock_files(jedi, rogue, starfighter, starlord, string, ttop, zelda)
+        
+        assert(jedi.year == 2017)
+        assert(rogue.year == 2016)
+        assert(starfighter.year == 1984)
+        assert(starlord.year == 2022)
+        assert(not string.year)
+        assert(ttop.year == 1968)
+        assert(zelda.year == 1991)
+        
+    def test_new_name(self):
+                
+        jedi = Film(SRC / JEDI / f'{JEDI}.mkv')
+        rogue = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        starfighter = Film(SRC / STARFIGHTER)
+        ttop = Film(SRC / TTOP / f'{TTOP}.mkv')
+        
+        Make.mock_files(jedi, rogue, starfighter, ttop)
+        
+        TMDb.Search.parallel(jedi, rogue, starfighter, ttop)
+        
+        assert(jedi.new_name == 'Star Wars - The Last Jedi (2017)')
+        assert(rogue.new_name == 'Rogue One - A Star Wars Story (2016)')
+        assert(starfighter.new_name == 'The Last Starfighter (1984)')
+        assert(ttop.new_name == '2001 - A Space Odyssey (1968)')
+        
     def test_search_tmdb(self):
 
-        conftest._setup()
+        Make.mock_file(SRC / ROGUE / f'{ROGUE}.mkv')
+        film = Film(SRC / ROGUE)
+        assert(film == Path(film))
+        
+        film.search_tmdb_sync()
+        
+        assert(film.title is not None)
+        assert(film.tmdb.id is not None)
+        assert(film.year is not None)
+        assert(film.tmdb.title_similarity == 0.5)
+        assert(film.tmdb.overview)
+        assert(film.tmdb.poster_url)
+        assert(len(film._tmdb_matches) > 0)
 
-        fylm.config.tmdb.enabled = True
-        assert(fylm.config.tmdb.enabled is True)
+    def test_should_ignore(self):
 
-        # Look up films by name from TMDb and update title
-        for film in tmdb.dispatch_search_set(conftest.valid_films).run():
-            expected_path = os.path.join(
-                film.primary_file.new_foldername, film.primary_file.new_filename_and_ext)
-            match = next((tf for tf in conftest.made.good for f in tf.expect if f == expected_path), None)
+        unpack = SRC / f'_UNPACK_{ROGUE}/'
+        Create.dirs(unpack)
+        assert(Film(unpack).should_ignore)
 
-            if match is None:
-                raise AssertionError(f'"{expected_path}" was expected but not found on the filesystem')
-                
-            assert(film.title is not None)
-            assert(film.tmdb_id is not None)
-            assert(film.tmdb_id == match.tmdb_id)
-            assert(film.year is not None)
+        star = SRC / STARFIGHTER
+        Make.mock_file(star)
+        assert(not Film(star).should_ignore)
 
-        for not_a_film in list(set(conftest.all_films) - set(conftest.valid_films)):
-            assert(not_a_film.tmdb_id is None)
+    def test_tmdb_none(self):
 
-    def test_title_the(self):
+        assert(type(Film(SRC / JEDI).tmdb).__name__ == 'Result')
+        assert(not Film(SRC / JEDI).tmdb.id)
+        
+    def test_src(self):
+        
+        src = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        dst = Film(SRC / ROGUE / f'Rogue One.mkv')
 
-        conftest._setup()
+        film = Film(SRC / ROGUE)
+        Make.mock_file(src)
 
-        # Check that films beginning with 'The' have it moved to the end, ', The'
-        for film in conftest.all_films:
-            if not film.should_ignore and ', the' in film.title_the.lower():
-                assert(not film.title_the.lower().startswith('the '))
-                assert(film.title_the.lower().endswith(', the'))
+        assert(src.exists())
+        assert(not dst.exists())
+        film.search_tmdb_sync()
+        Move.safe(src, dst)
+        assert(not src.exists())
+        assert(dst.exists())
+        
+        # Ensure that even though we moved it, src didn't change
+        assert film.src == SRC / ROGUE
+        
+class TestFilmFile(object):
+    pass
+    
+    
+    
+    """SO MUCH MORE TESTS"""
 
-    def test_year(self):
-
-        conftest._setup()
-
-        # Check that year is detected correctly
-        for film in conftest.all_films:
-            if film.year is not None:
-                assert(film.year >= 1910)
-                assert(film.year < 2160)
-                assert(film.year != 2160)
-                assert(film.year != 1080)
-                assert(film.year != 720)
+    """    
 
     def test_resolution(self):
 
@@ -91,8 +240,9 @@ class TestFilm(object):
                 if file.resolution is not None:
                     assert(file.resolution in ['720p', '1080p', '2160p'])
 
+    @pytest.mark.skip(reason="Not implemented")
     def test_mediainfo(self):
-
+        pass
         
 
     def test_media(self):
@@ -139,20 +289,6 @@ class TestFilm(object):
                         assert(not re.search(rx, file.title))
                         break
 
-    def test_is_file_or_dir(self):
-
-        conftest._setup()
-
-        # Check file extensions to verify whether source is a file or a dir
-        for film in conftest.all_films:
-            if film.is_file:
-                assert(len(film.video_files) == 1)
-                assert(len(film.all_valid_files) == 1)
-                assert(film.all_valid_files[0].ext is not None and [film.all_valid_files[0].ext in config.video_exts + config.extra_exts])
-                assert(film.is_folder == False)
-            elif film.is_folder:
-                assert(film.is_file == False)
-
     def test_should_ignore(self):
 
         conftest._setup()
@@ -161,3 +297,5 @@ class TestFilm(object):
         for tf in conftest.made.bad:
             for f in tf.make:
                 assert(f not in [os.path.basename(f.source_path) for f in conftest.valid_films])
+
+"""

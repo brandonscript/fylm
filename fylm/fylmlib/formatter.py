@@ -44,7 +44,7 @@ p = inflect.engine()
     
 class Format:
 
-    class Rename:
+    class Name:
         r"""Build a new file and folder name object from the specified renaming pattern.
 
         Using regular expressions and a { } templating syntax, construct
@@ -54,36 +54,19 @@ class Format:
         # For using other characters with pattern objects, place them inside {} e.g. { - edition}.
         # For escaping templating characters, use \{ \}, e.g. {|{edition\}}.
 
-        Args:
-            A Film.File object to build a path from.
         """
 
         def __init__(self, file: 'Film.File'):
             """Initialize the new_basename instance
 
             Args:
-                file (Film.File): [description]
-                build_for (RenameStyle): [description]
+                file: A Film.File object to build new names from.
             """
             self.file = file
-            self.filename = None
-            self.dirname = None
-
-        def build(self) -> 'Rename':
-            """Builds a string representation of a new path"""
-            
-            # Make sure file is set
-            try:
-                assert(self.file and type(self.file).name == 'Film.File')
-            except AttributeError:
-                raise AssertionError("Called 'build' but 'file' wasn't set.")
                 
-            # Create mutable copies of the original renaming patterns
-            file_template = copy(config.rename_pattern.file)
-            dir_template = copy(config.rename_pattern.folder)
-            
-            self.filename = self._map_template(file_template)
-            self.dirname = self._map_template(dir_template)
+            # Map mutable copies of the original renaming patterns to names
+            self.name = self._map_template(copy(config.rename_pattern.file))
+            self.parent = self._map_template(copy(config.rename_pattern.folder))
             
         @property
         def filmrel(self) -> 'Path':
@@ -92,25 +75,25 @@ class Format:
             Returns:
                 Path: A Path object from the given string.
             """
-            if not self.filename:
+            if not self.name:
                 raise AttributeError(
-                    f"Could not build path for '{self.file.filename}'; 'filename' attribute is missing.\n"
-                    f"You must initalize Rename then call build() before accessing 'filmrel'.")
+                    f"Could not build path for '{self.path.name}'; 'name' is missing.\n"
+                    f"Initalize Name and call build() before accessing 'filmrel'.")
                 
-            if config.use_folders and not self.dirname:
+            if not self.parent:
                 raise AttributeError(
-                    f"Could not build path for '{self.file.filename}'; 'dirname' attribute is missing.\n"
-                    f"You must initalize Rename then call build() before accessing 'filmrel'.")
+                    f"Could not build path for '{self.path.name}'; 'parent' is missing.\n"
+                    f"Initalize Name and call build() before accessing 'filmrel'.")
                 
             # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
             # Credit: https://stackoverflow.com/a/34504896/1214800
-            if sys.platform == 'darwin' and re.search(r'/', self.filename):
-                self.filename - self.filename.replace(r'/', '-')
+            if sys.platform == 'darwin' and re.search(r'/', self.name):
+                self.name - self.name.replace(r'/', '-')
             
             if config.use_folders:
-                return Path(self.dirname).joinpath(self.filename)
+                return Path(self.parent) / self.name
             else:
-                return Path(self.filename)
+                return Path(self.name)
             
         def _map_template(self, template: str) -> str:
             """Maps a pattern to a string given the template mask provided.
@@ -127,19 +110,24 @@ class Format:
             # be ordered such that the most restrictive comes before the
             # most flexible match.
             quality = '-'.join(filter(
-                None, [file.media.display_name if file.media else None, file.resolution or None]))
+                None, [
+                    self.file.media.display_name if self.file.media else None, 
+                    self.file.resolution.display_name if self.file.resolution else None
+                ]))
 
-            part = f', Part {file.parent_film.part}' if file.parent_film.part and build_for == RenameStyle.FILE else ""
+            part = (f', Part {self.file.film.part}' 
+                    if self.file.part and build_for == RenameMask.FILE 
+                    else "")
 
             pattern_map = [
-                ["title-the", file.parent_film.title_the + part],
-                ["title", file.parent_film.title + part],
-                ["edition", file.edition],
-                ["year", file.parent_film.year],
+                ["title-the", self.file.film.title_the + part],
+                ["title", self.file.film.title + part],
+                ["edition", self.file.edition],
+                ["year", self.file.film.year],
                 ["quality-full",
-                    f'{quality}{" Proper" if file.is_proper else ""}'],
+                    f'{quality}{" Proper" if self.file.is_proper else ""}'],
                 ["quality", f'{quality}'],
-                ["hdr", " HDR" if file.is_hdr else ""]
+                ["hdr", " HDR" if self.file.is_hdr else ""]
             ]
 
             # Enumerate the pattern map
@@ -172,7 +160,7 @@ class Format:
             template = template.replace(r'\}', '}')
 
             # Strip illegal chars
-            template = strip_illegal_chars(template)
+            template = Format.strip_illegal_chars(template)
 
             # Hack macOS titles that read / from the filesystem as :. If we don't do this,
             # we end up with the app trying to create folders for any title that contains
@@ -182,15 +170,17 @@ class Format:
             # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
             # `Dude Where's My Car`).
 
-            return strip_extra_whitespace(template)
+            return Format.strip_extra_whitespace(template)
 
-    def pretty_size(bytes: Union[int, float], units: Units = None, precision: int = None) -> str:
+    def pretty_size(bytes: Union[int, float], 
+                    units: Units = None, 
+                    precision: int = None) -> str:
         """Returns a human readable string representation of bytes.
 
         Args:
-            bytes (int, float): bytes, or passed multiple of bytes from a recursive call.
+            bytes (int, float): Bytes
             units (Units, optional): Specific Units type to format to. Defaults to None.
-            precision (int, optional): Decimal places. Default is 2 for GB, 1 for MB, otherwise 0.
+            precision (int, optional): Decimal places. Default is 2 for GB, 1 for MB, else 0.
 
         Returns:
             str: A human readable string representation of bytes, e.g. 4.12 GiB or 210.2 MB.
@@ -223,56 +213,57 @@ class Format:
             
         return f'{bytes:,.{prec}f} {u[0]}'
 
-    @staticmethod
-    def pretty_size_old(size_in_bytes=0, ):
-        """Pretty format filesize/size_in_bytes into human-readable strings.
+    # FIXME: Remove
+    # @staticmethod
+    # def pretty_size_old(size_in_bytes=0, ):
+    #     """Pretty format filesize/size_in_bytes into human-readable strings.
 
-        Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,
-        this measurement is automatically calculated depending on filesize,
-        but can be overridden by passing `measure` key.
+    #     Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,
+    #     this measurement is automatically calculated depending on filesize,
+    #     but can be overridden by passing `measure` key.
 
-        Args:
-            size_in_bytes (int): file size in bytes
-            measure (enums.Size, optional): Key value for the pretty_size_map to 
-                                   force formatting to a specific measurement.
-        Returns:
-            A human-readable formatted filesize string.
-        """
+    #     Args:
+    #         size_in_bytes (int): file size in bytes
+    #         measure (enums.Size, optional): Key value for the pretty_size_map to 
+    #                                force formatting to a specific measurement.
+    #     Returns:
+    #         A human-readable formatted filesize string.
+    #     """
 
-        # Force size_in_bytes to be an integer
-        b = size_in_bytes or 0
+    #     # Force size_in_bytes to be an integer
+    #     b = size_in_bytes or 0
 
-        # Map out the math required to re-calculate bytes into human-readable formats.
-        pretty_size_map = {
+    #     # Map out the math required to re-calculate bytes into human-readable formats.
+    #     pretty_size_map = {
 
-            # Do not round.
-            "B": b,
+    #         # Do not round.
+    #         "B": b,
 
-            # Round to nearest whole number.
-            "KB": round(b / 1000.0, decimal_places or 0),
-            "KiB": round(b / 1024.0, decimal_places or 0),
+    #         # Round to nearest whole number.
+    #         "KB": round(b / 1000.0, decimal_places or 0),
+    #         "KiB": round(b / 1024.0, decimal_places or 0),
 
-            # Round to one decimal place.
-            "MB": round(b / 1000.0 / 1000.0, decimal_places or 1),
-            "MiB": round(b / 1024.0 / 1024.0, decimal_places or 1),
+    #         # Round to one decimal place.
+    #         "MB": round(b / 1000.0 / 1000.0, decimal_places or 1),
+    #         "MiB": round(b / 1024.0 / 1024.0, decimal_places or 1),
 
-            # Round to two decimal places.
-            "GB": round(b / 1000.0 / 1000.0 / 1000.0, decimal_places or 2),
-            "GiB": round(b / 1024.0 / 1024.0 / 1024.0, decimal_places or 2)
-        }
+    #         # Round to two decimal places.
+    #         "GB": round(b / 1000.0 / 1000.0 / 1000.0, decimal_places or 2),
+    #         "GiB": round(b / 1024.0 / 1024.0 / 1024.0, decimal_places or 2)
+    #     }
 
-        # If measure was specified, format and return. This is usually used when calling
-        # this function recursively, but can be called manually.
-        if measure:
-            return f'{pretty_size_map[measure.value]} {measure.value}'
-        elif pretty_size_map[Size.GiB] > 1:
-            return Format.pretty_size(b, 'GiB')
-        elif pretty_size_map['MiB'] > 1:
-            return Format.pretty_size(b, 'MiB')
-        elif pretty_size_map['KiB'] > 1:
-            return Format.pretty_size(b, 'KiB')
-        else:
-            return f'{b:,.0f} B'
+    #     # If measure was specified, format and return. This is usually used when calling
+    #     # this function recursively, but can be called manually.
+    #     if measure:
+    #         return f'{pretty_size_map[measure.value]} {measure.value}'
+    #     elif pretty_size_map[Size.GiB] > 1:
+    #         return Format.pretty_size(b, 'GiB')
+    #     elif pretty_size_map['MiB'] > 1:
+    #         return Format.pretty_size(b, 'MiB')
+    #     elif pretty_size_map['KiB'] > 1:
+    #         return Format.pretty_size(b, 'KiB')
+    #     else:
+    #         return f'{b:,.0f} B'
 
     @staticmethod
     def pretty_size_diff(left: str, right: str):
@@ -349,7 +340,7 @@ class Format:
         Returns:
             A string without `The` at the beginning or end.
         """
-        return re.sub(patterns.begins_with_or_comma_the, '', s)
+        return re.sub(patterns.THE_PREFIX_SUFFIX, '', s)
 
     @staticmethod
     def strip_illegal_chars(s):
@@ -366,11 +357,11 @@ class Format:
 
         # If the char separates a word, e.g. Face/Off, we need to preserve that
         # separation with a dash (-).
-        s = re.sub(r'(?<=\S)[' + patterns.illegal_chars + r'](?=\S)', '-', s)
+        s = re.sub(r'(?<=\S)[' + patterns.ILLEGAL_CHARS + r'](?=\S)', '-', s)
 
         # If it terminates another word, e.g. Mission: Impossible, we replace it
         # with space-dash-space. Duplicate whitespace will be removed later.
-        s = re.sub(r'\s?[' + patterns.illegal_chars + r']\s?', ' - ', s)
+        s = re.sub(r'\s?[' + patterns.ILLEGAL_CHARS + r']\s?', ' - ', s)
 
         # Strip zero-width spaces
         s = s.lstrip(u'\u200c')
@@ -386,7 +377,7 @@ class Format:
         Returns:
             A string without those bad chars.
         """
-        return re.sub(patterns.trailing_nonword_chars, '', s)
+        return re.sub(patterns.TRAILING_NONWORD_CHARS, '', s)
 
     @staticmethod
     def strip_extra_whitespace(s):
@@ -417,10 +408,10 @@ class Format:
         for prev, current in zip(word_list[0:], word_list[1:]):
 
             # If it's a roman numeral, uppercase it
-            if is_roman_numeral(current):
+            if Format.is_roman_numeral(current):
                 title.append(current.upper())
             # If the word is an article, and preceded by a regular word, lowercase it
-            elif (current.lower() in patterns.articles):
+            elif (current.lower() in patterns.ARTICLES):
                 l = current.lower()
                 # There are some exceptions for when we need to re-capitalize it
                 # If the current is not 'and'
@@ -434,12 +425,12 @@ class Format:
                 # then we should capitalize the article.
                 # (e.g., Make The Knife vs. The Chronicles of Narnia The Lion the Witch, and the Wardrobe)
                 if (not current.lower() == 'and' 
-                    and not prev.lower() in patterns.articles 
+                    and not prev.lower() in patterns.ARTICLES 
                     and not prev.endswith(',') 
                     and (
                         not prev.rstrip(',').isalpha()
                         or is_number(prev)
-                        or (is_roman_numeral(prev) and not prev.lower() == title[0].lower())
+                        or (Format.is_roman_numeral(prev) and not prev.lower() == title[0].lower())
                         or (current.lower() in ['a', 'the'] and not is_possible_verb(prev))
                     )
                 ):
@@ -450,7 +441,7 @@ class Format:
             else:
                 title.append(current.capitalize())
 
-        title = list(map(capitalize_if_special_chars, title))
+        title = list(map(Format.capitalize_if_special_chars, title))
         return ' '.join(title)
 
     @staticmethod
@@ -468,6 +459,7 @@ class Format:
         """
         return s if c == 1 else p.plural(s)
 
+    # FIXME: Move to tools
     @staticmethod
     def is_number(s):
         """Tests if string is likely numeric, or numberish
@@ -484,6 +476,7 @@ class Format:
             pass
         return any([s.isnumeric(), s.isdigit()])
 
+    # FIXME: Move to tools
     @staticmethod
     def is_roman_numeral(s):
         """Tests if string is exactly a roman numeral
@@ -493,9 +486,10 @@ class Format:
         Returns:
             True if the string is a roman numeral, otherwise False
         """
-        match = re.search(patterns.roman_numerals, s)
+        match = re.search(patterns.ROMAN_NUMERALS, s)
         return True if (match and match.group(1)) else False
 
+    # FIXME: Move to tools
     @staticmethod
     def is_possible_verb(s):
         """Tests if string is a possible verb
@@ -519,7 +513,7 @@ class Format:
             A split string, uppercased on the non-word char
             e.g. face:off --> Face:Off
         """
-        m = re.compile(patterns.intra_word_special_chars)
+        m = re.compile(patterns.INTRA_WORD_SPECIAL_CHARS)
         return ''.join(
             [t.capitalize() for t in re.split(m, s)]
         ) if re.search(m, s) else s

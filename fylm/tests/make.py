@@ -87,27 +87,28 @@ class Make:
         global GB
 
         path = Path(path)
+        
+        if path.suffix.lower() in ['.mkv', '.mp4', '.m4v', '.avi']:
 
-        # 720p mkv
-        if re.search(r'\b720p?\b', str(path), re.I):
-            return random.randrange(int(3 * GB), int(7 * GB))
-        
-        # 1080p mkv
-        elif re.search(r'\b1080p?\b', str(path), re.I):
-            return random.randrange(int(7 * GB), int(15 * GB))
-        
-        # 4K mkv
-        elif re.search(r'\b(2160p?|4k)\b', str(path), re.I):
-            return random.randrange(int(18 * GB), int(26 * GB))
-        
-        # .avi or SD mkv
-        elif (path.suffix.lower() == ['.avi'] 
-              or re.search(r'\b(DVD?|HDTV)\b', str(path), re.I)):
-            return random.randrange(int(750 * MB), int(1300 * MB))
-        
-        # junk file
-        elif path.suffix.lower() in ['.mkv', '.mp4']:
-            return random.randrange(10 * MB, 50 * MB)
+            # junk file
+            if 'sample' in str(path).lower() or 'junk' in str(path).lower():
+                return random.randrange(10 * MB, 50 * MB)
+            
+            # 720p mkv
+            elif re.search(r'\b720p?\b', str(path), re.I):
+                return random.randrange(int(3 * GB), int(7 * GB))
+            
+            # 1080p mkv
+            elif re.search(r'\b1080p?\b', str(path), re.I):
+                return random.randrange(int(7 * GB), int(15 * GB))
+            
+            # 4K mkv
+            elif re.search(r'\b(2160p?|4k)\b', str(path), re.I):
+                return random.randrange(int(18 * GB), int(26 * GB))
+            
+            # .avi or SD mkv
+            else:
+                return random.randrange(int(750 * MB), int(1300 * MB))
         
         # Something else
         else:

@@ -86,7 +86,7 @@ STRIP_WHEN_COMPARING = re.compile(r'([\W]|\b\d\b|^(the|a)\b|, the)', re.I)
 
 # Beginning or end of string "The" or ", The", ignoring non-word characters
 # at the end of the string.
-BEGINS_WITH_OR_COMMA_THE = re.compile(r'(^the\W+|, the\W*$)', re.I)
+THE_PREFIX_SUFFIX = re.compile(r'(^the\W+|, the\W*$)', re.I)
 
 # ANSI character escaping
 ANSI_ESCAPE = re.compile(r'(^\s+|(\x9B|\x1B\[)[0-?]*[ -/]*[@-~])', re.I)
@@ -103,3 +103,9 @@ ZERO_SPACE = u'\u200c'
 
 # TV show
 TV_SHOW = re.compile(r"\bS\d{2}(E\d{2})?\b", re.I)
+
+# Unpacking
+UNPACK = re.compile(r"^_UNPACK", re.I)
+
+# Sample
+SAMPLE = re.compile(r"\bsample\b", re.I)

@@ -29,274 +29,144 @@ import itertools
 import asyncio
 import concurrent.futures
 from functools import partial
-from pathlib import Path, PurePath
+from copy import copy
+from pathlib import Path
 from typing import Union
 
 from pymediainfo import MediaInfo
 from lazy import lazy
 
-from fylmlib.enums import *
 import fylmlib.config as config
-import fylmlib.parser as Parser
-import fylmlib.formatter as formatter
 import fylmlib.patterns as patterns
-import fylmlib.tmdb as tmdb
-import fylmlib.operations as ops
+from fylmlib.tools import *
+from fylmlib.enums import *
+from fylmlib import FilmPath
+from fylmlib import Console
+from fylmlib import Parser
+from fylmlib import Duplicates
+from fylmlib import Format
+from fylmlib import TMDb
+from fylmlib import Info
 
-class Film:
+class Film(FilmPath):
     """A Film object contains basic details about the a film, references to the individual 
     File objects it contains (or just one, if it's a single file). Using regular expressions 
-    and themoviedb.org APIs, it can intelligently identify key attributes of a film from 
-    a standard file naming convention.
+    and themoviedb.org API, it can intelligently identify key attributes of a film from 
+    common file naming conventions.
 
     Attributes:
 
-        original_path (str):        Original (immutable) abs source path of film's root dir,
-                                    or file, if it's a file, e.g.
-                                     - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene
+        src (Filmpath):                 Original (immutable) abs source path of the film's root, e.g.
+                                         - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene or
+                                         - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
 
-        original_basename (str):    Original (immutable) basname of film's root dir,
-                                    or file, if it's a file, e.g.
-                                     - Avatar.2009.BluRay.1080p.x264-Scene or
-                                     - Avatar.2009.BluRay.1080p.x264-Scene.mkv
+        dst (Filmpath):                 Desired abs path to this film's new root, e.g.
+                                         - /volumes/movies/HD/Avatar (2009) or
+                                         - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
-        current_path (str):         Current abs source path of film's root dir,
-                                    or file, if it's a file, e.g.
-                                     - /volumes/movies/HD/Avatar (2009) or
-                                     - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene
+        main_file (Film.File):          Returns the largest wanted file in a Film folder (or if there 
+                                        is only a single file, that file). In most cases, this will be
+                                        the primary video file
+                                        Be careful when using this, as a folder could
+                                        have multiple versions of the same film.
 
-        destination_path (str):     Desired abs path to this film's new root dir, 
-                                    or file, if using file-based naming, e.g.
-                                     - /volumes/movies/HD/Avatar (2009) or
-                                     - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
+        title (str):                    Title of the film.
 
-        title (str):                Title of the film.
+        title_the (str):                For titles that begin with 'The', move it to the
+                                        end of the title, e.g. 'Chronicles of Narnia, The'.
 
-        title_the (str):            For titles that begin with 'The', move it to the
-                                    end of the title, e.g. 'Chronicles of Narnia, The'.
+        year (int):                     Primary release year, determined from FilmPath's filmrel.
 
-        year (int):                 Primary release year.
+        tmdb (TMDb.Result):             Selected TMDb.Result that was selected as a match.
 
-        tmdb_id (int):              TMDb ID for film.
+        files ([Film.File]):            Mapped from FilmPath.files to Film.File. 
+        
+        new_name (Path):                New name of the film, including the file extension if applicable.
 
-        tmdb_verified (bool):       Set to True once a TMDb result is verified in interactive mode.
+        wanted_files ([Film.File]):     A subset of files that have wanted file extensions.
 
-        tmdb_similarity (float):    Float value between 0 and 1 representing the Levenshtein 
-                                    distance similarity between parsed title and proposed title.
+        bad_files ([Film.File]):        A subset of files that are not wanted.
 
-        tmdb_matches (list):        A list of TmdbResult possible matches from TMDb, 
-                                    ordered most to least likely to match.
+        should_ignore (bool):           Returns True if this film should be ignored, then updates
+                                        ignore_reason with an explanation.
 
-        overview (str):             A short description of the film from TMDb.
+        ignore_reason (IgnoreReason):   If applicable, a reason describing why this film was ignored.
 
-        poster_url (str):           URL for the TMDb film poster.
-
-        size (int):                 Size of film (file or dir) in bytes.
-
-        is_file (bool):             Returns True if the path loaded is a file.
-
-        is_dir (bool):              Returns True if the path loaded is a dir.
-
-        exists (bool):              Returns True if the path loaded exists, otherwise sets 
-                                    the ignore_reason and returns False.
-
-        main_file (Film.File):      Returns the largest wanted file in a Film folder (or if there 
-                                    is only a single file, that file). In most cases, this will be
-                                    the primary video file
-                                    Be careful when using this, as a folder could
-                                    have multiple versions of the same film.
-
-        all_files (list):           A list of all Film.File objects in the film's folder, or a
-                                    list of exactly one if it's a file.
-
-        wanted_files (list):        A subset of all_files that have wanted file extensions.
-
-        video_files (list):          A subset of all_files that have a valid video extension.
-
-        bad_files (list):           A subset of all_files that are not wanted.
-
-        duplicate_files (list):     A list of Film objects from the cached list of 
-                                    existing films that are duplicates of this film.
-
-        should_ignore (bool):       Returns True if this film should be ignored and Updates
-                                    ignore_reason with an explanation, if necessary.
-
-        ignore_reason (str):        If applicable, a reason describing why this film was ignored.
-
-        should_hide (bool):         Return True if this Film should be hidden
-                                    when printing to the console.
+        should_hide (bool):             Return True if this Film should be hidden
+                                        when printing to the console.
     """
 
-    def __init__(self, current_path: Union[str, Path, 'FilmPath']):        
-        self._original_path = current_path
-        self.current_path = current_path
-        self._title = None
-        self._year = None
-        self.tmdb_id: int = None
-        self.tmdb_verified: bool = False
-        self.tmdb_similarity: float = 0
-        self.tmdb_matches: [tmdb.TmdbResult] = []
-        self.overview: str = ''
-        self.poster_url: str = None
-        self._ignore_reason: IgnoreReason = None
-        self.parser = Parser(self.main_file.current_path)
-
-    # title needs a getter and setter, because a TMDb search can update it
-    @property
-    def title(self) -> str:
-        if not self._title:
-            self._title = self.parser.title
-        return self._title
-
-    @title.setter
-    def title(self, value: str):
-        self._title = value
+    def __init__(self, path: Union[str, Path, 'FilmPath']):
+        
+        super().__init__(path)
+        
+        self._src = Path(self)
+        self.tmdb: TMDb.Result = TMDb.Result()
+        self._tmdb_matches: [TMDb.Result] = []
+        # self._parser = Parser(self.main_file.filmrel if self.exists() else self)
 
     @property
-    def title_the(self) -> str:
-        return (f'{formatter.strip_the(self.title)}, The'
-                if re.search(patterns.begins_with_or_comma_the, self.title) else self.title)
-
-    # year needs a getter and setter, because a TMDb search can update it
-    @property
-    def year(self) -> int:
-        if not self._year:
-            self._year = self.parser.year
-        return self._year
-    
-    @year.setter
-    def year(self, value: str) -> int:
-        self._year = value
+    def bad_files(self) -> Iterable['Film.File']:
+        return iter(filter(lambda f: not f.is_wanted_file, self.files))
 
     @property
-    def original_path(self) -> str:
-        return self._original_path
-
-    @lazy
-    def original_basename(self) -> str:
-        return Path(self.current_path).name
-
-    @property
-    def destination_path(self) -> str:
+    def dst(self) -> Path:
         # If 'rename_only' is enabled, we need to override the configured
         # destination dir with the source dir.
         if config.rename_only is True:
-            return self.original_path
-        return os.path.normpath(os.path.join(
-            Film.Utils.destination_root_dir(self.main_file), 
-            self.main_file.new_dirname if config.use_folders else None))
+            return self.src.parent / self.new_name
+        else:
+            return config.destination_dir(self.main_file.resolution or None) / self.new_name
+        
+    @property
+    def new_name(self) -> Path:
+        name = Format.Name(self.main_file)
+        self.new_name_lazy = name
+        return name.parent if config.use_folders else name
     
     @lazy
-    def size(self) -> int:
-        return ops.size(self.current_path)
-
-    @lazy
-    def is_file(self) -> bool:
-        return Path(self.current_path).is_file()
-
-    @lazy
-    def is_dir(self) -> bool:
-        return Path(self.current_path).is_dir()
-
-    @property
-    def exists(self) -> bool:
-        # This should be called after should_ignore and before a file operation is performed,
-        # but it is kept separate, because it is an expensive function.
-        if not Path(self.current_path).exists():
-            self._ignore_reason = IgnoreReason.NO_LONGER_EXISTS
-            return False
-        return True
- 
-    @property
-    def main_file(self) -> 'Film.File':
-        try:
-            assert(self.all_files)
-        except:
-            raise AssertionError(f"'{self.current_path}'\ndoes not have any files.")
-        return self.all_files[0]
-
-    @property    
-    def all_files(self) -> ['Film.File']:
-        # Get all files, map them to File(), then sort by size
-        # inversely so that the largest file is first in the list
-        # TODO: This size calc/map can be replaced completely with FilmPath
-        found = [Film.File(p, self) for p in ops.dirops.find_deep(self.current_path)]
-        return list(self.Utils.sort_files(found))
-
-    @property
-    def video_files(self) -> ['Film.File']:
-        return list(self.Utils.video_files(self.wanted_files))
-
-    @property
-    def wanted_files(self) -> ['Film.File']:
-        return list(self.Utils.wanted_files(self.all_files))
-
-    @property
-    def bad_files(self) -> ['Film.File']:
-        return list(self.Utils.bad_files(self.all_files))
+    def new_name_lazy(self) -> Path:
+        # Cached copy of new_name
+        return self.new_name
 
     @lazy
     def duplicate_files(self) -> ['Film.File']:
-        # Import duplicates here to avoid circular imports.
-        import fylmlib.duplicates.find as find
-        return find(self)
+        return duplicates.Find(self)
 
     @property
-    def should_ignore(self) -> bool:
-        if re.search('^_UNPACK_', self.original_basename):
-            self._ignore_reason = IgnoreReason.UNPACKING
+    def files(self) -> Iterable['Film.File']:
+        files = [Film.File(f, film=self) for f in super().files]
+        return iter(sorted(files, key=lambda f: f.size_lazy, reverse=True))
 
-        elif ops.FilmPath.Utils.has_ignored_string(self.original_path):
-            self._ignore_reason = IgnoreReason.IGNORED_STRING
+    @lazy
+    def ignore_reason(self) -> IgnoreReason:
+        
+        i = IgnoreReason
+        if re.search(patterns.UNPACK, str(self.filmrel)): return i.UNPACKING
+        elif is_sys_file(self): return i.SYS
+        elif re.search(patterns.SAMPLE, str(self.filmrel)): return i.SAMPLE
+        elif Info.has_ignored_string(self.src): return i.IGNORED_STRING
+        elif bool(re.search(patterns.TV_SHOW, str(self))): return i.TV_SHOW
+        elif not self.exists(): return i.DOES_NOT_EXIST
+        elif self.is_dir() and iterlen(self.video_files) == 0: return i.NO_VIDEO_FILES
+        elif self.is_file() and not Info.has_valid_ext(self): return i.INVALID_EXT
+        elif self.year is None: return i.UNKNOWN_YEAR
+        elif not Info.is_acceptable_size(self.main_file): return i.TOO_SMALL
+        else: return None
+        
+        # TODO: Re-implement this in processor
+        """if self.ignore_reason is i.TOO_SMALL:
+            return f"{self.ignore_reason.str} - {formatter.pretty_size(self.size)}"
+        return self.ignore_reason.str if self.ignore_reason else None"""
 
-        elif bool(re.search(patterns.tv_show, self.original_basename)):
-            self._ignore_reason = IgnoreReason.TV_SHOW
-
-        elif self.is_file and not self.main_file.is_video:
-            self._ignore_reason = IgnoreReason.INVALID_EXT
-
-        elif self.is_dir and not self.video_files:
-            self._ignore_reason = IgnoreReason.NO_VIDEO_FILES
-
-        elif bool(re.search(patterns.tv_show, self.original_basename)):
-            self._ignore_reason = IgnoreReason.TV_SHOW
-
-        elif self.title is None:
-            self._ignore_reason = IgnoreReason.UNKNOWN_TITLE
-
-        elif self.year is None and (config.force_lookup is False or config.tmdb.enabled is False):
-            self._ignore_reason = IgnoreReason.UNKNOWN_YEAR
-
-        elif len(self.video_files) > 0 and self.size < Film.Utils.is_acceptable_size(self.main_file):
-            self._ignore_reason = IgnoreReason.SIZE_TOO_SMALL
-
-        return self._ignore_reason is not None
-
-    @property
-    def ignore_reason(self) -> Union[str, None]:
-        if self._ignore_reason is IgnoreReason.SIZE_TOO_SMALL:
-            return f"{self._ignore_reason.str} - {formatter.pretty_size(self.size)}"
-        return self._ignore_reason.str if self._ignore_reason else None
-
-    @property
-    def should_hide(self) -> bool:
-        if (self.should_ignore is True and config.interactive is True
-                # In interactive mode, these three exceptions should be ignored because the
-                # user may want to manually match them anyway.
-                and not self.ignore_reason is IgnoreReason.UNKNOWN_TITLE
-                and not self.ignore_reason is IgnoreReason.UNKNOWN_YEAR
-                and not self.ignore_reason is IgnoreReason.SIZE_TOO_SMALL):
-            return True
-        elif self.should_ignore is True and config.interactive is False and config.hide_ignored is True:
-            return True
+    @lazy
+    def main_file(self) -> 'Film.File':
+        if self.is_file():
+            return Film.File(self, film=self)
+        elif self.is_dir():
+            return first(self.video_files, None)
         else:
-            return False
-
-    def search_tmdb_sync(self):
-        """A synchronous wrapper for search_tmdb().
-        """
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.search_tmdb())
+            return None
 
     async def search_tmdb(self):
         """Performs a TMDb search on the existing film.
@@ -309,33 +179,74 @@ class Film:
         # Only perform lookups if TMDb searching is enabled.
         if config.tmdb.enabled is False:
             return
-
+    
         # Perform the search and save the first 10 sresults to the matches list.
         # If ID is not None, search by ID.
-        self.tmdb_matches = await tmdb.search(self.tmdb_id or self.title, None if self.tmdb_id else self.year)
-        best_match = next(iter(self.tmdb_matches or []), None)
-        if best_match is not None:
-            # If we find a result, update title, tmdb_id, year, and the tmdb_similarity.
-            self.update_with_match(best_match)
+        self._tmdb_matches = await TMDb.Search(self.title, self.year, self.tmdb.id).do()
+        best_match = first(iter(self._tmdb_matches or []), None)
+        if best_match:
+            # If we find a result, update title and year.
+            self.tmdb = best_match
+            self.title = best_match.new_title
+            self.year = best_match.new_year
         else:
             # If not, we update the ignore_reason
-            self._ignore_reason = IgnoreReason.NO_TMDB_RESULTS
+            self.ignore_reason = IgnoreReason.NO_TMDB_RESULTS
 
-    def update_with_match(self, match: 'TmdbResult'):
-        """Updates all of this film's properties witch those 
-        from a TmdbResult match object.
-
-        Args:
-            match (TmdbResult): Search result as a TmdbResult object.
+    def search_tmdb_sync(self):
+        """A synchronous wrapper for search_tmdb().
         """
-        self.title = match.proposed_title
-        self.year = match.proposed_year
-        self.overview = match.overview
-        self.poster_url = match.poster_url
-        self.tmdb_id = match.tmdb_id
-        self.tmdb_similarity = match.tmdb_similarity  
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.search_tmdb())
 
-    class File:
+    @lazy
+    def should_hide(self) -> bool:
+        if (self.should_ignore is True and config.interactive is True
+                # In interactive mode, these three exceptions should be ignored because the
+                # user may want to manually match them anyway.
+                and not self.ignore_reason is IgnoreReason.UNKNOWN_TITLE
+                and not self.ignore_reason is IgnoreReason.UNKNOWN_YEAR
+                and not self.ignore_reason is IgnoreReason.TOO_SMALL):
+            return True
+        elif (self.should_ignore is True 
+              and config.interactive is False 
+              and config.hide_ignored is True):
+            return True
+        else:
+            return False
+
+    @lazy
+    def should_ignore(self) -> bool:
+        return self.ignore_reason is not None
+
+    @lazy
+    def src(self) -> FilmPath:
+        return self._src
+
+    # title needs a getter and setter, because a TMDb search can update it
+    @lazy
+    def title(self) -> str:
+        return Parser(self).title
+
+    @property
+    def title_the(self) -> str:
+        return (f'{Format.strip_the(self.title)}, The'
+                if re.search(patterns.THE_PREFIX_SUFFIX, self.title) else self.title)
+
+    @property
+    def video_files(self) -> Iterable['Film.File']:
+        video_files = [Film.File(f, film=self) for f in super().video_files]
+        return iter(sorted(video_files, key=lambda f: f.size_lazy, reverse=True))
+
+    @property
+    def wanted_files(self) -> Iterable['Film.File']:
+        return iter(filter(lambda f: f.is_wanted_file, self.files))
+    
+    @lazy
+    def year(self) -> int:
+        return Parser(self).year
+
+    class File(FilmPath):
         """A Film object contains specific details about a Film file, including detailed information 
         like file type, media info, and other details that may differentiate a file from others 
         along side it in the same folder. This is a critical separation of roles from Film, in that a 
@@ -349,7 +260,7 @@ class Film:
         All File objects bound to the same Film object must share at least the same destination_root_dir
         path, title, year, and tmdb_id. 
 
-        Invalid or unwanted files can still be mapped to a File object, but self.is_valid will return False.
+        Invalid or unwanted files can still be mapped to a File object, but self.is_wanted_file will return False.
 
         Attributes:
         
@@ -369,7 +280,7 @@ class Film:
 
             is_proper (bool):           Indicates whether this version is a proper release.
 
-            parent_film:                Parent Film containing the file.
+            film:                       Parent Film containing the file.
 
             original_path (str):        Original (immutable) abs source path of file, e.g.
                                          - /volumes/downloads/Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
@@ -407,13 +318,9 @@ class Film:
 
             new_filename_stem (str):    Returns the new file name, excluding the file extension.
 
-            ext (str):                  File extension.
-
-            size (int):                 Size of file, in bytes.
-
             mediainfo (libmediainfo):   mediainfo derived from libmediainfo
 
-            is_valid (bool):            Returns True if the file is valid and wanted.
+            is_wanted_file (bool):            Returns True if the file is valid and wanted.
 
             is_video (bool):            Returns True if the film is a file and has a valid video file extension.
 
@@ -428,11 +335,13 @@ class Film:
             
             did_move (bool):            Returns true when the file has been successfully moved.
         """
+        
+        def __init__(self, path: Union[str, Path, 'FilmPath'], film: 'Film'):
 
-        def __init__(self, current_path: str, parent_film: 'Film'):
-            self._original_path: str = current_path
-            self.current_path: str = current_path
-            self.parent_film: Film = parent_film
+            super().__init__(path)
+
+            self._src = Path(self)
+            self.film: Film = film
             self.did_move: bool = False
             self.is_duplicate: bool = False
             self.duplicate: Should or None = None
@@ -440,40 +349,43 @@ class Film:
             
         @property
         def title(self) -> str:
-            return self.parent_film.title
+            return self.film.title
 
         @property
         def title_the(self) -> str:
-            return self.parent_film.title_the
+            return self.film.title_the
 
         @property
         def year(self) -> int:
-            return self.parent_film.year
+            return self.film.year
         
         @lazy
         def edition(self) -> str:
-            return self.parent_film.parser.edition
+            return Parser(self.filmrel).edition
 
         @lazy
         def media(self) -> Media:
-            return self.parent_film.parser.media
+            return Parser(self.filmrel).media
+        
+        @lazy
+        def part(self) -> Media:
+            return Parser(self.filmrel).part
         
         @lazy
         def is_hdr(self) -> bool:
-            return self.parent_film.parser.is_hdr
+            return Parser(self.filmrel).is_hdr
         
         @lazy
         def is_proper(self) -> bool:
-            return self.parent_film.parser.is_proper
+            return Parser(self.filmrel).is_proper
 
         @lazy
         def mediainfo(self) -> Union['Track', None]:
-            if not self.is_video:
+            if not self.is_video_file or not self.exists():
                 return None
 
-            media_info = MediaInfo.parse(self.current_path, library_file=str(PurePath(
-                Path(__file__).resolve().parent,
-                'libmediainfo.0.dylib')))
+            media_info = MediaInfo.parse(str(self), library_file=str(
+                Path(__file__).resolve().parent / 'libmediainfo.0.dylib'))
 
             for track in media_info.tracks:
                 if track.track_type == 'Video':
@@ -481,22 +393,8 @@ class Film:
                 
         @lazy
         def resolution(self) -> Resolution:
-            if not self.parent_film.parser.mediainfo:
-                self.parent_film.parser.mediainfo = self.mediainfo
-            return self.parser.resolution
-
-        @property
-        def original_path(self) -> str:
-            return self._original_path
+            return Parser(self.filmrel, mediainfo=self.mediainfo).resolution
         
-        @lazy
-        def original_filename(self) -> str:
-            return Path(self.original_path).name
-
-        @lazy
-        def original_rel_path(self) -> str:
-            return str(PurePath(Path(self.original_filename).parent.name, Path(self.original_filename).name))
-
         @property
         def new_filename(self, ext: str = None) -> str:
             """Builds a new filename for this file.
@@ -532,179 +430,26 @@ class Film:
         def destination_rel_path(self) -> str:
             return self.new_filename if config.use_folders is False else str(PurePath(
                 self.new_dirname, self.new_filename))
-
-        @lazy
-        def ext(self) -> str:
-            return Path(self.current_path).suffix if self.is_file else None
-
-        @lazy
-        def size(self) -> int:
-            return ops.size(self.current_path)
-
-        @lazy
-        def is_file(self) -> bool:
-            return Path(self.current_path).is_file()
             
         @lazy
-        def is_valid(self) -> bool:
+        def is_wanted_file(self) -> bool:
             # A valid file must have a valid extension
-            return Film.Utils.is_valid(self)
-
-        @property
-        def is_video(self) -> bool:
-            return self.is_file and any([self.ext in config.video_exts])
+            return Info.is_wanted_file(self)
 
         @property
         def is_subtitle(self):
             return self.ext == '.srt' or self.ext == '.sub'
 
-    class Utils:
+    class zInfo:
         # TODO: Most of these should be in FilmPath or ops
         """A collection of helper functions for Film objects."""
+
         
-        @classmethod
-        def sort_files(cls, files: ['Film.File']) -> ['Film.File']:
-            """Sort a list of files by size, reverse
-
-            Returns:
-                A sorted list of files.
-            """
-            return sorted(files, key=lambda f: f.size, reverse=True)
-
-        @classmethod
-        def wanted_files(cls, files: ['Film.File']) -> ['Film.File']:
-            """Filter valid files from a list of files.
-
-            Args:
-                files: [(Film.File)]
-            Returns:
-                A list of valid files.
-            """
-
-            # Sort by file size, in reverse, so the largest file is first
-            return filter(lambda f: f.is_valid, files)
-
-        @classmethod
-        def video_files(cls, files: ['Film.File']) -> ['Film.File']:
-            """Filter all valid feature film files from the list of films.
             
-            Returns:
-                Array of Film.File objects that are valid video files."""
+        
 
-            return filter(lambda f: f.is_video, files)
-            
-            # TODO: Do we need this functionality somewhere else? Or is this covered by
-            # ignore reason?
-            # return list(filter(lambda f: f.is_video and (
-            #         f.year is not None 
-            #         or f.resolution is not None 
-            #         or f.media is not None), files))
+        
 
-        @classmethod
-        def bad_files(cls, files: ['Film.File']) -> ['Film.File']:
-            """Filter a list of invalid files from a list of files.
+        
 
-            Args:
-                files: [(Film.File)]
-            Returns:
-                A list of invalid files.
-            """
-            print('bad_files', files)
-            return filter(lambda f: not f.is_valid, files)
-
-        @classmethod
-        def has_valid_ext(cls, file: 'Film.File') -> bool:
-            """Check if file has a valid extension.
-
-            Check the specified file's extension against config.video_exts and config.extra_exts.
-
-            Args:
-                file: (Film.File)
-            Returns:
-                True if the file has a valid extension, else False.
-            """
-            return file.is_file and (file.ext.lower() in 
-                        config.video_exts + config.extra_exts)
-            
-        @classmethod
-        def is_valid(cls, file: 'Film.File') -> bool:
-            """Check if the file is valid, according to valid film file criteria. To be valid, 
-            it must have a valid extension, no ignored strings, and be large enough.
-
-            Args:
-                file (Film.File): File to check its validity
-
-            Returns:
-                bool: True if the file is valid, otherwise False.
-            """
-            return (Film.Utils.has_valid_ext(file)
-
-                    # It must not contain an ignored string (e.g. 'sample')
-                    and not ops.FilmPath.Utils.has_ignored_string(file.original_path)
-
-                    # It must be large enough
-                    and Film.Utils.is_acceptable_size(file))
-
-        @classmethod
-        def is_acceptable_size(cls, file: 'Film.File') -> bool:
-            """Determine if a file_path is an acceptable size.
-
-            Args:
-                file: (Film.File)
-            Returns:
-                True, if the file is an acceptable size, else False.
-            """
-            return file.size >= cls.min_filesize(file)
-
-        @classmethod
-        def min_filesize(cls, file: 'Film.File') -> int:
-            """Determine the minimum filesize for the resolution for file path.
-
-            Args:
-                file: (str, utf-8) path to file.
-            Returns:
-                int: The minimum file size in bytes, or default in bytes
-                     if resolution could not be determined.
-            """
-
-            # If the file is valid but not a video, we can't expect 
-            # it to be too large (e.g., .srt)
-            if not file.is_video:
-                return 10
-            
-            # If the config is simple, just an int, return that in MB
-            min = config.min_filesize
-            if isinstance(min, int):
-                return min
-
-            # If the min filesize is not an int, we assume
-            # that it is an Addict of resolutions.
-            size = min.default
-            
-            if file.resolution is None:
-                size = min.default
-            elif file.resolution.value > 3: # 3 and higher are SD res
-                size = min.SD
-            else:
-                size = min[file.resolution.display_name]                
-
-            # If we're running tests, files are in MB instead of GB
-            t = 1 if 'pytest' in sys.argv[0] else 1024
-            return size * 1024 * t
-
-        @classmethod
-        def destination_root_dir(cls, file: 'Film.File') -> str:
-            """Returns the destination root path based on the file's resolution.
-
-            Args:
-                file (Film.File): File to check
-
-            Returns:
-                str: A root path string, e.g. /volumes/movies/HD or /volumes/movies/SD
-            """
-            try:
-                # Resolution Enum values > 3 are all SD
-                res_key = 'SD' if file.resolution.value > 3 else file.resolution.display_name
-                return config.destination_dirs[res_key]
-            except:
-                return config.destination_dirs.default
+        

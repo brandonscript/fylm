@@ -29,6 +29,7 @@ warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatche
 
 from rapidfuzz import fuzz
 
+from fylmlib import patterns
 from fylmlib.enums import *
 
 class Compare:
@@ -49,8 +50,8 @@ class Compare:
         # (mixed case, missing symbols, or illegal OS chars), we strip unwanted chars from
         # both the original and TMDb title, and convert both to lowercase so we can get
         # a more accurate string comparison.
-        a = ' '.join(re.sub(patterns.strip_when_comparing, ' ', a).lower().split())
-        b = ' '.join(re.sub(patterns.strip_when_comparing, ' ', b or '').lower().split())    
+        a = ' '.join(re.sub(patterns.STRIP_WHEN_COMPARING, ' ', a).lower().split())
+        b = ' '.join(re.sub(patterns.STRIP_WHEN_COMPARING, ' ', b or '').lower().split())    
         return fuzz.token_sort_ratio(a, b) / 100
 
     @staticmethod

@@ -33,7 +33,7 @@ from addict import Dict
 
 import fylmlib.config as config
 
-from fylmlib import Find, operations as ops
+from fylmlib import Find
 from make import Make, MakeFilmsResult
 
 if os.getenv('_PYTEST_RAISE', "0") != "0":

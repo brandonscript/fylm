@@ -32,17 +32,16 @@ from fylmlib.formatter import Format
 from fylmlib.progress import Progress
 from fylmlib.console import Console
 from fylmlib.parser import Parser
+from fylmlib.cursor import Cursor
+from fylmlib.operations import *
 
 # Higher level functions (init after)
 from fylmlib.compare import Compare
-from fylmlib.cursor import Cursor
+from fylmlib.tmdb import TMDb
 from fylmlib.duplicates import Duplicates
 from fylmlib.film import Film
 from fylmlib.interactive import Interactive
-from fylmlib.operations import *
 from fylmlib.notify import Notify
-# TODO: deprecate all dirops, fileops
 from fylmlib.processor import Processor
 from fylmlib.subtitle import Subtitle
-from fylmlib.tmdb import Tmdb
 

@@ -37,6 +37,8 @@ from pathlib import Path
 from addict import Dict
 import requests_cache
 
+from fylmlib.enums import Resolution
+
 def construct_yaml_str(self, node):
     """Hijack the yaml module loader to return unicode.
 
@@ -297,6 +299,25 @@ class Config(object):
         for k, v in self._defaults.items():
             setattr(self, k, Dict(v) if isinstance(v, dict) else v)
         del self._defaults
+        
+    def destination_dir(self, for_resolution: Resolution = Resolution.UNKNOWN) -> Path:
+        """Returns the destination root path based on the file's resolution.
+
+        Args:
+            for_resolution (Resolution): Resolution of film or file to check.
+
+        Returns:
+            The root Path for the specified resolution, e.g. 
+            /volumes/movies/HD or /volumes/movies/SD
+        """
+        try:
+            # Resolution Enum values > 3 are all SD
+            res_key = ('SD' 
+                       if for_resolution.resolution.value > 3 
+                       else for_resolution.resolution.display_name)
+            return self.destination_dirs[res_key]
+        except:
+            return self.destination_dirs.default
     
     def reload(self):
         """Reload config from config.yaml."""

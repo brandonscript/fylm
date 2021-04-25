@@ -61,7 +61,7 @@ class Processor:
         if not config.interactive and config.tmdb.enabled:
 
             # Dispatch an async search for all films
-            films = tmdb.dispatch_search_set(films).run()
+            films = tmdb.dispatch_search(films).run()
 
         # Route to the correct handler if the film shouldn't be skipped
         [cls.route(film) for film in films if not film.should_skip]

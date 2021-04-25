@@ -34,7 +34,7 @@ remove_unwanted_files: true
 # Remove the original source subfolder left behind after the important files have been copied, as long as it is not the root source dir.
 remove_source: true
 
-# Ignore files/folders smaller than this size, in MB. Good for skipping poorly named samples, or tiny files.
+# Ignore video files or dirs smaller than this size, in MB. Good for skipping poorly named samples, tiny files, or empty dirs.
 min_filesize:
   720p: 50
   1080p: 100
@@ -283,9 +283,7 @@ strip_prefixes:
 # A word of caution: adding common words here (especially words found in titles) will result in files/folders
 # being (unexpectedly) skipped.
 ignore_strings:
-  - sample
-  - '@eaDir'
-  - '_UNPACK_'
+  - fylmignore
 
 # keep_period: Array of strings that should retain the period in the name when searching, e.g. L.A. or S.W.A.T.
 keep_period:

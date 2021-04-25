@@ -52,7 +52,11 @@ class Parser:
     """
     def __init__(self, path: Union[str, 'Path', 'FilmPath'], mediainfo=None):
         
-        self.path = str(path)
+        try:
+            self.path = path.main_file.filmrel if path.exists() else path
+        except:
+            self.path = path
+        self.str = str(self.path)
         self.mediainfo = mediainfo
     
     @lazy
@@ -69,21 +73,18 @@ class Parser:
             A clean and well-formed film title.
         """
 
-        # Determine whether to use the file or its containing folder
-        # to determine the title by checking for year and resolution
-        title = self.dir if self.year or self.resolution else self.file
-
-        # Remove the file extension.
-        title = Path(title).stem
+        # Use the FilmPath's filmrel to identify the original title, 
+        # remove the extension.
+        title = self.str
 
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
             if title.lower().startswith(prefix.lower()):
                 title = title[len(prefix):]
         
-        # Use the 'strip_from_title' regular expression to replace unwanted
+        # Use the 'STRIP_FROM_TITLE' regular expression to replace unwanted
         # characters in a title with a space.
-        title = re.sub(patterns.strip_from_title, ' ', title)
+        title = re.sub(patterns.STRIP_FROM_TITLE, ' ', title)
         
         # If the title contains a known edition, strip it from the title. E.g.,
         # if we have Dinosaur.Special.Edition, we already know the edition, and
@@ -94,8 +95,8 @@ class Parser:
             title = re.sub(self._edition_map[0], '', title)
 
         # Strip all resolution and media tags from the title.
-        title = re.sub(patterns.media, '', title)
-        title = re.sub(patterns.resolution, '', title)
+        title = re.sub(patterns.MEDIA, '', title)
+        title = re.sub(patterns.RESOLUTION, '', title)
 
         # Typical naming patterns place the year as a delimiter between the title
         # and the rest of the file. Therefore we can assume we only care about
@@ -105,8 +106,8 @@ class Parser:
 
         # If a title ends with , The, we need to remove it and prepend it to the
         # start of the title.
-        if re.search(patterns.begins_with_or_comma_the, title):
-            title = f"The {re.sub(patterns.begins_with_or_comma_the, '', title)}"
+        if re.search(patterns.THE_PREFIX_SUFFIX, title):
+            title = f"The {re.sub(patterns.THE_PREFIX_SUFFIX, '', title)}"
 
         # Add back in . to titles or strings we know need to to keep periods.
         # Looking at you, S.W.A.T and After.Life.
@@ -118,14 +119,14 @@ class Parser:
                 break
 
         # Remove trailing non-word characters like ' - '
-        title = formatter.strip_trailing_nonword_chars(title)
+        title = Format.strip_trailing_nonword_chars(title)
 
         # Remove extra whitespace from the edges of the title and remove repeating
         # whitespace.
-        title = formatter.strip_extra_whitespace(title.strip())
+        title = Format.strip_extra_whitespace(title.strip())
 
         # Correct the case of the title
-        title = formatter.title_case(title)
+        title = Format.title_case(title)
 
         # Always uppercase strings that are meant to be in all caps
         for u in config.always_upper:
@@ -154,7 +155,7 @@ class Parser:
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and
         # no one will use python anymore).
-        m = last(re.finditer(patterns.YEAR, self.path), default=None)
+        m = last(re.finditer(patterns.YEAR, self.str), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
         return int(m.group('year')) if m else None
@@ -193,34 +194,31 @@ class Parser:
         
         if self.mediainfo:
             try:
-                if self.mediainfo.width == 3840:
-                    return Resolution.UHD_2160P
-                elif self.mediainfo.width == 1920:
-                    return Resolution.HD_1080P
-                elif self.mediainfo.width == 1280:
-                    return Resolution.HD_720P
-                elif self.mediainfo.width == 1024:
-                    return Resolution.SD_576P
-                elif self.mediainfo.width == 852:
-                    return Resolution.SD_480P
+                if self.mediainfo.width == 3840: return Resolution.UHD_2160P
+                elif self.mediainfo.width == 1920: return Resolution.HD_1080P
+                elif self.mediainfo.width == 1280: return Resolution.HD_720P
+                elif self.mediainfo.width == 1024: return Resolution.SD_576P
+                elif self.mediainfo.width == 852: return Resolution.SD_480P
             except:
                 pass
 
         # Search for any of the known qualities.
-        match = re.search(patterns.resolution, self.relpath)
+        m = last(re.finditer(patterns.RESOLUTION, self.str), default=None)
+        # Get the last element, and retrieve the 'year' capture group by name.
+        # If there are no matches, return None.
+        
+        if not m:
+            return Resolution.UNKNOWN
 
         # If a match exists, convert it to lowercase.
-        resolution = match.group('resolution').lower() if match else None
-        if resolution == '4k' or resolution.startswith('2160'):
+        resolution = m.group('resolution')
+    
+        if resolution == '4k' or resolution.startswith('2160'): 
             return Resolution.UHD_2160P
-        elif resolution.startswith('1080'):
-            return Resolution.HD_1080P
-        elif resolution.startswith('720'):
-            return Resolution.HD_720P
-        elif resolution.startswith('576'):
-            return Resolution.SD_576P
-        elif resolution.startswith('480'):
-            return Resolution.SD_480P
+        elif resolution.startswith('1080'): return Resolution.HD_1080P
+        elif resolution.startswith('720'): return Resolution.HD_720P
+        elif resolution.startswith('576'): return Resolution.SD_576P
+        elif resolution.startswith('480'): return Resolution.SD_480P
         return Resolution.UNKNOWN
 
     @lazy
@@ -236,17 +234,12 @@ class Parser:
             An enum representing the media found.
         """
 
-        match = re.search(patterns.media, self.relpath)
-        if match and match.group('bluray'):
-            return Media.BLURAY
-        elif match and match.group('webdl'):
-            return Media.WEBDL
-        elif match and match.group('hdtv'):
-            return Media.HDTV
-        elif match and match.group('dvd'):
-            return Media.DVD
-        elif match and match.group('sdtv'):
-            return Media.SDTV
+        match = re.search(patterns.MEDIA, self.str)
+        if match and match.group('bluray'): return Media.BLURAY
+        elif match and match.group('webdl'): return Media.WEBDL
+        elif match and match.group('hdtv'): return Media.HDTV
+        elif match and match.group('dvd'): return Media.DVD
+        elif match and match.group('sdtv'): return Media.SDTV
         return Media.UNKNOWN
 
     @lazy
@@ -262,7 +255,7 @@ class Parser:
             A bool representing the HDR status of the media.
         """
 
-        match = re.search(patterns.hdr, str(self.relpath))
+        match = re.search(patterns.HDR, str(self.str))
         return True if (match and match.group('hdr')) else False
 
     @lazy
@@ -278,7 +271,7 @@ class Parser:
             A bool representing the proper state of the media.
         """
 
-        match = re.search(patterns.proper, str(self.relpath))
+        match = re.search(patterns.PROPER, str(self.str))
         return True if (match and match.group('proper')) else False
 
     @lazy
@@ -296,11 +289,12 @@ class Parser:
         """
 
         # Search for a matching part condition
-        match = re.search(patterns.part, str(self.relpath))
+        match = re.search(patterns.PART, str(self.str))
         
         # If a match exists, convert it to uppercase.
         return match.group('part').upper() if match else None
 
+    @lazy
     def _edition_map(self) -> (str, str):
         """Internal method to search for special edition strings in a path.
 
@@ -324,7 +318,7 @@ class Parser:
             
             # Because this map is in a specific order, of we find a suitable match, we
             # want to return it right away.
-            result = re.search(rx, str(self.relpath))
+            result = re.search(rx, str(self.path.filmrel))
             if result:
                 # Return a tuple containing the matching compiled expression and its
                 # corrected value after performing a capture group replace, then break 

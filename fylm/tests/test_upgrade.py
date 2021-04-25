@@ -45,32 +45,32 @@ def async_safe_copy(conn, *args):
     conn.close()
 
 # @pytest.mark.skip()
-class TestMove(object):
+class TestUpgrade(object):
 
-    def test_basic_move(self):
+    # def test_basic_move(self):
         
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
+    #     conftest.cleanup_all()
+    #     conftest.make_empty_dirs()
 
-        # Reset config
-        conftest._setup()
+    #     # Reset config
+    #     conftest._setup()
 
-        config.interactive = False
-        assert(config.interactive is False)
+    #     config.interactive = False
+    #     assert(config.interactive is False)
 
-        make.make_mock_file(src, big_size)
+    #     make.make_mock_file(src, big_size)
 
-        config.safe_copy = False
-        assert(config.safe_copy is False)
+    #     config.safe_copy = False
+    #     assert(config.safe_copy is False)
         
-        config.test = False
-        assert(config.test is False)
+    #     config.test = False
+    #     assert(config.test is False)
 
-        move = ops.fileops.safe_move(src, dst)
+    #     move = ops.fileops.safe_move(src, dst)
 
-        assert(move is True)
-        assert(not os.path.exists(src))
-        assert(    os.path.exists(dst))
+    #     assert(move is True)
+    #     assert(not os.path.exists(src))
+    #     assert(    os.path.exists(dst))
 
     def test_dst_exists_upgrade_smaller(self):
 
@@ -187,86 +187,86 @@ class TestMove(object):
         assert(not os.path.exists(src))
         assert(    os.path.exists(dst))
 
-    def test_test_enabled(self):
+    # def test_test_enabled(self):
 
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
+    #     conftest.cleanup_all()
+    #     conftest.make_empty_dirs()
 
-        make.make_mock_file(src, big_size)
-        assert(os.path.exists(src))
-        assert(not os.path.exists(dst))
+    #     make.make_mock_file(src, big_size)
+    #     assert(os.path.exists(src))
+    #     assert(not os.path.exists(dst))
 
-        config.safe_copy = False
-        assert(config.safe_copy is False)
+    #     config.safe_copy = False
+    #     assert(config.safe_copy is False)
 
-        config.test = True
-        assert(config.test is True)
+    #     config.test = True
+    #     assert(config.test is True)
 
-        move = ops.fileops.safe_move(src, dst)
+    #     move = ops.fileops.safe_move(src, dst)
 
-        assert(move is True)
-        assert(os.path.exists(src))
-        assert(not os.path.exists(dst))
+    #     assert(move is True)
+    #     assert(os.path.exists(src))
+    #     assert(not os.path.exists(dst))
 
-    def test_src_and_dst_are_same_dir(self):
+    # def test_src_and_dst_are_same_dir(self):
 
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
+    #     conftest.cleanup_all()
+    #     conftest.make_empty_dirs()
 
-        make.make_mock_file(src, big_size)
+    #     make.make_mock_file(src, big_size)
 
-        config.safe_copy = False
-        assert(config.safe_copy is False)
+    #     config.safe_copy = False
+    #     assert(config.safe_copy is False)
         
-        config.test = False
-        assert(config.test is False)
+    #     config.test = False
+    #     assert(config.test is False)
 
-        move = ops.fileops.safe_move(src, src)
+    #     move = ops.fileops.safe_move(src, src)
 
-        assert(move is False)
-        assert(os.path.exists(src))
+    #     assert(move is False)
+    #     assert(os.path.exists(src))
 
-    def test_safe_copy(self):
+    # def test_safe_copy(self):
 
-        big_size = 75 * make.mb
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
+    #     big_size = 75 * make.mb
+    #     conftest.cleanup_all()
+    #     conftest.make_empty_dirs()
 
-        # Need to make sure this file is sufficiently big
-        make.make_mock_file(src, big_size * (1024 if os.environ.get('TRAVIS') is not None else 1))
+    #     # Need to make sure this file is sufficiently big
+    #     make.make_mock_file(src, big_size * (1024 if os.environ.get('TRAVIS') is not None else 1))
         
-        config.test = False
-        assert(config.test is False)
-        config.safe_copy = True
-        assert(config.safe_copy is True)
+    #     config.test = False
+    #     assert(config.test is False)
+    #     config.safe_copy = True
+    #     assert(config.safe_copy is True)
 
-        parent_conn, child_conn = Pipe()
-        p = Process(target=async_safe_copy, args=(child_conn, src, dst,))
-        p.start()
-        # This is a bit of a hack, but this test requires the file to sufficiently large enough
-        # to check that the partial exists before the thread finishes, but it also can't start
-        # too soon, so we sleep for 0.1s.
-        time.sleep(0.1)
-        assert(os.path.exists(f'{dst}.partial~'))
-        copy = parent_conn.recv()
-        p.join()
+    #     parent_conn, child_conn = Pipe()
+    #     p = Process(target=async_safe_copy, args=(child_conn, src, dst,))
+    #     p.start()
+    #     # This is a bit of a hack, but this test requires the file to sufficiently large enough
+    #     # to check that the partial exists before the thread finishes, but it also can't start
+    #     # too soon, so we sleep for 0.1s.
+    #     time.sleep(0.1)
+    #     assert(os.path.exists(f'{dst}.partial~'))
+    #     copy = parent_conn.recv()
+    #     p.join()
 
-        assert(copy is True)
-        assert(not os.path.exists(src))
-        assert(os.path.exists(dst))
+    #     assert(copy is True)
+    #     assert(not os.path.exists(src))
+    #     assert(os.path.exists(dst))
 
-        # Disable safe copy
-        config.safe_copy = False
-        assert(config.safe_copy is False)
+    #     # Disable safe copy
+    #     config.safe_copy = False
+    #     assert(config.safe_copy is False)
 
-    @pytest.mark.xfail(raises=OSError)
-    def test_not_path_exists(self):
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
+    # @pytest.mark.xfail(raises=OSError)
+    # def test_not_path_exists(self):
+    #     conftest.cleanup_all()
+    #     conftest.make_empty_dirs()
 
-        src = '_DOES_NOT_EXIST_'
-        dst = '_DOES_NOT_MATTER_'
+    #     src = '_DOES_NOT_EXIST_'
+    #     dst = '_DOES_NOT_MATTER_'
 
-        move = ops.fileops.safe_move(src, dst)
+    #     move = ops.fileops.safe_move(src, dst)
 
-        assert(move is False)
+    #     assert(move is False)

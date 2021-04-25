@@ -223,7 +223,7 @@ class FilmPath(Path):
                                      - Avatar.2009.BluRay.1080p.x264-Scene/av.bluray.1080p.mkv
                                      - Avatar.2009.BluRay.1080p.x264-Scene.mkv
                                      
-        filmroot (FilmPath):        The root path of a file or dir wit.
+        filmroot (FilmPath):        The root path of a file or dir.
                                     
         is_container (bool):        Returns True if the path contains multiple films and should 
                                     be investigated recursively.
@@ -257,12 +257,16 @@ class FilmPath(Path):
                                     provided by config or -s, e.g.
                                     
                                      - /volumes/downloads
+                                     
+        size (int):                 Size of the file or total size of dir, passthrough to Size.calc.
+        
+        size_lazy (int):            Cached copy of size.
                                     
         siblings ([FilmPath]):      Iterable of all files or dirs that are adjacent to the current path.
                                             
         video_files ([FilmPath]):   Iterable subset of files that are valid video files.
         
-        year (int or None):         Year detected in .name.
+        xyear (int or None):        Year detected in in the name segment.
         
     Methods:
     
@@ -396,7 +400,8 @@ class FilmPath(Path):
         if self._dirs:
             return self._dirs
         if not self.is_dir() or not self.is_absolute():
-            self._dirs = None
+            raise NotADirectoryError(
+                f"No 'dirs' for '{self}', it is not a dir.")
         else:
             self._dirs = [FilmPath(d) for d in Find.shallow(self) if (
                 d.is_dir() and not d == self)]
@@ -407,7 +412,7 @@ class FilmPath(Path):
         if self._files:
             return self._files
         if not self.is_dir() or not self.is_absolute():
-            self._files = None
+            raise NotADirectoryError(f"No 'files' for '{self}', it is not a dir.")
         else:
             self._files = [FilmPath(f) for f in Find.shallow(self) if f.is_file()]
         return self._files
@@ -415,15 +420,14 @@ class FilmPath(Path):
     @lazy
     def filmrel(self) -> 'FilmPath':
         
-        # If this isn't a film, it can't have a filmrel.
-        if not self.maybe_film:
-            return None
-        
-        # If it's not an absolute path, return itself
-        if not self.is_absolute():
-            return self
-        
-        return self.relative_to(self.branch)
+        # If it doesn't exist, but is a video file or has a year, 
+        # walk the parents to find the first path without year, then 
+        # return the relative path between it and self.
+        if self.is_video_file or (self.xyear or self.parent.xyear):
+            fr = first(self.parents,
+                       where=lambda x: not x.xyear,
+                       default=None)
+            return self.relative_to(fr) if fr else None
 
     @lazy
     def filmroot(self) -> 'Path':
@@ -451,13 +455,13 @@ class FilmPath(Path):
         # If it's a directory, without a year, and 
         # containing at least one non-empty dir
         if (self.is_dir() 
-            and not self.year 
+            and not self.xyear 
             and self.dirs 
             and any(not d.is_empty for d in self.dirs)):
             return True
         
         # Lambda: from all objects in x, create a list of years
-        def get_years(x): return [o.year for o in x if o is not None]
+        def get_years(x): return [o.xyear for o in x if o is not None]
 
         # Lambda: compare a list and see if they all match
         def all_match(x): return all(y == x[0] for y in x if y)
@@ -473,7 +477,7 @@ class FilmPath(Path):
     @lazy
     def is_empty(self) -> bool:
         if not self.is_dir():
-            raise NotADirectoryError(f"'is_empty' failed for '{self}', it is not a dir.")
+            raise NotADirectoryError(f"'is_empty' failed, '{self}' is not a dir.")
         return not first(self.iterdir(), where=lambda x: not is_sys_file(x))
 
     @lazy
@@ -494,12 +498,12 @@ class FilmPath(Path):
             return False
 
         # If it's a video file and its parent doens't have a year
-        if self.is_video_file and not self.parent.year:
+        if self.is_video_file and not self.parent.xyear:
             self.filmroot = Path(self)
             return True
         
         # Lambda: from all objects in x, create a list of years if not None
-        def get_years(x): return [y for y in [Parser(o.name).year for o in x] if y is not None]
+        def get_years(x): return [y for y in [o.xyear for o in x] if y is not None]
 
         # Lambda: compare a list and see if they all match
         def all_match(x): return all(y == x[0] for y in x if y)
@@ -546,8 +550,16 @@ class FilmPath(Path):
     def maybe_film(self) -> bool:
         
         # If it's not absolute, we can only check for year and video ext.
-        if not self.is_absolute() and (self.is_video_file or self.year):
+        if not self.is_absolute() and (self.is_video_file or self.xyear):
             return True
+        
+        # If it doesn't exist, all we can do is check it or its parent 
+        # for a year.
+        if not self.exists() and (self.is_video_file 
+                                  or self.xyear 
+                                  or self.parent.xyear):
+            return True
+            
         
         # It's a video file and its parent is a branch
         if self.is_video_file and self.parent.is_branch:
@@ -572,18 +584,30 @@ class FilmPath(Path):
     def siblings(self) -> Iterable['FilmPath']:
         if not self.is_absolute():
             raise ValueError(
-                f"Checking for siblings for '{self}' failed, path must be absolute.")
+                f"'siblings' failed '{self}', path must be absolute.")
         yield from [x for x in self.parent.iterdir() if x != self and not is_sys_file(x)]
+        
+    @lazy
+    def size_lazy(self) -> int:
+        return Size.calc(self)
+
+    @property
+    def size(self) -> int:
+        self.size_lazy = Size.calc(self)
+        return self.size_lazy
 
     @property
     def video_files(self) -> Iterable['FilmPath']:
+        if not self.exists():
+            raise FileNotFoundError(
+                f"'video_files' failed, '{self}' does not exist.")
         if not self.is_dir():
             raise NotADirectoryError(
-                f"'video_files' failed for '{self}', it is not a dir.")
+                f"'video_files' failed, '{self}' is not a dir.")
         return filter(lambda f: Info.is_video_file(f), self.resolve().rglob("*"))
 
     @lazy
-    def year(self) -> int:
+    def xyear(self) -> int:
         
         # If it's not an absolute path, we can check the whole path.
         return Parser(self.name if self.is_absolute() else str(self)).year
@@ -812,6 +836,18 @@ class Info:
     """Utilities and helper functions for FilmPath"""
     
     @staticmethod
+    def is_acceptable_size(path: 'FilmPath') -> bool:
+        """Determine if a path is an acceptable size.
+
+            Args:
+                path (FilmPath): Path to file.
+                
+            Returns:
+                True, if the path is an acceptable size, else False.
+            """
+        return path.size >= Info.min_filesize(path)
+    
+    @staticmethod
     def is_video_file(path: Union[str, Path, 'FilmPath']) -> bool:
         """Determines if the specified path is a video file from
         config.video_exts.
@@ -826,6 +862,30 @@ class Info:
         # Coerce to a standard Path object
         p = Path(path)
         return p.suffix and p.suffix.lower() in config.video_exts
+    
+    @staticmethod
+    def is_wanted_file(path: Union[str, Path, 'FilmPath']) -> bool:
+        """Check if the file is wanted, based on ext, ignored string,
+        and size.
+        
+        This is an expensive call, so use wisely.
+
+        Args:
+            path (str, Path, or FilmPath): Path to check
+
+        Returns:
+            bool: True if the path is valid, otherwise False.
+        """
+        if not path.is_file():
+            return False
+        
+        return (Info.has_valid_ext(path)
+
+                # It must not contain an ignored string (e.g. 'sample')
+                and not Info(has_ignored_string)
+
+                # It must be large enough
+                and Info.is_acceptable_size(path))
     
     @staticmethod
     def has_valid_ext(path: Union[str, Path, 'FilmPath']) -> bool:
@@ -857,6 +917,48 @@ class Info:
        
         # Coerce to a str
         return any(word.lower() in str(path).lower() for word in config.ignore_strings)
+    
+    @staticmethod
+    def min_filesize(path: 'FilmPath') -> int:
+        """Determine the minimum filesize for the resolution for path.
+
+        Args:
+            path (FilmPath): Path to file.
+
+        Returns:
+            int: The minimum file size in bytes, or default in bytes
+                    if resolution could not be determined.
+        """
+
+        # If the file is valid but not a video, we can't expect
+        # it to be too large (e.g., .srt)
+        if not path.is_video_file:
+            return 0
+
+        # If the config is simple, just an int, return that in MB
+        min = config.min_filesize
+        if isinstance(min, int):
+            return min
+
+        # If the min filesize is not an int, we assume
+        # that it is an Addict of resolutions.
+        size = min.default
+
+        try:
+            res = path.resolution
+        except:
+            res = Parser(path).resolution
+
+        if res is None:
+            size = min.default
+        elif res.value > 3:  # 3 and higher are SD res
+            size = min.SD
+        else:
+            size = min[res.display_name]
+
+        # If we're running tests, files are in MB instead of GB
+        t = 1 if 'pytest' in sys.argv[0] else 1024
+        return size * 1024 * t
             
     @staticmethod
     def paths_exist(paths: [Union[str, Path, 'FilmPath']], quiet: bool = False) -> bool:

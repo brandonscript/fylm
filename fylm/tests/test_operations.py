@@ -48,7 +48,7 @@ SRC2 = conftest.src_path2
 
 ALITA = 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE'
 ALITA_DST = f'Alita Battle Angel (2019) Bluray-1080p/'\
-                f'Alita Battle Angel (2019) Bluray-1080p.mkv'
+            f'Alita Battle Angel (2019) Bluray-1080p.mkv'
 ATMITW = 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE'
 AVATAR = 'Avatar.2009.BluRay.2160p.HDR.x265-xWinG'
 DEEP = '#deep'
@@ -390,6 +390,12 @@ class TestFilmPath(object):
         assert(FilmPath(SRC).dirs)
         assert(len(FilmPath(SRC).dirs) == len(dirs))
 
+    @pytest.mark.xfail(raises=NotADirectoryError)
+    def test_dirs_if_file(self):
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        Make.mock_file(alita)
+        assert(alita.dirs)
+            
     def test_files(self):
         Make.all_mock_files()
 
@@ -399,6 +405,13 @@ class TestFilmPath(object):
         assert(FilmPath(SRC).files)
         assert(len(FilmPath(SRC).files) == len(files))
 
+    @pytest.mark.xfail(raises=NotADirectoryError)
+    def test_files_if_file(self):
+        
+        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
+        Make.mock_file(alita)
+        assert(alita.dirs)
+    
     def test_filmrel(self):
         
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
@@ -423,7 +436,7 @@ class TestFilmPath(object):
         assert(alita.parent.filmrel == Path(ALITA))
         assert(atmitw.filmrel == Path(ATMITW) / Path(ATMITW).with_suffix('.mkv'))
         assert(atmitw.parent.filmrel == Path(ATMITW))
-        assert(not avatar.filmrel)
+        assert(avatar.filmrel == Path(AVATAR))
         assert(not empty.filmrel)
         assert(not notes.filmrel)
         assert(starlord.filmrel == Path(STARLORD))
@@ -696,6 +709,59 @@ class TestFilmPath(object):
 
         assert(iterlen(FilmPath(ALITA).siblings) == 1)
 
+    def test_size(self):
+        
+        files = [
+            (SRC / 'Test/Test.File.mkv', 10 * MB),
+            (SRC / 'Test/Test.File2.mkv', 21 * MB),
+            (SRC / 'Test/Test.File3.mkv', 8 * MB),
+            (SRC / 'Test/Test.File.jpg', 15 * KB),
+            (SRC / 'Test/Test.File.avi', 2 * MB)
+        ]
+
+        for f in files:
+            Make.mock_file(f[0], f[1])
+
+        # Assert file size matches definition
+        for f in files:
+            assert(abs(FilmPath(f[0]).size - f[1]) == 0)
+
+        # Assert dir is at least the size of the file, probably larger
+        # because the folder itself takes up some space. Diff of 1 byte.
+
+        # Test multiple files in dir to diff of 3 bytes
+        assert(abs(FilmPath(SRC / 'Test').size - sum(s for (_, s) in files) == 0))
+        
+    def test_size_lazy(self):
+        
+        files = [
+            (SRC / 'Test/Test.File.mkv', 10 * MB),
+            (SRC / 'Test/Test.File2.mkv', 21 * MB),
+            (SRC / 'Test/Test.File3.mkv', 8 * MB),
+            (SRC / 'Test/Test.File.jpg', 15 * KB),
+            (SRC / 'Test/Test.File.avi', 2 * MB)
+        ]
+
+        for f in files:
+            Make.mock_file(f[0], f[1])
+
+        # Assert file size matches definition
+        for f in files:
+            assert(abs(FilmPath(f[0]).size - f[1]) == 0)
+
+        # Assert dir is at least the size of the file, probably larger
+        # because the folder itself takes up some space. Diff of 1 byte.
+
+        test = FilmPath(SRC / 'Test')
+        
+        # Test multiple files in dir to diff of 3 bytes
+        assert(abs(test.size_lazy - sum(s for (_, s) in files) == 0))
+        
+        Delete.dir(SRC / 'Test')
+        
+        # Test the cached size_lazy, even after deleted
+        assert(abs(test.size_lazy - sum(s for (_, s) in files) == 0))
+        
     def test_video_files(self):
         
         files = [
@@ -717,15 +783,15 @@ class TestFilmPath(object):
 
     def test_year(self):
         
-        assert(FilmPath(ALITA).year == 2019)
-        assert(FilmPath(ATMITW).year == 2017)
-        assert(not FilmPath(DEEP).year)
-        assert(FilmPath(STARLORD).parent.year == 2022)
-        assert(FilmPath(STARLORD).filmrel.year == 2022)
-        assert(FilmPath(TTOP).year == 1968)
-        assert(not FilmPath('2001.A.Space.Odyssey.1080p.x264.mkv').year)
-        assert(FilmPath(ZELDA).year == 1991)
-        assert(FilmPath(ZORG).year == 1989)
+        assert(FilmPath(ALITA).xyear == 2019)
+        assert(FilmPath(ATMITW).xyear == 2017)
+        assert(not FilmPath(DEEP).xyear)
+        assert(FilmPath(STARLORD).parent.xyear == 2022)
+        assert(FilmPath(STARLORD).filmrel.xyear == 2022)
+        assert(FilmPath(TTOP).xyear == 1968)
+        assert(not FilmPath('2001.A.Space.Odyssey.1080p.x264.mkv').xyear)
+        assert(FilmPath(ZELDA).xyear == 1991)
+        assert(FilmPath(ZORG).xyear == 1989)
 
     # Methods
 
@@ -1078,41 +1144,93 @@ class TestFind(object):
         assert(config.min_filesize == 0)
 
 class TestInfo(object):
+        
+    def test_exists_case_sensitive(self):
+        name = 'test-1080p.mkv'
+        funkyname = 'tEsT-fUnKy-1080p.MKV'
+        
+        Make.mock_src_files(name, funkyname)
+        
+        assert(Path(SRC / Path(name)).exists())
+        assert(Path(SRC / Path(funkyname)).exists())
+        assert(Info.exists_case_sensitive(Path(SRC / Path(name))))
+        assert(Info.exists_case_sensitive(Path(SRC / Path(funkyname))))
+        assert(not Info.exists_case_sensitive(Path(SRC / Path(name.upper()))))
+        assert(not Info.exists_case_sensitive(Path(SRC / Path(funkyname.lower()))))
     
+    def test_is_acceptable_size(self):
+
+        files = [
+            'Test.File.1080p.mkv',
+            'Test.File.avi',
+            'Test.File.srt',
+            'Test.File.mp4',
+            'Test.File.nfo',
+            'Test.File.mkv',
+            'TestDir/File.avi'
+        ]
+
+        Make.mock_file(SRC / files[0], 300 * MB)  # OK
+        Make.mock_file(SRC / files[1],   1 * MB)  # Not OK
+        Make.mock_file(SRC / files[2],   4 * KB)  # OK (not a video)
+        Make.mock_file(SRC / files[3],  54 * MB)  # OK
+        Make.mock_file(SRC / files[4],   4 * KB)  # OK (not a video)
+        Make.mock_file(SRC / files[5],  18 * MB)  # Not OK
+        Make.mock_file(SRC / files[6],  18 * MB)  # Dir - Not OK
+
+        assert(Film.Utils.is_acceptable_size(Film(SRC / files[0]).main_file))
+        assert(not Film.Utils.is_acceptable_size(Film(SRC / files[1]).main_file))
+        assert(Film.Utils.is_acceptable_size(Film(SRC / files[2]).main_file))
+        assert(Film.Utils.is_acceptable_size(Film(SRC / files[3]).main_file))
+        assert(Film.Utils.is_acceptable_size(Film(SRC / files[4]).main_file))
+        assert(not Film.Utils.is_acceptable_size(Film(SRC / files[5]).main_file))
+        assert(not Film.Utils.is_acceptable_size(Film(SRC / files[5])))
+
+    def test_is_same_partition(self):
+        assert(Info.is_same_partition(Path().home(), Path().home().parent))
+        # Cannot reliably test if this function fails, we'll just have to trust
+        # that when it's not on the same partition, it returns false.
+
     def test_is_video_file(self):
         mkv = 'test-1080p.mkv'
         bad = 'test.txt'
-        
+
         assert(Info.is_video_file(mkv))
         assert(Info.is_video_file(Path(mkv)))
         assert(Info.is_video_file(FilmPath(mkv)))
-        
+
         assert(not Info.is_video_file(bad))
         assert(not Info.is_video_file(Path(bad)))
         assert(not Info.is_video_file(FilmPath(bad)))
-        
+
         Make.mock_src_files(mkv)
-        
+
         assert(Info.is_video_file(os.path.normpath(str(SRC) + '/' + mkv)))
         assert(Info.is_video_file(SRC / Path(mkv)))
         assert(Info.is_video_file(SRC / FilmPath(mkv)))
-        
+
         conftest.cleanup_all()
         Make.empty_dirs()
-        
+
         funkyname = 'tEsT-1080p.MKV'
 
         assert(Info.is_video_file(funkyname))
         assert(Info.is_video_file(Path(funkyname)))
         assert(Info.is_video_file(FilmPath(funkyname)))
-        
+
         # Test relpath
         assert(Info.is_video_file(STARLORD))
-        
+
+    @pytest.mark.skip(reason="TODO")
+    def test_is_wanted_file(self):
+        pass
+
     def test_has_ignored_string(self):
-        assert(not Info.has_ignored_string('dir/A.File.1080p.bluray.x264-scene.mkv'))
+        assert(not Info.has_ignored_string(
+            'dir/A.File.1080p.bluray.x264-scene.mkv'))
         assert(Info.has_ignored_string('sample'))
-        assert(Info.has_ignored_string('A.File.1080p.bluray.x264-scene.sample.mkv'))
+        assert(Info.has_ignored_string(
+            'A.File.1080p.bluray.x264-scene.sample.mkv'))
         assert(Info.has_ignored_string('SaMpLe'))
         assert(Info.has_ignored_string('@eaDir'))
         assert(Info.has_ignored_string('@EAdir'))
@@ -1139,6 +1257,26 @@ class TestInfo(object):
         assert(Info.has_valid_ext(SRC / files[3]))
         assert(not Info.has_valid_ext(SRC / files[4]))
         assert(not Info.has_valid_ext(SRC / files[5]))
+
+    def test_min_filesize(self):
+
+        files = [
+            Film('Test.File.1080p.mkv'),
+            Film('Test.File.2160p.mp4'),
+            Film('Test.File.1080p.srt'),
+            Film('Test.File.720p.mkv'),
+            Film('Test.File.mkv'),
+            Film('Test.File.nfo'),
+            Film('Test.File.avi')
+        ]
+
+        assert(Film.Utils.min_filesize(files[0]) == 100 * MB)
+        assert(Film.Utils.min_filesize(files[1]) == 200 * MB)
+        assert(Film.Utils.min_filesize(files[2]) == 0 * MB)
+        assert(Film.Utils.min_filesize(files[3]) == 50 * MB)
+        assert(Film.Utils.min_filesize(files[4]) == 20 * MB)
+        assert(Film.Utils.min_filesize(files[5]) == 0 * MB)
+        assert(Film.Utils.min_filesize(files[6]) == 20 * MB)
     
     def test_paths_exist(self):
         # 2/2 valid paths
@@ -1149,24 +1287,6 @@ class TestInfo(object):
                                          Path('.').resolve()]))
         # 0/1 valid paths
         assert(not Info.paths_exist([Path('/__THERE_IS_NO_SPOON__')]))
-
-    def test_is_same_partition(self):
-        assert(Info.is_same_partition(Path().home(), Path().home().parent))
-        # Cannot reliably test if this function fails, we'll just have to trust 
-        # that when it's not on the same partition, it returns false.
-        
-    def test_exists_case_sensitive(self):
-        name = 'test-1080p.mkv'
-        funkyname = 'tEsT-fUnKy-1080p.MKV'
-        
-        Make.mock_src_files(name, funkyname)
-        
-        assert(Path(SRC / Path(name)).exists())
-        assert(Path(SRC / Path(funkyname)).exists())
-        assert(Info.exists_case_sensitive(Path(SRC / Path(name))))
-        assert(Info.exists_case_sensitive(Path(SRC / Path(funkyname))))
-        assert(not Info.exists_case_sensitive(Path(SRC / Path(name.upper()))))
-        assert(not Info.exists_case_sensitive(Path(SRC / Path(funkyname.lower()))))
 
 class FileExistsHandler(FileSystemEventHandler):
     
@@ -1488,67 +1608,3 @@ class TestSize(object):
         assert(Size.pretty(files[3][0]) == '100 B')
         assert(Size.pretty(files[4][0]) == '1.25 GiB')
         assert(Size.pretty(files[5][0]) == '700.0 MiB')
-
-@pytest.mark.skip()
-class TestSizeOperations_Deprecated(object):
-    
-    def test_size_of_largest_video(self):
-
-        conftest._setup()
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        files = [
-            'Test.File/Test.File.mkv',
-            'Test.File/Test.File2.mkv',
-            'Test.File/Test.File3.mkv',
-            'Test.File/Test.File.avi',
-            'Test.File/Test.File.srt',
-            'Test.File/Test.File.mp4',
-            'Test.File/Test.File.nfo'
-        ]
-
-        Make.mock_file(os.path.join(SRC, files[0]), 2354 * MB)
-        Make.mock_file(os.path.join(SRC, files[1]), 1612 * MB)
-        Make.mock_file(os.path.join(SRC, files[2]),  280 * MB)
-        Make.mock_file(os.path.join(SRC, files[3]),   10 * MB)
-        Make.mock_file(os.path.join(SRC, files[4]),    4 * KB)
-        Make.mock_file(os.path.join(SRC, files[5]),  454 * MB)
-        Make.mock_file(os.path.join(SRC, files[6]),    4 * KB)
-
-        # Test multiple files to diff of 1 byte
-        assert(abs(ops.size(ops.largest_video(os.path.dirname('Test.File'))) - (2354 * MB)) <= 1)
-
-    def test_is_acceptable_size(self):
-
-        conftest._setup()
-
-        config.min_filesize = 5  # min filesize in MB
-        assert(config.min_filesize == 5)
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        files = [
-            'Test.File.mkv',
-            'Test.File.avi',
-            'Test.File.srt',
-            'Test.File.mp4',
-            'Test.File.nfo'
-        ]
-
-        Make.mock_file(os.path.join(SRC, files[0]),  300 * MB)
-        Make.mock_file(os.path.join(SRC, files[1]),    1 * MB)
-        Make.mock_file(os.path.join(SRC, files[2]),    4 * KB)
-        Make.mock_file(os.path.join(SRC, files[3]),   54 * MB)
-        Make.mock_file(os.path.join(SRC, files[4]),    4 * KB)
-
-        assert(ops.fileops.is_acceptable_size(os.path.join(SRC, files[0])))
-        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[1])))
-        assert(ops.fileops.is_acceptable_size(os.path.join(SRC, files[2])))
-        assert(ops.fileops.is_acceptable_size(os.path.join(SRC, files[3])))
-        assert(not ops.fileops.is_acceptable_size(os.path.join(SRC, files[4])))
-
-        config.min_filesize = 0  # min filesize back to 0
-        assert(config.min_filesize == 0)
