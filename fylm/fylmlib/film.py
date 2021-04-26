@@ -56,11 +56,11 @@ class Film(FilmPath):
 
     Attributes:
 
-        src (Filmpath):                 Original (immutable) abs source path of the film's root, e.g.
+        src (FilmPath):                 Original (immutable) abs source path of the film's root, e.g.
                                          - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene or
                                          - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
 
-        dst (Filmpath):                 Desired abs path to this film's new root, e.g.
+        dst (FilmPath):                 Desired abs path to this film's new root, e.g.
                                          - /volumes/movies/HD/Avatar (2009) or
                                          - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
@@ -81,8 +81,9 @@ class Film(FilmPath):
 
         files ([Film.File]):            Mapped from FilmPath.files to Film.File. 
         
-        new_name (Path):                New name of the film, including the file extension if applicable.
-
+        new_name (Path):                New name of the film, including file extension if it's a file.
+        new_name_lazy (Path):           Lazy (cached) copy of new_name
+        
         wanted_files ([Film.File]):     A subset of files that have wanted file extensions.
 
         bad_files ([Film.File]):        A subset of files that are not wanted.
@@ -103,11 +104,17 @@ class Film(FilmPath):
         self._src = Path(self)
         self.tmdb: TMDb.Result = TMDb.Result()
         self._tmdb_matches: [TMDb.Result] = []
-        # self._parser = Parser(self.main_file.filmrel if self.exists() else self)
+
+    def __repr__(self):
+        return ' '.join([str(x) for x in [
+            f"Film('{self}')",
+            self.title,
+            self.year,
+            self.tmdb.id] if x])
 
     @property
     def bad_files(self) -> Iterable['Film.File']:
-        return iter(filter(lambda f: not f.is_wanted_file, self.files))
+        return iter(filter(lambda f: not f.is_wanted, self.files))
 
     @property
     def dst(self) -> Path:
@@ -116,13 +123,13 @@ class Film(FilmPath):
         if config.rename_only is True:
             return self.src.parent / self.new_name
         else:
-            return config.destination_dir(self.main_file.resolution or None) / self.new_name
+            return config.destination_dir(self.main_file.resolution) / self.new_name
         
     @property
     def new_name(self) -> Path:
         name = Format.Name(self.main_file)
         self.new_name_lazy = name
-        return name.parent if config.use_folders else name
+        return name.dirname if config.use_folders else name.filename
     
     @lazy
     def new_name_lazy(self) -> Path:
@@ -154,10 +161,10 @@ class Film(FilmPath):
         elif not Info.is_acceptable_size(self.main_file): return i.TOO_SMALL
         else: return None
         
-        # TODO: Re-implement this in processor
+        # FIXME: Re-implement this in processor
         """if self.ignore_reason is i.TOO_SMALL:
-            return f"{self.ignore_reason.str} - {formatter.pretty_size(self.size)}"
-        return self.ignore_reason.str if self.ignore_reason else None"""
+            return f"{self.ignore_reason.display_name} - {formatter.pretty_size(self.size)}"
+        return self.ignore_reason.display_name if self.ignore_reason else None"""
 
     @lazy
     def main_file(self) -> 'Film.File':
@@ -240,7 +247,7 @@ class Film(FilmPath):
 
     @property
     def wanted_files(self) -> Iterable['Film.File']:
-        return iter(filter(lambda f: f.is_wanted_file, self.files))
+        return iter(filter(lambda f: f.is_wanted, self.files))
     
     @lazy
     def year(self) -> int:
@@ -260,94 +267,101 @@ class Film(FilmPath):
         All File objects bound to the same Film object must share at least the same destination_root_dir
         path, title, year, and tmdb_id. 
 
-        Invalid or unwanted files can still be mapped to a File object, but self.is_wanted_file will return False.
+        Invalid or unwanted files can still be mapped to a File object, but self.is_wanted will return False.
 
         Attributes:
         
-            title (str):                Title of the parent Film object.
+            src (FilmPath):                 Original (immutable) abs source path of the file's root, e.g.
+                                            - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
 
-            title_the (str):            Title, The of the parent Film object.
+            dst (FilmPath):                 Desired abs path to this file's new root, e.g.
+                                            - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
-            year (str):                 Year of the parent Film object.
+            title (str):                    Ref to film.title.
 
-            edition (str):              Special edition.
+            title_the (str):                Ref to film.title.the.
 
-            media (Media):              Original release media (see enums.Media)
+            year (str):                     Ref to film.year.
             
-            resolution (Resolution):    Original pixel depth (see enums.Resolution)
+            tmdb (TMDb.Result):             Ref to film.tmdb.
 
-            is_hdr (bool):              Indicates whether this version is HDR.
+            edition (str):                  Special edition.
 
-            is_proper (bool):           Indicates whether this version is a proper release.
-
-            film:                       Parent Film containing the file.
-
-            original_path (str):        Original (immutable) abs source path of file, e.g.
-                                         - /volumes/downloads/Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
-
-            original_rel_path (str):    Original (immutable) relative source path of file, e.g.
-                                         - Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
-
-            original_filename (str):    Original (immutable) filename of file, e.g.
-                                         - Avatar.2009.BluRay.1080p.x264-Scene.mkv
-
-            current_path (str):         Current abs source path of file, e.g.
-                                         - /volumes/movies/HD/Avatar (2009)/Avatar (2009) Bluray-1080p.mkv or
-                                         - /volumes/downloads/Avatar.2009.BluRay.1080p.x264/Avatar.2009.BluRay.1080p.x264.mkv
-
-            destination_path (str):     Desired abs path to this file should exist when moved
-                                        renamed, e.g.
-                                         - /volumes/movies/HD/Avatar (2009)/Avatar (2009) Bluray-1080p.mkv
-
-            destination_root_dir (str): Desired root path based on the file's resolution, e.g.
-                                         - /volumes/movies/HD 
-                                         - /volumes/movies/SD
-
-            destination_rel_path (str): Desired renamed path to file relative to destination_root_dir. This may be
-                                        If config.use_folders is True, this will be in the form of {folder}/{file}. 
-                                        If False, it will be just the new filename (and equal to new_filename).
-                                         - Avatar (2009)/Avatar (2009) Bluray-1080p.mkv
-                                         - Avatar (2009) Bluray-1080p.mkv
-
-            new_filename (str):         New filename generated using the defined templating pattern
-                                        in config.rename_pattern.file. Supports an overload to force a different
-                                        file extension.
-
-            new_dirname (str):          New dirname generated using the defined templating pattern
-                                        in config.rename_pattern.folder.
-
-            new_filename_stem (str):    Returns the new file name, excluding the file extension.
-
-            mediainfo (libmediainfo):   mediainfo derived from libmediainfo
-
-            is_wanted_file (bool):            Returns True if the file is valid and wanted.
-
-            is_video (bool):            Returns True if the film is a file and has a valid video file extension.
-
-            is_subtitle (bool):         Returns True if the file is a subtitle.
-
-            is_duplicate (bool):        Returns True if this file is marked as a duplicate of another.
-
-            duplicate (Should or None): Returns None, or one of Should enum to describe what should happen when
-                                        this file encounters a duplicate.
-
-            upgrade_reason (str):       Returns the reason this file should be upgraded, or an empty string.
+            media (Media):                  Original release media (see enums.Media)
             
-            did_move (bool):            Returns true when the file has been successfully moved.
+            mediainfo (libmediainfo):       mediainfo derived from libmediainfo
+
+            resolution (Resolution):        Original pixel depth (see enums.Resolution)
+
+            is_hdr (bool):                  Indicates whether this version is HDR.
+            
+            hdr (str):                      Returns 'HDR" if is_hdr is True.
+
+            is_proper (bool):               Indicates whether this version is a proper release.
+
+            film:                           Parent Film containing the file.
+
+            new_name (Path):                New name of the file, including file extension.
+            new_name_lazy (Path):           Lazy (cached) copy of new_name
+
+            ignore_reason (IgnoreReason):   If applicable, a reason describing why this film was ignored.
+
+            is_wanted (bool):               Returns True if the file is valid and wanted.
+
+            is_subtitle (bool):             Returns True if the file is a subtitle.
+
+            did_move (bool):                Returns true when the file has been successfully moved.
+                                            Set manually from the return value (T/F) of Move.safe().
+            
+            is_duplicate (bool):            Returns True if this file is marked as a duplicate of another.
+
+            duplicate_action (Should):      Returns None, or one of Should enum to describe what should happen when
+                                            this file encounters a duplicate.
+
+            upgrade_reason (UpgradeReason): Returns the reason this file should be upgraded, or an empty string.
         """
         
         def __init__(self, path: Union[str, Path, 'FilmPath'], film: 'Film'):
 
-            super().__init__(path)
+            super().__init__(path, origin=film.origin)
 
             self._src = Path(self)
             self.film: Film = film
             self.did_move: bool = False
             self.is_duplicate: bool = False
-            self.duplicate: Should or None = None
-            self.upgrade_reason: str = ''
+            self.duplicate_action: Should or None = None
+            self.upgrade_reason: UpgradeReason = None
+        
+        def __repr__(self):
+            return f"File('{self}')\n" + str(tuple([str(x) for x in [
+                self.title,
+                self.year,
+                self.media.display_name,
+                self.resolution.display_name,
+                self.hdr,
+                self.edition,
+                'Proper ' if self.is_proper else None,
+                self.tmdb.id] if x]))
             
+        @lazy
+        def src(self) -> FilmPath:
+            return self._src
+        
         @property
+        def dst(self) -> Path:
+            # If 'rename_only' is enabled, we need to override the configured
+            # destination dir with the source dir.
+            if config.rename_only is True:
+                return self.src.parent / self.new_name
+            elif config.use_folders:
+                return (config.destination_dir(self.resolution) / 
+                        self.film.new_name /
+                        self.new_name)
+            else:
+                return (config.destination_dir(self.resolution) /
+                        self.new_name)
+            
+        @lazy
         def title(self) -> str:
             return self.film.title
 
@@ -355,9 +369,13 @@ class Film(FilmPath):
         def title_the(self) -> str:
             return self.film.title_the
 
-        @property
+        @lazy
         def year(self) -> int:
             return self.film.year
+        
+        @property
+        def tmdb(self) -> TMDb.Result:
+            return self.film.tmdb
         
         @lazy
         def edition(self) -> str:
@@ -368,8 +386,12 @@ class Film(FilmPath):
             return Parser(self.filmrel).media
         
         @lazy
-        def part(self) -> Media:
-            return Parser(self.filmrel).part
+        def part(self) -> str:
+            return Parser(self.name).part
+        
+        @lazy
+        def hdr(self) -> bool:
+            return 'HDR' if self.is_hdr else ''
         
         @lazy
         def is_hdr(self) -> bool:
@@ -396,60 +418,33 @@ class Film(FilmPath):
             return Parser(self.filmrel, mediainfo=self.mediainfo).resolution
         
         @property
-        def new_filename(self, ext: str = None) -> str:
-            """Builds a new filename for this file.
+        def new_name(self) -> Path:
+            name = Format.Name(self)
+            self.new_name_lazy = name
+            return f'{name.filename}{self.suffix}'
 
-            Args:
-                ext (str, optional): Overload the extension of this file. Defaults to ''.
-                                     Must be preceded by a ., e.g. '.mkv'
-
-            Returns:
-                str: The new filename.
-            """
-            # Ensure the passed ext string always starts with a single .
-            ext = '.' + ext.lstrip('.') if ext else self.ext
-            return Path(formatter.new_basename(self, Rename.FILE).build()).with_suffix(ext)._str
+        @lazy
+        def new_name_lazy(self) -> Path:
+            # Cached copy of new_name
+            return self.new_name
         
-        @property
-        def new_filename_stem(self) -> str:
-            return Path(self.new_filename).stem
-
-        @property
-        def new_dirname(self) -> str:
-            return formatter.new_basename(self, Rename.DIR).build()
-
-        @property
-        def destination_path(self) -> str:
-            # If 'rename_only' is enabled, we need to override the configured
-            # destination dir with the source dir.
-            return str(PurePath(
-                self.original_path if config.rename_only else Film.Utils.destination_root_dir(self), 
-                self.destination_rel_path))
-
-        @property
-        def destination_rel_path(self) -> str:
-            return self.new_filename if config.use_folders is False else str(PurePath(
-                self.new_dirname, self.new_filename))
+        @lazy
+        def ignore_reason(self) -> IgnoreReason:
+            i = IgnoreReason
+            if is_sys_file(self): return i.SYS
+            elif re.search(patterns.SAMPLE, str(self.filmrel)): return i.SAMPLE
+            elif Info.has_ignored_string(self.src): return i.IGNORED_STRING
+            elif not self.exists(): return i.DOES_NOT_EXIST
+            elif not Info.has_valid_ext(self): return i.INVALID_EXT
+            elif not Info.is_acceptable_size(self): return i.TOO_SMALL
+            else: return None
             
         @lazy
-        def is_wanted_file(self) -> bool:
-            # A valid file must have a valid extension
-            return Info.is_wanted_file(self)
+        def is_wanted(self) -> bool:
+            # If the file doesns't have an ignore reason, we
+            # can assume it is wanted.
+            return not self.ignore_reason
 
-        @property
+        @lazy
         def is_subtitle(self):
-            return self.ext == '.srt' or self.ext == '.sub'
-
-    class zInfo:
-        # TODO: Most of these should be in FilmPath or ops
-        """A collection of helper functions for Film objects."""
-
-        
-            
-        
-
-        
-
-        
-
-        
+            return self.suffix.lower() in ['.srt', '.sub']

@@ -104,8 +104,9 @@ class Notify:
             if not os.path.exists(images_path):
                 os.makedirs(images_path)
 
-            if film.poster_path:
-                url = urljoin('https://image.tmdb.org/t/p/w185/', film.poster_path)
+# FIXME: use Path
+            if film.poster_url:
+                url = urljoin('https://image.tmdb.org/t/p/w185', film.poster_path)
                 img = os.path.join(images_path, film.poster_path)
                 response = requests.get(url, stream=True)
                 with open(img, 'wb') as f:

@@ -65,8 +65,8 @@ class Format:
             self.file = file
                 
             # Map mutable copies of the original renaming patterns to names
-            self.name = self._map_template(copy(config.rename_pattern.file))
-            self.parent = self._map_template(copy(config.rename_pattern.folder))
+            self.filename = self._map_template(copy(config.rename_pattern.file))
+            self.dirname = self._map_template(copy(config.rename_pattern.folder))
             
         @property
         def filmrel(self) -> 'Path':
@@ -75,25 +75,25 @@ class Format:
             Returns:
                 Path: A Path object from the given string.
             """
-            if not self.name:
+            if not self.filename:
                 raise AttributeError(
                     f"Could not build path for '{self.path.name}'; 'name' is missing.\n"
                     f"Initalize Name and call build() before accessing 'filmrel'.")
                 
-            if not self.parent:
+            if not self.dirname:
                 raise AttributeError(
                     f"Could not build path for '{self.path.name}'; 'parent' is missing.\n"
                     f"Initalize Name and call build() before accessing 'filmrel'.")
                 
             # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
             # Credit: https://stackoverflow.com/a/34504896/1214800
-            if sys.platform == 'darwin' and re.search(r'/', self.name):
-                self.name - self.name.replace(r'/', '-')
+            if sys.platform == 'darwin' and re.search(r'/', self.filename):
+                self.filename - self.filename.replace(r'/', '-')
             
             if config.use_folders:
-                return Path(self.parent) / self.name
+                return Path(self.dirname) / self.filename
             else:
-                return Path(self.name)
+                return Path(self.filename)
             
         def _map_template(self, template: str) -> str:
             """Maps a pattern to a string given the template mask provided.

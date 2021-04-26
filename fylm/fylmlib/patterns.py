@@ -58,7 +58,10 @@ PROPER = re.compile(r'\d{4}.*?\b(?P<proper>proper)\b', re.I)
 HDR = re.compile(r'\b(?P<hdr>hdr)\b', re.I)
 
 # Compiled pattern that "Part n" where n is a number or roman numeral.
-PART = re.compile(r'\bpart\W?(?P<part>(?:\d+|' + _ROMAN_NUMERALS + r'))\b', re.I)
+# Can only occur after a year, to avoid false positives like Back to the Future.
+PART = re.compile(
+    r'(?<=\d{4}).*\bpart\W?(?P<part>(?:\d+|' + _ROMAN_NUMERALS + r'))\b', re.I
+)
 
 # Retrieves tmdb_id in [XXXX] format from a string
 TMDB_ID = re.compile(r'(?P<tmdb_id>\[\d+\])$')

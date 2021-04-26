@@ -33,17 +33,25 @@ from fylmlib import Film
 from fylmlib import Create
 from fylmlib import Move
 from fylmlib import TMDb
-from fylmlib.enums import Media, IgnoreReason
+from fylmlib import Find
+from fylmlib.tools import *
+from fylmlib.enums import *
 
 SRC = conftest.src_path
+ALITA_SD = 'Alita.Battle.Angel.2019.HDTV.x264-NMaRE'
+BTTF = 'Back.to.the.Future.Part.II.1989.1080p.BluRay.x264.DTS-HD'
 JEDI = 'Last Jedi, The (2017) Bluray-1080p'
+ROGUE_SD = 'Rogue.One.2016.HDTV.DVD.x264-group'
+ROGUE_720 = 'Rogue.One.2016.720p.BluRay.DTS.x264-group'
 ROGUE = 'Rogue.One.2016.1080p.BluRay.DTS.x264-group'
+ROGUE_PROPER = 'Rogue.One.2016.1080p.BluRay.PROPER.DTS.x264-group'
+ROGUE_4K = 'Rogue.One.2016.2160p.BluRay.HDR.10-bit.x265-group'
 STARFIGHTER = 'The.Last.Starfighter.1984.1080p.BluRay.x264.DTS-HD/tls-score.mkv'
 STARLORD = 'Starlord.2022.1080p/Starlord.mkv'
 TTOP = '2001.A.Space.Odyssey.1968.1080p'
+TTOP_WEB = '2001.A.Space.Odyssey.1968.1080p.WEB-DL'
 ZELDA = 'Zelda.A.Link.To.The.Past.1991.1080p.Bluray.mkv'
 
-# @pytest.mark.skip()
 class TestFilm(object):
     
     def test_init(self):
@@ -55,6 +63,44 @@ class TestFilm(object):
         assert(film == Path(film))
         assert(film.origin == SRC / ROGUE)
         assert(film.src == SRC / ROGUE)
+        
+    def test_bad_files(self):
+        rogue = Film(SRC / ROGUE)
+
+        Make.mock_files(rogue / f'{ROGUE}.mkv',
+                        rogue / f'{ROGUE}.sample.mkv',
+                        rogue / f'{ROGUE}.nfo',
+                        rogue / f'{ROGUE}.en.srt')
+
+        assert(iterlen(rogue.bad_files) == 2)
+
+    def test_dst(self):
+
+        alita_sd = Film(SRC / ALITA_SD / f'{ALITA_SD}.avi')
+        rogue720 = Film(SRC / ROGUE_720 / f'{ROGUE_720}.mkv')
+        rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        rogue4k = Film(SRC / ROGUE_4K / f'{ROGUE_4K}.mp4')
+
+        Make.mock_files(alita_sd, rogue720, rogue1080, rogue4k)
+
+        TMDb.Search.parallel(alita_sd, rogue720, rogue1080, rogue4k)
+
+        assert(alita_sd.dst == conftest.dst_paths['SD'] / 'Alita - Battle Angel (2019)')
+        assert(rogue720.dst == conftest.dst_paths['720p'] / 'Rogue One - A Star Wars Story (2016)')
+        assert(rogue1080.dst == conftest.dst_paths['1080p'] / 'Rogue One - A Star Wars Story (2016)')
+        assert(rogue4k.dst == conftest.dst_paths['2160p'] / 'Rogue One - A Star Wars Story (2016)')
+        
+    def test_files(self):
+        rogue = Film(SRC / ROGUE)
+        
+        Make.mock_files(rogue / f'{ROGUE}.mkv',
+                        rogue / f'{ROGUE}.sample.mkv',
+                        rogue / f'{ROGUE}.nfo',
+                        rogue / f'{ROGUE}.en.srt')
+        
+        assert(iterlen(rogue.files) == 4)
+        assert(all(type(f) == Film.File for f in rogue.files))
+        assert(iterlen(rogue.files) == 4)
 
     def test_ignore_reason(self):
 
@@ -111,6 +157,81 @@ class TestFilm(object):
         film = Film(SRC / ROGUE)
 
         assert(film.main_file == SRC / ROGUE / f'{ROGUE}.mkv')
+
+    def test_new_name(self):
+
+        jedi = Film(SRC / JEDI / f'{JEDI}.mkv')
+        rogue = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        starfighter = Film(SRC / STARFIGHTER)
+        ttop = Film(SRC / TTOP / f'{TTOP}.mkv')
+
+        Make.mock_files(jedi, rogue, starfighter, ttop)
+
+        TMDb.Search.parallel(jedi, rogue, starfighter, ttop)
+
+        assert(jedi.new_name == 'Star Wars - The Last Jedi (2017)')
+        assert(rogue.new_name == 'Rogue One - A Star Wars Story (2016)')
+        assert(starfighter.new_name == 'The Last Starfighter (1984)')
+        assert(ttop.new_name == '2001 - A Space Odyssey (1968)')
+        
+    def test_origin(self):
+
+        src = Path(SRC / ROGUE / f'{ROGUE}.mkv')
+        Make.mock_file(src)
+
+        found = Find.deep(SRC)
+        film = first((Film(f) for f in found), where=lambda x: x == SRC / ROGUE)
+
+        assert(film.origin == SRC)
+        assert(film.main_file.origin == SRC)
+
+    def test_search_tmdb(self):
+        # Covers film.tmdb and .tmdb_search()
+
+        Make.mock_file(SRC / ROGUE / f'{ROGUE}.mkv')
+        film = Film(SRC / ROGUE)
+        assert(film == Path(film))
+
+        film.search_tmdb_sync()
+
+        assert(film.title == 'Rogue One: A Star Wars Story')
+        assert(film.tmdb.new_title == film.title)
+        assert(film.tmdb.id == 330459)
+        assert(film.year == 2016)
+        assert(film.tmdb.new_year == 2016)
+        assert(film.new_name == 'Rogue One - A Star Wars Story (2016)')
+        assert(film.tmdb.title_similarity == 0.5)
+        assert(film.tmdb.overview)
+        assert(film.tmdb.poster_url)
+        assert(len(film._tmdb_matches) > 0)
+
+    def test_should_ignore(self):
+
+        unpack = SRC / f'_UNPACK_{ROGUE}/'
+        Create.dirs(unpack)
+        assert(Film(unpack).should_ignore)
+
+        star = SRC / STARFIGHTER
+        Make.mock_file(star)
+        assert(not Film(star).should_ignore)
+
+    def test_src(self):
+
+        src = Path(SRC / ROGUE / f'{ROGUE}.mkv')
+        dst = Path(SRC / ROGUE / f'Rogue One.mkv')
+
+        film = Film(SRC / ROGUE)
+        Make.mock_file(src)
+
+        assert(src.exists())
+        assert(not dst.exists())
+        film.search_tmdb_sync()
+        Move.safe(src, dst)
+        assert(not src.exists())
+        assert(dst.exists())
+
+        # Ensure that even though we moved it, src didn't change
+        assert film.src == SRC / ROGUE
     
     def test_title(self):
         
@@ -135,6 +256,21 @@ class TestFilm(object):
         assert(Film(SRC / STARFIGHTER).title == 'The Last Starfighter')
         assert(Film(SRC / JEDI).title_the == 'Last Jedi, The')
         assert(Film(SRC / STARFIGHTER).title_the == 'Last Starfighter, The')
+
+    def test_tmdb_none(self):
+
+        assert(type(Film(SRC / JEDI).tmdb).__name__ == 'Result')
+        assert(not Film(SRC / JEDI).tmdb.id)
+        
+    def test_wanted_files(self):
+        rogue = Film(SRC / ROGUE)
+
+        Make.mock_files(rogue / f'{ROGUE}.mkv',
+                        rogue / f'{ROGUE}.sample.mkv',
+                        rogue / f'{ROGUE}.nfo',
+                        rogue / f'{ROGUE}.en.srt')
+
+        assert(iterlen(rogue.wanted_files) == 2)
         
     def test_year(self):
                 
@@ -156,146 +292,208 @@ class TestFilm(object):
         assert(ttop.year == 1968)
         assert(zelda.year == 1991)
         
-    def test_new_name(self):
-                
-        jedi = Film(SRC / JEDI / f'{JEDI}.mkv')
-        rogue = Film(SRC / ROGUE / f'{ROGUE}.mkv')
-        starfighter = Film(SRC / STARFIGHTER)
-        ttop = Film(SRC / TTOP / f'{TTOP}.mkv')
-        
-        Make.mock_files(jedi, rogue, starfighter, ttop)
-        
-        TMDb.Search.parallel(jedi, rogue, starfighter, ttop)
-        
-        assert(jedi.new_name == 'Star Wars - The Last Jedi (2017)')
-        assert(rogue.new_name == 'Rogue One - A Star Wars Story (2016)')
-        assert(starfighter.new_name == 'The Last Starfighter (1984)')
-        assert(ttop.new_name == '2001 - A Space Odyssey (1968)')
-        
-    def test_search_tmdb(self):
+class TestFilmFile(object):
 
-        Make.mock_file(SRC / ROGUE / f'{ROGUE}.mkv')
+    def test_did_move(self):
+
+        src = Path(SRC / ROGUE / f'{ROGUE}.mkv')
+        dst = Path(SRC / ROGUE / f'Rogue One.mkv')
+
         film = Film(SRC / ROGUE)
-        assert(film == Path(film))
+        Make.mock_file(src)
+
+        assert(not film.main_file.did_move)
+        assert(src.exists())
+        assert(film.main_file.src == src)
+        film.main_file.did_move = Move.safe(src, dst)
+        assert(film.main_file.did_move)
+    
+    def test_dst(self):
+
+        alita_sd = Film(SRC / ALITA_SD / f'{ALITA_SD}.avi')
+        rogue720 = Film(SRC / ROGUE_720 / f'{ROGUE_720}.mkv')
+        rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        rogue4k = Film(SRC / ROGUE_4K / f'{ROGUE_4K}.mp4')
+
+        Make.mock_files(alita_sd, rogue720, rogue1080, rogue4k)
+
+        TMDb.Search.parallel(alita_sd, rogue720, rogue1080, rogue4k)
+
+        assert(alita_sd.main_file.dst == conftest.dst_paths['SD'] / 
+               'Alita - Battle Angel (2019)' /
+               'Alita - Battle Angel (2019) HDTV.avi')
+        assert(rogue720.main_file.dst == conftest.dst_paths['720p'] / 
+               'Rogue One - A Star Wars Story (2016)' /
+               'Rogue One - A Star Wars Story (2016) Bluray-720p.mkv')
+        assert(rogue1080.main_file.dst == conftest.dst_paths['1080p'] / 
+               'Rogue One - A Star Wars Story (2016)' /
+               'Rogue One - A Star Wars Story (2016) Bluray-1080p.mkv')
+        assert(rogue4k.main_file.dst == conftest.dst_paths['2160p'] / 
+               'Rogue One - A Star Wars Story (2016)' /
+               'Rogue One - A Star Wars Story (2016) Bluray-2160p HDR.mp4')
+
+    @pytest.mark.skip(reason="Covered by test_duplicates.py")
+    def test_duplicate_action(self):
+        pass
+
+    def test_edition(self):
+
+        starfighter = Film(SRC /
+                           f'{Path(STARFIGHTER).parent}.25th.A.E.' /
+                           Path(STARFIGHTER).name)
+        Make.mock_files(starfighter)
+
+        assert(starfighter.main_file.edition == '25th Anniversary Edition')
+
+    def test_film(self):
+
+        src = Path(SRC / ROGUE / f'{ROGUE}.mkv')
+
+        film = Film(SRC / ROGUE)
+        Make.mock_file(src)
+
+        assert(film.main_file.film == film)
+
+    def test_hdr(self):
+
+        rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        rogue4k = Film(SRC / ROGUE_4K / f'{ROGUE_4K}.mp4')
+
+        Make.mock_files(rogue1080, rogue4k)
+
+        assert(rogue4k.main_file.is_hdr)
+        assert(not rogue1080.main_file.is_hdr)
+        assert(rogue4k.main_file.hdr == 'HDR')
+        assert(rogue1080.main_file.hdr == '')
+
+    def test_ignore_reason(self):
+
+        sample = SRC / 'Test.File.sample.avi'
+        string = SRC / 'Test.File.fylmignore.avi'
+        bad_ext = SRC / 'Test.File.nfo'
+        small = SRC / 'Small.File.2003.1080p.mkv'
+        sys = SRC / '.DS_Store'
+
+        Make.mock_file(sample)
+        Make.mock_file(string)
+        Make.mock_file(bad_ext)
+        Make.mock_file(small, 2 * MB)
+        Make.mock_file(sys)
+
+        assert(Film(sample).ignore_reason == IgnoreReason.SAMPLE)
+        assert(Film(string).ignore_reason == IgnoreReason.IGNORED_STRING)
+        assert(Film('No.Spoon.1999/').ignore_reason ==
+               IgnoreReason.DOES_NOT_EXIST)
+        assert(Film(bad_ext).ignore_reason == IgnoreReason.INVALID_EXT)
+        assert(Film(SRC / small).ignore_reason == IgnoreReason.TOO_SMALL)
+        assert(Film(sys).ignore_reason == IgnoreReason.SYS)
+
+    @pytest.mark.skip(reason="Covered by test_duplicates.py")
+    def test_is_duplicate(self):
+        pass
+
+    def test_is_subtitle(self):
+        sub = Path(SRC / ROGUE / f'{ROGUE}.en.srt')
+        mkv = Path(SRC / ROGUE / f'Rogue One.mkv')
+
+        Make.mock_files(sub, mkv)
+
+        assert(not first(Film(SRC / ROGUE).files).is_subtitle)
+        assert(last(Film(SRC / ROGUE).files).is_subtitle)
+
+    def test_is_wanted(self):
+
+        good = SRC / ROGUE / f'{ROGUE}.mkv'
+        bad_ext = SRC / 'Test.File.nfo'
+        small = SRC / 'Small.File.2003.1080p.mkv'
+
+        Make.mock_file(good)
+        Make.mock_file(bad_ext)
+        Make.mock_file(small, 2 * MB)
+
+        assert(Film(good).main_file.is_wanted)
+        assert(not Film(bad_ext).main_file.is_wanted)
+        assert(not Film(SRC / small).main_file.is_wanted)
+
+    def test_media(self):
+
+        rogue_sd = Film(SRC / ROGUE_SD / f'{ROGUE_SD}.avi')
+        rogue720 = Film(SRC / ROGUE_720 / f'{ROGUE_720}.mkv')
+        rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        rogue4k = Film(SRC / ROGUE_4K / f'{ROGUE_4K}.mp4')
+        ttop = Film(SRC / TTOP_WEB / f'{TTOP_WEB}.mkv')
+
+        Make.mock_files(rogue_sd, rogue720, rogue1080, rogue4k, ttop)
+
+        assert(rogue_sd.main_file.media == Media.HDTV)
+        assert(rogue720.main_file.media == Media.BLURAY)
+        assert(rogue1080.main_file.media == Media.BLURAY)
+        assert(rogue4k.main_file.media == Media.BLURAY)
+        assert(ttop.main_file.media == Media.WEBDL)
+    
+    def test_origin(self):
         
-        film.search_tmdb_sync()
+        src = Path(SRC / ROGUE / f'{ROGUE}.mkv')
+
+        film = Film(SRC / ROGUE)
+        Make.mock_file(src)
+
+        assert(film.origin == SRC / ROGUE)
+        assert(film.main_file.origin == SRC / ROGUE)
+
+    def test_part(self):
+
+        rogue = Film(SRC / ROGUE / f'{ROGUE}.Part.1.mkv')
+        rogue2 = Film(SRC / ROGUE / f'{ROGUE}.Part.II.mkv')
+        bttf = Film(SRC / BTTF / f'{BTTF}.mkv')
+        Make.mock_files(rogue, rogue2, bttf)
+
+        assert(rogue.main_file.part == '1')
+        assert(rogue2.main_file.part == 'II')
+        assert(not bttf.main_file.part)
+
+    def test_proper(self):
+
+        rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        rogue_proper = Film(SRC / ROGUE_PROPER / f'{ROGUE_PROPER}.mkv')
+
+        Make.mock_files(rogue1080, rogue_proper)
         
-        assert(film.title is not None)
-        assert(film.tmdb.id is not None)
-        assert(film.year is not None)
-        assert(film.tmdb.title_similarity == 0.5)
-        assert(film.tmdb.overview)
-        assert(film.tmdb.poster_url)
-        assert(len(film._tmdb_matches) > 0)
+        assert(rogue_proper.main_file.is_proper)
+        assert(not rogue1080.main_file.is_proper)
 
-    def test_should_ignore(self):
+    def test_resolution(self):
 
-        unpack = SRC / f'_UNPACK_{ROGUE}/'
-        Create.dirs(unpack)
-        assert(Film(unpack).should_ignore)
+        rogue_sd = Film(SRC / ROGUE_SD / f'{ROGUE_SD}.avi')
+        rogue720 = Film(SRC / ROGUE_720 / f'{ROGUE_720}.mkv')
+        rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
+        rogue4k = Film(SRC / ROGUE_4K / f'{ROGUE_4K}.mp4')
 
-        star = SRC / STARFIGHTER
-        Make.mock_file(star)
-        assert(not Film(star).should_ignore)
+        Make.mock_files(rogue_sd, rogue720, rogue1080, rogue4k)
 
-    def test_tmdb_none(self):
+        assert(rogue_sd.main_file.resolution == Resolution.UNKNOWN)
+        assert(rogue720.main_file.resolution == Resolution.HD_720P)
+        assert(rogue1080.main_file.resolution == Resolution.HD_1080P)
+        assert(rogue4k.main_file.resolution == Resolution.UHD_2160P)
 
-        assert(type(Film(SRC / JEDI).tmdb).__name__ == 'Result')
-        assert(not Film(SRC / JEDI).tmdb.id)
-        
     def test_src(self):
-        
-        src = Film(SRC / ROGUE / f'{ROGUE}.mkv')
-        dst = Film(SRC / ROGUE / f'Rogue One.mkv')
+
+        src = Path(SRC / ROGUE / f'{ROGUE}.mkv')
+        dst = Path(SRC / ROGUE / f'Rogue One.mkv')
 
         film = Film(SRC / ROGUE)
         Make.mock_file(src)
 
         assert(src.exists())
         assert(not dst.exists())
-        film.search_tmdb_sync()
+        assert(film.main_file.src == src)
         Move.safe(src, dst)
         assert(not src.exists())
         assert(dst.exists())
-        
+
         # Ensure that even though we moved it, src didn't change
-        assert film.src == SRC / ROGUE
-        
-class TestFilmFile(object):
-    pass
+        assert film.main_file.src == src
     
-    
-    
-    """SO MUCH MORE TESTS"""
-
-    """    
-
-    def test_resolution(self):
-
-        conftest._setup()
-
-        # Check that resolution is detected correctly
-        for film in conftest.all_films:
-            for file in film.video_files:
-                if file.resolution is not None:
-                    assert(file.resolution in ['720p', '1080p', '2160p'])
-
-    @pytest.mark.skip(reason="Not implemented")
-    def test_mediainfo(self):
+    @pytest.mark.skip(reason="Covered by test_duplicates.py")
+    def test_upgrade_reason(self):
         pass
-        
-
-    def test_media(self):
-
-        conftest._setup()
-
-        # Check that media is detected correctly
-        for film in conftest.all_films:
-            for file in film.video_files:
-                if file.media is not None and file.media is not Media.UNKNOWN:
-                    assert(file.media in [Media.BLURAY, Media.WEBDL, Media.HDTV, Media.SDTV])
-
-    def test_hdr(self):
-
-        conftest._setup()
-
-        # Check that media is detected correctly
-        for film in conftest.all_films:
-            for file in film.video_files:
-                assert(file.is_hdr is True or file.is_hdr is False)
-
-
-    def test_proper(self):
-
-        conftest._setup()
-
-        # Check that proper is detected correctly
-        for film in conftest.all_films:
-            for file in film.video_files:
-                assert(file.is_proper is True or file.is_proper is False)
-
-    def test_edition(self):
-
-        conftest._setup()
-
-        # Check that editions, when detected, are set correctly and cleaned from original string
-        for film in conftest.all_films:
-            for file in film.video_files:
-                for key, value in config.edition_map:
-                    rx = re.compile(r'\b' + key + r'\b', re.I)
-                    result = re.search(rx, file.original_basename)
-                    if result:
-                        assert(file.edition == rx.sub(value, result.group()))
-                        assert(not re.search(rx, file.title))
-                        break
-
-    def test_should_ignore(self):
-
-        conftest._setup()
-        
-        # Check that bad films will be ignored
-        for tf in conftest.made.bad:
-            for f in tf.make:
-                assert(f not in [os.path.basename(f.source_path) for f in conftest.valid_films])
-
-"""

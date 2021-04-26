@@ -45,6 +45,14 @@ class Resolution(Enum):
         elif self == self.SD_480P: return "480p"
         elif self == self.UNKNOWN: return None
         else: return self.name
+    
+    @property
+    def key(self):
+        if self.value < 4:
+            return self.display_name
+        if self.value < 6:
+            return 'SD'
+        return 'default'
 
 class Media(Enum):
     BLURAY = 1
@@ -72,7 +80,7 @@ class IgnoreReason(Enum):
     NO_TMDB_RESULTS = 10
     SYS = 11
     @property
-    def str(self) -> str:
+    def display_name(self) -> str:
         # Ignoring because...
         if self == self.UNPACKING: return "it is unpacking"
         elif self == self.SAMPLE: return "it is a sample"
@@ -85,4 +93,26 @@ class IgnoreReason(Enum):
         elif self == self.DOES_NOT_EXIST: return "this file or folder no longer exists"
         elif self == self.NO_TMDB_RESULTS: return "no TMDb results were found"
         elif self == self.SYS: return "it is a system file or dir"
+        else: return None
+
+class UpgradeReason(Enum):
+    LOWER_RESOLUTION = 1
+    DIFFERENT_RESOLUTIONS = 2
+    BETTER_RESOLUTION = 3
+    HDR = 4
+    NOT_HDR = 5
+    DIFFERENT_EDITIONS = 6
+    SAME_OR_BETTER_QUALITY = 7
+    SAME_QUALITY = 8
+    @property
+    def display_name(self) -> str:
+        # Should {upgrade, keep, ignore} because: 
+        if self == self.LOWER_RESOLUTION: return "Lower resolution"
+        elif self == self.DIFFERENT_RESOLUTIONS: return "Different resolutions"
+        elif self == self.BETTER_RESOLUTION: return "Better resolution"
+        elif self == self.HDR: return "HDR"
+        elif self == self.NOT_HDR: return "Not HDR"
+        elif self == self.DIFFERENT_EDITIONS: return "Different editions"
+        elif self == self.SAME_OR_BETTER_QUALITY: return "Same or better quality"
+        elif self == self.SAME_QUALITY: return "Same quality"
         else: return None

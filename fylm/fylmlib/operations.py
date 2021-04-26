@@ -839,12 +839,12 @@ class Info:
     def is_acceptable_size(path: 'FilmPath') -> bool:
         """Determine if a path is an acceptable size.
 
-            Args:
-                path (FilmPath): Path to file.
-                
-            Returns:
-                True, if the path is an acceptable size, else False.
-            """
+        Args:
+            path (FilmPath): Path to file.
+            
+        Returns:
+            True, if the path is an acceptable size, else False.
+        """
         return path.size >= Info.min_filesize(path)
     
     @staticmethod
@@ -862,30 +862,6 @@ class Info:
         # Coerce to a standard Path object
         p = Path(path)
         return p.suffix and p.suffix.lower() in config.video_exts
-    
-    @staticmethod
-    def is_wanted_file(path: Union[str, Path, 'FilmPath']) -> bool:
-        """Check if the file is wanted, based on ext, ignored string,
-        and size.
-        
-        This is an expensive call, so use wisely.
-
-        Args:
-            path (str, Path, or FilmPath): Path to check
-
-        Returns:
-            bool: True if the path is valid, otherwise False.
-        """
-        if not path.is_file():
-            return False
-        
-        return (Info.has_valid_ext(path)
-
-                # It must not contain an ignored string (e.g. 'sample')
-                and not Info(has_ignored_string)
-
-                # It must be large enough
-                and Info.is_acceptable_size(path))
     
     @staticmethod
     def has_valid_ext(path: Union[str, Path, 'FilmPath']) -> bool:

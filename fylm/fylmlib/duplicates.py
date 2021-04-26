@@ -95,7 +95,7 @@ class Duplicates:
 
         # Sort so that ignores are first, so console can skip printing the rest
         sort_order = [Should.IGNORE, Should.UPGRADE, Should.KEEP_BOTH]
-        duplicate_videos = [d for x in sort_order for d in duplicate_videos if d.duplicate == x]
+        duplicate_videos = [d for x in sort_order for d in duplicate_videos if d.duplicate_action == x]
 
         # Reverse the order in interactive mode and return
         return duplicate_videos if not config.interactive else duplicate_videos[::-1]
@@ -171,11 +171,6 @@ class Duplicates:
         if config.duplicates.automatic_upgrading is False:
             return cls._mark(duplicate, Should.IGNORE)
 
-        # If the duplicate is a path and not a film, we need to load it.
-        # from fylmlib.film import Film
-        # if not isinstance(duplicate, Film):
-        #     duplicate = Film(duplicate)
-
         # Replace quality takes a dict of arrays for each quality, which governs whether
         # a specific quality has the ability to replace another. By default, this map
         # looks like:
@@ -189,54 +184,68 @@ class Duplicates:
         # Media order of priority is "bluray", "webdl", "hdtv", "dvd", "sdtv"
         # Proper should always take preference over a non-proper.
 
-        ignore_reason = ''
+        reason = None
 
         # If the resolutions don't match and the current resolution is in the
         # duplicate's upgrade table, upgrade, otherwise keep both.
         if compare.resolution(current, duplicate) != ComparisonResult.EQUAL:
-            if current.resolution in config.duplicates.upgrade_table[duplicate.resolution or 'SD']:
+            if (current.resolution in 
+                config.duplicates.upgrade_table[duplicate.resolution.key]):
                 # Duplicate is a lower resolution and is in the upgrade table
-                return cls._mark(duplicate, Should.UPGRADE, 'Lower resolution')
+                return cls._mark(duplicate, 
+                                 Should.UPGRADE, 
+                                 IgnoreReason.LOWER_RESOLUTION)
             else:
                 # Duplicate is a different resolution, but is not in the upgrade table
                 # so we're going to keep both copies.
-                return cls._mark(duplicate, Should.KEEP_BOTH, 'Different resolutions')
+                return cls._mark(duplicate, 
+                                 Should.KEEP_BOTH, 
+                                 IgnoreReason.DIFFERENT_RESOLUTIONS)
+                
         elif compare.resolution(current, duplicate) == ComparisonResult.LOWER:
             # Duplicate is a higher resolution than the current file 
-            ignore_reason = 'Better resolution'
+            reason = IgnoreReason.BETTER_RESOLUTION
 
         # If the resolutions match, we need to do some additional comparisons.
         if compare.resolution(current, duplicate) == ComparisonResult.EQUAL:
             # For now, HDR will always be kept alongside SDR copies, so if one is an HDR, 
             # we will automatically keep both.
             if current.is_hdr != duplicate.is_hdr:
-                return cls._mark(duplicate, Should.KEEP_BOTH, 'HDR' if duplicate.is_hdr else 'Not HDR')
+                return cls._mark(duplicate, 
+                                 Should.KEEP_BOTH, 
+                                 (IgnoreReason.HDR 
+                                  if duplicate.is_hdr 
+                                  else IgnoreReason.NOT_HDR))
 
             # If editions don't match, keep both unless the ignore_edition flag is enabled
             # Console should show a warning but the duplicate will remain intact.
             if current.edition != duplicate.edition and not config.duplicates.ignore_edition:
-                return cls._mark(duplicate, Should.KEEP_BOTH, 'Different editions')
+                return cls._mark(duplicate, 
+                                 Should.KEEP_BOTH, 
+                                 IgnoreReason.DIFFERENT_EDITIONS)
 
             # If the current is a better quality or proper, replace the same resolutions
             # This heuristic is quite complex, see code comments in compare.quality()
             if compare.quality(current, duplicate) == ComparisonResult.HIGHER:
-                return cls._mark(duplicate, Should.UPGRADE, 'Lower quality')
+                return cls._mark(duplicate, 
+                                 Should.UPGRADE, 
+                                 IgnoreReason.LOWER_QUALITY)
             else:
-                ignore_reason = 'Same or better quality'
+                reason = IgnoreReason.SAME_OR_BETTER_QUALITY
 
             # If the current file is of the same quality and the file size is larger, upgrade
             if (config.duplicates.automatic_upgrading is True and current.size > (duplicate.size or 0)):
                 return cls._mark(duplicate, Should.UPGRADE)
             elif current.size == (duplicate.size or 0):
-                ignore_reason = "Same quality"
+                reason = IgnoreReason.SAME_QUALITY
 
         # If up to this point we can't determine if we should upgrade or keep both, ignore the current file
         # because it cannot be safely moved without risk of data loss. Chances are at this point everything
         # is the same, except the current file is the same or smaller size than the duplicate.        
-        return cls._mark(duplicate, Should.IGNORE, ignore_reason)
+        return cls._mark(duplicate, Should.IGNORE, reason)
 
     @classmethod
-    def _mark(cls, d: 'Film.File', should: Should, reason: str='') -> Should:
+    def _mark(cls, d: 'Film.File', should: Should, reason: UpgradeReason=None) -> Should:
         """Marks a duplicate file with the result of a should() call,
         then returns the original should() value. This can appear to be a little
         backwards, but if it is set to Should.UPGRADE, that means it is marked for upgrade.
@@ -247,8 +256,8 @@ class Duplicates:
         Returns:
             Enum, one of 'Should.UPGRADE', 'Should.IGNORE', or 'Should.KEEP_BOTH'.
         """
-        d.duplicate = should
-        d.upgrade_reason = reason
+        d.duplicate_action = should
+        d.upgrade_reason = reason.display_name if reason else ''
         return should
 
     @classmethod

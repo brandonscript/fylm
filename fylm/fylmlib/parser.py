@@ -56,7 +56,7 @@ class Parser:
             self.path = path.main_file.filmrel if path.exists() else path
         except:
             self.path = path
-        self.str = str(self.path)
+        self.s = str(self.path)
         self.mediainfo = mediainfo
     
     @lazy
@@ -75,7 +75,7 @@ class Parser:
 
         # Use the FilmPath's filmrel to identify the original title, 
         # remove the extension.
-        title = self.str
+        title = self.s
 
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
@@ -155,7 +155,7 @@ class Parser:
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and
         # no one will use python anymore).
-        m = last(re.finditer(patterns.YEAR, self.str), default=None)
+        m = last(re.finditer(patterns.YEAR, self.s), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
         return int(m.group('year')) if m else None
@@ -203,7 +203,7 @@ class Parser:
                 pass
 
         # Search for any of the known qualities.
-        m = last(re.finditer(patterns.RESOLUTION, self.str), default=None)
+        m = last(re.finditer(patterns.RESOLUTION, self.s), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
         
@@ -234,7 +234,7 @@ class Parser:
             An enum representing the media found.
         """
 
-        match = re.search(patterns.MEDIA, self.str)
+        match = re.search(patterns.MEDIA, self.s)
         if match and match.group('bluray'): return Media.BLURAY
         elif match and match.group('webdl'): return Media.WEBDL
         elif match and match.group('hdtv'): return Media.HDTV
@@ -255,7 +255,7 @@ class Parser:
             A bool representing the HDR status of the media.
         """
 
-        match = re.search(patterns.HDR, str(self.str))
+        match = re.search(patterns.HDR, str(self.s))
         return True if (match and match.group('hdr')) else False
 
     @lazy
@@ -271,7 +271,7 @@ class Parser:
             A bool representing the proper state of the media.
         """
 
-        match = re.search(patterns.PROPER, str(self.str))
+        match = re.search(patterns.PROPER, str(self.s))
         return True if (match and match.group('proper')) else False
 
     @lazy
@@ -289,7 +289,7 @@ class Parser:
         """
 
         # Search for a matching part condition
-        match = re.search(patterns.PART, str(self.str))
+        match = re.search(patterns.PART, str(self.s))
         
         # If a match exists, convert it to uppercase.
         return match.group('part').upper() if match else None

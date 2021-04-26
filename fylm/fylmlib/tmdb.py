@@ -32,12 +32,14 @@ import warnings
 import asyncio
 import functools
 from typing import Union
+from datetime import datetime
 # FIXME: Delete?
 # warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
 import tmdbsimple as tmdb
 from rapidfuzz import fuzz
 from lazy import lazy
+from addict import Dict
 
 import fylmlib.config as config
 from fylmlib import Console
@@ -101,9 +103,7 @@ class TMDb:
             src_title=None, 
             src_year=None, 
             raw_result=None):
-
-            # self.query = query
-            # self.query_year = query_year
+            
             self.src_title = src_title
             self.src_year = src_year
             self.new_title = None
@@ -118,7 +118,10 @@ class TMDb:
                 self._merge(raw_result)
                 
         def __repr__(self):
-            return f"Result('{self.new_title}', {self.new_year}, {self.id})"
+            return f"Result" + str(tuple([str(x) for x in [
+                self.new_title or self.src_title,
+                self.new_year or self.src_year,
+                self.id] if x]))
 
         def __eq__(self, other):
             """Use __eq__ method to define duplicate search results"""
@@ -131,33 +134,33 @@ class TMDb:
                 'new_year', self.new_year,
                 'id', self.id))
 
-        def _merge(self, raw_result):
+        def _merge(self, raw):
             """Map properties to this object from a raw JSON result.
 
             Maps all the properties in the TMDb API JSON result onto
             this instance.
 
             Args:
-                raw_result: (Result) raw TMDb search result object
+                raw: (Result) raw TMDb search result object
             """
-            for key, value in {
-                "id": raw_result['id'],
-                "overview": raw_result['overview'],
-                "poster_url": raw_result['poster_path'].strip("/") if raw_result['poster_path'] else None,
-                "popularity": raw_result['popularity'],
-                "vote_count": raw_result['vote_count'],
-                "new_title": raw_result['title'],
-                "new_year": (0 
-                             if 'release_date' not in raw_result or len(raw_result['release_date']) == 0 
-                             else int(raw_result['release_date'][:4]))
-            }.items():
-                setattr(self, key, value)
+            raw = Dict(raw)
+            
+            self.id = raw.id
+            self.overview = raw.overview
+            self.poster_url = raw.poster_path
+            self.popularity = raw.popularity
+            self.vote_count = raw.vote_count
+            self.new_title = raw.title
+            try:
+                self.new_year = datetime.strptime(
+                    raw.release_date, "%Y-%m-%d").year
+            except:
+                self.new_year = 0
 
         @lazy
         def title_similarity(self) -> float:
-            """Compare parsed title to TMDb title.
-
-            Performs a comparison between parsed title and proposed title.
+            """Performs a Levenshtein distance comparison between src title and 
+            new title.
 
             Returns:
                 A decimal value between 0 and 1 representing the similarity between
@@ -178,9 +181,6 @@ class TMDb:
         @lazy
         def is_instant_match(self) -> bool:
             """Determine if a search result is an instant match.
-
-            This method checks the result against 'ideal' expectations to
-            determine if the result qualifies as an instant match.
 
             Returns:
                 True if the TMDb result is an instant match candidate, else False.
@@ -238,7 +238,6 @@ class TMDb:
                 films ([Film]): *args list of films to search.
             """
             def __init__(self, *films):
-                # FIXME: Should hide or ignore? What about interactive?
                 self.films = [film for film in films if not film.should_ignore]
 
                 loop = asyncio.get_event_loop()
@@ -273,52 +272,35 @@ class TMDb:
 
             Console.debug(f"\nInit search for '{self.query}' with year {self.year}\n")
             
-            # Primary release year search
-            # Example API call:
-            #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY&include_adult=true
-            r = await self.dispatch_async(
-                query=self.query, 
-                primary_release_year=self.year)
-            if r and r[0].is_instant_match: return [r[0]]
-            self.results += r
+            stripped = re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query)
+            queries = [
+                # Primary release year search
+                # Example API call:
+                #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY
+                {'query': self.query, 'primary_release_year': self.year},
                 
-            # Basic year search
-            # Example API call:
-            #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY&include_adult=true
-            r = await self.dispatch_async(
-                query=self.query, 
-                year=self.year)
-            if r and r[0].is_instant_match: return [r[0]]
-            self.results += r
-            
-            # Strip some chars from query
-            r = await self.dispatch_async(
-                query=re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query), 
-                primary_release_year=self.year
-            )
-            if r and r[0].is_instant_match: return [r[0]]
-            self.results += r
-            
-            # Try searching without year
-            r = await self.dispatch_async(query=self.query)
-            if r and r[0].is_instant_match: return [r[0]]
-            self.results += r
-
-            # Iterate over each word in the search string.
-            q = re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query)
-            for i, _ in enumerate(q.split()):
+                # Basic year search
+                # Example API call:
+                #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY
+                {'query': self.query, 'year': self.year},
                 
-                r = await self.dispatch_async(
-                    query=q.rsplit(' ', i)[0],
-                    primary_release_year=self.year
-                )
-                if r and r[0].is_instant_match: return [r[0]]
-                self.results += r
-                    
-                # Try again without the year
-                r = await self.dispatch_async(query=q.rsplit(' ', i)[0])
-                if r and r[0].is_instant_match: return [r[0]]
-                self.results += r
+                # Strip some chars from query
+                {'query': stripped, 'primary_release_year': self.year},
+                
+                # Try searching without year
+                {'query': self.query}
+            ]
+            for i, _ in enumerate(stripped.split()):
+                # Recursively remove the last word in the query
+                q = stripped.rsplit(' ', i)[0]
+                queries.append({'query': q, 'primary_release_year': self.year})
+                queries.append({'query': q})
+                
+            for q in queries:
+                r = await self.dispatch_async(**q)
+                if r and r[0].is_instant_match: 
+                    return [r[0]]
+            self.results.extend(r)
 
             # If no instant match was found, we need to figure out which are the most likely 
             # matches. Strip duplicate results and remove results that don't match the 

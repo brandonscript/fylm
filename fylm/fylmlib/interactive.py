@@ -90,7 +90,7 @@ class Interactive:
 
         # Find all lower quality duplicates that are marked as upgradable (i.e., in the upgrade table)
         # TODO: This is probably very circular and could be improved a lot.
-        upgradable_files = [l for l in duplicates.find_lower_quality(film) if l.duplicate == Should.UPGRADE]
+        upgradable_files = [l for l in duplicates.find_lower_quality(film) if l.duplicate_action == Should.UPGRADE]
 
         duplicates_to_delete = []
         
@@ -128,7 +128,7 @@ class Interactive:
             if len(duplicates_to_delete) > 0:
                 for d in duplicates_to_delete:
                     # Mark the duplicate for upgrading
-                    d.duplicate = Should.UPGRADE
+                    d.duplicate_action = Should.UPGRADE
                 duplicates.rename_unwanted(film, duplicates_to_delete)
             return True
         
