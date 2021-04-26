@@ -47,7 +47,8 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
         raise excinfo.value
 
 if config.cache:
-    requests_cache.install_cache(f'.cache.fylm_test_py{sys.version_info[0]}', expire_after=timedelta(hours=120))
+    requests_cache.install_cache(str(Path('.').resolve(
+    ) / '.cache.fylm.test'), expire_after=timedelta(hours=120))
     requests_cache.core.remove_expired_responses()
 
 files_root = Path(__file__).parent
@@ -77,7 +78,7 @@ def setup():
     Make.empty_dirs()
 
     # Console output
-    config.no_console = True
+    config.no_console = not config.debug
     
     # Set quiet to suppress external notifications
     config.quiet = True
@@ -104,7 +105,7 @@ def setup():
     # valid_films = list(filter(lambda film: not film.should_ignore, all_films))
 
     if os.environ.get('DEBUG') is not None: 
-        config.debug = True if os.environ.get('DEBUG') == 'True' else False
+        config.debug = True if os.environ.get('DEBUG').lower() == 'true' else False
     
 def remake_files():
     

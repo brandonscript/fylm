@@ -272,6 +272,9 @@ class Config(object):
         # For tests on Travis, set min_filesize to 0
         if os.environ.get('TRAVIS') is not None:
             self._defaults.tmdb.key = self._defaults.tmdb.key or os.environ.get('TMDB_KEY')
+            
+        if os.environ.get('DEBUG') is not None:
+            self._defaults.debug = True
         
         # Map paths in source_dirs to Path and remove duplicates.
         self._defaults.source_dirs = set(map(Path, self._defaults.source_dirs))
@@ -292,7 +295,7 @@ class Config(object):
         # Set up cache.
         if self._defaults.cache is True:
             cache_ttl = self._defaults.cache_ttl or 1
-            requests_cache.install_cache(f'.cache.fylm_py{sys.version_info[0]}', 
+            requests_cache.install_cache(str(Path('.').resolve() / '.cache.fylm'),
                                          expire_after=timedelta(hours=cache_ttl))
             requests_cache.core.remove_expired_responses()
 

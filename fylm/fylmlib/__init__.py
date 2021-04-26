@@ -42,6 +42,5 @@ from fylmlib.duplicates import Duplicates
 from fylmlib.film import Film
 from fylmlib.interactive import Interactive
 from fylmlib.notify import Notify
-from fylmlib.processor import Processor
 from fylmlib.subtitle import Subtitle
-
+from fylmlib.app import App

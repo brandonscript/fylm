@@ -28,10 +28,10 @@ import sys
 import itertools
 import asyncio
 import concurrent.futures
-from functools import partial
 from copy import copy
 from pathlib import Path
 from typing import Union
+from timeit import default_timer as timer
 
 from pymediainfo import MediaInfo
 from lazy import lazy
@@ -97,9 +97,9 @@ class Film(FilmPath):
                                         when printing to the console.
     """
 
-    def __init__(self, path: Union[str, Path, 'FilmPath']):
+    def __init__(self, path: Union[str, Path, 'FilmPath'], origin: 'Path' = None):
         
-        super().__init__(path)
+        super().__init__(path, origin=origin)
         
         self._src = Path(self)
         self.tmdb: TMDb.Result = TMDb.Result()
@@ -147,7 +147,6 @@ class Film(FilmPath):
 
     @lazy
     def ignore_reason(self) -> IgnoreReason:
-        
         i = IgnoreReason
         if re.search(patterns.UNPACK, str(self.filmrel)): return i.UNPACKING
         elif is_sys_file(self): return i.SYS
@@ -158,7 +157,7 @@ class Film(FilmPath):
         elif self.is_dir() and iterlen(self.video_files) == 0: return i.NO_VIDEO_FILES
         elif self.is_file() and not Info.has_valid_ext(self): return i.INVALID_EXT
         elif self.year is None: return i.UNKNOWN_YEAR
-        elif not Info.is_acceptable_size(self.main_file): return i.TOO_SMALL
+        elif not Info.is_acceptable_size(self): return i.TOO_SMALL
         else: return None
         
         # FIXME: Re-implement this in processor
@@ -182,6 +181,10 @@ class Film(FilmPath):
         as params. If a result is found, the current film's properties
         are updated with the values from TMDb.
         """
+        
+        # Don't perform a lookup if it should be ignored.
+        if self.should_ignore:
+            return
 
         # Only perform lookups if TMDb searching is enabled.
         if config.tmdb.enabled is False:
@@ -243,7 +246,7 @@ class Film(FilmPath):
     @property
     def video_files(self) -> Iterable['Film.File']:
         video_files = [Film.File(f, film=self) for f in super().video_files]
-        return iter(sorted(video_files, key=lambda f: f.size_lazy, reverse=True))
+        return iter(sorted(video_files, key=lambda f: f.size.value, reverse=True))
 
     @property
     def wanted_files(self) -> Iterable['Film.File']:
@@ -321,9 +324,9 @@ class Film(FilmPath):
             upgrade_reason (UpgradeReason): Returns the reason this file should be upgraded, or an empty string.
         """
         
-        def __init__(self, path: Union[str, Path, 'FilmPath'], film: 'Film'):
+        def __init__(self, path: Union[str, Path, 'FilmPath'], film: 'Film', origin: 'Path' = None):
 
-            super().__init__(path, origin=film.origin)
+            super().__init__(path, origin=origin or film.origin)
 
             self._src = Path(self)
             self.film: Film = film
@@ -342,6 +345,24 @@ class Film(FilmPath):
                 self.edition,
                 'Proper ' if self.is_proper else None,
                 self.tmdb.id] if x]))
+        
+        # @Override(_from_kwargs) 
+        @classmethod
+        def _from_kwargs(cls, *args):
+
+            # Support init from kwargs passed in a tuple from reduce.
+
+            try:
+                kwargs = dict(*args)
+            except:
+                kwargs = dict(args)
+
+            new = cls(super().__new__(
+                cls, *kwargs['_parts']), 
+                      origin=kwargs['_origin'],
+                      film=kwargs['film'])
+            new.__dict__ = {**new.__dict__, **kwargs}
+            return new
             
         @lazy
         def src(self) -> FilmPath:

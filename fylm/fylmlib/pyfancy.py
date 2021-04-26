@@ -50,7 +50,9 @@ style so no new text will have unwanted styling.
 """
 
 class pyfancy:
-    def __str__(self): return self.get()
+    def __str__(self): 
+        return self.get()
+    
     def __init__(self, parseText="", obj=""):
         # Stores output text, for reset use get()
         self.out = str(obj)
@@ -107,9 +109,9 @@ class pyfancy:
     def get(self):
         return self.out + "\033[0m"
 
-    # Outputs text using print (should work in Python 2 and 3)
-    def output(self):
-        print(self.get())
+    # Outputs text using print
+    def output(self, end=None):
+        print(self.get(), end=end)
 
     # Adds new text without changing the styling
     def add(self,addition):
@@ -129,7 +131,7 @@ class pyfancy:
     #Alternate between all the colours of the rainbow
     #No orange, replaced with lightRed
     #No purple/violet so I ignored it
-    def rainbow(self,addition=""):
+    def rainbow(self, addition=""):
         x = 0
         for i in range(len(addition)):
             if (addition[i] in [" ", "\t", "\n", "\r"]): x+=1

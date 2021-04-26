@@ -21,8 +21,34 @@
 
 from typing import Iterable, Union
 import itertools
+import re
+import math
 
+import nltk
+from nltk.corpus import wordnet as wn
+try:
+    nltk.data.find('wordnet')
+except LookupError:
+    nltk.download('wordnet', quiet=True)
+import inflect
+p = inflect.engine()
+
+import fylmlib.patterns as patterns
 from fylmlib.constants import *
+
+def num(x):
+    """Coerces any numeric type to the lowest fidelity 
+    possible (int or float). 
+       
+    Args:
+        x (numberish):    The number to coerce
+        
+    Returns:
+        Number coerced to int or float, or None
+    """
+    if not x:
+        return None
+    return int(x) if math.floor(x) == float(x) else float(x)
 
 def first(iterable: Iterable, where=None, default=None):
     """Returns the first item in the `iterable` that satisfies the `where` 
@@ -32,6 +58,9 @@ def first(iterable: Iterable, where=None, default=None):
         iterable (iterable):    An iterable
         where (lambda):         Condition to apply
         default: Default        value to return if no result is found
+        
+    Returns:
+        First iterable, first iterable that matches condition, or default.
     """
     
     return next((x for x in iterable if where(x)) 
@@ -45,6 +74,9 @@ def last(iterable: Iterable, where=None, default=None):
         iterable (iterable):    An iterable
         where (lambda):         Condition to apply
         default: Default        value to return if no result is found
+        
+    Returns:
+        Last iterable, last iterable that matches condition, or default.
     """
     
     try:
@@ -89,8 +121,43 @@ def iterlen(iterable: Iterable) -> int:
     Returns:
         int: Counts the number of items in the iterator.
     """
-
     return sum(1 for _ in iterable)
+
+def is_number(s):
+    """Tests if string is likely numeric, or numberish
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        True if the string is a number, otherwise False
+    """
+    try:
+        float(s)
+        return True
+    except:
+        pass
+    return any([s.isnumeric(), s.isdigit()])
+
+def is_possible_verb(s):
+    """Tests if string is a possible verb
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        True if the string is a verb, otherwise False
+    """
+    return 'v' in set(s.pos() for s in wn.synsets(s))
+
+def is_roman_numeral(s):
+    """Tests if string is exactly a roman numeral
+
+    Args:
+        s (str, utf-8): Input string to check
+    Returns:
+        True if the string is a roman numeral, otherwise False
+    """
+    match = re.search(patterns.ROMAN_NUMERALS, s)
+    return True if (match and match.group(1)) else False
 
 def is_sys_file(path: Union[str, 'Path', 'FilmPath']) -> bool:
     """Checks to see if the path provided is a system file.

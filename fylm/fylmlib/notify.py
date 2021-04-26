@@ -37,8 +37,8 @@ import requests
 from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
 import fylmlib.config as config
-import fylmlib.log as log
-import fylmlib.console as Console
+from fylmlib import Log
+from fylmlib import Console
 
 """Notification handler for Fylm.
 
@@ -62,13 +62,13 @@ class Notify:
             and config.test is False):
 
             # Disable the log so that HTTP ops aren't printed to the log.
-            log.disable()
+            Log.disable()
             try:
                 # Create a connection to the Plex server
                 plex = PlexServer(baseurl=config.plex.baseurl, token=config.plex.token, timeout=10)
             except Exception as e:
                 # If the connection fails, log the error and print a response to the console.
-                log.enable()
+                Log.enable()
                 console().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
                 console.error(e)
                 return
@@ -84,7 +84,7 @@ class Notify:
             console().green(' Done ✓\n').print()
 
             # Re-enable logging when done.
-            log.enable()
+            Log.enable()
 
     def pushover(film):
         """Pushover notification handler.

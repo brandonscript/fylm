@@ -732,7 +732,7 @@ class TestFilmPath(object):
         # Test multiple files in dir to diff of 3 bytes
         assert(abs(FilmPath(SRC / 'Test').size - sum(s for (_, s) in files) == 0))
         
-    def test_size_lazy(self):
+    def test_size_cache(self):
         
         files = [
             (SRC / 'Test/Test.File.mkv', 10 * MB),
@@ -747,7 +747,7 @@ class TestFilmPath(object):
 
         # Assert file size matches definition
         for f in files:
-            assert(abs(FilmPath(f[0]).size - f[1]) == 0)
+            assert(abs(FilmPath(f[0]).size.value - f[1]) == 0)
 
         # Assert dir is at least the size of the file, probably larger
         # because the folder itself takes up some space. Diff of 1 byte.
@@ -755,12 +755,12 @@ class TestFilmPath(object):
         test = FilmPath(SRC / 'Test')
         
         # Test multiple files in dir to diff of 3 bytes
-        assert(abs(test.size_lazy - sum(s for (_, s) in files) == 0))
+        assert(abs(test.size.value - sum(s for (_, s) in files) == 0))
         
         Delete.dir(SRC / 'Test')
         
-        # Test the cached size_lazy, even after deleted
-        assert(abs(test.size_lazy - sum(s for (_, s) in files) == 0))
+        # Test the cached size, even after deleted
+        assert(abs(test.size.value - sum(s for (_, s) in files) == 0))
         
     def test_video_files(self):
         
@@ -976,7 +976,7 @@ class TestFind(object):
         found = Find.shallow(SRC)
         assert(iterlen(found) == 8)
         
-    def test_sync_attrs(self):
+    def test_sync_parallel(self):
         
         Make.all_mock_files()
         found = list(Find.deep(SRC))
@@ -987,7 +987,7 @@ class TestFind(object):
             assert(not 'is_filmroot' in f.__dict__)
             assert(not 'maybe_film' in f.__dict__)
             
-        synced = Find.sync_attrs(iter(found), attrs=['filmrel', 
+        synced = Find.sync_parallel(iter(found), attrs=['filmrel', 
                                                      'filmroot', 
                                                      'is_filmroot', 
                                                      'maybe_film'])
@@ -1552,7 +1552,6 @@ class TestMove(object):
         Move.rename(src, dst.name)
         assert(src.exists())
         assert(not dst.exists())
-        
 
 class TestSize(object):
     
@@ -1571,16 +1570,32 @@ class TestSize(object):
 
         # Assert file size matches definition
         for f in files:
-            assert(abs(Size.calc(f[0]) - f[1]) == 0)
+            assert(abs(Size(f[0]).value - f[1] == 0))
 
         # Assert dir is at least the size of the file, probably larger
         # because the folder itself takes up some space. Diff of 1 byte.
         
         for f in files[1:]: # slice the first one, because it is not in a dir
-            assert(abs(Size.calc(Path(f[0]).parent) - f[1] == 0))
+            assert(abs(Size(f[0].parent).value - f[1] == 0))
 
         # Test multiple files in dir to diff of 3 bytes
-        assert(abs(Size.calc(SRC) - sum(s for (_, s) in files) == 0))
+        assert(abs(Size(SRC).value - sum(s for (_, s) in files) == 0))
+    
+    @pytest.mark.xfail(raises=AttributeError)
+    def test_not_init(self):
+
+        Size.calc(Path('.'))
+        
+    def test_cache_refresh(self):
+
+        f = SRC / 'Test.Dir/Test.File.mkv'
+        Make.mock_file(f, 21 * MB)
+        size = Size(f)
+        assert(size.value == 21 * MB)
+        Delete.dir(SRC / 'Test.Dir')
+        assert(size.value == 21 * MB)
+        size.refresh()
+        assert(not size.value)
         
     def test_pretty(self):
         
@@ -1597,14 +1612,14 @@ class TestSize(object):
         for f in files:
             Make.mock_file(f[0], f[1])
                         
-        assert(Size.pretty(files[0][0]) == '1.46 GiB')
-        assert(Size.pretty(files[0][0], units=Units.GB) == '1.57 GB')
-        assert(Size.pretty(files[0][0], precision=1) == '1.5 GiB')
-        assert(Size.pretty(files[0][0], precision=0) == '1 GiB')
-        assert(Size.pretty(files[0][0], units=Units.MiB) == '1,500.0 MiB')
-        assert(Size.pretty(files[0][0], units=Units.MB) == '1,572.9 MB')
-        assert(Size.pretty(files[1][0]) == '768.0 MiB')
-        assert(Size.pretty(files[2][0]) == '10.0 MiB')
-        assert(Size.pretty(files[3][0]) == '100 B')
-        assert(Size.pretty(files[4][0]) == '1.25 GiB')
-        assert(Size.pretty(files[5][0]) == '700.0 MiB')
+        assert(Size(files[0][0]).pretty() == '1.46 GiB')
+        assert(Size(files[0][0]).pretty(units=Units.GB) == '1.57 GB')
+        assert(Size(files[0][0]).pretty(precision=1) == '1.5 GiB')
+        assert(Size(files[0][0]).pretty(precision=0) == '1 GiB')
+        assert(Size(files[0][0]).pretty(units=Units.MiB) == '1,500.0 MiB')
+        assert(Size(files[0][0]).pretty(units=Units.MB) == '1,572.9 MB')
+        assert(Size(files[1][0]).pretty() == '768.0 MiB')
+        assert(Size(files[2][0]).pretty() == '10.0 MiB')
+        assert(Size(files[3][0]).pretty() == '100 B')
+        assert(Size(files[4][0]).pretty() == '1.25 GiB')
+        assert(Size(files[5][0]).pretty() == '700.0 MiB')

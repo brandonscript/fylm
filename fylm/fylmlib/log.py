@@ -68,7 +68,7 @@ class Log:
     def indent(s):
         """Convenience method to write info to log with an indent and prefix.
         """
-        log.info(f'\t{s}')
+        Log.info(f'\t{s}')
 
     @staticmethod
     def info(s):

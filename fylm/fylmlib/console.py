@@ -25,11 +25,13 @@ output to the log module.
     Console: the main class exported by this module.
 """
 
-import datetime
 import os
 import re
 import sys
 import itertools
+import shutil
+import math
+from datetime import datetime
 
 from colors import color
 
@@ -73,6 +75,9 @@ class Console(object):
         # Inject ANSI helper functions
         for c in vars(ansi):
             self._colorizer(c)
+            
+    def __repr__(self):
+        return str(self._pltxt)
 
     def _colorizer(self, c):
         def add(s=''):
@@ -112,15 +117,15 @@ class Console(object):
         self.add(f'    → {s}')
         return self
 
-    def print(self, should_log=True, override_no_console=False):
+    def print(self, should_log=True, override_no_console=False, end=None):
         if config.no_console and not override_no_console:
             return
         if should_log:
             Log.info(self._pltxt.get())
         if config.plaintext:
-            print(patterns.ansi_escape.sub('', self._pltxt.get()))
+            print(patterns.ANSI_ESCAPE.sub('', self._pltxt.get()), end=end)
         else:
-            self._fmtxt.output()
+            self._fmtxt.output(end=end)
 
     """Helper methods for Console class.
     """
@@ -128,11 +133,15 @@ class Console(object):
     def print_welcome(self):
         """Print and log the initial welcome header.
         """
+        
+        tsize = shutil.get_terminal_size((80, 20))
 
         # Start log section header
-        log.info(f'{("-"*40)} {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")} {("-"*40)}')
+        date = f' {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} '
+        dashes = "-"*math.floor((tsize.columns-2-len(date))/2)
+        Log.info(f'{dashes}{date}{dashes}')
         
-        dirs = '\n                 '.join(config.source_dirs)
+        dirs = f'\n{" "*17}'.join((str(d) for d in config.source_dirs))
         c = Console().pink(f"\nFylm is scanning {dirs}")
 
         if config.test or config.force_lookup or config.duplicates.force_overwrite:
@@ -376,7 +385,7 @@ class Console(object):
             pass
     
     @classmethod
-    def debug(cls, s: str=''):
+    def debug(cls, s: str='', end=None):
         """Print debugging details, if config.debug is enabled.
 
         Args:
@@ -385,7 +394,7 @@ class Console(object):
         if config.debug is True:
             # TODO: Debug shouldn't also be printing info
             Log.debug(s)
-            cls().bold().debug(s).print()
+            cls().bold().debug(s).print(end=end)
 
     @classmethod
     def error(cls, s: str='', x: Exception=None):

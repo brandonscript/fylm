@@ -23,9 +23,9 @@ import itertools
 
 import fylm
 import fylmlib.config as config
-import fylmlib.operations as ops
 from fylmlib.film import Film
 import conftest
+from make import Make
 
 # Overwrite the app's pre-loaded config.
 fylm.config = config
@@ -33,6 +33,49 @@ fylm.config = config
 # @pytest.mark.skip()
 class TestApp(object):
     """Integration tests for application functionality"""
+
+    def test_app(self):
+        
+        Make.all_mock_files()
+
+        # Execute
+        fylm.main()
+
+        # Make sure we have some test films
+        assert(len(conftest.made.good) > 0)
+
+        # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
+        (moved, expected) = get('expect')
+        for desired_path in expected:
+            assert(ops.fileops.exists_case_sensitive(desired_path))
+        assert(len(list(set(moved))) == len(list(set(expected))))
+
+    # @pytest.mark.skip(reason="Slow")
+    def test_app_no_folders(self):
+
+        conftest._setup()
+
+        fylm.config.test = False
+        fylm.config.use_folders = False
+        fylm.config.tmdb.enabled = True
+        assert(fylm.config.test is False)
+        assert(fylm.config.use_folders is False)
+        assert(fylm.config.tmdb.enabled is True)
+
+        # Execute
+        fylm.main()
+
+        # Make sure we have some test films
+        assert(len(conftest.made.good) > 0)
+
+        # Assert that all of the films were moved successfully into the correct destination folders.
+        (moved, expected) = get('expect', folders=False)
+        for desired_path in expected:
+            assert(ops.fileops.exists_case_sensitive(desired_path))
+        assert(len(list(set(moved))) == len(list(set(expected))))
+
+        fylm.config.use_folders = True
+        assert(fylm.config.use_folders is True)
 
     def test_app_tmdb_disabled(self):
 
@@ -56,60 +99,6 @@ class TestApp(object):
         for desired_path in expected:
             assert(ops.fileops.exists_case_sensitive(desired_path))
         assert(len(list(set(moved))) == len(list(set(expected))))
-
-        
-    # @pytest.mark.skip(reason="Slow")
-    def test_app_use_folders_true(self):
-
-        conftest._setup()
-
-        fylm.config.test = False
-        fylm.config.use_folders = True
-        fylm.config.tmdb.enabled = True
-        assert(fylm.config.test is False)
-        assert(fylm.config.use_folders is True)
-        assert(fylm.config.tmdb.enabled is True)
-
-        # fylm.config.debug = True
-
-        # Execute
-        fylm.main()
-
-        # Make sure we have some test films
-        assert(len(conftest.made.good) > 0)
-
-        # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
-        (moved, expected) = get('expect')
-        for desired_path in expected:
-            assert(ops.fileops.exists_case_sensitive(desired_path))
-        assert(len(list(set(moved))) == len(list(set(expected))))
-
-    # @pytest.mark.skip(reason="Slow")
-    def test_app_use_folders_false(self):
-
-        conftest._setup()
-        
-        fylm.config.test = False
-        fylm.config.use_folders = False
-        fylm.config.tmdb.enabled = True
-        assert(fylm.config.test is False)
-        assert(fylm.config.use_folders is False)
-        assert(fylm.config.tmdb.enabled is True)
-
-        # Execute
-        fylm.main()
-
-        # Make sure we have some test films
-        assert(len(conftest.made.good) > 0)
-
-        # Assert that all of the films were moved successfully into the correct destination folders.
-        (moved, expected) = get('expect', folders=False)
-        for desired_path in expected:
-            assert(ops.fileops.exists_case_sensitive(desired_path))
-        assert(len(list(set(moved))) == len(list(set(expected))))
-
-        fylm.config.use_folders = True
-        assert(fylm.config.use_folders is True)
 
 def get(key, folders=True) -> ([], []):
     expected = []

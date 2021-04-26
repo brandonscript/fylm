@@ -28,40 +28,53 @@ import os
 import sys
 from typing import List
 import asyncio
+from timeit import default_timer as timer
 
 import fylmlib.config as config
-import fylmlib.console as Console
-import fylmlib.subtitle as Subtitle
-import fylmlib.duplicates as Duplicates
-import fylmlib.interactive as interactive
-from fylmlib.enums import Should
-import fylmlib.formatter as formatter
-import fylmlib.operations as ops
 import fylmlib.counter as counter
-import fylmlib.notify as notify
-import fylmlib.tmdb as tmdb
+from fylmlib.enums import *
+from fylmlib import Console
+from fylmlib import Find
+from fylmlib import Format
+from fylmlib import Notify
+from fylmlib import TMDb
+from fylmlib import Interactive
+from fylmlib import Duplicates
+from fylmlib import Subtitle
+from fylmlib import Film
+from fylmlib.tools import *
 
 _move_queue = []
 
-class Processor:
+class App:
     """Main class for scanning for and processing films.
 
     All methods are class methods, thus this class should never be instantiated.
     """
 
-    @classmethod
-    def iterate(cls, films: ['Film']):
-        """Main entry point for processor, iterates a list of films.
-
-        Args:
-            films: [Film] list of film objects to process.
-        """
-
+    @staticmethod
+    def run():
+        """Main entry point for Fylm."""
+        
+        start = timer()
+        films = sorted([Film(f) for f in Find.new() if f.is_filmroot], 
+                       key=lambda f: f.name.lower())
+        
+        Console.debug(f"Found {len(films)} possible films in the specified src dirs, checking them...")
+        films = list(filter(lambda f: not f.should_ignore, 
+                            Find.sync_parallel(iter(films), attrs=['filmrel', 'year', 'size'])))
+        
+        end = timer()
+        Console.debug(f"Done, took {round(end - start)} seconds")
+        
         # Perform async lookup of films when not in interactive mode
         if not config.interactive and config.tmdb.enabled:
-
-            # Dispatch an async search for all films
-            films = tmdb.dispatch_search(films).run()
+            
+            start = timer()
+            Console.debug(f"Searching TMDb...")
+            TMDb.Search.parallel(*films)
+            end = timer()
+            Console.debug(f"\nDone, took {round(end - start)} seconds")
 
         # Route to the correct handler if the film shouldn't be skipped
         [cls.route(film) for film in films if not film.should_skip]

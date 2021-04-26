@@ -25,22 +25,13 @@ human-readable information to the console/log.
 """
 
 import re
-import nltk
 from copy import copy
-from nltk.corpus import wordnet as wn
 from typing import Union
 
+from fylmlib.tools import *
 from fylmlib.enums import *
 import fylmlib.config as config
 import fylmlib.patterns as patterns
-
-try:
-    nltk.data.find('wordnet')
-except LookupError:
-    nltk.download('wordnet', quiet=True)
-    
-import inflect
-p = inflect.engine()
     
 class Format:
 
@@ -408,7 +399,7 @@ class Format:
         for prev, current in zip(word_list[0:], word_list[1:]):
 
             # If it's a roman numeral, uppercase it
-            if Format.is_roman_numeral(current):
+            if is_roman_numeral(current):
                 title.append(current.upper())
             # If the word is an article, and preceded by a regular word, lowercase it
             elif (current.lower() in patterns.ARTICLES):
@@ -430,7 +421,7 @@ class Format:
                     and (
                         not prev.rstrip(',').isalpha()
                         or is_number(prev)
-                        or (Format.is_roman_numeral(prev) and not prev.lower() == title[0].lower())
+                        or (is_roman_numeral(prev) and not prev.lower() == title[0].lower())
                         or (current.lower() in ['a', 'the'] and not is_possible_verb(prev))
                     )
                 ):
@@ -458,48 +449,6 @@ class Format:
             s, or {s}s if c <> 1
         """
         return s if c == 1 else p.plural(s)
-
-    # FIXME: Move to tools
-    @staticmethod
-    def is_number(s):
-        """Tests if string is likely numeric, or numberish
-
-        Args:
-            s (str, utf-8): Input string to check
-        Returns:
-            True if the string is a number, otherwise False
-        """
-        try:
-            float(s)
-            return True
-        except:
-            pass
-        return any([s.isnumeric(), s.isdigit()])
-
-    # FIXME: Move to tools
-    @staticmethod
-    def is_roman_numeral(s):
-        """Tests if string is exactly a roman numeral
-
-        Args:
-            s (str, utf-8): Input string to check
-        Returns:
-            True if the string is a roman numeral, otherwise False
-        """
-        match = re.search(patterns.ROMAN_NUMERALS, s)
-        return True if (match and match.group(1)) else False
-
-    # FIXME: Move to tools
-    @staticmethod
-    def is_possible_verb(s):
-        """Tests if string is a possible verb
-
-        Args:
-            s (str, utf-8): Input string to check
-        Returns:
-            True if the string is a verb, otherwise False
-        """
-        return 'v' in set(s.pos() for s in wn.synsets(s))
 
     @staticmethod
     def capitalize_if_special_chars(s):

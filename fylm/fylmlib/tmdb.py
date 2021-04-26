@@ -206,7 +206,7 @@ class TMDb:
             if (self.title_similarity >= ideal_title_similarity
                 and self.year_deviation <= config.tmdb.max_year_diff
                 and initial_chars_match):
-                Console.debug(f'Instant match: {self.new_title} ({self.new_year})')
+                # Console.debug(f'Instant match: {self.new_title} ({self.new_year})')
                 return True
             else:
                 return False
@@ -239,7 +239,7 @@ class TMDb:
             """
             def __init__(self, *films):
                 self.films = [film for film in films if not film.should_ignore]
-
+                Console.debug(f" --> Starting async search for {len(self.films)} films")
                 loop = asyncio.get_event_loop()
                 tasks = asyncio.gather(*[
                     asyncio.ensure_future(self._worker(i, film))
@@ -249,9 +249,9 @@ class TMDb:
 
             async def _worker(self, i, film):
                 async with _sem:  # semaphore limits num of simultaneous calls
-                    Console.debug(f"  >>> Async worker {i} started - '{film.title}'")
+                    # Console.debug(f"Async worker {i} started - '{film.title}'")
                     await film.search_tmdb()
-                    Console.debug(f"  >>> Async worker {i} done - '{film.title}'")
+                    # Console.debug(f"Async worker {i} done - '{film.title}'")
                     return film
 
         async def do(self) -> ['TMDb.Result']:
@@ -264,13 +264,15 @@ class TMDb:
             # If querying by ID (an int), search immediately and return the result.
             if self.id or type(self.query) is int:
                 
-                Console.debug(f'\nSearch by TMDb ID: {self.id or self.query}')
+                # Console.debug(f'Searching ID={self.id or self.query}')
+                Console.debug('.', end='')
                 
                 # Example API call:
                 #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
                 return await Search.dispatch_async(tmdb_id=self.id or self.query)
 
-            Console.debug(f"\nInit search for '{self.query}' with year {self.year}\n")
+            # Console.debug(f"Searching '{self.query}' ({self.year})")
+            Console.debug('.', end='')
             
             stripped = re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query)
             queries = [

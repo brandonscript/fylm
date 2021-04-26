@@ -26,18 +26,17 @@ singleton nature. It is used to keep track of successful moves/renames.
 """
 
 # Counter property
-count = 0
+COUNT = 0
 
-# Increment the counter property by the specified value (num)
 def add(num):
-    """Increment the count property by value (num)
+    """Increment the COUNT property by value (num)
 
     Args:
         num: (int) the number to add to the existing count.
     """
 
     # Pull in the module's (global) count variable.
-    global count
+    global COUNT
 
-    # Increment the count property.
-    count += num
+    # Increment the COUNT property.
+    COUNT += num

@@ -32,49 +32,46 @@ import asyncio
 from contextlib import suppress
 
 import fylmlib.config as config
+import fylmlib.counter as counter
 from fylmlib import Console
-from fylmlib import Processor
+from fylmlib import App
 # from fylmlib import
 from fylmlib import Notify
-import fylmlib.counter as counter
 from fylmlib import Cursor
 
 __version__ = '0.4.0-beta'
 
 def main():
     """Main program."""
-    
-    # Load config the first time
-    config.load()
 
     try:
         # Initialize the success counter.
-        counter.count = 0
+        counter.COUNT = 0
 
         # Print the welcome message to the console.
-        console().print_welcome()
+        Console().print_welcome()
 
         # Attempt to create the destination dirs if they does not exist.
-        for _, dr in config.destination_dirs.items():
-            ops.dirops.create_deep(dr)
+        # for _, dr in config.destination_dirs.items():
+        #     ops.dirops.create_deep(dr)
 
-        # Verify that destination paths exist.
-        ops.dirops.verify_root_paths_exist(list(config.destination_dirs.values()))
+        # # Verify that destination paths exist.
+        # ops.dirops.verify_root_paths_exist(list(config.destination_dirs.values()))
 
-        # Load duplicates before film processing begins.
-        ops.dirops.get_existing_films(config.destination_dirs)
+        # # Load duplicates before film processing begins.
+        # ops.dirops.get_existing_films(config.destination_dirs)
 
-        # Verify that source path(s) exist.
-        ops.dirops.verify_root_paths_exist(config.source_dirs)
+        # # Verify that source path(s) exist.
+        # ops.dirops.verify_root_paths_exist(config.source_dirs)
 
         # Retrieve a list of films from the current source dir(s) and process each film.
-        processor.iterate(ops.dirops.get_new_films(config.source_dirs))
+        App.run()
 
         # When all films have been processed, notify Plex (if enabled).
-        notify.plex()
+        Notify.plex()
 
         # Print the summary.
-        console().print_exit(counter.count)
+        Console().print_exit(counter.COUNT)
     
     except (KeyboardInterrupt, SystemExit):
         loop = asyncio.get_event_loop()
@@ -82,20 +79,15 @@ def main():
             pending = asyncio.Task.all_tasks()
             loop.run_until_complete(asyncio.gather(*pending))
             loop.close()
-        console().print_exit_early()
+        Console().print_exit_early()
     except (IOError, OSError) as e:
-        console().error(f'{type(e).__name__}: {e}')
-        if config.debug or config.errors:
-            import traceback
-            traceback.print_exc()
-    except Exception as e:
-        console().error(f'{(type(e).__name__, e)}: {type(e)}')
+        Console().error(f'{type(e).__name__}: {e}')
         if config.debug or config.errors:
             import traceback
             traceback.print_exc()
     finally:
         # Don't leave the cursor hidden
-        cursor.show()
+        Cursor.show()
 
 if __name__ == "__main__":
     main()

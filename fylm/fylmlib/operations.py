@@ -50,6 +50,8 @@ from fylmlib import Parser
 from fylmlib import Cursor
 from fylmlib import Format
 
+sys.setrecursionlimit(2000)
+
 class Create:
     """Utilities for making files/dirs on the filesystem."""
     
@@ -109,7 +111,7 @@ class Delete:
 
         # First we ensure the dir is less than the max_size threshold, or empty, 
         # otherwise abort. If max_size is -1 or force is enabled, do it anyway.
-        if files_count == 0 or force or Size.calc(path) < max_size:
+        if files_count == 0 or force or Size(path).value < max_size:
 
             Console.debug(f"Recursively deleting '{path}' which contains {files_count} files.")
 
@@ -258,10 +260,8 @@ class FilmPath(Path):
                                     
                                      - /volumes/downloads
                                      
-        size (int):                 Size of the file or total size of dir, passthrough to Size.calc.
-        
-        size_lazy (int):            Cached copy of size.
-                                    
+        size (Size):                Size object containing size of the file or dir.
+                                            
         siblings ([FilmPath]):      Iterable of all files or dirs that are adjacent to the current path.
                                             
         video_files ([FilmPath]):   Iterable subset of files that are valid video files.
@@ -303,6 +303,7 @@ class FilmPath(Path):
                     
         self._dirs: [FilmPath] = list(map(FilmPath, dirs)) if dirs else None
         self._files: [FilmPath] = list(map(FilmPath, files)) if files else None
+        self._size = None
 
     # @overrides(__reduce__)
     def __reduce__(self):
@@ -319,6 +320,18 @@ class FilmPath(Path):
         # its remaining attributes.
 
         # This is required in order to support pickling for async ops.
+        # ---
+        
+        # We need to check all children of this object's __dict__ to make sure there
+        # are no circular references to a type matching 'self'.
+
+        for _, v in self.__dict__.items():
+            try:
+                for ki, vi in v.__dict__.items():
+                    if type(vi) == type(self):
+                        v.__dict__[ki] = Path(vi)
+            except:
+                pass
 
         args = {**{'_parts': self._parts}, **self.__dict__}
         return (self.__class__._from_kwargs, tuple(args.items()))
@@ -366,10 +379,8 @@ class FilmPath(Path):
             kwargs = dict(*args)
         except:
             kwargs = dict(args)
-            
-        new = cls(super().__new__(cls,
-                                  *kwargs['_parts']),
-                  origin=kwargs['_origin'])
+                    
+        new = cls(super().__new__(cls, *kwargs['_parts']), origin=kwargs['_origin'])
         new.__dict__ = {**new.__dict__, **kwargs}
         return new
 
@@ -586,15 +597,13 @@ class FilmPath(Path):
             raise ValueError(
                 f"'siblings' failed '{self}', path must be absolute.")
         yield from [x for x in self.parent.iterdir() if x != self and not is_sys_file(x)]
-        
-    @lazy
-    def size_lazy(self) -> int:
-        return Size.calc(self)
 
     @property
     def size(self) -> int:
-        self.size_lazy = Size.calc(self)
-        return self.size_lazy
+        if self._size is None:
+            self._size = Size(self)
+            self._size.value
+        return self._size
 
     @property
     def video_files(self) -> Iterable['FilmPath']:
@@ -828,9 +837,9 @@ class Find:
     #     yield from filter(lambda x: x.is_file() and not x.is_valid, Find.deep(path))
     
     @staticmethod
-    def sync_attrs(paths_iter: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
+    def sync_parallel(paths: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
         with mp.Pool() as pool:
-            yield from pool.starmap(FilmPath.sync, zip(paths_iter, repeat(attrs)))
+            yield from pool.starmap(FilmPath.sync, zip(paths, repeat(attrs)))
             
 class Info:
     """Utilities and helper functions for FilmPath"""
@@ -845,7 +854,7 @@ class Info:
         Returns:
             True, if the path is an acceptable size, else False.
         """
-        return path.size >= Info.min_filesize(path)
+        return int(path.size.value) >= Info.min_filesize(path)
     
     @staticmethod
     def is_video_file(path: Union[str, Path, 'FilmPath']) -> bool:
@@ -1016,8 +1025,8 @@ class Move:
             True if the file move was successful, otherwise False.
         """
         
-        src = Path(src)
-        dst = Path(dst)
+        src = src if type(src) is FilmPath else Path(src)
+        dst = src if type(dst) is FilmPath else Path(dst)
 
         if not src.exists():
             raise OSError(f"Error moving '{src}', path does not exist.")
@@ -1059,7 +1068,7 @@ class Move:
             return True
 
         # Store the size of the source file to verify the copy was successful.
-        expected_size = Size.calc(src)
+        expected_size = Size(path).calc()
 
         # Do we need to copy, or move?
         copy = config.always_copy is True or not Info.is_same_partition(
@@ -1284,29 +1293,83 @@ class Move:
             src.rename(dst)
    
 class Size:
-    """Utils for calculating the size of paths on the filesystem."""
+    """Calculates and stores the size of the specified path on the filesystem."""
     
-    def calc(path: Union[str, Path, 'FilmPath']) -> int:
+    def __init__(self, path: Union[str, Path, 'FilmPath']):
+        if not Path(path).exists():
+            raise FileNotFoundError(
+                f"Cannot calculate size, '{path}' does not exist")
+        self.path = Path(path)
+        self._size = path._size if type(path) == FilmPath else None
+        
+    def __repr__(self): 
+        return self.pretty()
+    
+    # def __float__(self): return float(self.size or 0)
+    # def __int__(self): return int(self.size or 0)
+    # def __add__(self, other): return int.__add__(self.size, num(other))
+    # def __sub__(self, other): return int.__sub__(self.size, num(other))
+    # def __mul__(self, other): return int.__mul__(self.size, num(other))
+    # def __matmul__(self, other): return int.__matmul__(self.size, num(other))
+    # def __truediv__(self, other): return int.__truediv__(self.size, num(other))
+    # def __floordiv__(self, other): return int.__floordiv__(self.size, num(other))
+    # def __mod__(self, other): return int.__mod__(self.size, num(other))
+    # def __divmod__(self, other): return int.__divmod__(self.size, num(other))
+    # def __pow__(self, other, modulo=None): 
+    #     return int.__pow__(self.size, num(other), int(modulo) if modulo else None)
+    # def __lshift__(self, other): return int.__lshift__(self.size, num(other))
+    # def __rshift__(self, other): return int.__rshift__(self.size, num(other))
+    # def __and__(self, other): return int.__and__(self.size, num(other))
+    # def __xor__(self, other): return int.__xor__(self.size, num(other))
+    # def __or__(self, other): return int.__or__(self.size, num(other))
+    # def __lt__(self, other): return int.__lt__(self.size, num(other))
+    # def __le__(self, other): return int.__le__(self.size, num(other))
+    # def __eq__(self, other): return int.__eq__(self.size, num(other))
+    # def __ne__(self, other): return int.__ne__(self.size, num(other))
+    # def __ge__(self, other): return int.__ge__(self.size, num(other))
+    # def __gt__(self, other): return int.__gt__(self.size, num(other))
+    
+    @property
+    def value(self) -> int:
+        """Determine the size of a file or dir, or returns the cached
+        value if it has been set.
+            
+        Returns:
+            Size of file or folder, in bytes (B), or None.
+        """
+        
+        if self._size is None:
+            if not self.path.exists():
+                Console.error(
+                    f"Cannot calculate size, '{self.path}' does not exist.")
+                self._size = 0
+            else:
+                self._size = self._calc()
+        return self._size
+    
+    def _calc(self) -> int:
         """Determine the size of a file or dir.
-
-        Args:
-            path (str): File or folder to determine size.
+            
         Returns:
             Size of file or folder, in bytes (B), or 0.
         """
-        p = Path(path)
-        if not p.exists():
-            raise Exception(f'Cannot calculate size, path does not exist ({path})')
-
+        
+        if not type(self) == Size:
+            raise AttributeError("'_calc' was called before Size was initialized.")
+            
         # If it's a directory, we need to call the _size_dir func to recursively get
         # the size of each file inside.
-        if p.is_dir():
-            return sum(f.stat().st_size for f in p.glob('**/*') if f.is_file())
+        if self.path.is_dir():
+            return sum(f.stat().st_size for f in self.path.glob('**/*') if f.is_file())
         else:
-            return p.stat().st_size
+            return self.path.stat().st_size
+    
+    def refresh(self) -> int:
+        self._size = None
+        self.value
         
-    def pretty(path: Union[int, float], units: Units = None, precision: int = None) -> str:
-        """Calculates size and formats the result by calling Format.pretty_size.
+    def pretty(self, units: Units = None, precision: int = None) -> str:
+        """Formats a size in bytes as a human-readable string.
 
         Args:
             size (int or float): Size value to format
@@ -1316,4 +1379,4 @@ class Size:
         Returns:
             str: Size, formatted as pretty.
         """
-        return Format.pretty_size(Size.calc(path), units=units, precision=precision)
+        return Format.pretty_size(self.value or 0, units=units, precision=precision)
