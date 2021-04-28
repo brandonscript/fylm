@@ -36,7 +36,11 @@ class TestApp(object):
 
     def test_app(self):
         
-        Make.all_mock_files()
+        made = Make.all_mock_files()
+        
+        # (moved, expected) = get('expect_no_lookup')
+        # for f in [f.expect_no_lookup for f in made.good]:
+        #     print(f)
 
         # Execute
         fylm.main()

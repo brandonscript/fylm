@@ -91,7 +91,7 @@ strict: true
 cache: true
 
 # Cache time-to-live, in hours.
-cache_ttl: 120
+cache_ttl: 168
 
 # --limit={int, 0 = no limit}
 # Limits the number of files that are checked/renamed in a single run. Useful for doing large rename jobs, 

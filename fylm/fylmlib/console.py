@@ -39,6 +39,7 @@ import fylmlib.config as config
 from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
 from fylmlib.enums import *
+from fylmlib.constants import *
 from fylmlib import patterns, Log, Format, Progress
 
 class Console(object):
@@ -138,7 +139,7 @@ class Console(object):
 
         # Start log section header
         date = f' {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} '
-        dashes = "-"*math.floor((tsize.columns-2-len(date))/2)
+        dashes = "-"*40
         Log.info(f'{dashes}{date}{dashes}')
         
         dirs = f'\n{" "*17}'.join((str(d) for d in config.source_dirs))
@@ -188,14 +189,22 @@ class Console(object):
         # Print blank line to separate from previous film
         Console().print()
         # Print original filename and size.
-        c = Console().bold(' ')
-        if film.should_ignore and (config.interactive is False or not (film.ignore_reason or '').startswith('Unknown')):
-            c.red()
-        c.add(film.original_basename)
-        c.reset().dark_gray(f' ({formatter.pretty_size(film.size)})')
+        c = Console()
+        if film.should_ignore and (
+            config.interactive is False 
+            or not (film.ignore_reason == IgnoreReason.UNKNOWN_YEAR
+                    or film.ignore_reason == IgnoreReason.UNKNOWN_TITLE)):
+            c.red(f' {FAIL} ')
+        else:
+            c.green(f' {CHECK} ')
+            
+        c.add(f'{film.new_name if not film.should_ignore else film.name}')
+        c.reset().white(f' ({film.size.pretty()})')
+        if film.tmdb.id:
+            c.gray(f' [{film.tmdb.id}] ')
+            c.dark_gray(f'{Format.percent(film.tmdb.title_similarity)}% match')
         c.print()
-        Console().dark_gray().indent(f'in {film.original_path}').print()
-
+        Console().dark_gray(f'{INDENT}{film.src}').print()
 
     def print_search_result(self, film):
         """Print and log film search result details.
@@ -208,11 +217,11 @@ class Console(object):
         if config.tmdb.enabled is True:
             if film.tmdb_id is not None:
                 c = Console().indent()
-                c.green(f'✓ {film.title} ({film.year})')
+                c.green(f'{CHECK} {film.title} ({film.year})')
                 c.dark_gray(f' [{film.tmdb_id}] {formatter.percent(film.title_similarity)}% match')
                 c.print()
             else:
-                Console().red().indent(f'× {film.title} ({film.year})').print()
+                Console().red().indent(f'{FAIL} {film.title} ({film.year})').print()
    
     def print_skip(self, film):
         """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
@@ -220,8 +229,9 @@ class Console(object):
         Args:
             film: (Film) Film that was skipped.
         """
-
-        Console().red().dim().indent().red().dim(film.ignore_reason).print()
+        if film.should_ignore:
+            Console().red().dim(
+                f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
     def print_duplicates(self, film: 'Film'):
         """Print any duplicates found to the Console.
@@ -286,7 +296,7 @@ class Console(object):
                         c.indent(p).add(f"(Force) replacing ")
                     else:
                         c.red()
-                        c.indent(p).add(f"{r}ignoring; not an upgrade for ".capitalize())
+                        c.indent(p).add(f"{r}ignoring, not an upgrade for ".capitalize())
                 else:
                     c.gray(p).indent()
 
@@ -359,10 +369,8 @@ class Console(object):
         if not config.plaintext:
             print('      ' + Progress.bar(100 * copied / total), end='\r')
             # Catch stdout if None
-            try:
+            if sys.stdout:
                 sys.stdout.flush()
-            except:
-                pass
 
     @classmethod
     def get_input(cls, prompt):
@@ -383,6 +391,13 @@ class Console(object):
             sys.stdout.write("\033[K")
         except:
             pass
+        
+    @classmethod
+    def slow(cls, s: str='', seconds=0):
+        
+        if config.debug is True:
+            cls().yellow().bold(WARN).reset().yellow(
+                f" {s} - {round(seconds)} seconds").print()
     
     @classmethod
     def debug(cls, s: str='', end=None):
@@ -394,7 +409,7 @@ class Console(object):
         if config.debug is True:
             # TODO: Debug shouldn't also be printing info
             Log.debug(s)
-            cls().bold().debug(s).print(end=end)
+            cls().add('🐞 ').debug(s).print(end=end)
 
     @classmethod
     def error(cls, s: str='', x: Exception=None):

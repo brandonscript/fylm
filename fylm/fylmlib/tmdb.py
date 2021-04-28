@@ -33,6 +33,8 @@ import asyncio
 import functools
 from typing import Union
 from datetime import datetime
+from timeit import default_timer as timer
+
 # FIXME: Delete?
 # warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
@@ -47,13 +49,12 @@ from fylmlib import Log
 from fylmlib import Compare
 from fylmlib import Format
 from fylmlib import patterns
+from fylmlib.constants import *
 
 if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key
-
-MAX_WORKERS = 50  # Number of concurrent requests
-_sem = asyncio.Semaphore(MAX_WORKERS)
-
+    
+MAX_WORKERS = 50
 
 # TODO: A shit ton of refactoring on TMDb
 class TMDb:
@@ -232,26 +233,25 @@ class TMDb:
             self.results = []
 
         class parallel:
-            """Performs synchronous concurrent lookups from TMDb.
+            """Performs asynchronous concurrent lookups from TMDb.
             
             Args:
                 films ([Film]): *args list of films to search.
             """
             def __init__(self, *films):
-                self.films = [film for film in films if not film.should_ignore]
-                Console.debug(f" --> Starting async search for {len(self.films)} films")
                 loop = asyncio.get_event_loop()
                 tasks = asyncio.gather(*[
                     asyncio.ensure_future(self._worker(i, film))
-                    for (i, film) in enumerate(self.films)
+                    for (i, film) in enumerate(films)
                 ])
                 loop.run_until_complete(tasks)
 
             async def _worker(self, i, film):
-                async with _sem:  # semaphore limits num of simultaneous calls
-                    # Console.debug(f"Async worker {i} started - '{film.title}'")
+                # semaphore limits num of simultaneous calls
+                async with asyncio.Semaphore(MAX_WORKERS):
+                    # Console().yellow(f"{ARROW} Worker {i} started '{film.title}'").print()
                     await film.search_tmdb()
-                    # Console.debug(f"Async worker {i} done - '{film.title}'")
+                    # Console().yellow(f"{ARROW} Worker {i} done '{film.title}' - {round(timer() - start)} second(s)").print()
                     return film
 
         async def do(self) -> ['TMDb.Result']:
@@ -265,15 +265,11 @@ class TMDb:
             if self.id or type(self.query) is int:
                 
                 # Console.debug(f'Searching ID={self.id or self.query}')
-                Console.debug('.', end='')
                 
                 # Example API call:
                 #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
-                return await Search.dispatch_async(tmdb_id=self.id or self.query)
+                return await Search.dispatch_search(tmdb_id=self.id or self.query)
 
-            # Console.debug(f"Searching '{self.query}' ({self.year})")
-            Console.debug('.', end='')
-            
             stripped = re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query)
             queries = [
                 # Primary release year search
@@ -297,10 +293,11 @@ class TMDb:
                 q = stripped.rsplit(' ', i)[0]
                 queries.append({'query': q, 'primary_release_year': self.year})
                 queries.append({'query': q})
-                
-            for q in queries:
-                r = await self.dispatch_async(**q)
+
+            for i, q in enumerate(queries):
+                r = await self.dispatch_search(**q)
                 if r and r[0].is_instant_match: 
+                    # Console.debug(f"Instant (tried {i+1}×) '{self.query}' - {round(timer() - start)} second(s)")
                     return [r[0]]
             self.results.extend(r)
 
@@ -334,21 +331,10 @@ class TMDb:
 
             # Return the sorted and filtered list
             self.results = sorted_results
+            # Console.debug(f"Slow '{self.query}' ({round(timer() - start)} second(s))")
             return self.results
 
-        async def dispatch_async(self, **kwargs) -> [dict]:
-            """Asynchronous caller for _searcher.
-            
-            Args:
-                kwargs (dict): Dictionary of kwargs to pass to TMDb searcher
-                
-            Returns:
-                A list of raw result dictionary objects mapped from TMDb JSON.
-            """
-            loop = asyncio.get_event_loop()
-            return await loop.run_in_executor(None, functools.partial(self._searcher, **kwargs))
-
-        def _searcher(self, **kwargs) -> [dict]:
+        async def dispatch_search(self, **kwargs) -> [dict]:
             """TMDb lib search executor. Performs a TMDb search using the 
             specified query params.
             
@@ -373,8 +359,8 @@ class TMDb:
                 res = search.results
             # Re-enable the log
             Log.enable()
-            return [Result(src_title=self.query, 
-                           src_year=self.year, 
+            return [Result(src_title=self.query,
+                           src_year=self.year,
                            raw_result=r) for r in res]
 
 Result = TMDb.Result

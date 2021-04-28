@@ -23,3 +23,8 @@ This module handles all the enumerable constants for Fylm.
 """
 
 SYS_FILES = ['@eaDir', 'Thumbs.db', '.DS_Store']
+ARROW = '➜'
+WARN = '❬!❭'
+CHECK = '✓'
+FAIL = '×'
+INDENT = '   '

@@ -35,6 +35,7 @@ from timeit import default_timer as timer
 
 from pymediainfo import MediaInfo
 from lazy import lazy
+import nest_asyncio
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
@@ -82,7 +83,8 @@ class Film(FilmPath):
         files ([Film.File]):            Mapped from FilmPath.files to Film.File. 
         
         new_name (Path):                New name of the film, including file extension if it's a file.
-        new_name_lazy (Path):           Lazy (cached) copy of new_name
+        
+        new_name_refresh (Path):        Invalidate the lazy (cached) copy of new_name
         
         wanted_files ([Film.File]):     A subset of files that have wanted file extensions.
 
@@ -125,15 +127,20 @@ class Film(FilmPath):
         else:
             return config.destination_dir(self.main_file.resolution) / self.new_name
         
-    @property
+    @lazy
     def new_name(self) -> Path:
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.new_name_async())
+    
+    async def new_name_async(self) -> Path: 
+        if 'new_name' in self.__dict__:
+            return self.new_name
         name = Format.Name(self.main_file)
-        self.new_name_lazy = name
         return name.dirname if config.use_folders else name.filename
     
-    @lazy
-    def new_name_lazy(self) -> Path:
-        # Cached copy of new_name
+    def new_name_refresh(self) -> Path:
+        # Reset cached copy of new_name
+        lazy.invalidate(self, 'new_name')
         return self.new_name
 
     @lazy
@@ -143,7 +150,7 @@ class Film(FilmPath):
     @property
     def files(self) -> Iterable['Film.File']:
         files = [Film.File(f, film=self) for f in super().files]
-        return iter(sorted(files, key=lambda f: f.size_lazy, reverse=True))
+        return iter(sorted(files, key=lambda f: f.size.value, reverse=True))
 
     @lazy
     def ignore_reason(self) -> IgnoreReason:
@@ -192,6 +199,8 @@ class Film(FilmPath):
     
         # Perform the search and save the first 10 sresults to the matches list.
         # If ID is not None, search by ID.
+        Console.debug(f"Searching '{self.title}'")
+        start = timer()
         self._tmdb_matches = await TMDb.Search(self.title, self.year, self.tmdb.id).do()
         best_match = first(iter(self._tmdb_matches or []), None)
         if best_match:
@@ -202,6 +211,10 @@ class Film(FilmPath):
         else:
             # If not, we update the ignore_reason
             self.ignore_reason = IgnoreReason.NO_TMDB_RESULTS
+        
+        end = timer()
+        if round(end - start) > 1:
+            Console.slow(f"Took a long time searching for '{self.title}'", end - start)
 
     def search_tmdb_sync(self):
         """A synchronous wrapper for search_tmdb().
@@ -241,7 +254,8 @@ class Film(FilmPath):
     @property
     def title_the(self) -> str:
         return (f'{Format.strip_the(self.title)}, The'
-                if re.search(patterns.THE_PREFIX_SUFFIX, self.title) else self.title)
+                if re.search(patterns.THE_PREFIX_SUFFIX, self.title) 
+                else self.title)
 
     @property
     def video_files(self) -> Iterable['Film.File']:
@@ -273,55 +287,58 @@ class Film(FilmPath):
         Invalid or unwanted files can still be mapped to a File object, but self.is_wanted will return False.
 
         Attributes:
-        
-            src (FilmPath):                 Original (immutable) abs source path of the file's root, e.g.
-                                            - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+
+            did_move (bool):                Returns true when the file has been successfully moved.
+                                            Set manually from the return value (T/F) of Move.safe().
 
             dst (FilmPath):                 Desired abs path to this file's new root, e.g.
                                             - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
-            title (str):                    Ref to film.title.
-
-            title_the (str):                Ref to film.title.the.
-
-            year (str):                     Ref to film.year.
-            
-            tmdb (TMDb.Result):             Ref to film.tmdb.
+            duplicate_action (Should):      Returns None, or one of Should enum to describe what should happen when
+                                            this file encounters a duplicate.
 
             edition (str):                  Special edition.
+
+            film:                           Parent Film containing the file.
+            
+            hdr (str):                      Returns 'HDR" if is_hdr is True.
+
+            ignore_reason (IgnoreReason):   If applicable, a reason describing why this film was ignored.
+            
+            is_duplicate (bool):            Returns True if this file is marked as a duplicate of another.
+
+            is_hdr (bool):                  Indicates whether this version is HDR.
+
+            is_proper (bool):               Indicates whether this version is a proper release.
+
+            is_subtitle (bool):             Returns True if the file is a subtitle.
+
+            is_wanted (bool):               Returns True if the file is valid and wanted.
 
             media (Media):                  Original release media (see enums.Media)
             
             mediainfo (libmediainfo):       mediainfo derived from libmediainfo
 
-            resolution (Resolution):        Original pixel depth (see enums.Resolution)
-
-            is_hdr (bool):                  Indicates whether this version is HDR.
-            
-            hdr (str):                      Returns 'HDR" if is_hdr is True.
-
-            is_proper (bool):               Indicates whether this version is a proper release.
-
-            film:                           Parent Film containing the file.
-
             new_name (Path):                New name of the file, including file extension.
-            new_name_lazy (Path):           Lazy (cached) copy of new_name
-
-            ignore_reason (IgnoreReason):   If applicable, a reason describing why this film was ignored.
-
-            is_wanted (bool):               Returns True if the file is valid and wanted.
-
-            is_subtitle (bool):             Returns True if the file is a subtitle.
-
-            did_move (bool):                Returns true when the file has been successfully moved.
-                                            Set manually from the return value (T/F) of Move.safe().
             
-            is_duplicate (bool):            Returns True if this file is marked as a duplicate of another.
+            new_name_refresh (Path):        Refresh the lazy (cached) copy of new_name
+            
+            part (int):                     Part number of the file if it has multiple parts.
 
-            duplicate_action (Should):      Returns None, or one of Should enum to describe what should happen when
-                                            this file encounters a duplicate.
+            resolution (Resolution):        Original pixel depth (see enums.Resolution)
+        
+            src (FilmPath):                 Original (immutable) abs source path of the file's root, e.g.
+                                            - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
+
+            title (str):                    Ref to film.title.
+
+            title_the (str):                Ref to film.title.the.
+            
+            tmdb (TMDb.Result):             Ref to film.tmdb.
 
             upgrade_reason (UpgradeReason): Returns the reason this file should be upgraded, or an empty string.
+
+            year (str):                     Ref to film.year.
         """
         
         def __init__(self, path: Union[str, Path, 'FilmPath'], film: 'Film', origin: 'Path' = None):
@@ -346,6 +363,14 @@ class Film(FilmPath):
                 'Proper ' if self.is_proper else None,
                 self.tmdb.id] if x]))
         
+        # @overrides(__reduce__)
+        def __reduce__(self):
+            
+            lazy.invalidate(self.film, 'main_file')
+
+            args = {**{'_parts': self._parts}, **self.__dict__}
+            return (self.__class__._from_kwargs, tuple(args.items()))
+        
         # @Override(_from_kwargs) 
         @classmethod
         def _from_kwargs(cls, *args):
@@ -363,11 +388,7 @@ class Film(FilmPath):
                       film=kwargs['film'])
             new.__dict__ = {**new.__dict__, **kwargs}
             return new
-            
-        @lazy
-        def src(self) -> FilmPath:
-            return self._src
-        
+
         @property
         def dst(self) -> Path:
             # If 'rename_only' is enabled, we need to override the configured
@@ -375,12 +396,16 @@ class Film(FilmPath):
             if config.rename_only is True:
                 return self.src.parent / self.new_name
             elif config.use_folders:
-                return (config.destination_dir(self.resolution) / 
+                return (config.destination_dir(self.resolution) /
                         self.film.new_name /
                         self.new_name)
             else:
                 return (config.destination_dir(self.resolution) /
-                        self.new_name)
+                        self.new_name)            
+            
+        @lazy
+        def src(self) -> FilmPath:
+            return self._src
             
         @lazy
         def title(self) -> str:
@@ -390,64 +415,21 @@ class Film(FilmPath):
         def title_the(self) -> str:
             return self.film.title_the
 
-        @lazy
-        def year(self) -> int:
-            return self.film.year
-        
         @property
         def tmdb(self) -> TMDb.Result:
             return self.film.tmdb
+
+        @lazy
+        def year(self) -> int:
+            return self.film.year
         
         @lazy
         def edition(self) -> str:
             return Parser(self.filmrel).edition
 
         @lazy
-        def media(self) -> Media:
-            return Parser(self.filmrel).media
-        
-        @lazy
-        def part(self) -> str:
-            return Parser(self.name).part
-        
-        @lazy
         def hdr(self) -> bool:
             return 'HDR' if self.is_hdr else ''
-        
-        @lazy
-        def is_hdr(self) -> bool:
-            return Parser(self.filmrel).is_hdr
-        
-        @lazy
-        def is_proper(self) -> bool:
-            return Parser(self.filmrel).is_proper
-
-        @lazy
-        def mediainfo(self) -> Union['Track', None]:
-            if not self.is_video_file or not self.exists():
-                return None
-
-            media_info = MediaInfo.parse(str(self), library_file=str(
-                Path(__file__).resolve().parent / 'libmediainfo.0.dylib'))
-
-            for track in media_info.tracks:
-                if track.track_type == 'Video':
-                    return track
-                
-        @lazy
-        def resolution(self) -> Resolution:
-            return Parser(self.filmrel, mediainfo=self.mediainfo).resolution
-        
-        @property
-        def new_name(self) -> Path:
-            name = Format.Name(self)
-            self.new_name_lazy = name
-            return f'{name.filename}{self.suffix}'
-
-        @lazy
-        def new_name_lazy(self) -> Path:
-            # Cached copy of new_name
-            return self.new_name
         
         @lazy
         def ignore_reason(self) -> IgnoreReason:
@@ -459,7 +441,19 @@ class Film(FilmPath):
             elif not Info.has_valid_ext(self): return i.INVALID_EXT
             elif not Info.is_acceptable_size(self): return i.TOO_SMALL
             else: return None
-            
+
+        @lazy
+        def is_hdr(self) -> bool:
+            return Parser(self.filmrel).is_hdr
+
+        @lazy
+        def is_proper(self) -> bool:
+            return Parser(self.filmrel).is_proper
+
+        @lazy
+        def is_subtitle(self):
+            return self.suffix.lower() in ['.srt', '.sub']
+
         @lazy
         def is_wanted(self) -> bool:
             # If the file doesns't have an ignore reason, we
@@ -467,5 +461,56 @@ class Film(FilmPath):
             return not self.ignore_reason
 
         @lazy
-        def is_subtitle(self):
-            return self.suffix.lower() in ['.srt', '.sub']
+        def media(self) -> Media:
+            return Parser(self.filmrel).media
+
+        @lazy
+        def mediainfo(self) -> Union['Track', None]:
+            if 'mediainfo' in self.__dict__:
+                return self.mediainfo
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                nest_asyncio.apply(loop)
+            return loop.run_until_complete(self.mediainfo_async())
+
+        async def mediainfo_async(self) -> Union['Track', None]:
+            if not self.is_video_file or not self.exists():
+                return None
+
+            media_info = MediaInfo.parse(str(self), library_file=str(
+                Path(__file__).resolve().parent / 'libmediainfo.0.dylib'))
+
+            for track in media_info.tracks:
+                if track.track_type == 'Video':
+                    return track
+
+        @lazy
+        def new_name(self) -> Path:
+            name = Format.Name(self)
+            self.new_name_lazy = name
+            return f'{name.filename}{self.suffix}'
+
+        def new_name_refresh(self) -> Path:
+            # Reset cached copy of new_name
+            lazy.invalidate(self, 'new_name')
+            return self.new_name
+        
+        @lazy
+        def part(self) -> str:
+            return Parser(self.name).part
+                
+        @lazy
+        def resolution(self) -> Resolution:
+            res = Parser(self.filmrel).resolution
+            if res is not Resolution.UNKNOWN:
+                return res
+            elif self.mediainfo:
+                try:
+                    if self.mediainfo.width == 3840: return Resolution.UHD_2160P
+                    elif self.mediainfo.width == 1920: return Resolution.HD_1080P
+                    elif self.mediainfo.width == 1280: return Resolution.HD_720P
+                    elif self.mediainfo.width == 1024: return Resolution.SD_576P
+                    elif self.mediainfo.width == 852: return Resolution.SD_480P
+                except:
+                    pass
+            return Resolution.UNKNOWN

@@ -84,7 +84,7 @@ def main():
         Console().error(f'{type(e).__name__}: {e}')
         if config.debug or config.errors:
             import traceback
-            traceback.print_exc()
+            exit(traceback.print_exc())
     finally:
         # Don't leave the cursor hidden
         Cursor.show()

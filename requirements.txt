@@ -5,7 +5,9 @@ addict>=2.4.0
 requests-cache>=0.4.13
 tmdbsimple>=2.1.0
 PlexAPI
+halo
 requests>=2.20.0
+nest-asyncio>=1.5.1
 pymediainfo>=4.0
 future-fstrings>=1.2.0
 rapidfuzz>=1.2.1

@@ -34,6 +34,7 @@ import re
 import itertools
 import pickle
 import time
+import asyncio
 from itertools import chain, repeat
 import multiprocessing as mp
 from pathlib import Path
@@ -49,8 +50,6 @@ from fylmlib import Console
 from fylmlib import Parser
 from fylmlib import Cursor
 from fylmlib import Format
-
-sys.setrecursionlimit(2000)
 
 class Create:
     """Utilities for making files/dirs on the filesystem."""
@@ -322,16 +321,9 @@ class FilmPath(Path):
         # This is required in order to support pickling for async ops.
         # ---
         
-        # We need to check all children of this object's __dict__ to make sure there
-        # are no circular references to a type matching 'self'.
-
-        for _, v in self.__dict__.items():
-            try:
-                for ki, vi in v.__dict__.items():
-                    if type(vi) == type(self):
-                        v.__dict__[ki] = Path(vi)
-            except:
-                pass
+        # Short-circuit recursion by checking referenced types three levels deep.
+        # If at the third level, any types match self or second level, cast them
+        # to Path instead, which does not maintain state.
 
         args = {**{'_parts': self._parts}, **self.__dict__}
         return (self.__class__._from_kwargs, tuple(args.items()))
@@ -645,8 +637,8 @@ class FilmPath(Path):
 class Find:
     """A collection of methods to search for files and dirs."""
     
-    _NEW = None # Cached list from Find.new()
-    _EXISTING = None # Cached list from Find.existing()
+    NEW = None # Cached list from Find.new()
+    EXISTING = None # Cached list from Find.existing()
 
     @staticmethod
     def deep(path: Union[str, Path, 'FilmPath'], 
@@ -760,8 +752,8 @@ class Find:
         
         # If existing films has already been loaded and the list has
         # more than one film:
-        if cls._EXISTING:
-            return cls._EXISTING
+        if cls.EXISTING:
+            return cls.EXISTING
         
         # If paths is none or empty, there's nothing to search for.
         
@@ -776,9 +768,9 @@ class Find:
             Find.shallow(p, sort_key=sort_key) for p in _paths)
             
         # Set the class var
-        cls._EXISTING = list(found_iter)
+        cls.EXISTING = list(found_iter)
         
-        return cls._EXISTING
+        return cls.EXISTING
     
     @classmethod
     def new(cls, 
@@ -797,8 +789,8 @@ class Find:
 
         # If new films has already been loaded and the list has
         # more than one film:
-        if cls._NEW:
-            return cls._NEW
+        if cls.NEW:
+            return cls.NEW
         
         Console.debug('Loading new films...')
         
@@ -814,9 +806,9 @@ class Find:
             Find.deep_sorted(p, sort_key=sort_key) for p in paths)
         
         # Set the class var
-        cls._NEW = list(found_iter)
+        cls.NEW = list(found_iter)
 
-        return cls._NEW
+        return cls.NEW
     
     # @staticmethod
     # # FIXME: Probably not going to keep this
@@ -836,6 +828,7 @@ class Find:
     #     # Filter the results using a lambda function.
     #     yield from filter(lambda x: x.is_file() and not x.is_valid, Find.deep(path))
     
+    # FIXME: Move to Parallel
     @staticmethod
     def sync_parallel(paths: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
         with mp.Pool() as pool:
@@ -1291,6 +1284,26 @@ class Move:
 
             # Rename
             src.rename(dst)
+
+class Parallel:
+        """Performs asynchronous concurrent operation on an iterable."""
+        def __init__(self, iterable, max_workers=50):
+            self.iterable = iterable
+            self.max_workers = max_workers
+            
+        def call(self, func):
+            loop = asyncio.get_event_loop()
+            tasks = asyncio.gather(*[
+                asyncio.ensure_future(self._worker(i, o, func))
+                for (i, o) in enumerate(self.iterable)
+            ])
+            return loop.run_until_complete(tasks)
+
+        async def _worker(self, i, o, func):
+            # semaphore limits num of simultaneous calls
+            async with asyncio.Semaphore(self.max_workers):
+                await getattr(o, func.__name__)()
+                return o
    
 class Size:
     """Calculates and stores the size of the specified path on the filesystem."""

@@ -32,6 +32,9 @@ from fylmlib.tools import *
 from fylmlib.enums import *
 import fylmlib.config as config
 import fylmlib.patterns as patterns
+from timeit import default_timer as timer
+
+MAX_WORKERS = 50
     
 class Format:
 
@@ -56,8 +59,10 @@ class Format:
             self.file = file
                 
             # Map mutable copies of the original renaming patterns to names
-            self.filename = self._map_template(copy(config.rename_pattern.file))
-            self.dirname = self._map_template(copy(config.rename_pattern.folder))
+            self.filename = self._map_template(
+                copy(config.rename_pattern.file), RenameMask.FILE)
+            self.dirname = self._map_template(
+                copy(config.rename_pattern.folder), RenameMask.DIR)
             
         @property
         def filmrel(self) -> 'Path':
@@ -68,12 +73,12 @@ class Format:
             """
             if not self.filename:
                 raise AttributeError(
-                    f"Could not build path for '{self.path.name}'; 'name' is missing.\n"
+                    f"Could not build path for '{self.path.name}', 'name' is missing.\n"
                     f"Initalize Name and call build() before accessing 'filmrel'.")
                 
             if not self.dirname:
                 raise AttributeError(
-                    f"Could not build path for '{self.path.name}'; 'parent' is missing.\n"
+                    f"Could not build path for '{self.path.name}', 'parent' is missing.\n"
                     f"Initalize Name and call build() before accessing 'filmrel'.")
                 
             # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
@@ -86,11 +91,13 @@ class Format:
             else:
                 return Path(self.filename)
             
-        def _map_template(self, template: str) -> str:
+        def _map_template(self, template: str, rename_mask: RenameMask) -> str:
             """Maps a pattern to a string given the template mask provided.
             
             Args:
                 template (str): The template.
+                rename_mask (RenameMask): RenameMask.FILE or .DIR, depending on 
+                                          which is being generated.
 
             Returns:
                 str: Name derived from the template.
@@ -105,14 +112,10 @@ class Format:
                     self.file.media.display_name if self.file.media else None, 
                     self.file.resolution.display_name if self.file.resolution else None
                 ]))
-
-            part = (f', Part {self.file.film.part}' 
-                    if self.file.part and build_for == RenameMask.FILE 
-                    else "")
-
+            
             pattern_map = [
-                ["title-the", self.file.film.title_the + part],
-                ["title", self.file.film.title + part],
+                ["title-the", self.file.film.title_the],
+                ["title", self.file.film.title],
                 ["edition", self.file.edition],
                 ["year", self.file.film.year],
                 ["quality-full",
@@ -157,6 +160,10 @@ class Format:
             # we end up with the app trying to create folders for any title that contains
             # a /. Looking at you, Face/Off.
             template = template.replace(r'/', '-')
+            
+            # Append Part to the file, if applicable
+            if rename_mask == RenameMask.FILE and self.file.part:
+                template = f"{template}, Part {self.file.part}"
 
             # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
             # `Dude Where's My Car`).
@@ -204,59 +211,8 @@ class Format:
             
         return f'{bytes:,.{prec}f} {u[0]}'
 
-    # FIXME: Remove
-    # @staticmethod
-    # def pretty_size_old(size_in_bytes=0, ):
-    #     """Pretty format filesize/size_in_bytes into human-readable strings.
-
-    #     Maps a byte count to KiB, MiB, GiB, KB, MB, or GB. By default,
-    #     this measurement is automatically calculated depending on filesize,
-    #     but can be overridden by passing `measure` key.
-
-    #     Args:
-    #         size_in_bytes (int): file size in bytes
-    #         measure (enums.Size, optional): Key value for the pretty_size_map to 
-    #                                force formatting to a specific measurement.
-    #     Returns:
-    #         A human-readable formatted filesize string.
-    #     """
-
-    #     # Force size_in_bytes to be an integer
-    #     b = size_in_bytes or 0
-
-    #     # Map out the math required to re-calculate bytes into human-readable formats.
-    #     pretty_size_map = {
-
-    #         # Do not round.
-    #         "B": b,
-
-    #         # Round to nearest whole number.
-    #         "KB": round(b / 1000.0, decimal_places or 0),
-    #         "KiB": round(b / 1024.0, decimal_places or 0),
-
-    #         # Round to one decimal place.
-    #         "MB": round(b / 1000.0 / 1000.0, decimal_places or 1),
-    #         "MiB": round(b / 1024.0 / 1024.0, decimal_places or 1),
-
-    #         # Round to two decimal places.
-    #         "GB": round(b / 1000.0 / 1000.0 / 1000.0, decimal_places or 2),
-    #         "GiB": round(b / 1024.0 / 1024.0 / 1024.0, decimal_places or 2)
-    #     }
-
-    #     # If measure was specified, format and return. This is usually used when calling
-    #     # this function recursively, but can be called manually.
-    #     if measure:
-    #         return f'{pretty_size_map[measure.value]} {measure.value}'
-    #     elif pretty_size_map[Size.GiB] > 1:
-    #         return Format.pretty_size(b, 'GiB')
-    #     elif pretty_size_map['MiB'] > 1:
-    #         return Format.pretty_size(b, 'MiB')
-    #     elif pretty_size_map['KiB'] > 1:
-    #         return Format.pretty_size(b, 'KiB')
-    #     else:
-    #         return f'{b:,.0f} B'
-
     @staticmethod
+    # FIXME: Redo this
     def pretty_size_diff(left: str, right: str):
         """Pretty format filesize comparison.
 
@@ -412,9 +368,11 @@ class Format:
                 # and...
                 #    the previous wasn't alphabetical, numerical, or a roman numeral
                 #    (however, the roman numeral can't be the first word in the title)
-                #    it's not 'a' or 'the' preceded by a possible verb
+                #    it's not 'a' or 'the'
+                #       (We should check that it's not preceded by verb, but nltk 
+                #       synsets is way too slow.)
                 # then we should capitalize the article.
-                # (e.g., Make The Knife vs. The Chronicles of Narnia The Lion the Witch, and the Wardrobe)
+                # (e.g., Mack The Knife vs. The Chronicles of Narnia The Lion the Witch, and the Wardrobe)
                 if (not current.lower() == 'and' 
                     and not prev.lower() in patterns.ARTICLES 
                     and not prev.endswith(',') 
@@ -422,7 +380,7 @@ class Format:
                         not prev.rstrip(',').isalpha()
                         or is_number(prev)
                         or (is_roman_numeral(prev) and not prev.lower() == title[0].lower())
-                        or (current.lower() in ['a', 'the'] and not is_possible_verb(prev))
+                        or (current.lower() in ['a', 'the'])
                     )
                 ):
                     l = l.capitalize()

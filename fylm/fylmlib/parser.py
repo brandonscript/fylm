@@ -37,6 +37,8 @@ import fylmlib.patterns as patterns
 from fylmlib.tools import *
 from fylmlib.enums import *
 from fylmlib import Format
+from fylmlib import Console
+from timeit import default_timer as timer
 
 class Parser:
     """A collection of string parsing utilities to apply regular 
@@ -50,14 +52,13 @@ class Parser:
         path (str, Path, or FilmPath): Relative or absolute path to a film file
     
     """
-    def __init__(self, path: Union[str, 'Path', 'FilmPath'], mediainfo=None):
+    def __init__(self, path: Union[str, 'Path', 'FilmPath']):
         
         try:
             self.path = path.main_file.filmrel if path.exists() else path
         except:
             self.path = path
         self.s = str(self.path)
-        self.mediainfo = mediainfo
     
     @lazy
     def title(self) -> str:
@@ -72,11 +73,13 @@ class Parser:
         Returns:
             A clean and well-formed film title.
         """
+        
+        start = timer()
 
         # Use the FilmPath's filmrel to identify the original title, 
         # remove the extension.
         title = self.s
-
+        
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
             if title.lower().startswith(prefix.lower()):
@@ -94,15 +97,15 @@ class Parser:
         if self._edition_map[0] is not None:
             title = re.sub(self._edition_map[0], '', title)
 
-        # Strip all resolution and media tags from the title.
-        title = re.sub(patterns.MEDIA, '', title)
-        title = re.sub(patterns.RESOLUTION, '', title)
-
         # Typical naming patterns place the year as a delimiter between the title
         # and the rest of the file. Therefore we can assume we only care about
         # the first part of the string, and so we split on the year value, and keep
         # only the left-hand portion.
         title = title.split(str(self.year))[0]
+        
+        # Strip all resolution and media tags from the title.
+        title = re.sub(patterns.MEDIA, '', title)
+        title = re.sub(patterns.RESOLUTION, '', title)
 
         # If a title ends with , The, we need to remove it and prepend it to the
         # start of the title.
@@ -128,11 +131,17 @@ class Parser:
         # Correct the case of the title
         title = Format.title_case(title)
 
+        """
         # Always uppercase strings that are meant to be in all caps
         for u in config.always_upper:
             rx = re.compile(r'\b' + u + r'\b', re.I)
             if re.search(rx, title):
                 title = re.sub(rx, u, title)
+        """
+        end = timer()
+        if round(end - start) > 1:
+            Console.slow(
+                f"Took a long time parsing title from '{self.path.filmrel}'", end - start)
         
         return title
 
@@ -152,13 +161,19 @@ class Parser:
             A 4-digit integer representing the release year, or None if
             no year could be determined.
         """
+        start = timer()
         # Find all matches of years between 1910 and 2159 (we don't want to
         # match 2160 because 2160p, and hopefully I'll be dead by then and
         # no one will use python anymore).
         m = last(re.finditer(patterns.YEAR, self.s), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
-        return int(m.group('year')) if m else None
+        year = int(m.group('year')) if m else None
+        end = timer()
+        if round(end - start) > 1:
+            Console.slow(
+                f"Took a long time parsing title from '{self.path.filmrel}'", end - start)
+        return year
 
     @lazy
     def edition(self) -> str:
@@ -191,16 +206,6 @@ class Parser:
         Returns:
             A an Enum representing the file's resolution, or None.
         """
-        
-        if self.mediainfo:
-            try:
-                if self.mediainfo.width == 3840: return Resolution.UHD_2160P
-                elif self.mediainfo.width == 1920: return Resolution.HD_1080P
-                elif self.mediainfo.width == 1280: return Resolution.HD_720P
-                elif self.mediainfo.width == 1024: return Resolution.SD_576P
-                elif self.mediainfo.width == 852: return Resolution.SD_480P
-            except:
-                pass
 
         # Search for any of the known qualities.
         m = last(re.finditer(patterns.RESOLUTION, self.s), default=None)

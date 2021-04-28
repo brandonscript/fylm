@@ -48,6 +48,6 @@ class _AnsiColors:
         self.black = 0
         self.white = 255
         self.error = 1
-        self.debug = 24
+        self.debug = 160
 
 ansi = _AnsiColors()

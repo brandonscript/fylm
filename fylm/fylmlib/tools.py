@@ -23,13 +23,7 @@ from typing import Iterable, Union
 import itertools
 import re
 import math
-
-import nltk
-from nltk.corpus import wordnet as wn
-try:
-    nltk.data.find('wordnet')
-except LookupError:
-    nltk.download('wordnet', quiet=True)
+from timeit import default_timer as timer
 import inflect
 p = inflect.engine()
 
@@ -137,16 +131,6 @@ def is_number(s):
     except:
         pass
     return any([s.isnumeric(), s.isdigit()])
-
-def is_possible_verb(s):
-    """Tests if string is a possible verb
-
-    Args:
-        s (str, utf-8): Input string to check
-    Returns:
-        True if the string is a verb, otherwise False
-    """
-    return 'v' in set(s.pos() for s in wn.synsets(s))
 
 def is_roman_numeral(s):
     """Tests if string is exactly a roman numeral

@@ -28,13 +28,17 @@ import os
 import sys
 from typing import List
 import asyncio
+import time
 from timeit import default_timer as timer
+
+from halo import Halo
 
 import fylmlib.config as config
 import fylmlib.counter as counter
 from fylmlib.enums import *
 from fylmlib import Console
 from fylmlib import Find
+from fylmlib import Parallel
 from fylmlib import Format
 from fylmlib import Notify
 from fylmlib import TMDb
@@ -43,6 +47,7 @@ from fylmlib import Duplicates
 from fylmlib import Subtitle
 from fylmlib import Film
 from fylmlib.tools import *
+from fylmlib.constants import *
 
 _move_queue = []
 
@@ -56,25 +61,41 @@ class App:
     def run():
         """Main entry point for Fylm."""
         
-        start = timer()
-        films = sorted([Film(f) for f in Find.new() if f.is_filmroot], 
+        NEW = sorted([Film(f) for f in Find.new() if f.is_filmroot], 
                        key=lambda f: f.name.lower())
+        NEW = list(Find.sync_parallel(iter(NEW), attrs=['filmrel', 'year', 'size']))
+        # NEW = list(filter(lambda f: not f.should_ignore, NEW))
         
-        Console.debug(f"Found {len(films)} possible films in the specified src dirs, checking them...")
-        films = list(filter(lambda f: not f.should_ignore, 
-                            Find.sync_parallel(iter(films), attrs=['filmrel', 'year', 'size'])))
-        
-        end = timer()
-        Console.debug(f"Done, took {round(end - start)} seconds")
+        Console().pink(f"Found {len(NEW)} potential {Format.pluralize('film', len(NEW))}").print()
         
         # Perform async lookup of films when not in interactive mode
         if not config.interactive and config.tmdb.enabled:
             
+            def spinner(text):
+                return Halo(text=text,
+                            spinner='dots',
+                            color='yellow',
+                            text_color='yellow')
+                
+            def spinner_done(text, s):
+                Console().green(f' {CHECK}  {text} '
+                                ).dark_gray(f'({round(s)} seconds)'
+                                ).print()
+            
+            # Search TMDb
             start = timer()
-            Console.debug(f"Searching TMDb...")
-            TMDb.Search.parallel(*films)
+            spin1 = spinner('Searching TMDb...')
+            if not config.debug: spin1.start()
+            
+            TMDb.Search.parallel(*NEW)
+            
             end = timer()
-            Console.debug(f"\nDone, took {round(end - start)} seconds")
+            if not config.debug: spin1.stop()
+            spinner_done('Done searching TMDb', end - start)
+                                      
+            for film in NEW:
+                Console().print_film_header(film)
+                Console().print_skip(film)
 
         # Route to the correct handler if the film shouldn't be skipped
         [cls.route(film) for film in films if not film.should_skip]
