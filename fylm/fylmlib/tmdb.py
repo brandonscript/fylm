@@ -34,6 +34,7 @@ import functools
 from typing import Union
 from datetime import datetime
 from timeit import default_timer as timer
+import requests
 
 # FIXME: Delete?
 # warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
@@ -42,6 +43,8 @@ import tmdbsimple as tmdb
 from rapidfuzz import fuzz
 from lazy import lazy
 from addict import Dict
+from pathlib import Path
+from itertools import groupby
 
 import fylmlib.config as config
 from fylmlib import Console
@@ -80,7 +83,7 @@ class TMDb:
 
             new_year:           The primary release year of the TMDb search result.
 
-            id:                 The TMDb ID of the search result.
+            id (int):           The TMDb ID of the search result.
 
             overview:           TMDb short description (overview) of the film.
 
@@ -97,7 +100,10 @@ class TMDb:
             is_potential_match: Performs a checking heuristic to determine if the search
                                 result qualifies as a potential match.
                                 
-            is_verified (bool): Set to True once a TMDb result is verified in interactive mode.
+            is_verified (bool): Set to True when the search result is retrieved from TMDb
+                                
+            ia_accepted (bool): Set to True once a TMDb result is verified in interactive mode.
+            
         """
         
         def __init__(self, 
@@ -114,6 +120,7 @@ class TMDb:
             self.popularity = 0
             self.vote_count = 0
             self.poster_url = None
+            self.is_verified = False
 
             if raw_result is not None:
                 self._merge(raw_result)
@@ -132,8 +139,8 @@ class TMDb:
 
         def __hash__(self):
             return hash(('new_title', self.new_title, 
-                'new_year', self.new_year,
-                'id', self.id))
+                         'new_year', self.new_year,
+                         'id', self.id))
 
         def _merge(self, raw):
             """Map properties to this object from a raw JSON result.
@@ -146,12 +153,15 @@ class TMDb:
             """
             raw = Dict(raw)
             
-            self.id = raw.id
+            self.id = int(raw.id)
             self.overview = raw.overview
             self.poster_url = raw.poster_path
             self.popularity = raw.popularity
             self.vote_count = raw.vote_count
             self.new_title = raw.title
+            if raw.title and raw.release_date:
+                # It's a valid API search result, so mark as valid
+                self.is_verified = True
             try:
                 self.new_year = datetime.strptime(
                     raw.release_date, "%Y-%m-%d").year
@@ -167,6 +177,8 @@ class TMDb:
                 A decimal value between 0 and 1 representing the similarity between
                 the two titles.
             """
+            if not self.src_title:
+                return 0
             return Compare.title_similarity(self.src_title, self.new_title)
 
         @lazy
@@ -177,6 +189,8 @@ class TMDb:
                 An absolute integer value representing the difference between
                 the parsed year and the TMDb result's release year.
             """
+            if not self.src_title:
+                return 1000
             return int(Compare.year_deviation(self.src_year, self.new_year))
 
         @lazy
@@ -187,6 +201,9 @@ class TMDb:
                 True if the TMDb result is an instant match candidate, else False.
             """
 
+            if not self.src_title:
+                return False
+            
             # Define a threshold for an 'ideal' title similarity. This value
             # is used to determine an instant match.
             ideal_title_similarity = 0.85
@@ -209,8 +226,18 @@ class TMDb:
                 and initial_chars_match):
                 # Console.debug(f'Instant match: {self.new_title} ({self.new_year})')
                 return True
-            else:
-                return False
+            return False
+            
+        def update(self, film):
+            """Updates a given film with the values of this result.
+
+            Args:
+                film (Film): Film to update
+            """
+            film.tmdb = self
+            film.title = self.new_title
+            film.year = self.new_year
+            lazy.invalidate(film.main_file, 'new_name')
             
     class Search:
         
@@ -253,6 +280,43 @@ class TMDb:
                     await film.search_tmdb()
                     # Console().yellow(f"{ARROW} Worker {i} done '{film.title}' - {round(timer() - start)} second(s)").print()
                     return film
+                
+        class Q:
+            """Search query dictionary handler
+            
+            Args:
+                query: str or int
+                id: int
+                year
+                primary_release_year
+            """
+            def __init__(self, query=None, primary_release_year=None, year=None, id=None):
+                self.query = query
+                self.primary_release_year = primary_release_year
+                self.year = year
+                self.id = id
+                
+            def __repr__(self):
+                return ' '.join(f"Q('{self.query}') "\
+                        f"{self.primary_release_year or ''} "\
+                        f"{self.year or ''} "\
+                        f"{self.id or ''}".split())
+                
+            def __eq__(self, other):
+                """Use __eq__ method to define duplicate queries"""
+                return (self.query == other.query
+                        and self.primary_release_year == other.primary_release_year
+                        and self.year == self.year
+                        and self.id == self.id)
+
+            def __hash__(self):
+                return hash(('query', self.query,
+                             'primary_release_year', self.primary_release_year,
+                             'year', self.year,
+                             'id', self.id))
+                
+            def dict(self):
+                return self.__dict__
 
         async def do(self) -> ['TMDb.Result']:
             """Executes a series of searches until a suitable match is found.
@@ -260,86 +324,101 @@ class TMDb:
             Returns:
                 An ordered list of TMDb.Result objects.
             """
+            
+            Q = Search.Q
 
             # If querying by ID (an int), search immediately and return the result.
             if self.id or type(self.query) is int:
-                
                 # Console.debug(f'Searching ID={self.id or self.query}')
-                
-                # Example API call:
-                #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
-                return await Search.dispatch_search(tmdb_id=self.id or self.query)
+                return await self.dispatch_search(Q(id=self.id, query=self.query))
+            
+            # ID search
+            # Example API call:
+            #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
+            
+            # Primary release year search
+            # Example API call:
+            #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY
+            
+            # Basic year search
+            # Example API call:
+            #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY
 
+            queries = []
             stripped = re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query)
+                    
             queries = [
-                # Primary release year search
-                # Example API call:
-                #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY
-                {'query': self.query, 'primary_release_year': self.year},
-                
-                # Basic year search
-                # Example API call:
-                #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY
-                {'query': self.query, 'year': self.year},
-                
-                # Strip some chars from query
-                {'query': stripped, 'primary_release_year': self.year},
-                
-                # Try searching without year
-                {'query': self.query}
+                Q(query=self.query, year=self.year),
+                Q(query=stripped, year=self.year),
+                Q(query=self.query, primary_release_year=self.year),
+                Q(query=stripped, primary_release_year=self.year)
             ]
+
+            # Try separating path parts
+            parts = Path(self.query).parts
+            if len(parts) > 1:
+                [queries.append(Q(query=p, primary_release_year=self.year)) for p in parts]
+                [queries.append(Q(query=p)) for p in parts]
+
+            # Recursively remove the last word in the query
             for i, _ in enumerate(stripped.split()):
-                # Recursively remove the last word in the query
                 q = stripped.rsplit(' ', i)[0]
-                queries.append({'query': q, 'primary_release_year': self.year})
-                queries.append({'query': q})
+                queries.append(Q(query=q, primary_release_year=self.year))
+                queries.append(Q(query=q))
 
-            for i, q in enumerate(queries):
-                r = await self.dispatch_search(**q)
-                if r and r[0].is_instant_match: 
-                    # Console.debug(f"Instant (tried {i+1}×) '{self.query}' - {round(timer() - start)} second(s)")
-                    return [r[0]]
-            self.results.extend(r)
-
+            # Get an ordered list of unique queries
+            for i, q in enumerate(list(dict.fromkeys(queries))):
+                r = await self.dispatch_search(q)
+                for m in r:
+                    if m.is_instant_match:
+                        return [m]
+                self.results.extend(r)
+                
+            # Sort, group/aggregate by ID, then sort by number of times the result appeared
+            # in all searches
+            results_sorted = sorted(self.results, key=lambda x: x.id)
+            aggregate_results = [(r, len(list(results))) for r, results in groupby(results_sorted)]
+            aggregate_results.sort(key=lambda x: x[1], reverse=True)
+            
             # If no instant match was found, we need to figure out which are the most likely 
             # matches. Strip duplicate results and remove results that don't match the 
             # configured match threshold:
             filtered_results = list(filter(
                 lambda x: 
-                    (x.year_deviation == 0 
-                        and (x.vote_count + x.popularity) >= 100
-                        and x.title_similarity == config.tmdb.min_title_similarity / 1.4) or
-                    (int(x.year_deviation) <= config.tmdb.max_year_diff 
-                        and x.popularity >= config.tmdb.min_popularity
-                        and x.title_similarity == config.tmdb.min_title_similarity) or
-                    (x.year_deviation <= 2
-                        and x.title_similarity >= 1.0) or
-                    (x.year_deviation <= 1
-                        and x.title_similarity >= 0.8) or
-                    (x.year_deviation == 0
-                        and x.title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
-                set(self.results)
+                    (x[0].year_deviation == 0 
+                        and (x[0].vote_count + x[0].popularity) >= 100
+                        and x[0].title_similarity == config.tmdb.min_title_similarity / 1.4) or
+                    (int(x[0].year_deviation) <= config.tmdb.max_year_diff 
+                        and x[0].popularity >= config.tmdb.min_popularity
+                        and x[0].title_similarity == config.tmdb.min_title_similarity) or
+                    (x[0].year_deviation <= 2
+                        and x[0].title_similarity >= 1.0) or
+                    (x[0].year_deviation <= 1
+                        and x[0].title_similarity >= 0.8) or
+                    (x[0].year_deviation == 0
+                        and x[0].title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
+                aggregate_results # aggregate results is in a tuple: (Result, number_of_times_returned)
             ))
-
+            
             # Sort the results by:
             #   - Sort by highest popularity rank first
             #   - Then prefer a matching title similarity first (a 0.7 is better than a 0.4)
             #   - Then prefer lowest year deviation (0 is better than 1)
             sorted_results = list(sorted(filtered_results, 
-                key=lambda x: (-(x.vote_count + x.popularity), -x.title_similarity, x.year_deviation)
+                key=lambda x: (-(x[0].vote_count + x[0].popularity), -x[0].title_similarity, x[0].year_deviation)
             ))
 
-            # Return the sorted and filtered list
-            self.results = sorted_results
+            # Return results (0 index) from the sorted and filtered tuple list
+            self.results = [x[0] for x in sorted_results]
             # Console.debug(f"Slow '{self.query}' ({round(timer() - start)} second(s))")
             return self.results
 
-        async def dispatch_search(self, **kwargs) -> [dict]:
+        async def dispatch_search(self, q: 'Search.Q') -> ['Search.Result']:
             """TMDb lib search executor. Performs a TMDb search using the 
             specified query params.
             
             Args:
-                kwargs (dict): Dictionary of kwargs to pass to TMDb searcher
+                Q (Search.Q): Dictionary of kwargs to pass to TMDb searcher
                 
             Returns:
                 A list of raw result dictionary objects mapped from TMDb JSON.
@@ -350,12 +429,16 @@ class TMDb:
             search = tmdb.Search()
             # Build the search query and execute the search.
             res = []
-            kwargs['include_adult'] = 'true'
-            if 'id' in kwargs:
-                r = tmdb.Movies(kwargs['id']).info()
-                res = [r] if r else []
+            query = q.__dict__
+            query['include_adult'] = 'true'
+            if q.id:
+                try:
+                    r = tmdb.Movies(q.id).info()
+                    res = [r] if r else []
+                except requests.exceptions.HTTPError:
+                    res = []
             else:
-                search.movie(**kwargs)
+                search.movie(**query)
                 res = search.results
             # Re-enable the log
             Log.enable()

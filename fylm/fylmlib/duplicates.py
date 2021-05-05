@@ -24,20 +24,64 @@ This module handles all the duplicate checking and handling logic for Fylm.
 
 import os
 import itertools
+from pathlib import Path
 
 from fylmlib.enums import *
+from fylmlib.tools import *
 import fylmlib.config as config
-# from fylmlib.operations import fileops, dirops
-from fylmlib import Console, Compare
+from fylmlib import Console, Compare, Find, FilmPath, TMDb
 
 class Duplicates:
-    """Class for handling duplicate checking and governance.
-
-    All methods are class methods, thus this class should never be instantiated.
+    """Class for finding, discovering, and handling duplicates
+    
+    Args:
+        film (Film): A film to check for duplicates.
     """
+    
+    ALL = []
+    
+    def __init__(self, film: 'Film'):
+        self._init = False
+        self.film = film
+        self.duplicates = []
+        
+    def __repr__(self):        
+        if len(self) == 0:
+            return "Duplicates(None)"
+        x = f"Duplicates('{self.film.main_file.new_name}')\n"
+        x += '\n–'.join([f'{f}' for f in (self.files if self._init else self.duplicates)])
+        return x
+    
+    def __len__(self):
+        if not self._init:
+            self.find()
+        return len(self.duplicates)
+        
+    def find(self) -> ['Film']:
+        """Gets all copies of the specified film that exist in any dst dir.
+        
+        Returns:
+            A list of duplicates film objects
+        """
+        
+        from fylmlib import Film
+        
+        if not config.duplicates.enabled or config.rename_only:
+            Console.debug('Duplicate checking is disabled, skipping.')
+            return []
+        
+        Console.debug(f"Looking for duplicates of '{self.film.title} ({self.film.year})'")
 
-    @classmethod
-    def find(cls, film: 'Film') -> ['Film.File']:
+        self.duplicates = list(map(Film, Find.glob(*set(config.destination_dirs.values()), 
+                               search=f"{self.film.title} {self.film.year}")))
+        
+        self._init = True
+        # Only return duplicate films if they have video files (no empty dirs)
+        return [d for d in self.duplicates if iterlen(d.video_files) > 0]
+        
+
+    @classmethod #DEPRECATED:
+    def find_old(cls, film: 'Film') -> ['Film.File']:
         """From a list of existing films, return those that contain
         one or more duplicate files.
 
@@ -52,15 +96,16 @@ class Duplicates:
         """
 
         # If check for duplicates is disabled, return an empty array (because we don't care if they exist).
-        # DANGER ZONE: With check_for_duplicates disabled and force_overwrite enabled, any files
+        # DANGER ZONE:
+        # With check_for_duplicates disabled and force_overwrite enabled, any files
         # with the same name at the destination will be silently overwritten.
         if config.duplicates.enabled is False or config.rename_only is True:
-            debug('Duplicate checking is disabled, skipping.')
+            Console.debug('Duplicate checking is disabled, skipping.')
             return []
 
         existing_films = dirops.get_existing_films(config.destination_dirs)
 
-        debug(f'Checking list of duplicates for "{film.new_basename}"')
+        Console.debug(f'Checking list of duplicates for "{film.new_basename}"')
         # Filter the existing_films cache array to titles beginning with the first letter of the
         # current film, then filter to check for duplicates. Then we filter out empty folder,
         # folders with no valid media folders, and keep only non-empty folders and files.
@@ -85,12 +130,12 @@ class Duplicates:
            existing_films))
 
         duplicate_videos = list(itertools.chain(*[d.video_files for d in duplicates]))
-        debug(f'Total duplicate copies of this film found: {len(duplicate_videos)}')
+        Console.debug(f'Total duplicate copies of this film found: {len(duplicate_videos)}')
 
         for v in film.video_files:
             for d in duplicate_videos:
                 # Mark each duplicate in the record
-                if cls.should(v, d) == Should.IGNORE:
+                if cls.decide(v, d) == Should.IGNORE:
                     film.ignore_reason = "Not an upgrade for existing version"
 
         # Sort so that ignores are first, so console can skip printing the rest
@@ -100,76 +145,72 @@ class Duplicates:
         # Reverse the order in interactive mode and return
         return duplicate_videos if not config.interactive else duplicate_videos[::-1]
 
-    @classmethod
-    def find_exact(cls, film: 'Film') -> ['Film.File']:
-        """Retrieves exact duplicates File object for a film.
+    @property
+    def files(self) -> ('Film.File', ['Film.File']):
+        """Retrieves a list of duplicate files in all dst paths,
+        and markes the 'duplicate_action' attribute of each.
 
-        If no exact duplicate is detected, returns an empty list.
-
-        Args:
-            film: (Film) a film file to search for an exact duplicate.
         Returns:
-            list: [Film.File] that is an exact match by quality (not size). 
-                  Hopefully only ever be one file, but a user could have
-                  more exact matches in multiple folders.
+            tuple (Film.File, [Film.File]): Tuple list of duplicate files mapped 
+            to the current film's video files
         """
         # Identify sets of files that are exact quality matches. While resolution, media,
-        # or quality could be missing from a duplicate's filename, by checking these properties
-        # we can prevent data loss. Only YOU can prevent data loss!
-
-        return [d for v in film.video_files for d in film.duplicate_files if compare.is_exact_duplicate(v, d)]
-
-    @classmethod
-    def find_lower_quality(cls, film: 'Film') -> ['Film.File']:
-        """Retrieves all File objects for a film that are a lesser quality.
-        Size is not compared here, only quality attributes.
-        If none are found, returns an empty list.
-
-        Args:
-            film: (Film) a film file to search for lower quality duplicates.
-        Returns:
-            list: [Film.File] of duplicates that are lower quality than the current file.
-        """
-
-        # Compares video files to duplicate files and returns all duplicates where 
-        # the duplicate (d) is lower quality than the current film's video files (v).
-        return [d for v in film.video_files for d in film.duplicate_files if compare.quality(d, v) == ComparisonResult.LOWER]
-
-    @classmethod
-    def find_upgradable(cls, film: 'Film'):
-        """Finds duplicates on the destination dirs that will be upgraded.
+        # or quality could be missing from a duplicate's filename, so we check these attrs.
+        # Only YOU can prevent data loss!
         
-        Args:
-            film (Film): Film object used to search for upgradable duplicates.
-        """
+        if not self._init:
+            self.find()
+        
+        dupes = [v for f in self.duplicates for v in f.video_files]
+        return [(Duplicates.File(d, v)) for d in dupes for v in f.video_files]
+        
+        d = [Film(dv).main_file for d in self.duplicates for dv in d.video_files]
+        return [Duplicates.File(self.film, dv) for dv in d]
 
-        # Loop through each duplicate that should be replaced.
-        return [d for v in film.video_files for d in film.duplicate_files if cls.should(v, d) == Should.UPGRADE]
+    @property
+    def exact(self):
+        """A subset of duplicates that are exact (except size) matches.
+
+        Returns:
+            list: [Film.File] of upgradeable duplicate files.
+        """
+        return [d for d in self.files if d.duplicate_result == ComparisonResult.EQUAL]
+    
+    @property
+    def upgradable(self):
+        """A subset of duplicates that are lower quality than the current file.
+
+        Returns:
+            list: [Film.File] of upgradeable duplicate files.
+        """
+        return [d for d in self.files if d.duplicate_action == Should.UPGRADE]
 
     @classmethod
-    def should(cls, current: 'Film.File', duplicate: 'Film.File') -> Should:
+    def decide(cls, current: 'Film.File', duplicate: 'Film.File') -> Should:
         """Determines how to handle the current file when a duplicate is detected.
 
         Config settings govern whether a duplicate can be upgraded if it is of
         a specific quality, e.g. a 1080p can be allowed upgrade a 720p, but a
-        2160p cannot.
+        2160p cannot. Bluray can also upgrade WEBDL, for example.
 
         The return value of this method is an Enum, the result of which should
-        incicate which action to take:
+        incicate which action the src file should take against the duplicate:
             - upgrade: the current file should upgrade the duplicate
             - ignore: the current file should be skipped and the duplicate left intact
             - keep_both: both files should be kept, as they are treated as unique
         
         Args:
             current (Film.File): The current Film (file) object.
-            duplicate (Film.File): Verified duplicate file that the current file will be compared to.
+            duplicate (Film.File): Verified duplicate file that the current file 
+            will be compared to.
+       
         Returns:
-            Enum, one of 'Should.UPGRADE', 'Should.IGNORE', or 'Should.KEEP_BOTH'.
+            Enum, one of 'Should.UPGRADE', '.KEEP', or '.KEEP_BOTH'.
         """
 
         # If duplicate replacing is disabled, don't replace.
         if config.duplicates.automatic_upgrading is False:
-            return cls._mark(duplicate, Should.IGNORE)
+            return cls._mark(Should.KEEP, duplicate, because=r.UPGRADING_DISABLED)
 
         # Replace quality takes a dict of arrays for each quality, which governs whether
         # a specific quality has the ability to replace another. By default, this map
@@ -184,80 +225,67 @@ class Duplicates:
         # Media order of priority is "bluray", "webdl", "hdtv", "dvd", "sdtv"
         # Proper should always take preference over a non-proper.
 
-        reason = None
+        r = ComparisonReason
+        
+        def upgrade_table(f): return config.duplicates.upgrade_table[f.resolution.key]
+        
+        (result, this) = Compare.quality(current, duplicate)
+        
+        duplicate.duplicate_result = result
 
-        # If the resolutions don't match and the current resolution is in the
-        # duplicate's upgrade table, upgrade, otherwise keep both.
-        if compare.resolution(current, duplicate) != ComparisonResult.EQUAL:
-            if (current.resolution in 
-                config.duplicates.upgrade_table[duplicate.resolution.key]):
-                # Duplicate is a lower resolution and is in the upgrade table
-                return cls._mark(duplicate, 
-                                 Should.UPGRADE, 
-                                 IgnoreReason.LOWER_RESOLUTION)
+        # If they're equal or not comparable, do nothing.
+        if this == r.IDENTICAL:
+            return cls._mark(Should.KEEP, duplicate, because=this)
+
+        if result == ComparisonResult.NOT_COMPARABLE:
+            return cls._mark(Should.KEEP_BOTH, duplicate, because=this)
+
+        if this == r.HIGHER_RESOLUTION:
+            if current.resolution in upgrade_table(duplicate):
+                return cls._mark(Should.UPGRADE, duplicate, because=r.LOWER_RESOLUTION)
             else:
-                # Duplicate is a different resolution, but is not in the upgrade table
-                # so we're going to keep both copies.
-                return cls._mark(duplicate, 
-                                 Should.KEEP_BOTH, 
-                                 IgnoreReason.DIFFERENT_RESOLUTIONS)
-                
-        elif compare.resolution(current, duplicate) == ComparisonResult.LOWER:
-            # Duplicate is a higher resolution than the current file 
-            reason = IgnoreReason.BETTER_RESOLUTION
-
-        # If the resolutions match, we need to do some additional comparisons.
-        if compare.resolution(current, duplicate) == ComparisonResult.EQUAL:
-            # For now, HDR will always be kept alongside SDR copies, so if one is an HDR, 
-            # we will automatically keep both.
-            if current.is_hdr != duplicate.is_hdr:
-                return cls._mark(duplicate, 
-                                 Should.KEEP_BOTH, 
-                                 (IgnoreReason.HDR 
-                                  if duplicate.is_hdr 
-                                  else IgnoreReason.NOT_HDR))
-
-            # If editions don't match, keep both unless the ignore_edition flag is enabled
-            # Console should show a warning but the duplicate will remain intact.
-            if current.edition != duplicate.edition and not config.duplicates.ignore_edition:
-                return cls._mark(duplicate, 
-                                 Should.KEEP_BOTH, 
-                                 IgnoreReason.DIFFERENT_EDITIONS)
-
-            # If the current is a better quality or proper, replace the same resolutions
-            # This heuristic is quite complex, see code comments in compare.quality()
-            if compare.quality(current, duplicate) == ComparisonResult.HIGHER:
-                return cls._mark(duplicate, 
-                                 Should.UPGRADE, 
-                                 IgnoreReason.LOWER_QUALITY)
+                return cls._mark(Should.KEEP_BOTH, duplicate, because=r.DIFFERENT_RESOLUTIONS)
+            
+        elif this == r.LOWER_RESOLUTION:
+            if not duplicate.resolution in upgrade_table(current):
+                return cls._mark(Should.KEEP_BOTH, duplicate, because=r.DIFFERENT_RESOLUTIONS)
             else:
-                reason = IgnoreReason.SAME_OR_BETTER_QUALITY
+                return cls._mark(Should.KEEP, duplicate, because=r.HIGHER_RESOLUTION)
 
-            # If the current file is of the same quality and the file size is larger, upgrade
-            if (config.duplicates.automatic_upgrading is True and current.size > (duplicate.size or 0)):
-                return cls._mark(duplicate, Should.UPGRADE)
-            elif current.size == (duplicate.size or 0):
-                reason = IgnoreReason.SAME_QUALITY
+        if this == r.HIGHER_QUALITY:
+            return cls._mark(Should.UPGRADE, duplicate, because=r.LOWER_QUALITY)
+        elif this == r.LOWER_QUALITY:
+            return cls._mark(Should.KEEP, duplicate, because=r.HIGHER_QUALITY)
+    
+        if this == r.PROPER:
+            return cls._mark(Should.UPGRADE, duplicate, because=r.NOT_PROPER)
+        elif this == r.NOT_PROPER: 
+            return cls._mark(Should.KEEP, duplicate, because=r.PROPER)
+        
+        if this == r.BIGGER:
+            return cls._mark(Should.UPGRADE, duplicate, because=r.SMALLER)
+        elif this == r.SMALLER: 
+            return cls._mark(Should.KEEP, duplicate, because=r.BIGGER)
 
-        # If up to this point we can't determine if we should upgrade or keep both, ignore the current file
-        # because it cannot be safely moved without risk of data loss. Chances are at this point everything
-        # is the same, except the current file is the same or smaller size than the duplicate.        
-        return cls._mark(duplicate, Should.IGNORE, reason)
+        # If up to this point we can't determine if we should upgrade or keep both, 
+        # ignore the current file because it cannot be safely moved without risk of 
+        # data loss. Chances are at this point everything is the same, except the 
+        # current file is the same or smaller size than the duplicate.        
+        return cls._mark(Should.KEEP, duplicate, r.NOT_COMPARABLE)
 
     @classmethod
-    def _mark(cls, d: 'Film.File', should: Should, reason: UpgradeReason=None) -> Should:
-        """Marks a duplicate file with the result of a should() call,
-        then returns the original should() value. This can appear to be a little
-        backwards, but if it is set to Should.UPGRADE, that means it is marked for upgrade.
+    def _mark(cls, should: Should, d: 'Film.File', because: ComparisonReason = None) -> Should:
+        """Update a file with the results of the comparison, including the action to be taken.
         
         Args:
-            current (Film.File): The current Film (file) object.
-            duplicate (Film.File): Verified duplicate file that the current file will be compared to.
+            should (Should): Action to be taken against the duplicate
+            duplicate (Film.File): Duplicate the current file was compared to
+            reason (ComparisonReason): Reason why this file should or shouldn't be upgraded
         Returns:
             Enum, one of 'Should.UPGRADE', 'Should.IGNORE', or 'Should.KEEP_BOTH'.
         """
         d.duplicate_action = should
-        d.upgrade_reason = reason.display_name if reason else ''
+        d.duplicate_reason = because
         return should
 
     @classmethod
@@ -323,3 +351,27 @@ class Duplicates:
             if dup_film.is_folder and len(dirops.find_deep(dup_film.source_path)) == 0:
                 # Delete the parent film dir and any hidden contents if it is less than 1 KB.
                 dirops.delete_dir_and_contents(dup_film.source_path, max_size=1000)
+
+    class File:
+        """A class to retain a list of duplicate files in the dst dirs
+        mapped to the action the current src film should take.
+        
+        Attributes:
+            src_film (Film): Source film object
+            dup_file (Film.File): Duplicate file
+            action (Should): Action the src film should take against the file
+            comparison (ComparisonResult): (Left) src primary file compared to (right) dst
+        """
+        
+        def __init__(self, current: 'Film.File', duplicate: 'Film.File'):
+            
+            self.current = current
+            self.duplicate = duplicate
+            self.action = Duplicates.decide(current.main_file, duplicate)
+            self.reason = duplicate.duplicate_reason
+            
+        def __repr__(self):
+            return f"DuplicateFile('{self.duplicate.dst.parent}') " \
+                   f"{self.action.name} " \
+                   f"Because.{self.reason.name} " \
+                   f"{self.duplicate.size.pretty()}"

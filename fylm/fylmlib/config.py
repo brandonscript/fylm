@@ -160,14 +160,14 @@ class Config(object):
             dest="always_copy",
             help="Always copy instead of move files, even if they're on the same partition")
 
-        # --hide-ignored
-        # This option will hide ignored films from the console output.
+        # --hide-bad
+        # This option will hide bad films from the console output.
         parser.add_argument(
-            '--hide-ignored',
+            '--hide-bad',
             action="store_true",
-            default=self._defaults.hide_ignored,
-            dest="hide_ignored",
-            help='Hide ignored films from the console output')
+            default=self._defaults.hide_bad,
+            dest="hide_bad",
+            help='Hide bad films from the console output')
 
         # -i, --interactive
         # This option enables prompts to confirm or correct TMDb matches.

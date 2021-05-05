@@ -234,7 +234,7 @@ class FilmPath(Path):
         
         is_origin (bool):           Returns True if the path matches the origin.
                                     
-        is_branch (bool):           Returns True if the path is container, but not a film.  
+        is_branch (bool):           Returns True if the path is likely to contain more than one film.
         
         is_filmroot (bool):         Returns True if the path is the filmroot.
         
@@ -265,7 +265,7 @@ class FilmPath(Path):
                                             
         video_files ([FilmPath]):   Iterable subset of files that are valid video files.
         
-        xyear (int or None):        Year detected in in the name segment.
+        _year (int or None):        Year detected in in the name segment.
         
     Methods:
     
@@ -344,8 +344,6 @@ class FilmPath(Path):
     # @overrides(joinpath)
     def joinpath(self, path) -> 'FilmPath':
         joined = FilmPath(super().joinpath(path), origin=self.origin)
-        # TODO: I think we don't actually want this here.
-        # self.__dict__ = joined.__dict__.copy()
         return joined
     
     # @overrrides(parent)
@@ -398,26 +396,24 @@ class FilmPath(Path):
             if d != self:
                 yield d
     
-    @property
+    @lazy
     def dirs(self) -> ['FilmPath']:
         if self._dirs:
             return self._dirs
         if not self.is_dir() or not self.is_absolute():
-            raise NotADirectoryError(
-                f"No 'dirs' for '{self}', it is not a dir.")
-        else:
-            self._dirs = [FilmPath(d) for d in Find.shallow(self) if (
+            return None
+        self._dirs = [FilmPath(d, origin=self.origin) for d in Find.shallow(self) if (
                 d.is_dir() and not d == self)]
         return self._dirs
 
-    @property
+    @lazy
     def files(self) -> ['FilmPath']:
         if self._files:
             return self._files
         if not self.is_dir() or not self.is_absolute():
-            raise NotADirectoryError(f"No 'files' for '{self}', it is not a dir.")
-        else:
-            self._files = [FilmPath(f) for f in Find.shallow(self) if f.is_file()]
+            return None
+        self._files = [FilmPath(f, origin=self.origin)
+                       for f in Find.shallow(self) if f.is_file()]
         return self._files
 
     @lazy
@@ -426,11 +422,26 @@ class FilmPath(Path):
         # If it doesn't exist, but is a video file or has a year, 
         # walk the parents to find the first path without year, then 
         # return the relative path between it and self.
-        if self.is_video_file or (self.xyear or self.parent.xyear):
+        if self.is_video_file or (self._year or self.parent._year):
             fr = first(self.parents,
-                       where=lambda x: not x.xyear,
+                       where=lambda x: x.parent.is_branch,
                        default=None)
-            return self.relative_to(fr) if fr else None
+            if not fr:
+                return   
+            # If we already have a year but the parent does not,
+            # that's good enough
+            if self._year and not fr._year:
+                return self.relative_to(fr)
+            # Otherwise, we check fr or its parent for a year
+            # (and make sure it's not a branch)
+            elif (fr._year or fr == self.parent) and not fr.is_branch:
+                return self.relative_to(fr.parent)
+            else:
+                return self.relative_to(fr)
+        # If there are no other video files in this dir, it
+        # should have the same filmrel as its child video file
+        elif self.is_dir() and iterlen(self.video_files) == 1:
+            return first(self.video_files).relative_to(self.parent)
 
     @lazy
     def filmroot(self) -> 'Path':
@@ -458,13 +469,13 @@ class FilmPath(Path):
         # If it's a directory, without a year, and 
         # containing at least one non-empty dir
         if (self.is_dir() 
-            and not self.xyear 
+            and not self._year 
             and self.dirs 
             and any(not d.is_empty for d in self.dirs)):
             return True
         
         # Lambda: from all objects in x, create a list of years
-        def get_years(x): return [o.xyear for o in x if o is not None]
+        def get_years(x): return [o._year for o in x if o is not None]
 
         # Lambda: compare a list and see if they all match
         def all_match(x): return all(y == x[0] for y in x if y)
@@ -500,13 +511,23 @@ class FilmPath(Path):
         if not self.is_terminus:
             return False
 
-        # If it's a video file and its parent doens't have a year
-        if self.is_video_file and not self.parent.xyear:
-            self.filmroot = Path(self)
-            return True
+        # If it's a video file and its parent doesn't have a year
+        if self.is_video_file and not self.parent._year:
+            
+            # If its parent is a branch, it's a filmroot.
+            if self.parent.is_branch or self.parent.is_origin:
+                self.filmroot = Path(self)
+                # Make sure its parent isn't also a filmroot, otherwise
+                # we'll get double entries.
+                self.parent.is_filmroot = False
+                return True
+            else:
+                self.filmroot = Path(self.parent)
+                self.parent.is_filmroot = True
+                return False
         
         # Lambda: from all objects in x, create a list of years if not None
-        def get_years(x): return [y for y in [o.xyear for o in x] if y is not None]
+        def get_years(x): return [y for y in [o._year for o in x] if y is not None]
 
         # Lambda: compare a list and see if they all match
         def all_match(x): return all(y == x[0] for y in x if y)
@@ -553,14 +574,14 @@ class FilmPath(Path):
     def maybe_film(self) -> bool:
         
         # If it's not absolute, we can only check for year and video ext.
-        if not self.is_absolute() and (self.is_video_file or self.xyear):
+        if not self.is_absolute() and (self.is_video_file or self._year):
             return True
         
         # If it doesn't exist, all we can do is check it or its parent 
         # for a year.
         if not self.exists() and (self.is_video_file 
-                                  or self.xyear 
-                                  or self.parent.xyear):
+                                  or self._year 
+                                  or self.parent._year):
             return True
             
         
@@ -577,6 +598,8 @@ class FilmPath(Path):
 
     @property
     def origin(self) -> Path:
+        if '_origin' not in self.__dict__:
+            return Path(self)
         return self._origin
 
     @origin.setter
@@ -603,12 +626,11 @@ class FilmPath(Path):
             raise FileNotFoundError(
                 f"'video_files' failed, '{self}' does not exist.")
         if not self.is_dir():
-            raise NotADirectoryError(
-                f"'video_files' failed, '{self}' is not a dir.")
+            return None
         return filter(lambda f: Info.is_video_file(f), self.resolve().rglob("*"))
 
     @lazy
-    def xyear(self) -> int:
+    def _year(self) -> int:
         
         # If it's not an absolute path, we can check the whole path.
         return Parser(self.name if self.is_absolute() else str(self)).year
@@ -633,6 +655,22 @@ class FilmPath(Path):
         for a in (attrs or default):
             fp.__dict__[a] = getattr(fp, a)
         return fp
+    
+    def setpath(self, new_path: Union[str, Path, 'FilmPath']):
+        """Updates the current Path object's path parts
+        with that of a new one.
+
+        Args:
+            new_path (str or Pathlike): Path to update this one with.
+        """
+        
+        new_path = Path(new_path)
+        self._drv = new_path._drv
+        self._root = new_path._root
+        self._parts = new_path._parts
+        self._pparts = tuple(self._parts)
+        self._cached_cparts = self._flavour.casefold_parts(self._parts)
+        self._str = new_path.__str__()
             
 class Find:
     """A collection of methods to search for files and dirs."""
@@ -732,6 +770,28 @@ class Find:
                 if hide_sys_files and is_sys_file(p):
                     continue
                 yield FilmPath(p, origin=origin)
+                
+    @staticmethod
+    def glob(*paths, search: str) -> ['FilmPath']:
+        """Takes an input string and searches the filesystem
+        for a likely match.
+
+        Args:
+            search (str): Search string
+
+        Returns:
+            [FilmPath]: List of matching FilmPaths
+        """
+        Console.debug(f"Searching for glob string '{search}'...")
+        
+        paths = list(map(Path, set(paths)))
+        globstr = re.sub(patterns.ALL_NONWORD_CHARS, '*', search) + '*'
+
+        found_iter = itertools.chain.from_iterable(
+            Path(p).glob(globstr) for p in paths)
+        
+        return list(found_iter)
+        
     
     @classmethod
     def existing(cls, 
@@ -760,12 +820,12 @@ class Find:
         Console.debug('Searching for existing films...')
         
         # Coerce str path objects to Path set
-        _paths = list(map(Path, set(paths) if paths else set(
+        paths = list(map(Path, set(paths) if paths else set(
             config.destination_dirs.values())))
         
         # Shallow scan the target dirs
         found_iter = itertools.chain.from_iterable(
-            Find.shallow(p, sort_key=sort_key) for p in _paths)
+            Find.shallow(p, sort_key=sort_key) for p in paths)
             
         # Set the class var
         cls.EXISTING = list(found_iter)
@@ -1002,8 +1062,8 @@ class Move:
     
     @staticmethod
     def safe(src: Union[str, Path, 'FilmPath'], 
-                  dst: Union[str, Path, 'FilmPath'], 
-                  overwrite=False):
+             dst: Union[str, Path, 'FilmPath'], 
+             overwrite=False):
         """Performs a 'safe' move operation, with some additional checks before moving 
         files. 
         
@@ -1061,7 +1121,7 @@ class Move:
             return True
 
         # Store the size of the source file to verify the copy was successful.
-        expected_size = Size(path).calc()
+        expected_size = Size(src).value
 
         # Do we need to copy, or move?
         copy = config.always_copy is True or not Info.is_same_partition(
@@ -1099,7 +1159,7 @@ class Move:
                 return False
 
             # Check the size of the destination file.
-            dst_size = Size.calc(dst_tmp)
+            dst_size = Size(dst_tmp).value
             size_diff = abs(dst_size - expected_size)
             
             # Verify that the file is within 10 bytes of the original.

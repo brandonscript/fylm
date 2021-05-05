@@ -31,6 +31,8 @@ import sys
 import itertools
 import shutil
 import math
+import time
+from pathlib import Path
 from datetime import datetime
 
 from colors import color
@@ -40,7 +42,7 @@ from fylmlib.pyfancy import *
 from fylmlib.ansi import ansi
 from fylmlib.enums import *
 from fylmlib.constants import *
-from fylmlib import patterns, Log, Format, Progress
+from fylmlib import patterns, Log, Format as ƒ, Progress
 
 class Console(object):
     """Main class for console output methods.
@@ -164,7 +166,7 @@ class Console(object):
         """
 
         s = f"Successfully {'renamed' if config.rename_only else 'moved'}" \
-                f" {count} {formatter.pluralize('film', count)}" if count > 0 else "No films moved"
+                f" {count} {ƒ.pluralize('film', count)}" if count > 0 else "No films moved"
         
         c = Console()
         if config.test is True:
@@ -178,62 +180,87 @@ class Console(object):
         """
         Console().pink('\n\nThat\'s it, I quit.').print()
 
-    def print_film_header(self, film):
-        """When a film is loaded, print a title header.
+    @staticmethod
+    def print_film_header(film):
+        """Print the film header.
 
         Args:
-            film: (Film) film to pass to debug calls.
-            ignore: (bool) True if the film should be ignored, else False
+            film (Film) for which to print details.
         """
-        
-        # Print blank line to separate from previous film
-        Console().print()
-        # Print original filename and size.
-        c = Console()
-        if film.should_ignore and (
-            config.interactive is False 
-            or not (film.ignore_reason == IgnoreReason.UNKNOWN_YEAR
-                    or film.ignore_reason == IgnoreReason.UNKNOWN_TITLE)):
-            c.red(f' {FAIL} ')
-        else:
-            c.green(f' {CHECK} ')
-            
-        c.add(f'{film.new_name if not film.should_ignore else film.name}')
-        c.reset().white(f' ({film.size.pretty()})')
-        if film.tmdb.id:
-            c.gray(f' [{film.tmdb.id}] ')
-            c.dark_gray(f'{Format.percent(film.tmdb.title_similarity)}% match')
-        c.print()
-        Console().dark_gray(f'{INDENT}{film.src}').print()
 
-    def print_search_result(self, film):
-        """Print and log film search result details.
-
-        Args:
-            film: (Film) Film to print/log.
-        """
+        c = Console('\n')
         
-        # Only print lookup results if TMDb searching is enabled.
-        if config.tmdb.enabled is True:
-            if film.tmdb_id is not None:
-                c = Console().indent()
-                c.green(f'{CHECK} {film.title} ({film.year})')
-                c.dark_gray(f' [{film.tmdb_id}] {formatter.percent(film.title_similarity)}% match')
-                c.print()
+        # Interactive mode
+        if config.interactive:
+            Console().gray(f'\n{INDENT}{film.name}').white(S.size(film)).print()
+            Console().dark_gray(f'{INDENT}{film.src.parent}').print(end="")
+            if film.should_ignore and not film.ignore_reason in [
+                    IgnoreReason.UNKNOWN_YEAR,
+                    IgnoreReason.TOO_SMALL,
+                    IgnoreReason.NO_TMDB_RESULTS]:
+                c.red(f' {FAIL} {S.name(film)}')
+            elif film.tmdb.id and film.tmdb.is_instant_match:
+                c.green(f' {CHECK} {S.name(film)}')
             else:
-                Console().red().indent(f'{FAIL} {film.title} ({film.year})').print()
+                c.light_blue(f' {UNCERTAIN} {S.name(film)}')
+            
+        # Automatic mode
+        else: 
+            
+            if film.should_ignore:
+                c.red(f' {FAIL} {S.name(film)}')
+            else:
+                c.green(f' {CHECK} {S.name(film)}')
+            c.reset().white(S.size(film))
+        
+        if film.tmdb.id:
+            c.gray(S.tmdb_id(film))
+            c.dark_gray(S.percent(film))
+        c.print()
+    
+    @staticmethod
+    def print_interactive_success(film):
+        c = Console().green(f' {ARROW} {S.name(film)}')
+        if film.tmdb.id:
+            c.gray(S.tmdb_id(film))
+            c.dark_gray(S.percent(film))
+        c.print()
+        
+    @staticmethod
+    def print_interactive_uncertain(film):
+        Console().light_blue(f' {UNCERTAIN} {film.title} ({film.year})').print()
+        
+    @staticmethod
+    def print_src_dst(film):
+        """Print the src and dst.
+
+        Args:
+            film (Film) for which to print details.
+        """
+        
+        if config.interactive:
+            return
+        
+        Console().dark_gray(f'{INDENT}{film.src}').print()
+        if not film.should_ignore:
+            Console().gray(f'{INDENT}{film.dst}').print()
    
-    def print_skip(self, film):
+    @staticmethod
+    def print_skip(film):
         """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
 
         Args:
             film: (Film) Film that was skipped.
         """
         if film.should_ignore:
-            Console().red().dim(
-                f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
+            if config.interactive and film.ignore_reason == IgnoreReason.SKIP:
+                Console().dark_gray('      Skipped').print()
+            else:
+                Console().red().dim(
+                    f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
-    def print_duplicates(self, film: 'Film'):
+    @staticmethod
+    def print_duplicates(film: 'Film'):
         """Print any duplicates found to the Console.
 
         Args:
@@ -241,24 +268,24 @@ class Console(object):
         """
 
         # Import duplicates' should_replace function here to prevent circular imports.
-        from fylmlib.duplicates import duplicates
+        if not config.duplicates.enabled:
+        # FIXME:
+            duplicate_count = len(film.verified_duplicate_files)
 
-        duplicate_count = len(film.verified_duplicate_files)
+            if duplicate_count > 0:
+                
+                c = Console().blue().indent().add(f"{duplicate_count} {ƒ.pluralize('duplicate', duplicate_count)} found")
 
-        if duplicate_count > 0:
-            
-            c = Console().blue().indent().add(f"{duplicate_count} {formatter.pluralize('duplicate', duplicate_count)} found")
+                if config.interactive is True:
+                    c.add(' for ').light_blue(f'{film.all_valid_files[0].new_filename_and_ext}')
+                    c.blue(':').print()
+                else:
+                    c.add(':').print()
 
-            if config.interactive is True:
-                c.add(' for ').light_blue(f'{film.all_valid_files[0].new_filename_and_ext}')
-                c.blue(':').print()
-            else:
-                c.add(':').print()
+                if config.interactive is False:
+                    Console.print_interactive_duplicates(film)
 
-            if config.interactive is False:
-                self.print_duplicate_lines(film)
-
-    def print_duplicate_lines(self, film):
+    def print_interactive_duplicates(self, film):
         """Print a duplicate line.
 
         Args:
@@ -273,8 +300,8 @@ class Console(object):
             for d in film.verified_duplicate_files:
 
                 # Print a line of detail for each duplicate
-                size_diff = formatter.pretty_size_diff(v.source_path, d.source_path)
-                pretty_size = formatter.pretty_size(d.size)
+                size_diff = ƒ.pretty_size_diff(v.source_path, d.source_path)
+                pretty_size = ƒ.pretty_size(d.size)
                 should = d.duplicate
 
                 c = Console()
@@ -302,8 +329,8 @@ class Console(object):
 
                 c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
                 c.dark_gray(' [')
-                if d.upgrade_reason != '':
-                    c.add(f'{d.upgrade_reason}, ')
+                if d.duplicate_reason != '':
+                    c.add(f'{d.duplicate_reason}, ')
                 c.add(f'{size_diff}]')
                 c.print()
 
@@ -345,9 +372,9 @@ class Console(object):
         if choice.startswith('['):
             c.dark_gray(f' {choice}')
         else:
-            match = re.search(patterns.tmdb_id, choice)
+            match = re.search(patterns.TMDB_ID, choice)
             tmdb_id = match.group('tmdb_id') if match else ''
-            c.gray(f" {re.sub(patterns.tmdb_id, '', choice)}")
+            c.gray(f" {re.sub(patterns.TMDB_ID, '', choice)}")
             c.dark_gray(tmdb_id)
         c.print()
 
@@ -383,20 +410,35 @@ class Console(object):
 
     @classmethod
     def clearline(cls):
-        """Clears the current printed line.
-        """
+        """Clears the current printed line."""
 
         # Clear line, if stdout is not None
-        try:
-            sys.stdout.write("\033[K")
-        except:
-            pass
+        if sys.stdout:
+            sys.stdout.write(CURSOR_UP_ONE)
+            sys.stdout.write(ERASE_LINE)
+            sys.stdout.flush()
+        return cls
+            
+    @classmethod
+    def up(cls):
+        """Clears the previous printed line."""
+
+        # Clear line, if stdout is not None
+        if sys.stdout:
+            sys.stdout.write(CURSOR_UP_ONE)
+            sys.stdout.flush()
+        return cls
+            
+    @classmethod
+    def wait(cls, s: int=0):
+        if not config.no_console and not config.plaintext:
+            time.sleep(s)
         
     @classmethod
     def slow(cls, s: str='', seconds=0):
         
         if config.debug is True:
-            cls().yellow().bold(WARN).reset().yellow(
+            cls().yellow().bold(f'{ WARN }').reset().yellow(
                 f" {s} - {round(seconds)} seconds").print()
     
     @classmethod
@@ -423,3 +465,20 @@ class Console(object):
         cls().bold().error(s).print()
         if x:
             raise type(x)(s)
+
+    class strings:
+        
+        @staticmethod
+        def size(film): return f' ({film.size.pretty()})'
+        
+        @staticmethod
+        def tmdb_id(film): return f' [{film.tmdb.id}] '
+        
+        @staticmethod
+        def percent(film): return f'{ƒ.percent(film.tmdb.title_similarity)}% match'
+        
+        @staticmethod
+        def name(film): return (Path(film.main_file.new_name).stem 
+                        if not film.should_ignore else film.name)
+
+S = Console.strings

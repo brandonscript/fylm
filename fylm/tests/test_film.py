@@ -301,7 +301,7 @@ class TestFilmFile(object):
 
         film = Film(SRC / ROGUE)
         Make.mock_file(src)
-
+        FIXME: "Move is now a declarative function"
         assert(not film.main_file.did_move)
         assert(src.exists())
         assert(film.main_file.src == src)

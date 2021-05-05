@@ -27,6 +27,8 @@ human-readable information to the console/log.
 import re
 from copy import copy
 from typing import Union
+import locale
+locale.setlocale(locale.LC_ALL, '')
 
 from fylmlib.tools import *
 from fylmlib.enums import *
@@ -37,6 +39,8 @@ from timeit import default_timer as timer
 MAX_WORKERS = 50
     
 class Format:
+    
+    # FIXME: Format should take a string or int and init
 
     class Name:
         r"""Build a new file and folder name object from the specified renaming pattern.
@@ -245,6 +249,10 @@ class Format:
         # Otherwise they must be the same size.
         else:
             return 'identical size'
+        
+    @staticmethod
+    def num(d):
+        return f'{d:n}'
 
     @staticmethod
     def percent(d):

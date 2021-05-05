@@ -24,7 +24,7 @@ This module handles all the enumerable constants for Fylm.
 
 from enum import Enum
 
-Should = Enum('Should', 'UPGRADE IGNORE KEEP_BOTH DELETE')
+Should = Enum('Should', 'UPGRADE KEEP IGNORE KEEP_BOTH DELETE')
 ComparisonResult = Enum('ComparisonResult', 'HIGHER EQUAL LOWER NOT_COMPARABLE')
 RenameMask = Enum('RenameMask', 'FILE DIR')
 Units = Enum('Units', 'B KiB MiB GiB KB MB GB')
@@ -79,6 +79,7 @@ class IgnoreReason(Enum):
     DOES_NOT_EXIST = 9
     NO_TMDB_RESULTS = 10
     SYS = 11
+    SKIP = 12
     @property
     def display_name(self) -> str:
         # Ignoring because...
@@ -90,29 +91,36 @@ class IgnoreReason(Enum):
         elif self == self.NO_VIDEO_FILES: return "it doesn't contain video files"
         elif self == self.UNKNOWN_YEAR: return "it doesn't have a year"
         elif self == self.TOO_SMALL: return "it is too small"
-        elif self == self.DOES_NOT_EXIST: return "this file or folder no longer exists"
-        elif self == self.NO_TMDB_RESULTS: return "no TMDb results were found"
+        elif self == self.DOES_NOT_EXIST: return "this path no longer exists"
+        elif self == self.NO_TMDB_RESULTS: return "no TMDb results found"
         elif self == self.SYS: return "it is a system file or dir"
+        elif self == self.SKIP: return "it was skipped"
         else: return None
 
-class UpgradeReason(Enum):
-    LOWER_RESOLUTION = 1
-    DIFFERENT_RESOLUTIONS = 2
-    BETTER_RESOLUTION = 3
-    HDR = 4
-    NOT_HDR = 5
-    DIFFERENT_EDITIONS = 6
-    SAME_OR_BETTER_QUALITY = 7
-    SAME_QUALITY = 8
+class ComparisonReason(Enum):
+    HIGHER_QUALITY = 1
+    HIGHER_RESOLUTION = 2
+    LOWER_QUALITY = 3
+    LOWER_RESOLUTION = 4
+    DIFFERENT_QUALITIES = 5
+    DIFFERENT_RESOLUTIONS = 6
+    SAME_QUALITY = 7
+    SAME_RESOLUTION = 8
+    HDR = 9
+    NOT_HDR = 10
+    PROPER = 11
+    NOT_PROPER = 12
+    DIFFERENT_EDITIONS = 13
+    BIGGER = 14
+    SAME_SIZE = 15
+    SMALLER = 16
+    NOT_COMPARABLE = 17
+    IDENTICAL = 18
+    UPGRADING_DISABLED = 19
     @property
     def display_name(self) -> str:
         # Should {upgrade, keep, ignore} because: 
-        if self == self.LOWER_RESOLUTION: return "Lower resolution"
-        elif self == self.DIFFERENT_RESOLUTIONS: return "Different resolutions"
-        elif self == self.BETTER_RESOLUTION: return "Better resolution"
-        elif self == self.HDR: return "HDR"
-        elif self == self.NOT_HDR: return "Not HDR"
-        elif self == self.DIFFERENT_EDITIONS: return "Different editions"
-        elif self == self.SAME_OR_BETTER_QUALITY: return "Same or better quality"
-        elif self == self.SAME_QUALITY: return "Same quality"
-        else: return None
+        if self.name:
+            return self.name.replace('_', ' ').capitalize().replace('hdr', 'HDR')
+        else: 
+            return None

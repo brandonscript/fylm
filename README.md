@@ -68,7 +68,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
     --rename, -r
     --copy, -c
     --move, -m
-    --hide-ignored
+    --hide-bad
     --interactive, -i
     --limit=n, -l
     --pop=n, -p
@@ -86,7 +86,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 - `rename` will just rename files and folders and leave them in the source folder.
 - `copy` will force files on the same partition to be copied and verified instead of moved.
 - `move` will force the behavior of move even if source and destination are on different partitions.
-- `hide-ignored` will hide files and folders that are ignored from the console output. Disabled in interactive mode.
+- `hide-bad` will hide files and folders that are marked as bad from the console output. Disabled in interactive mode.
 - `interactive` prompt to confirm or correct TMDb matches.
 - `limit=n` limits the number of films to process to `n`.
 - `pop=n` will set the minimum acceptable TMDb 'popularity' ranking to `n`.

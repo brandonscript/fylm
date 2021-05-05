@@ -29,17 +29,20 @@ import readline
 import os
 
 from fylmlib.enums import *
+from enum import Enum
 import fylmlib.config as config
-import fylmlib.parser as Parser
-import fylmlib.console as Console
-import fylmlib.duplicates as Duplicates
-import fylmlib.formatter as formatter
-import fylmlib.operations as ops
+from fylmlib import Parser
+from fylmlib import Console
+from fylmlib import Duplicates
+from fylmlib import Format as ƒ
+from fylmlib import Film
+
+InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 
 class Interactive:
 
     @classmethod
-    def lookup(cls, film):
+    def lookup(cls, film) -> bool:
         """Main router for handling a known or unknown film.
 
         Determines whether the user should be prompted to verify a
@@ -54,15 +57,19 @@ class Interactive:
         if config.interactive is False:
             raise Exception('Interactive mode is not enabled')
 
-        if film.should_ignore:
+        # If it's ignored for an irredeemable reason, return False
+        if film.should_ignore and not film.ignore_reason in [
+                IgnoreReason.UNKNOWN_YEAR,
+                IgnoreReason.TOO_SMALL,
+                IgnoreReason.NO_TMDB_RESULTS]:
+            return False
+        elif film.should_ignore:
             return cls.handle_unknown_film(film)
         else:
-            # Search TMDb for film details (if enabled).
-            film.search_tmdb_sync()
             return cls.verify_film(film)
 
     @classmethod
-    def handle_duplicates(cls, film):
+    def handle_duplicates(cls, film) -> bool:
         """Prompt the user to handle duplicates of a film.
 
         Determines how to handle duplicates of the inbound film, either
@@ -71,17 +78,16 @@ class Interactive:
         Args:
             film: (Film) Current film to process
         Returns:
-            False if deleting this or skipping this film, otherwise True
-            (if True, it will be processed)
+            bool: Returns True if this file should be moved, otherwise False
         """
         if config.interactive is False:
             raise Exception('Interactive mode is not enabled')
 
         # Return immediately if the film is not a duplicate
-        if len(film.duplicate_files) == 0:
+        if len(film.duplicates) == 0:
             return True
 
-        console().print_duplicate_lines(film)
+        Console().print_interactive_duplicates(film)
 
         choices = []
 
@@ -100,17 +106,17 @@ class Interactive:
             duplicates_to_delete.append(exact)
             # If the duplicate is smaller than the current primary file, consider it an upgrade, otherwise a replace.
             (s, a) = ('Upgrade', '') if exact.size < film.primary_file.size else ('Replace', ' anyway')
-            choices.append(f"{s} existing film '{exact.new_filename_and_ext}'{a} ({formatter.pretty_size(exact.size)})")
+            choices.append(f"{s} existing film '{exact.new_filename_and_ext}'{a} ({ƒ.pretty_size(exact.size)})")
         else:
             # If there are no upgradable files, but still duplicates detected, 
             # the only choice should be keep (not upgrade or replace)
             if len(upgradable_files) == 0 and len(film.duplicate_files) > 0:
-                choices.append(f"Keep this file (and existing {formatter.pluralize('film', len(film.duplicate_files))})")
+                choices.append(f"Keep this file (and existing {ƒ.pluralize('film', len(film.duplicate_files))})")
             else:    
-                choices.append(f"Upgrade {len(upgradable_files)} existing lower quality {formatter.pluralize('film', len(upgradable_files))}")
+                choices.append(f"Upgrade {len(upgradable_files)} existing lower quality {ƒ.pluralize('film', len(upgradable_files))}")
                 duplicates_to_delete = upgradable_files
 
-        choices.extend([f"Delete this file (keep existing {formatter.pluralize('film', len(film.duplicate_files))})",
+        choices.extend([f"Delete this file (keep existing {ƒ.pluralize('film', len(film.duplicate_files))})",
                         ('S', '[ Skip ]')])
 
         choice = cls._choice_input(
@@ -136,7 +142,7 @@ class Interactive:
         elif choice == len(choices) - 2:
 
             # Ask user to confirm destructive action
-            console().print_ask(
+            Console().print_ask(
                 f"Are you sure you want to delete '{film.source_path}?'")
             confirm_delete = cls._choice_input(
                 prompt='',
@@ -180,13 +186,12 @@ class Interactive:
         Returns:
             True if the film passes verification, else False
         """
-
-        # TODO: When a bad lookup is found (Mars Quest for Life 1080p (2009).mkv), if fixed by a good match, should be green in interactive rename, not red
-
-        console().print_search_result(film)
         
-        if len(film.matches) > 0:        
-            console().print_ask('Is this correct? [Y]')
+        if len(film.tmdb_matches) == 0:
+            cls.handle_unknown_film(film)
+        
+        else:
+            Console().print_ask('Is this correct? [Y]')
             choice = cls._choice_input(
             prompt='', 
             choices=[
@@ -199,40 +204,19 @@ class Interactive:
 
             config.mock_input = _shift(config.mock_input)
 
-            film.tmdb_verified = (choice == 0)
+            film.tmdb.ia_accepted = (choice == 0)
 
             if choice == 1:
                 return cls.search_by_name(film)
             elif choice == 2:
-                return cls.lookup_by_id(film)
+                return cls.search_by_id(film)
             elif choice == 3:
-                film.ignore_reason = 'Skipped'
-                console().print_interactive_skipped()
+                film.ignore_reason = IgnoreReason.SKIP
+                Console().print_interactive_skipped()
                 return False
             else:
                 # User is happy with the result, verify
-                return film.tmdb_verified  
-
-        else:
-            console().print_ask('No matches found')
-            choice = cls._choice_input(
-            prompt='', 
-            choices=[
-                ('N', 'Search by name'),
-                ('I', 'Lookup by ID'),
-                ('S', '[ Skip ]')],
-            mock_input=_first(config.mock_input))
-
-            config.mock_input = _shift(config.mock_input)
-
-            if choice == 0:
-                return cls.search_by_name(film)
-            elif choice == 1:
-                return cls.lookup_by_id(film)
-            elif choice == 2:
-                film.ignore_reason = 'Skipped'
-                console().print_interactive_skipped()
-                return False
+                return film.tmdb.ia_accepted
 
     @classmethod
     def handle_unknown_film(cls, film):
@@ -244,8 +228,7 @@ class Interactive:
         Returns:
             True if the film should be processed, else False
         """      
-
-        console().print_ask(f"{film.ignore_reason} [N]")
+        Console().print_ask(f"{film.ignore_reason.display_name.capitalize()} [N]")
 
         # Continuously loop this if an invalid choice is entered.
         while True:
@@ -263,14 +246,13 @@ class Interactive:
             if choice == 0:
                 return cls.search_by_name(film)
             elif choice == 1:
-                return cls.lookup_by_id(film)
+                return cls.search_by_id(film)
             elif choice == 2:
-                film.ignore_reason = 'Skipped'
-                console().print_interactive_skipped()
+                film.ignore_reason = IgnoreReason.SKIP
                 return False           
 
     @classmethod
-    def lookup_by_id(cls, film):
+    def search_by_id(cls, film):
         """Perform an interactive lookup of a film by ID.
 
         Ask the user for a TMDb ID, then perform a search for that ID.
@@ -283,25 +265,25 @@ class Interactive:
         while True:
 
             # Delete the existing ID in case it is a mismatch.
-            film.tmdb_id = None
+            film.tmdb.id = None
             search = cls._simple_input('TMDb ID: ', mock_input=_first(config.mock_input))
             config.mock_input = _shift(config.mock_input)
             try:
-                # Attempt to convert the search query to an int and update
-                # the film.
-                film.tmdb_id = int(search)
-                try:
-                    # Search for the new film by ID.
-                    film.search_tmdb_sync()
+                # Attempt to convert the search query to an int
+                film.tmdb.id = int(search)
+            except ValueError:
+                Console().print_interactive_error("A TMDb ID must be a number")
+            
+            # Search for the new film by ID.
+            film.search_tmdb_sync()
+            if film.tmdb.is_verified is True:
+                Console().print_interactive_uncertain(film)
+                return cls.verify_film(film)
+            else:
+                Console().print_interactive_error(f"No results found for '{film.tmdb.id}'")
+            
 
-                    # Verify the search result.
-                    return cls.verify_film(film)
-                except Exception as e:
-                    console().print_interactive_error("Hrm, that ID doesn't exist")
-                    debug(e)
-            except Exception as e:
-                console().print_interactive_error("A TMDb ID must be a number")
-                debug(e)
+    _last_search = None
 
     @classmethod
     def search_by_name(cls, film):
@@ -317,11 +299,12 @@ class Interactive:
         """
 
         # Delete the existing ID in case it is a mismatch.
-        film.tmdb_id = None
+        film.tmdb.id = None
         query = cls._simple_input("Search TMDb: ", 
-            f"{film.title or ''}{' ' if film.title else ''}{film.year or ''}", 
-            mock_input=_first(config.mock_input))
+                                  cls._last_search or film.name, 
+                                  mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
+        cls._last_search = query
         p = Parser(query)
         film.title = p.title
         film.year = p.year
@@ -344,45 +327,52 @@ class Interactive:
 
         # If no matches are found, continually prompt user to find a correct match.
 
-        while len(film.matches) == 0:
+        while len(film.tmdb_matches) == 0:
             return cls.handle_unknown_film(film)
 
-        console().indent().bold().white('Search results:').print()
+        Console().indent().bold().white('Search results:').print()
 
         # Generate a list of choices based on search results and save the input
         # to `choice`.
+        choices = [(i + 1, f"{m.new_title} ({m.new_year}) [{m.id}]") for i, m in 
+                   enumerate(film.tmdb_matches)]
         choice = cls._choice_input(
             prompt="", 
-            choices=[f"{m.proposed_title} ({m.proposed_year}) [{m.tmdb_id}]" for m in film.matches] + 
-            ['[ New search ]', '[ Search by ID ]', '[ Skip ]'],
-            enumeration='number',
+            choices=choices + [
+                ('N', '[ New search ]'),
+                ('I', '[ Lookup by ID ]'),
+                ('S', '[ Skip ]')],
+            # choices=[f"{m.new_title} ({m.new_year}) [{m.id}]" for m in film.tmdb_matches] + 
+            # ['[ New search ]', '[ Search by ID ]', '[ Skip ]'],
+            enumeration=InteractiveKeyMode.TUPLE,
             mock_input=_first(config.mock_input))
 
         config.mock_input = _shift(config.mock_input)
 
         # If 'Edit search' was selected, try again, then forward
         # the return value.
-        if choice == len(film.matches):
+        if choice == len(film.tmdb_matches):
             return cls.search_by_name(film)
 
         # If 'Search by ID' was selected, redirect to ID lookup, then forward
         # the return value.
-        elif choice == len(film.matches) + 1:
-            return cls.lookup_by_id(film)
+        elif choice == len(film.tmdb_matches) + 1:
+            return cls.search_by_id(film)
 
         # If skipping, return False
-        elif choice == len(film.matches) + 2:
-            film.tmdb_id = None
-            film.ignore_reason = 'Skipped'
-            console().print_interactive_skipped()
+        elif choice == len(film.tmdb_matches) + 2:
+            film.id = None
+            film.ignore_reason = IgnoreReason.SKIP
+            Console().print_interactive_skipped()
             return False
 
         # If we haven't returned yet, update the film with the selected match 
         # and mark it as verified.
-        film.update_with_match(film.matches[choice])
-        film.tmdb_verified = True
+        
+        film.tmdb_matches[choice].update(film)
+        film.tmdb.ia_accepted = True
 
-        console().print_search_result(film)
+        Console().print_interactive_success(film)
         return True
 
     @classmethod
@@ -403,7 +393,7 @@ class Interactive:
 
         readline.set_startup_hook(lambda: readline.insert_text(prefill))
         try:
-            return console.get_input(prompt)
+            return Console.get_input(prompt)
         finally:
             readline.set_startup_hook()
 
@@ -445,7 +435,14 @@ class Interactive:
                 print(error_message)
 
     @classmethod
-    def _choice_input(cls, prompt, choices, default=None, prefill='', enumeration='char', error_message=None, mock_input=None):
+    def _choice_input(cls, 
+                      prompt, 
+                      choices, 
+                      default=None, 
+                      prefill='', 
+                      enumeration=InteractiveKeyMode.CHAR, 
+                      error_message=None, 
+                      mock_input=None):
         """Choice-based prompt for input.
 
         Ask the user for input from a set of choices.
@@ -453,23 +450,26 @@ class Interactive:
         Args:
             prompt: (str) The question the user will be asked
             choices: (list(str)) A list of choices the user has to select from
-            enumeration: (str) Can be 'number' or 'char'. 'char' should only be used when len(choices)<27
+            enumeration: (str) Can be InteractiveKeyMode.NUMBER or .CHAR. CHAR should only be used when len(choices)<27
             error_message: (str) An optional error message to be shown when an input is not a valid choice
             mock_input: (char) A mock input response for tests
         Returns:
             The index of the selected choice
         """
-        if enumeration == 'number':
+        if enumeration == InteractiveKeyMode.NUMBER:
             chars = [str(x + 1) for x in range(len(choices))]
-        elif enumeration == 'char':
+        elif enumeration == InteractiveKeyMode.CHAR:
             assert len(choices) < 27, "To many choices to be represented by single letters"
             chars = [x[0].title() if isinstance(x, tuple) else x[:1].title() for x in choices]
             choices = [x[1] if isinstance(x, tuple) else x for x in choices]
+        elif enumeration == InteractiveKeyMode.TUPLE:
+            chars = [str(x[0]).title() for x in choices]
+            choices = [x[1] for x in choices]
         else:
-            raise ValueError("enumeration is not 'number' or 'char'")
+            raise ValueError("'enumeration' is not .NUMBER or .CHAR")
 
         for idx, choice in zip(chars, choices):
-            console().print_choice(idx, choice)
+            Console().print_choice(idx, choice)
 
         answer = cls._condition_input(
             prompt, 

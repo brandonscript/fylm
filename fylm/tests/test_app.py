@@ -38,6 +38,8 @@ class TestApp(object):
         
         made = Make.all_mock_files()
         
+        config.interactive = True
+        
         # (moved, expected) = get('expect_no_lookup')
         # for f in [f.expect_no_lookup for f in made.good]:
         #     print(f)
@@ -46,7 +48,7 @@ class TestApp(object):
         fylm.main()
 
         # Make sure we have some test films
-        assert(len(conftest.made.good) > 0)
+        assert(len(made.good) > 0)
 
         # Assert that all of the films were moved successfully into the correct destination folders/subfolders.
         (moved, expected) = get('expect')
@@ -66,7 +68,7 @@ class TestApp(object):
         assert(fylm.config.use_folders is False)
         assert(fylm.config.tmdb.enabled is True)
 
-        # Execute
+        # Executes
         fylm.main()
 
         # Make sure we have some test films

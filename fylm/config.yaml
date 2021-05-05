@@ -49,9 +49,9 @@ size_units_ibi: true
 # Path Where history.log will be written.
 log_path: ./
 
-# --hide-ignored
-# Hide ignored films from the console output.
-hide_ignored: true
+# --hide-bad
+# Hide bad films from the console output.
+hide_bad: true
 
 # --interactive
 # Prompt to confirm or correct TMDb matches.

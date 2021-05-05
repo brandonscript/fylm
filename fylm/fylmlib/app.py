@@ -38,18 +38,20 @@ import fylmlib.counter as counter
 from fylmlib.enums import *
 from fylmlib import Console
 from fylmlib import Find
+from fylmlib import Move
 from fylmlib import Parallel
-from fylmlib import Format
+from fylmlib import Format as ƒ
 from fylmlib import Notify
 from fylmlib import TMDb
 from fylmlib import Interactive
 from fylmlib import Duplicates
 from fylmlib import Subtitle
 from fylmlib import Film
+from fylmlib import Info
 from fylmlib.tools import *
 from fylmlib.constants import *
 
-_move_queue = []
+MOVE_QUEUE = []
 
 class App:
     """Main class for scanning for and processing films.
@@ -61,57 +63,116 @@ class App:
     def run():
         """Main entry point for Fylm."""
         
-        NEW = sorted([Film(f) for f in Find.new() if f.is_filmroot], 
-                       key=lambda f: f.name.lower())
-        NEW = list(Find.sync_parallel(iter(NEW), attrs=['filmrel', 'year', 'size']))
-        # NEW = list(filter(lambda f: not f.should_ignore, NEW))
+        filmroots = filter(lambda f: f.is_filmroot, map(Film, Find.new()))
+        filmroots = Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size'])
         
-        Console().pink(f"Found {len(NEW)} potential {Format.pluralize('film', len(NEW))}").print()
+        NEW = sorted(filmroots, key=lambda f: f.name.lower())
+        # NEW = list(Find.sync_parallel(iter(NEW), attrs=['filmrel', 'year', 'size']))
         
-        # Perform async lookup of films when not in interactive mode
-        if not config.interactive and config.tmdb.enabled:
-            
-            def spinner(text):
-                return Halo(text=text,
-                            spinner='dots',
-                            color='yellow',
-                            text_color='yellow')
-                
-            def spinner_done(text, s):
-                Console().green(f' {CHECK}  {text} '
-                                ).dark_gray(f'({round(s)} seconds)'
-                                ).print()
+        if len(NEW) == 0:
+            return  # TODO:
+
+        potential = f"Found {len(NEW)} possible new {ƒ.pluralize('film', len(NEW))}"
+        c = Console().pink(potential).print()
+        if config.duplicates.enabled:
+            Console().pink(f"Loading existing films...").print()
+            Duplicates.ALL = Find.existing()
+            Console.up().clearline()
+            c = Console().pink(f'{potential}')
+            c.add(f' and')
+            c.add(f"{' no' if len(Duplicates.ALL) == 0 else len(Duplicates.ALL)}")
+            c.add(f" existing {ƒ.pluralize('film', len(Duplicates.ALL))}")
+            c.print()
+        
+        if config.tmdb.enabled:
             
             # Search TMDb
-            start = timer()
-            spin1 = spinner('Searching TMDb...')
-            if not config.debug: spin1.start()
+            start = timer() # TODO: This is yuck; separate out.
+            spinner = Halo(text='Searching TMDb...',
+                         spinner='dots',
+                         color='yellow',
+                         text_color='yellow')
+            if not config.debug: spinner.start()
             
             TMDb.Search.parallel(*NEW)
             
-            end = timer()
-            if not config.debug: spin1.stop()
-            spinner_done('Done searching TMDb', end - start)
-                                      
-            for film in NEW:
-                Console().print_film_header(film)
+            spinner.stop()
+            Console().green(f'{CHECK} Done searching TMDb '
+                            ).dark_gray(f'({round(timer() - start)} seconds)'
+                            ).print()
+            
+            Console.wait(1.5)
+            Console.clearline()
+            
+        QUEUE = []
+        
+        NEW = [f for f in NEW if not f.should_hide]
+        
+        for film in NEW:
+            
+            if not film.exists():
+                film.ignore_reason = IgnoreReason.DOES_NOT_EXIST
+                
+            film.duplicates = Duplicates(film)
+            
+            Console.print_film_header(film) # TODO: Combine these into a single header
+            if config.interactive:
+                # TODO: interactive prompt
+                # If the film is rejected via the interactive flow, skip.
+                # Do an interactive lookup
+                Interactive.lookup(film)
+                Interactive.handle_duplicates(film)
+                # if 
+                # If interactive mode is enabled, a False return here
+                # indicates we no longer want to keep this file, so
+                # return.
+                # TODO: duplicates.rename_unwanted(film)
+            
+            if film.should_ignore is True:
                 Console().print_skip(film)
+                continue
+            
+            if not config.interactive:
+                Console.print_src_dst(film)    
+                Console.print_duplicates(film)
+            
+            if config.rename_only:
+                # TODO: print_rename()
+                pass
+            elif (config.always_copy or 
+                    not Info.is_same_partition(film.src.parent, film.dst)):
+                # TODO: print_copy()
+                # add to move queue
+                pass
+            else:
+                # Update the counter with a successful move
+                film.move()
+                if all([f.did_move for f in film.files]):
+                    counter.COUNT += 1
+                
+                # Add this film to the moved duplicates
+                Duplicates.ALL.append(film)
+                                
+        if len(QUEUE) > 0:
+            Console().pink(
+                f"\nPreparing to copy {len(QUEUE)} {ƒ.pluralize('film', len(QUEUE))}...").print()
+                # TODO: process queue
 
-        # Route to the correct handler if the film shouldn't be skipped
-        [cls.route(film) for film in films if not film.should_skip]
+        # # Route to the correct handler if the film shouldn't be skipped
+        # [cls.route(film) for film in films if not film.should_skip]
                         
-        # If we are running in interactive mode, we need to handle the moves
-        # after all the lookups are completed in case we have long-running copy
-        # operations.
-        if config.interactive is True:
+        # # If we are running in interactive mode, we need to handle the moves
+        # # after all the lookups are completed in case we have long-running copy
+        # # operations.
+        # if config.interactive is True:
 
-            # If we're moving more than one film, print the move header.
-            queue_count = len(_move_queue)
-            c = console().pink(f"\n{'Copying' if config.safe_copy else 'Moving'}")
-            c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...").print()
+        #     # If we're moving more than one film, print the move header.
+        #     queue_count = len(_move_queue)
+        #     c = console().pink(f"\n{'Copying' if config.safe_copy else 'Moving'}")
+        #     c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...").print()
 
-            # Process the entire queue
-            cls.process_move_queue()
+        #     # Process the entire queue
+        #     cls.process_move_queue()
 
     @classmethod
     def route(cls, film: 'Film'):
@@ -122,20 +183,13 @@ class App:
         """
 
         # Print film header to console.
-        console().print_film_header(film)
+        # console().print_film_header(film)
             
-        if config.interactive is True:
-            # If the film is rejected via the interactive flow, skip.
-            if interactive.lookup(film) is False:
-                return
-        else:
-            # If the film still should be ignored after looking up, skip.
-            if film.should_ignore is True:
-                console().print_skip(film)
-                return
-            else:
-                # If the lookup was successful, print the results to the console.
-                console().print_search_result(film)
+        # if config.interactive is True:
+            
+        # else:
+        #     # If the film still should be ignored after looking up, skip.
+            
 
         # If duplicate checking is enabled and the film is a duplicate, rename
         # all the duplicates we do not want to keep so they can be deleted later.

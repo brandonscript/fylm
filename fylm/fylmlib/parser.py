@@ -31,6 +31,7 @@ import re
 
 from lazy import lazy
 from typing import Union
+from pathlib import Path
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
@@ -55,10 +56,11 @@ class Parser:
     def __init__(self, path: Union[str, 'Path', 'FilmPath']):
         
         try:
-            self.path = path.main_file.filmrel if path.exists() else path
+            self.path = path.main_file.filmrel if path.main_file.exists() else path
         except:
             self.path = path
-        self.s = str(self.path)
+        # If the title has multiple path parts, keep the longest one
+        self.s = max(Path(self.path).parts, key=len)
     
     @lazy
     def title(self) -> str:
@@ -111,6 +113,9 @@ class Parser:
         # start of the title.
         if re.search(patterns.THE_PREFIX_SUFFIX, title):
             title = f"The {re.sub(patterns.THE_PREFIX_SUFFIX, '', title)}"
+            
+        # Remove everything after the encoding string, if it exists
+        title = re.sub(patterns.ENCODING, '', title)
 
         # Add back in . to titles or strings we know need to to keep periods.
         # Looking at you, S.W.A.T and After.Life.
@@ -260,7 +265,7 @@ class Parser:
             A bool representing the HDR status of the media.
         """
 
-        match = re.search(patterns.HDR, str(self.s))
+        match = re.search(patterns.HDR, self.s)
         return True if (match and match.group('hdr')) else False
 
     @lazy
@@ -276,7 +281,7 @@ class Parser:
             A bool representing the proper state of the media.
         """
 
-        match = re.search(patterns.PROPER, str(self.s))
+        match = re.search(patterns.PROPER, self.s)
         return True if (match and match.group('proper')) else False
 
     @lazy
@@ -294,7 +299,7 @@ class Parser:
         """
 
         # Search for a matching part condition
-        match = re.search(patterns.PART, str(self.s))
+        match = re.search(patterns.PART, self.s)
         
         # If a match exists, convert it to uppercase.
         return match.group('part').upper() if match else None
@@ -323,7 +328,7 @@ class Parser:
             
             # Because this map is in a specific order, of we find a suitable match, we
             # want to return it right away.
-            result = re.search(rx, str(self.path.filmrel))
+            result = re.search(rx, self.s)
             if result:
                 # Return a tuple containing the matching compiled expression and its
                 # corrected value after performing a capture group replace, then break 

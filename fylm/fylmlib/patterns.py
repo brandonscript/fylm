@@ -101,6 +101,9 @@ INTRA_WORD_SPECIAL_CHARS = re.compile(r'(?<=[^\W])([:\-_•·.])(?=[^\W])', re.I
 # Non-word chars to strip from the end of a title
 TRAILING_NONWORD_CHARS = re.compile(r'[\b\s]*[-_:]\s*$', re.I)
 
+# Matches all non-word chars in a string
+ALL_NONWORD_CHARS = re.compile(r'[^0-9a-zA-Z]+')
+
 # Zero-width space
 ZERO_SPACE = u'\u200c'
 
@@ -109,6 +112,9 @@ TV_SHOW = re.compile(r"\bS\d{2}(E\d{2})?\b", re.I)
 
 # Unpacking
 UNPACK = re.compile(r"^_UNPACK", re.I)
+
+# Encoding
+ENCODING = re.compile(f"x26[45].*$", re.I)
 
 # Sample
 SAMPLE = re.compile(r"\bsample\b", re.I)

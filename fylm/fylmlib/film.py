@@ -44,10 +44,10 @@ from fylmlib.enums import *
 from fylmlib import FilmPath
 from fylmlib import Console
 from fylmlib import Parser
-from fylmlib import Duplicates
 from fylmlib import Format
 from fylmlib import TMDb
 from fylmlib import Info
+from fylmlib import Move
 
 class Film(FilmPath):
     """A Film object contains basic details about the a film, references to the individual 
@@ -65,6 +65,8 @@ class Film(FilmPath):
                                          - /volumes/movies/HD/Avatar (2009) or
                                          - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
+        duplicates (Film) are           List of duplicate filmes on the dst dirs.
+        
         main_file (Film.File):          Returns the largest wanted file in a Film folder (or if there 
                                         is only a single file, that file). In most cases, this will be
                                         the primary video file
@@ -83,15 +85,12 @@ class Film(FilmPath):
         files ([Film.File]):            Mapped from FilmPath.files to Film.File. 
         
         new_name (Path):                New name of the film, including file extension if it's a file.
-        
-        new_name_refresh (Path):        Invalidate the lazy (cached) copy of new_name
-        
+                
         wanted_files ([Film.File]):     A subset of files that have wanted file extensions.
 
         bad_files ([Film.File]):        A subset of files that are not wanted.
 
-        should_ignore (bool):           Returns True if this film should be ignored, then updates
-                                        ignore_reason with an explanation.
+        should_ignore (bool):           Returns True if this film should be ignored.
 
         ignore_reason (IgnoreReason):   If applicable, a reason describing why this film was ignored.
 
@@ -105,18 +104,17 @@ class Film(FilmPath):
         
         self._src = Path(self)
         self.tmdb: TMDb.Result = TMDb.Result()
-        self._tmdb_matches: [TMDb.Result] = []
+        self.tmdb_matches: [TMDb.Result] = []
 
     def __repr__(self):
-        return ' '.join([str(x) for x in [
-            f"Film('{self}')",
-            self.title,
+        return f"Film('{self}')\n" + str(tuple([str(x) for x in [
+            Path(self.title).name,
             self.year,
-            self.tmdb.id] if x])
+            self.tmdb.id] if x]))
 
     @property
     def bad_files(self) -> Iterable['Film.File']:
-        return iter(filter(lambda f: not f.is_wanted, self.files))
+        return filter(lambda f: f.should_ignore, self.files)
 
     @property
     def dst(self) -> Path:
@@ -126,31 +124,16 @@ class Film(FilmPath):
             return self.src.parent / self.new_name
         else:
             return config.destination_dir(self.main_file.resolution) / self.new_name
-        
+    
     @lazy
     def new_name(self) -> Path:
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.new_name_async())
-    
-    async def new_name_async(self) -> Path: 
-        if 'new_name' in self.__dict__:
-            return self.new_name
         name = Format.Name(self.main_file)
         return name.dirname if config.use_folders else name.filename
-    
-    def new_name_refresh(self) -> Path:
-        # Reset cached copy of new_name
-        lazy.invalidate(self, 'new_name')
-        return self.new_name
 
-    @lazy
-    def duplicate_files(self) -> ['Film.File']:
-        return duplicates.Find(self)
-
-    @property
-    def files(self) -> Iterable['Film.File']:
-        files = [Film.File(f, film=self) for f in super().files]
-        return iter(sorted(files, key=lambda f: f.size.value, reverse=True))
+    @lazy # @Override(files)
+    def files(self) -> ['Film.File']:
+        return sorted([Film.File(f, film=self) for f in super().files],
+                             key=lambda f: f.size.value, reverse=True)
 
     @lazy
     def ignore_reason(self) -> IgnoreReason:
@@ -180,6 +163,19 @@ class Film(FilmPath):
             return first(self.video_files, None)
         else:
             return None
+        
+    def move(self) -> 'Film':
+        """Moves all the film's wanted files.
+
+        Returns:
+            Film: A new copy of this film with updated path.
+        """
+        # Move all wanted files and update files
+        self.files = [f.move() for f in self.wanted_files]
+        success = all([f.did_move for f in self.files])
+        if success:
+            self.setpath(Path(self.dst))
+            return self
 
     async def search_tmdb(self):
         """Performs a TMDb search on the existing film.
@@ -201,13 +197,11 @@ class Film(FilmPath):
         # If ID is not None, search by ID.
         Console.debug(f"Searching '{self.title}'")
         start = timer()
-        self._tmdb_matches = await TMDb.Search(self.title, self.year, self.tmdb.id).do()
-        best_match = first(iter(self._tmdb_matches or []), None)
+        self.tmdb_matches = await TMDb.Search(self.title, self.year, self.tmdb.id).do()
+        best_match = first(iter(self.tmdb_matches or []), None)
         if best_match:
             # If we find a result, update title and year.
-            self.tmdb = best_match
-            self.title = best_match.new_title
-            self.year = best_match.new_year
+            best_match.update(self)
         else:
             # If not, we update the ignore_reason
             self.ignore_reason = IgnoreReason.NO_TMDB_RESULTS
@@ -222,25 +216,24 @@ class Film(FilmPath):
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.search_tmdb())
 
-    @lazy
+    @property
     def should_hide(self) -> bool:
-        if (self.should_ignore is True and config.interactive is True
-                # In interactive mode, these three exceptions should be ignored because the
-                # user may want to manually match them anyway.
-                and not self.ignore_reason is IgnoreReason.UNKNOWN_TITLE
-                and not self.ignore_reason is IgnoreReason.UNKNOWN_YEAR
-                and not self.ignore_reason is IgnoreReason.TOO_SMALL):
-            return True
-        elif (self.should_ignore is True 
-              and config.interactive is False 
-              and config.hide_ignored is True):
-            return True
-        else:
+        if not config.hide_bad:
             return False
+        return self.should_ignore
 
-    @lazy
+    @property
     def should_ignore(self) -> bool:
-        return self.ignore_reason is not None
+        # In automatic mode, we can't redeem a bad match, so we must skip.
+        if not config.interactive:
+            return self.ignore_reason is not None
+        # In interactive mode, we can still lookup a file even if it's
+        # missing year, too small, or didn't find an automatic match.
+        else:
+            return self.ignore_reason and not self.ignore_reason in [
+                IgnoreReason.UNKNOWN_YEAR,
+                IgnoreReason.TOO_SMALL,
+                IgnoreReason.NO_TMDB_RESULTS]
 
     @lazy
     def src(self) -> FilmPath:
@@ -259,12 +252,11 @@ class Film(FilmPath):
 
     @property
     def video_files(self) -> Iterable['Film.File']:
-        video_files = [Film.File(f, film=self) for f in super().video_files]
-        return iter(sorted(video_files, key=lambda f: f.size.value, reverse=True))
+        return filter(lambda f: Info.is_video_file(f), self.files)
 
     @property
     def wanted_files(self) -> Iterable['Film.File']:
-        return iter(filter(lambda f: f.is_wanted, self.files))
+        return filter(lambda f: not f.should_ignore, self.files)
     
     @lazy
     def year(self) -> int:
@@ -284,7 +276,7 @@ class Film(FilmPath):
         All File objects bound to the same Film object must share at least the same destination_root_dir
         path, title, year, and tmdb_id. 
 
-        Invalid or unwanted files can still be mapped to a File object, but self.is_wanted will return False.
+        Invalid or unwanted files can still be mapped to a File object, but self.should_ignore will return False.
 
         Attributes:
 
@@ -296,6 +288,10 @@ class Film(FilmPath):
 
             duplicate_action (Should):      Returns None, or one of Should enum to describe what should happen when
                                             this file encounters a duplicate.
+
+            duplicate_reason (C....Reason): Why this file should be upgraded, if it is a duplicate.
+            
+            duplicate_result (C....Result): The result of this file being compared to another.
 
             edition (str):                  Special edition.
 
@@ -313,8 +309,6 @@ class Film(FilmPath):
 
             is_subtitle (bool):             Returns True if the file is a subtitle.
 
-            is_wanted (bool):               Returns True if the file is valid and wanted.
-
             media (Media):                  Original release media (see enums.Media)
             
             mediainfo (libmediainfo):       mediainfo derived from libmediainfo
@@ -326,6 +320,8 @@ class Film(FilmPath):
             part (int):                     Part number of the file if it has multiple parts.
 
             resolution (Resolution):        Original pixel depth (see enums.Resolution)
+            
+            should_ignore (bool):           Returns True if this film should be ignored.
         
             src (FilmPath):                 Original (immutable) abs source path of the file's root, e.g.
                                             - /volumes/downloads/Avatar.2009.BluRay.1080p.x264-Scene.mkv
@@ -335,8 +331,6 @@ class Film(FilmPath):
             title_the (str):                Ref to film.title.the.
             
             tmdb (TMDb.Result):             Ref to film.tmdb.
-
-            upgrade_reason (UpgradeReason): Returns the reason this file should be upgraded, or an empty string.
 
             year (str):                     Ref to film.year.
         """
@@ -350,11 +344,12 @@ class Film(FilmPath):
             self.did_move: bool = False
             self.is_duplicate: bool = False
             self.duplicate_action: Should or None = None
-            self.upgrade_reason: UpgradeReason = None
+            self.duplicate_reason: ComparisonReason = None
+            self.duplicate_result: ComparisonResult = None
         
         def __repr__(self):
             return f"File('{self}')\n" + str(tuple([str(x) for x in [
-                self.title,
+                Path(self.title).name,
                 self.year,
                 self.media.display_name,
                 self.resolution.display_name,
@@ -455,12 +450,6 @@ class Film(FilmPath):
             return self.suffix.lower() in ['.srt', '.sub']
 
         @lazy
-        def is_wanted(self) -> bool:
-            # If the file doesns't have an ignore reason, we
-            # can assume it is wanted.
-            return not self.ignore_reason
-
-        @lazy
         def media(self) -> Media:
             return Parser(self.filmrel).media
 
@@ -483,17 +472,22 @@ class Film(FilmPath):
             for track in media_info.tracks:
                 if track.track_type == 'Video':
                     return track
+                
+        def move(self) -> 'Film.File':
+            """Moves the file.
+
+            Returns:
+                File: A new copy of this file with updated path.
+            """
+            self.did_move = Move.safe(self.src, self.dst)
+            if self.did_move:
+                self.setpath(Path(self.dst))
+                return self
 
         @lazy
         def new_name(self) -> Path:
             name = Format.Name(self)
-            self.new_name_lazy = name
             return f'{name.filename}{self.suffix}'
-
-        def new_name_refresh(self) -> Path:
-            # Reset cached copy of new_name
-            lazy.invalidate(self, 'new_name')
-            return self.new_name
         
         @lazy
         def part(self) -> str:
@@ -514,3 +508,9 @@ class Film(FilmPath):
                 except:
                     pass
             return Resolution.UNKNOWN
+
+        @lazy
+        def should_ignore(self) -> bool:
+            # If the file doesns't have an ignore reason, we
+            # can assume it is wanted.
+            return self.ignore_reason

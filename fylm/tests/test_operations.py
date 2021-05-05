@@ -46,6 +46,7 @@ def is_alphabetical_name(l: [Path]):
 SRC = conftest.src_path
 SRC2 = conftest.src_path2
 
+AMC = "A Monster Calls-1080p/amc.mkv"
 ALITA = 'Alita.Battle.Angel.2019.BluRay.1080p.x264-NMaRE'
 ALITA_DST = f'Alita Battle Angel (2019) Bluray-1080p/'\
             f'Alita Battle Angel (2019) Bluray-1080p.mkv'
@@ -55,6 +56,7 @@ DEEP = '#deep'
 ROGUE = 'Rogue.One.2016.1080p.BluRay.DTS.x264-group'
 STARLORD = 'Starlord.2022.1080p/Starlord.mkv'
 TTOP = '2001.A.Space.Odyssey.1968.1080p'
+TTOP_NO_YEAR = '2001.A.Space.odyssey.1080p.BluRay.x264.anoXmous'
 ZELDA = 'Zelda.A.Link.To.The.Past.1991.1080p.Bluray.mkv'
 ZORG = 'Zorg.2.1989.1080p.Bluray.mkv'
 
@@ -305,6 +307,14 @@ class TestFilmPath(object):
     # Overrides
 
     def test_joinpath(self):
+        
+        ttop = FilmPath(SRC / TTOP_NO_YEAR / f'{TTOP_NO_YEAR}.mkv', origin=SRC)
+        Make.mock_file(ttop)
+        
+        test = ttop.parent.joinpath(f'{TTOP_NO_YEAR}.mkv')
+        assert(test == SRC / TTOP_NO_YEAR / f'{TTOP_NO_YEAR}.mkv')
+        assert(test.origin == SRC)
+        
         fp = FilmPath(SRC)
         assert(fp == SRC)
         fp.origin = '/'
@@ -336,10 +346,18 @@ class TestFilmPath(object):
     # Attributes
 
     def test_origin(self):
-        assert(FilmPath(f'/{STARLORD}').origin == Path(f'/{STARLORD}'))
-        assert(FilmPath(SRC).origin == SRC)
-        alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
-        assert(alita.origin == alita)
+        
+        ttop = FilmPath(SRC / TTOP_NO_YEAR / f'{TTOP_NO_YEAR}.mkv', origin=SRC)
+        Make.mock_file(ttop)
+        assert(ttop == SRC / TTOP_NO_YEAR / f'{TTOP_NO_YEAR}.mkv')
+        assert(ttop.origin == SRC)
+        
+        conftest.cleanup_all()
+        
+        Make.all_mock_files()
+        found = Find.deep(SRC)
+        for f in found:
+            assert(f.origin == SRC)
 
     def test_branch(self):
         
@@ -414,6 +432,7 @@ class TestFilmPath(object):
     
     def test_filmrel(self):
         
+        amc = FilmPath(SRC / AMC)
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
         avatar = FilmPath(SRC / '#4K' / AVATAR)
@@ -424,13 +443,18 @@ class TestFilmPath(object):
         zelda = FilmPath(SRC / ZELDA)
         
         Create.dirs(avatar, empty)
-        Make.mock_files(alita,
+        Make.mock_files(amc,
+                        alita,
                         atmitw,
                         notes,
                         starlord,
                         ttop,
                         zelda)
         
+        assert(amc.parent.is_filmroot)
+        assert(not amc.is_filmroot)
+        assert(amc.filmrel == Path(amc.parent.name) / Path(amc.name))
+        assert(amc.parent.filmrel == Path(amc.parent.name) / Path(amc.name))
         assert(not FilmPath(SRC).filmrel)
         assert(alita.filmrel == Path(ALITA) / Path(f'{ALITA}.mkv'))
         assert(alita.parent.filmrel == Path(ALITA))
@@ -452,6 +476,7 @@ class TestFilmPath(object):
         notes = FilmPath(SRC / '#notes' / 'my_note.txt')
         starlord = FilmPath(SRC / DEEP / STARLORD)
         ttop = FilmPath((SRC / DEEP / TTOP / TTOP).with_suffix('.mkv'))
+        ttop_ny = FilmPath(SRC / TTOP_NO_YEAR / f'{TTOP_NO_YEAR}.mkv')
         zelda = FilmPath(SRC / ZELDA)
 
         Create.dirs(avatar, empty)
@@ -460,6 +485,7 @@ class TestFilmPath(object):
                         notes,
                         starlord,
                         ttop,
+                        ttop_ny,
                         zelda)
 
         assert(not FilmPath(SRC).filmroot)
@@ -472,6 +498,8 @@ class TestFilmPath(object):
         assert(not notes.filmroot)
         assert(starlord.filmroot == starlord.parent)
         assert(ttop.filmroot == ttop.parent)
+        assert(ttop_ny.parent.filmroot == ttop.ny.parent)
+        assert(ttop_ny.filmroot == ttop.ny.parent)
         assert(zelda.filmroot == zelda)
 
     def test_is_empty(self):
@@ -537,6 +565,21 @@ class TestFilmPath(object):
                 assert(not f.is_branch)
 
     def test_is_filmroot(self):
+        
+        # Test a completely unknown file
+        unknown = FilmPath(SRC / 'tl-lk.1080p.mkv', origin=SRC)
+        Make.mock_file(unknown)
+        assert(unknown.is_filmroot)
+        
+        conftest.cleanup_all()
+        
+        # Test a good file with no year
+        ttop = FilmPath(SRC / TTOP_NO_YEAR / f'{TTOP_NO_YEAR}.mkv')
+        Make.mock_file(ttop)
+        assert(not ttop.is_filmroot)
+        assert(ttop.parent.is_filmroot)
+        
+        conftest.cleanup_all()
         
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         atmitw = FilmPath((SRC / ATMITW / ATMITW).with_suffix('.mkv'))
@@ -683,6 +726,14 @@ class TestFilmPath(object):
         assert(not zelda.parent.maybe_film)
         assert(zorg.maybe_film)
         assert(not zorg.parent.maybe_film)
+        
+    def test_setpath(self):
+        p = FilmPath(SRC / STARLORD)
+        assert(p == SRC / STARLORD)
+        assert(str(p) == str(SRC / STARLORD))
+        p.setpath(FilmPath(SRC / ALITA / f'{ALITA}.mkv'))
+        assert(p == SRC / ALITA / f'{ALITA}.mkv')
+        assert(str(p) == str(SRC / ALITA / f'{ALITA}.mkv'))
         
     def test_siblings(self):
         
