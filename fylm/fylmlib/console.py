@@ -193,18 +193,12 @@ class Console(object):
         Console().pink('\n\nThat\'s it, I quit.').print()
 
     @staticmethod
-    def print_film_header(film):
-        """Print the film header.
-
-        Args:
-            film (Film) for which to print details.
-        """
-
+    def print_film_header(film: 'Film'):
         c = Console('\n')
         
         # Interactive mode
         if config.interactive:
-            Console().gray(f'\n{INDENT}{film.name}').white(S.size(film)).print()
+            Console().gray(f'\n{INDENT}{film.main_file.name}').white(S.size(film)).print()
             Console().dark_gray(f'{INDENT}{film.src.parent}').print(end="")
             if film.should_ignore and not film.ignore_reason in [
                     IgnoreReason.UNKNOWN_YEAR,
@@ -231,7 +225,7 @@ class Console(object):
         c.print()
     
     @staticmethod
-    def print_interactive_success(film):
+    def print_interactive_success(film: 'Film'):
         c = Console().green(f' {ARROW} {S.name(film)}')
         if film.tmdb.id:
             c.gray(S.tmdb_id(film))
@@ -239,17 +233,11 @@ class Console(object):
         c.print()
         
     @staticmethod
-    def print_interactive_uncertain(film):
+    def print_interactive_uncertain(film: 'Film'):
         Console().light_blue(f' {UNCERTAIN} {film.title} ({film.year})').print()
         
     @staticmethod
-    def print_src_dst(film):
-        """Print the src and dst.
-
-        Args:
-            film (Film) for which to print details.
-        """
-        
+    def print_src_dst(film: 'Film'):
         if config.interactive:
             return
         
@@ -258,12 +246,7 @@ class Console(object):
             Console().gray(f'{INDENT}{film.dst}').print()
    
     @staticmethod
-    def print_skip(film):
-        """Print and log reason for skipping a film. Prints file in red, reason in dark gray.
-
-        Args:
-            film: (Film) Film that was skipped.
-        """
+    def print_skip(film: 'Film'):
         if film.should_ignore:
             if config.interactive and film.ignore_reason == IgnoreReason.SKIP:
                 Console.print_interactive_skipped()
@@ -272,12 +255,7 @@ class Console(object):
                     f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
     @staticmethod
-    def print_duplicates(film: 'Film'):
-        """Print any duplicates found to the Console.
-
-        Args:
-            film: (Film) Inbound film for which one or more duplicates has been detected.
-        """
+    def print_duplicates_old(film: 'Film'):
 
         # Import duplicates' should_replace function here to prevent circular imports.
         if not config.duplicates.enabled:
@@ -300,12 +278,6 @@ class Console(object):
 
     @staticmethod
     def print_duplicates(duplicates: '[Duplicates.Map]'):
-        """Print all duplicates for the film.
-
-        Args:
-            duplicates: ([Duplicates.Map]) A map of compared duplicate files
-        """
-
         # If any duplicates determine that the current file should be ignored,
         # we only show the skip recommendation.
         keeps = list(filter(lambda mp: mp.action == Should.KEEP_EXISTING, duplicates))
@@ -492,16 +464,16 @@ class Console(object):
     class strings:
         
         @staticmethod
-        def size(film): return f' ({film.size.pretty()})'
+        def size(film: 'Film'): return f' ({film.size.pretty()})'
         
         @staticmethod
-        def tmdb_id(film): return f' [{film.tmdb.id}] '
+        def tmdb_id(film: 'Film'): return f' [{film.tmdb.id}] '
         
         @staticmethod
-        def percent(film): return f'{ƒ.percent(film.tmdb.title_similarity)}% match'
+        def percent(film: 'Film'): return f'{ƒ.percent(film.tmdb.title_similarity)}% match'
         
         @staticmethod
-        def name(film): return (Path(film.main_file.new_name).stem 
+        def name(film: 'Film'): return (Path(film.main_file.new_name).stem 
                         if not film.should_ignore else film.name)
 
     class _AnsiColors:

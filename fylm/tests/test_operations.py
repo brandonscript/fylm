@@ -54,6 +54,7 @@ ATMITW = 'All.the.Money.in.the.World.2017.BluRay.1080p.x264-NMaRE'
 AVATAR = 'Avatar.2009.BluRay.2160p.HDR.x265-xWinG'
 DEEP = '#deep'
 ROGUE = 'Rogue.One.2016.1080p.BluRay.DTS.x264-group'
+ROGUE_4K = 'Rogue.One.A.Star.Wars.Story.2016.4K.BluRay.HDR.10bit.DTS.HD.MA-PlUSh.mp4'
 STARLORD = 'Starlord.2022.1080p/Starlord.mkv'
 TTOP = '2001.A.Space.Odyssey.1968.1080p'
 TTOP_NO_YEAR = '2001.A.Space.odyssey.1080p.BluRay.x264.anoXmous'
@@ -431,6 +432,15 @@ class TestFilmPath(object):
         assert(alita.dirs)
     
     def test_filmrel(self):
+        
+        rogue = FilmPath(SRC / '#4K' / ROGUE_4K)
+        
+        Make.mock_file(rogue)
+        
+        assert(rogue._year == 2016)
+        assert(rogue.filmrel == Path(ROGUE_4K))
+        
+        conftest.cleanup_all()
         
         amc = FilmPath(SRC / AMC)
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
