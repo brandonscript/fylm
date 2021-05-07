@@ -86,6 +86,9 @@ class Interactive:
         """
         if config.interactive is False:
             raise Exception('Interactive mode is not enabled')
+        
+        if film.should_ignore:
+            return False
 
         # Return immediately if the film is not a duplicate
         if len(film.duplicates) == 0:
@@ -93,8 +96,6 @@ class Interactive:
 
         Reason = ComparisonReason
         Result = ComparisonResult
-        
-        existing_to_delete = []
         # In case there are multiple video files in the original film, 
         # we need to process each separately.
         for v in film.video_files:
@@ -107,8 +108,10 @@ class Interactive:
             Console.print_duplicates(mp)
 
             choices = []
+            existing_to_delete = []
 
             exact = first(mp, where=lambda d: v.dst == d.duplicate.src, default=None)
+            same_quality = list(filter(lambda d: v.dst.name == d.duplicate.src.name, mp))
             keep_existing = [d for d in mp if d.action == Should.KEEP_EXISTING]
             keep_both = [d for d in mp if d.action == Should.KEEP_BOTH]
             upgradable = [d for d in mp if d.action == Should.UPGRADE]
@@ -119,12 +122,20 @@ class Interactive:
                     only = color('only', style='underline')
                     choices.append(f"Upgrade existing (smaller) copy {only}")
                 else:
-                    choices.append("Replace existing copy anyway (not an upgrade)")            
+                    choices.append("Replace existing copy anyway (not an upgrade)")
+            if not exact and len(same_quality) > 0:
+                c = Console().yellow(INDENT_WIDE, ('These files are' if len(same_quality) > 1 else 'This file is'))
+                c.add(' not in the expected destination folder:')
+                for q in same_quality:
+                    c.add('\n').add(INDENT_WIDE, '-', q.duplicate.src)
+                c.print()
+                choices.append(
+                    f"Keep this file (ignore existing {ƒ.pluralize('version', len(film.duplicates.files))})")
             if len(upgradable) > 0 and len(keep_existing) == 0:
                 qty = len(upgradable)
                 qty_str = f'{ƒ.num_to_words(qty)} ' if qty > 0 else ''
                 choices.append(
-                    ('A', f"Upgrade {'all ' if qty > 0 else ''}{qty_str}lower quality {ƒ.pluralize('version', qty)}"))
+                    ('A', f"Upgrade {'all ' if qty > 1 else ''}{qty_str}lower quality {ƒ.pluralize('version', qty)}"))
                 
             if len(keep_both) > 0:
                 choices.append(f"Keep this file (and existing {ƒ.pluralize('version', len(film.duplicates.files))})")
@@ -140,9 +151,12 @@ class Interactive:
 
             config.mock_input = _shift(config.mock_input)
             
+            if choice == len(choices) - 1:
+                return False  # skip
+            
             if letter == 'A':
                 existing_to_delete.extend(upgradable)
-            elif choice == 0:
+            elif choice == 0 and exact:
                 existing_to_delete.append(exact)
 
             # Keep (move/copy) this file, and prep anything marked for upgrade
@@ -177,10 +191,6 @@ class Interactive:
 
                 return False
             
-            # Skipping (or default)
-            else:
-                return False
-
     @classmethod
     def verify_film(cls, film):
         """Prompt the user to verify whether the best match is correct.
@@ -213,14 +223,12 @@ class Interactive:
             config.mock_input = _shift(config.mock_input)
 
             film.tmdb.ia_accepted = (choice == 0)
-
             if choice == 1:
                 return cls.search_by_name(film)
             elif choice == 2:
                 return cls.search_by_id(film)
             elif choice == 3:
                 film.ignore_reason = IgnoreReason.SKIP
-                Console.print_interactive_skipped()
                 return False
             else:
                 # User is happy with the result, verify

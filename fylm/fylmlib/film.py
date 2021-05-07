@@ -137,8 +137,11 @@ class Film(FilmPath):
 
     @lazy # @Override(files)
     def files(self) -> ['Film.File']:
-        return sorted([Film.File(f, film=self) for f in super().files],
+        if super().files:
+            return sorted([Film.File(f, film=self) for f in super().files],
                              key=lambda f: f.size.value, reverse=True)
+        else:
+            return [Film.File(self, film=self)]
 
     @lazy
     def ignore_reason(self) -> IgnoreReason:

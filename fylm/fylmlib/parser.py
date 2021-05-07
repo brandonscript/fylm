@@ -223,7 +223,7 @@ class Parser:
         # If a match exists, convert it to lowercase.
         resolution = m.group('resolution')
     
-        if resolution == '4k' or resolution.startswith('2160'): 
+        if resolution.lower() == '4k' or resolution.startswith('2160'): 
             return Resolution.UHD_2160P
         elif resolution.startswith('1080'): return Resolution.HD_1080P
         elif resolution.startswith('720'): return Resolution.HD_720P

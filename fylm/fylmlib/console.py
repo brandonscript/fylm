@@ -266,7 +266,7 @@ class Console(object):
         """
         if film.should_ignore:
             if config.interactive and film.ignore_reason == IgnoreReason.SKIP:
-                Console().dark_gray('      Skipped').print()
+                Console.print_interactive_skipped()
             else:
                 Console().red().dim(
                     f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
@@ -330,7 +330,7 @@ class Console(object):
                     and config.interactive is False):
                     c.yellow(f"(Force) replacing ")
                 else:
-                    c.red(fixcase(f"skipping, not an upgrade for existing file with the same name\n{INDENT_WIDE} "))
+                    c.red(fixcase(f"skipping, not an upgrade for existing file of the same quality\n{INDENT_WIDE} "))
             else:
                 c.gray()
 
@@ -367,7 +367,8 @@ class Console(object):
         """
         Console().yellow(INDENT_WIDE, s).print()
 
-    def print_interactive_error(self, s):
+    @staticmethod
+    def print_interactive_error(s):
         """Print an interactive error.
 
         Args:
@@ -375,10 +376,11 @@ class Console(object):
         """
         Console().red(f'      {s}').print()
 
-    def print_interactive_skipped(self):
+    @staticmethod
+    def print_interactive_skipped():
         """Print an interactive skip message.
         """
-        Console().dark_gray('      Skipped').print()
+        Console().dark_gray(INDENT_WIDE, 'Skipped').print()
 
     @staticmethod
     def print_choice(idx, choice):
