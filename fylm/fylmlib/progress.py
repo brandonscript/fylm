@@ -25,8 +25,6 @@ This module generates a progress bar from a percentage and width.
 """
 
 from colors import color
-
-from fylmlib.ansi import ansi
 import fylmlib.config as config
 
 class Progress:
@@ -40,6 +38,8 @@ class Progress:
         Returns:
             A compiled progress bar for outputting to console.
         """
+        
+        from fylmlib.console import ansi
 
         if config.plaintext:
             FULL_BLOCK = "X"

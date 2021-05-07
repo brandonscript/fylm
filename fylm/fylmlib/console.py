@@ -36,11 +36,11 @@ from pathlib import Path
 from datetime import datetime
 
 from colors import color
+import yaml
 
 import fylmlib.config as config
-from fylmlib.pyfancy import *
-from fylmlib.ansi import ansi
 from fylmlib.enums import *
+from fylmlib.tools import *
 from fylmlib.constants import *
 from fylmlib import patterns, Log, Format as ƒ, Progress
 
@@ -58,77 +58,89 @@ class Console(object):
         .dim(' dim').print()
 
     """
-    def __init__(self, s=''):
+    def __init__(self, *s, join=' '):
 
-        # Coerce to string
-        s = f"{s}"
-
-        # Formatted string
-        self._fmtxt = pyfancy(s)
-
-        # Plaintext string
-        self._pltxt = pyfancy(s)
-
-        # Color
-        self._color = None
-
-        # Style
+        self._color = 'white'
         self._style = []
-
+        self.parts = []
+        self.parts_plaintext = []
+            
         # Inject ANSI helper functions
-        for c in vars(ansi):
+        for c in vars(self.ansi):
             self._colorizer(c)
+            
+        self.add(*s, join=join)
             
     def __repr__(self):
         return str(self._pltxt)
 
-    def _colorizer(self, c):
-        def add(s=''):
+    def _colorizer(self, c: str):
+        def add(*s, join=' '):
             if c is not None:
                 self._color = c
-            self.add(s)
+            self.add(*s, join=join)
             return self
         self.__setattr__(c, add)
+        
+    @property
+    def _fmtxt(self):
+        return ''.join(self.parts)
+        
+    @property
+    def _pltxt(self):
+        return ''.join(self.parts_plaintext)
 
-    def add(self, s=''):
-        s = f"{s}"
+    def add(self, *s, join=' '):
+        p = join.join([f"{x}" for x in s])
         style = '+'.join(list(set(self._style))) if self._style else None
-        self._fmtxt.add(color(s, fg=getattr(ansi, self._color or 'white'), style=style))
-        self._pltxt.add(s)
+        fmt = color(p,
+                  fg=self._color
+                  if type(self._color) == int
+                  else getattr(self.ansi, self._color),
+                  style=style)
+        self.parts.append(fmt)
+        self.parts_plaintext.append(p)
+        return self
+    
+    def ansi(self, code: int = 0):
+        self._color = int(code)
         return self
 
-    def get(self):
-        return self._fmtxt.get()
-
-    def bold(self, s=''):
+    def bold(self, *s, join=' '):
         self._style.append('bold')
-        self.add(s)
+        self.add(*s)
+        return self
+    
+    def underline(self, *s, join=' '):
+        self._style.append('underline')
+        self.add(*s)
         return self
 
-    def dim(self, s=''):
+    def dim(self, *s, join=' '):
         self._style.append('faint')
-        self.add(s)
+        self.add(*s)
+        return self
+    
+    def norm(self, *s, join=' '):
+        self._style = []
+        self.add(*s)
         return self
 
-    def reset(self, s=''):
+    def reset(self, *s, join=' '):
         self._color = None
         self._style = []
-        self.add(s)
+        self.add(*s)
         return self
 
-    def indent(self, s=''):
-        self.add(f'    → {s}')
-        return self
-
-    def print(self, should_log=True, override_no_console=False, end=None):
+    def print(self, should_log=True, override_no_console=False, end=None, plain=False):
         if config.no_console and not override_no_console:
             return
         if should_log:
-            Log.info(self._pltxt.get())
-        if config.plaintext:
-            print(patterns.ANSI_ESCAPE.sub('', self._pltxt.get()), end=end)
+            Log.info(self._pltxt)
+        if plain or config.plaintext:
+            print(patterns.ANSI_ESCAPE.sub('', self._pltxt), end=end)
         else:
-            self._fmtxt.output(end=end)
+            print(self._fmtxt, end=end)
 
     """Helper methods for Console class.
     """
@@ -274,7 +286,8 @@ class Console(object):
 
             if duplicate_count > 0:
                 
-                c = Console().blue().indent().add(f"{duplicate_count} {ƒ.pluralize('duplicate', duplicate_count)} found")
+                c = Console().blue().add(INDENT_WIDE)
+                c.add(f"{duplicate_count} {ƒ.pluralize('duplicate', duplicate_count)} found")
 
                 if config.interactive is True:
                     c.add(' for ').light_blue(f'{film.all_valid_files[0].new_filename_and_ext}')
@@ -283,69 +296,76 @@ class Console(object):
                     c.add(':').print()
 
                 if config.interactive is False:
-                    Console.print_interactive_duplicates(film)
+                    Console.print_duplicates(film)
 
-    def print_interactive_duplicates(self, film):
-        """Print a duplicate line.
+    @staticmethod
+    def print_duplicates(duplicates: '[Duplicates.Map]'):
+        """Print all duplicates for the film.
 
         Args:
-            film: (Film.File) The film object for which to print duplicates
+            duplicates: ([Duplicates.Map]) A map of compared duplicate files
         """
 
-        # In case there are multiple video files in the original film, 
-        # we need to process each separately.
-        for v in film.video_files:
-
-            # Veriified duplicates exist on the filesystem
-            for d in film.verified_duplicate_files:
-
-                # Print a line of detail for each duplicate
-                size_diff = ƒ.pretty_size_diff(v.source_path, d.source_path)
-                pretty_size = ƒ.pretty_size(d.size)
-                should = d.duplicate
-
-                c = Console()
-                r = "" 
-                p = "  "
-                if config.interactive:
-                    c.yellow()
-                    r = "Recommend "
-                    p = ""
-                if should == Should.UPGRADE:
-                    c.blue() if not config.interactive else c.yellow()
-                    c.indent(p).add(f"{r}upgrading ".capitalize())
-                elif should == Should.KEEP_BOTH:
-                    c.purple() if not config.interactive else c.yellow()
-                    c.indent(p).add(f"{r}keeping both this and ".capitalize())
-                elif should == Should.IGNORE:
-                    if config.duplicates.force_overwrite is True and config.interactive is False:
-                        c.yellow()
-                        c.indent(p).add(f"(Force) replacing ")
-                    else:
-                        c.red()
-                        c.indent(p).add(f"{r}ignoring, not an upgrade for ".capitalize())
+        # If any duplicates determine that the current file should be ignored,
+        # we only show the skip recommendation.
+        keeps = list(filter(lambda mp: mp.action == Should.KEEP_EXISTING, duplicates))
+        duplicates = keeps[:1] if keeps else duplicates
+        
+        def fixcase(s): return s.capitalize() if not config.interactive else s
+            
+        for mp in duplicates:
+            
+            c = Console(INDENT_WIDE, '')
+            if config.interactive:
+                c.red() if mp.action == Should.KEEP_EXISTING else c.yellow()
+                c.add("Suggest ")
+            if mp.action == Should.UPGRADE:
+                c.blue() if not config.interactive else c.yellow()
+                c.add(fixcase("upgrading "))
+            elif mp.action == Should.KEEP_BOTH:
+                c.purple() if not config.interactive else c.yellow()
+                c.add(fixcase("keeping both this and "))
+            elif mp.action == Should.KEEP_EXISTING:
+                if (config.duplicates.force_overwrite is True 
+                    and config.interactive is False):
+                    c.yellow(f"(Force) replacing ")
                 else:
-                    c.gray(p).indent()
+                    c.red(fixcase(f"skipping, not an upgrade for existing file with the same name\n{INDENT_WIDE} "))
+            else:
+                c.gray()
 
-                c.add(f"'{os.path.basename(d.source_path)}' ({pretty_size})")
-                c.dark_gray(' [')
-                if d.duplicate_reason != '':
-                    c.add(f'{d.duplicate_reason}, ')
-                c.add(f'{size_diff}]')
-                c.print()
+            c.add(f"'{mp.duplicate.name}' ({mp.duplicate.size.pretty()})")
+            c.dark_gray(' ')
+            if mp.reason == ComparisonReason.IDENTICAL:
+                c.add('Identical')
+                
+            # They're different, but we can't determine if one is better than the other
+            elif mp.result == ComparisonResult.DIFFERENT:
+                c.add(f'Different {mp.reason.display_name.lower()}')
+                
+            # For human readable output, we need to reverse the descriptor
+            # because if "new" is better than "duplicate", we describe the inverse
+            # for the duplicate.
+            elif mp.reason == ComparisonReason.SIZE:
+                c.add(ƒ.pretty_size_diff(mp.new.size.value, mp.duplicate.size.value))
+            else:
+                c.add(f'{"Higher" if mp.result == ComparisonResult.LOWER else "Lower"}')
+                c.add(f' {mp.reason.display_name.lower()}')
+            c.print()
 
-                # If in non-interactive mode, if a duplicate of equal or greater quality is detected,
-                # we know this film won't be moved, so we can just display this duplicate.
-                if not config.interactive and should == Should.IGNORE:
-                    break
+            # If in non-interactive mode, if a duplicate of equal or greater quality is detected,
+            # we know this film won't be moved, so we can just display this duplicate.
+            if not config.interactive and mp.action == Should.KEEP_EXISTING:
+                break
 
-    def print_ask(self, s):
+    @staticmethod
+    def print_ask(s):
         """Print an interactive question.
 
         Args:
             s: (str, utf-8) String to print/log.
         """
-        Console().yellow().indent().add(s).print()
+        Console().yellow(INDENT_WIDE, s).print()
 
     def print_interactive_error(self, s):
         """Print an interactive error.
@@ -360,7 +380,8 @@ class Console(object):
         """
         Console().dark_gray('      Skipped').print()
 
-    def print_choice(self, idx, choice):
+    @staticmethod
+    def print_choice(idx, choice):
         """Print a question choice.
 
         Args:
@@ -368,13 +389,13 @@ class Console(object):
             choice: (str, utf-8) Choice to print/log.
         """
 
-        c = Console().gray(f'      {idx})')
+        c = Console().white(INDENT_WIDE, f'{idx})')
         if choice.startswith('['):
             c.dark_gray(f' {choice}')
         else:
             match = re.search(patterns.TMDB_ID, choice)
             tmdb_id = match.group('tmdb_id') if match else ''
-            c.gray(f" {re.sub(patterns.TMDB_ID, '', choice)}")
+            c.light_gray(f" {re.sub(patterns.TMDB_ID, '', choice)}")
             c.dark_gray(tmdb_id)
         c.print()
 
@@ -385,7 +406,7 @@ class Console(object):
             return
 
         from fylmlib.operations import dirops
-        Console().gray().indent(
+        Console().gray().add(INDENT_WIDE, 
             f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
             f" '{os.path.basename(dst)}' to {os.path.dirname(dst)}"
         ).print()
@@ -400,13 +421,13 @@ class Console(object):
                 sys.stdout.flush()
 
     @classmethod
-    def get_input(cls, prompt):
+    def get_input(cls, p):
         """Prompt the user for input
 
         Args:
-            prompt: (str, utf-8) Query to prompt.
+            p (str): Query to print.
         """
-        return input(color('    » ', fg=ansi.white) + color(prompt, fg=ansi.yellow))
+        return input(color(PROMPT, fg=Console.ansi.white) + color(p, fg=Console.ansi.yellow))
 
     @classmethod
     def clearline(cls):
@@ -481,4 +502,35 @@ class Console(object):
         def name(film): return (Path(film.main_file.new_name).stem 
                         if not film.should_ignore else film.name)
 
+    class _AnsiColors:
+
+        """Color handling for console output.
+
+        ANSI color map for console output. Get a list of colors here = 
+        http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#256-colors
+
+        You can change the colors the terminal outputs by changing the 
+        ANSI values here.
+
+            ansi is the main property exported by this module.
+        """
+
+        def __init__(self):
+            with open(Path(__file__).parent.parent / 'colors.yaml', 'r') as f:
+                colormap = yaml.safe_load(f)    
+                for k, v in colormap.items():
+                    self.__setattr__(k, v)
+                    
+        def discover(self):
+            """Print all 256 colors in a matrix on your system."""
+            print('\n')
+            for i in range(0, 16):
+                for j in range(0, 16):
+                    code = str(i * 16 + j)
+                    sys.stdout.write(u"\u001b[38;5;" + code + "m " + code.ljust(4))
+                print(u"\u001b[0m")
+            
+            
+
+Console.ansi = Console._AnsiColors()
 S = Console.strings

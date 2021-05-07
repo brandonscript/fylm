@@ -34,8 +34,6 @@ from fylmlib.pushover import init, Client
 from colors import color
 import requests
 
-from fylmlib.pyfancy import *
-from fylmlib.ansi import ansi
 import fylmlib.config as config
 from fylmlib import Log
 from fylmlib import Console
@@ -69,11 +67,11 @@ class Notify:
             except Exception as e:
                 # If the connection fails, log the error and print a response to the console.
                 Log.enable()
-                console().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
+                Console().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
                 console.error(e)
                 return
 
-            console().white('\nUpdating plex...').print()
+            Console().white('\nUpdating plex...').print()
 
             # If the connection was successful, tell Plex to update specified sections if running
             # in live mode. No need to notify in test mode since there won't be any changes.
@@ -81,7 +79,7 @@ class Notify:
                 for section in (plex.library.section(section) for section in config.plex.sections):
                     section.refresh()
 
-            console().green(' Done ✓\n').print()
+            Console().green(' Done ✓\n').print()
 
             # Re-enable logging when done.
             Log.enable()

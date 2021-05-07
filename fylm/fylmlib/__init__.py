@@ -26,7 +26,6 @@ import fylmlib.patterns as patterns
 import fylmlib.enums as enums
 
 # Low-level library dependencies (init first)
-from fylmlib.ansi import ansi
 from fylmlib.log import Log
 from fylmlib.formatter import Format
 from fylmlib.progress import Progress

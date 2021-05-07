@@ -83,7 +83,7 @@ class Delete:
                 
     @staticmethod
     def dir(path=Union[str, Path, 'FilmPath'], 
-            max_size: int = 50*1024, force: bool = False):
+            max_size: int = 50*1024, force: bool = False) -> bool:
         """Recursively delete dir path and all its contents, if the total dir 
         size is less than max_size (default 50 KB).
 
@@ -92,10 +92,13 @@ class Delete:
             max_size (int, optional): Max size in Bytes a folder can be to 
                                       allow for deletion. Default=50000.
             force (bool): Force deletion by setting max_size to -1
+            
+        Bool:
+
         """
         
         path = Path(path)
-        # Check to make sure p isn't a source dir
+        # Check to make sure path isn't a source dir
         if str(path).lower() in [
                 str(x).lower() for x in set(
                     config.source_dirs + list(config.destination_dirs.values()))]:
@@ -112,22 +115,24 @@ class Delete:
         # otherwise abort. If max_size is -1 or force is enabled, do it anyway.
         if files_count == 0 or force or Size(path).value < max_size:
 
-            Console.debug(f"Recursively deleting '{path}' which contains {files_count} files.")
+            Console.debug(f"Recursively deleting '{path}' which contains {files_count} file(s).")
 
             # Only perform destructive actions if we're running in live mode.
-            if config.test is False:
-                try:
-                    shutil.rmtree(path)
-
-                # Catch resource busy error
-                except OSError as e:
-                    if e.args[0] == 16:
-                        console.error(
-                            f"Failed to remove '{path}', it is in use.")
+            if config.test:
+                return True
+            try:
+                shutil.rmtree(path)
+                return True
+            # Catch resource busy error
+            except OSError as e:
+                if e.args[0] == 16:
+                    console.error(
+                        f"Failed to remove '{path}', it is in use.")
         else:
-            Console().red().indent(
+            Console().red(INDENT_WIDE, 
                 f"Will not delete '{path}' ({'not empty' if files_count > 0 else Size.pretty(max_size)})"
             )
+        return False
             
     @staticmethod
     def files(paths: [Union[str, Path, 'FilmPath']], count: int = 0) -> int:
@@ -143,7 +148,7 @@ class Delete:
         Returns:
             int: Number of files that were deleted successfully.
         """
-        # TODO: Removed 'if config.remove_unwanted_files:' from this method, needs to be elsewhere.
+        # FIXME: Removed 'if config.remove_unwanted_files:' from this method, needs to be elsewhere.
 
         deleted_files = count
         
@@ -172,17 +177,42 @@ class Delete:
         try:
             p = Path(path)
             if not p.exists():
-                Console().error().indent(f"Could not delete 'p'; it does not exist.")
+                Console().error(INDENT_WIDE, f"Could not delete '{p}'; it does not exist.")
             else:
                 if not config.test:
                     p.unlink()
                 # If successful, return 1 for a successful op.
                 return 1
         except Exception as e:
-            Console().error().indent(f"Unable to remove '{path}': {e}")
+            Console().error(INDENT_WIDE, f"Unable to remove '{path}': {e}")
         
         # Default return 0
         return 0
+    
+    @staticmethod
+    def path(path: Union[str, Path, 'FilmPath'], force: bool = False) -> bool:
+        """Attempts to delete the specified path (file or dir)
+        and fails gracefully if it does not.
+
+        Args:
+            path (str, Path, or FilmPath): Path to delete
+            force (bool): Forces the path to be deleted even if it is above
+                          size safety threshold.
+
+        Returns:
+            bool: True if the path exists and was deleted successfully.
+        """
+        
+        Console.debug(f"Deleting path '{path}'")
+        
+        try:
+            p = Path(path)
+            if p.is_file():
+                return bool(Delete.file(path))
+            elif p.is_dir():
+                return bool(Delete.dir(path, force=force))
+        except Exception as e:
+            Console().error(INDENT_WIDE, f"Unable to remove '{path}': {e}")        
                          
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate 
@@ -1057,11 +1087,11 @@ class Info:
             return False
         return p in p.parent.iterdir()
     
-class Move:
-    """Move and copy filesystem utils"""
+class IO:
+    """Move, rename, and copy filesystem utils"""
     
     @staticmethod
-    def safe(src: Union[str, Path, 'FilmPath'], 
+    def move(src: Union[str, Path, 'FilmPath'], 
              dst: Union[str, Path, 'FilmPath'], 
              overwrite=False):
         """Performs a 'safe' move operation, with some additional checks before moving 
@@ -1106,13 +1136,13 @@ class Move:
             # overwrite, so we can skip this.
             if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                Console().red().indent(
+                Console().red(INDENT_WIDE, 
                     f"Unable to move, '{dst.name}' already exists in '{dst.parent}'.").print()
                 return False
 
             # File overwriting is enabled and not marked to upgrade, so warn but continue
-            Console().yellow().indent(
-                f"Replacing existing file in '{dst.parent}'.").print()
+            Console().yellow(INDENT_WIDE, 
+                f"Replacing existing file '{dst.parent}'").print()
 
         # Only perform destructive changes if running in live mode, so we can short-circuit
         # the rest by returning True here and presuming it was successful.
@@ -1145,7 +1175,7 @@ class Move:
             if copy:
 
                 # Copy the file using progress bar
-                Move.copy_with_progress(src, dst_tmp)
+                IO.copy_with_progress(src, dst_tmp)
             
             # Just move
             else:
@@ -1154,7 +1184,7 @@ class Move:
                 
             # Make sure the new file exists on the filesystem.
             if not dst_tmp.exists():
-                console().red().indent(
+                console().red(INDENT_WIDE, 
                     f"Failed to move '{src}'.")
                 return False
 
@@ -1183,14 +1213,14 @@ class Move:
                     
             # If not, then we print an error and return False.
             else:
-                console().red().indent(
+                console().red(INDENT_WIDE, 
                     f"Size mismatch when moving '{src}', off by {Size.pretty(diff)}.")
                 return False           
 
         except (IOError, OSError) as e:
 
             # Catch exception and soft warn in the console (don't raise Exception).
-            Console().red().indent(f"Failed to move '{src}'.")
+            Console().red(INDENT_WIDE, f"Failed to move '{src}'.")
             Console.debug(e)
             print(e)
 
@@ -1231,7 +1261,7 @@ class Move:
             dst =  dst / src.name
             
         if dst.exists():
-            console().red().indent(
+            console().red(INDENT_WIDE, 
                 f"Unable to copy, a file named '{dst.name}' already exists in '{dst.parent}'.").print()
             return
             
@@ -1264,7 +1294,7 @@ class Move:
             size = os.stat(src).st_size
             with open(src, 'rb') as fsrc:
                 with open(dst, 'wb') as fdst:
-                    Move._copyfileobj(fsrc, fdst, callback=Console(
+                    IO._copyfileobj(fsrc, fdst, callback=Console(
                     ).print_copy_progress_bar, total=size)
 
         # Perform a low-level copy.
@@ -1332,7 +1362,7 @@ class Move:
         
         # Check if a file already exists and abort.
         if dst.exists():
-            Console().red().indent(
+            Console().red(INDENT_WIDE, 
                 f"Unable to rename, '{dst.name}' already exists in '{dst.parent}'.").print()
             return
 
@@ -1346,23 +1376,24 @@ class Move:
             src.rename(dst)
 
 class Parallel:
-        """Performs asynchronous concurrent operation on an iterable."""
+        """Performs asynchronous concurrent operation on an iterable.
+        Once initialized, use the .call(func) method to execute ops."""
         def __init__(self, iterable, max_workers=50):
             self.iterable = iterable
             self.max_workers = max_workers
             
-        def call(self, func):
+        def call(self, func, *args, **kwargs):
             loop = asyncio.get_event_loop()
             tasks = asyncio.gather(*[
-                asyncio.ensure_future(self._worker(i, o, func))
+                asyncio.ensure_future(self._worker(i, o, func, *args, **kwargs))
                 for (i, o) in enumerate(self.iterable)
             ])
             return loop.run_until_complete(tasks)
 
-        async def _worker(self, i, o, func):
+        async def _worker(self, i, o, func, *args, **kwargs):
             # semaphore limits num of simultaneous calls
             async with asyncio.Semaphore(self.max_workers):
-                await getattr(o, func.__name__)()
+                await getattr(o, func.__name__)(*args, **kwargs)
                 return o
    
 class Size:
@@ -1377,30 +1408,6 @@ class Size:
         
     def __repr__(self): 
         return self.pretty()
-    
-    # def __float__(self): return float(self.size or 0)
-    # def __int__(self): return int(self.size or 0)
-    # def __add__(self, other): return int.__add__(self.size, num(other))
-    # def __sub__(self, other): return int.__sub__(self.size, num(other))
-    # def __mul__(self, other): return int.__mul__(self.size, num(other))
-    # def __matmul__(self, other): return int.__matmul__(self.size, num(other))
-    # def __truediv__(self, other): return int.__truediv__(self.size, num(other))
-    # def __floordiv__(self, other): return int.__floordiv__(self.size, num(other))
-    # def __mod__(self, other): return int.__mod__(self.size, num(other))
-    # def __divmod__(self, other): return int.__divmod__(self.size, num(other))
-    # def __pow__(self, other, modulo=None): 
-    #     return int.__pow__(self.size, num(other), int(modulo) if modulo else None)
-    # def __lshift__(self, other): return int.__lshift__(self.size, num(other))
-    # def __rshift__(self, other): return int.__rshift__(self.size, num(other))
-    # def __and__(self, other): return int.__and__(self.size, num(other))
-    # def __xor__(self, other): return int.__xor__(self.size, num(other))
-    # def __or__(self, other): return int.__or__(self.size, num(other))
-    # def __lt__(self, other): return int.__lt__(self.size, num(other))
-    # def __le__(self, other): return int.__le__(self.size, num(other))
-    # def __eq__(self, other): return int.__eq__(self.size, num(other))
-    # def __ne__(self, other): return int.__ne__(self.size, num(other))
-    # def __ge__(self, other): return int.__ge__(self.size, num(other))
-    # def __gt__(self, other): return int.__gt__(self.size, num(other))
     
     @property
     def value(self) -> int:

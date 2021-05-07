@@ -27,7 +27,7 @@ import re
 import sys
 import itertools
 import asyncio
-import concurrent.futures
+# import concurrent.futures
 from copy import copy
 from pathlib import Path
 from typing import Union
@@ -47,7 +47,7 @@ from fylmlib import Parser
 from fylmlib import Format
 from fylmlib import TMDb
 from fylmlib import Info
-from fylmlib import Move
+from fylmlib import IO
 
 class Film(FilmPath):
     """A Film object contains basic details about the a film, references to the individual 
@@ -65,7 +65,7 @@ class Film(FilmPath):
                                          - /volumes/movies/HD/Avatar (2009) or
                                          - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
-        duplicates (Film) are           List of duplicate filmes on the dst dirs.
+        duplicates ([Film])             List of duplicate film objects on the dst dirs.
         
         main_file (Film.File):          Returns the largest wanted file in a Film folder (or if there 
                                         is only a single file, that file). In most cases, this will be
@@ -125,6 +125,11 @@ class Film(FilmPath):
         else:
             return config.destination_dir(self.main_file.resolution) / self.new_name
     
+    @property
+    def duplicates(self) -> ['Film']:
+        from fylmlib import Duplicates
+        return Duplicates(self)
+
     @lazy
     def new_name(self) -> Path:
         name = Format.Name(self.main_file)
@@ -280,18 +285,17 @@ class Film(FilmPath):
 
         Attributes:
 
+            FIXME: Do we still need action?
+            action (Should):                Action to be taken against this file, if any. Most often set
+                                            as a result of duplicate checking.
+            
             did_move (bool):                Returns true when the file has been successfully moved.
-                                            Set manually from the return value (T/F) of Move.safe().
+                                            Set manually from the return value (T/F) of IO.move().
 
             dst (FilmPath):                 Desired abs path to this file's new root, e.g.
                                             - /volumes/movies/HD/Avatar (2009) Bluray-1080p.mkv
 
-            duplicate_action (Should):      Returns None, or one of Should enum to describe what should happen when
-                                            this file encounters a duplicate.
-
-            duplicate_reason (C....Reason): Why this file should be upgraded, if it is a duplicate.
-            
-            duplicate_result (C....Result): The result of this file being compared to another.
+            duplicates: ([Film.File])       List of duplicate files and relationships
 
             edition (str):                  Special edition.
 
@@ -300,8 +304,6 @@ class Film(FilmPath):
             hdr (str):                      Returns 'HDR" if is_hdr is True.
 
             ignore_reason (IgnoreReason):   If applicable, a reason describing why this film was ignored.
-            
-            is_duplicate (bool):            Returns True if this file is marked as a duplicate of another.
 
             is_hdr (bool):                  Indicates whether this version is HDR.
 
@@ -314,8 +316,6 @@ class Film(FilmPath):
             mediainfo (libmediainfo):       mediainfo derived from libmediainfo
 
             new_name (Path):                New name of the file, including file extension.
-            
-            new_name_refresh (Path):        Refresh the lazy (cached) copy of new_name
             
             part (int):                     Part number of the file if it has multiple parts.
 
@@ -340,12 +340,9 @@ class Film(FilmPath):
             super().__init__(path, origin=origin or film.origin)
 
             self._src = Path(self)
+            self.action: Should = None
             self.film: Film = film
             self.did_move: bool = False
-            self.is_duplicate: bool = False
-            self.duplicate_action: Should or None = None
-            self.duplicate_reason: ComparisonReason = None
-            self.duplicate_result: ComparisonResult = None
         
         def __repr__(self):
             return f"File('{self}')\n" + str(tuple([str(x) for x in [
@@ -396,27 +393,11 @@ class Film(FilmPath):
                         self.new_name)
             else:
                 return (config.destination_dir(self.resolution) /
-                        self.new_name)            
-            
-        @lazy
-        def src(self) -> FilmPath:
-            return self._src
-            
-        @lazy
-        def title(self) -> str:
-            return self.film.title
-
+                        self.new_name)     
+                
         @property
-        def title_the(self) -> str:
-            return self.film.title_the
-
-        @property
-        def tmdb(self) -> TMDb.Result:
-            return self.film.tmdb
-
-        @lazy
-        def year(self) -> int:
-            return self.film.year
+        def duplicates(self) -> ['Film']:
+            return self.film.duplicates.files
         
         @lazy
         def edition(self) -> str:
@@ -447,7 +428,7 @@ class Film(FilmPath):
 
         @lazy
         def is_subtitle(self):
-            return self.suffix.lower() in ['.srt', '.sub']
+            return self.suffix.lower() in constants.SUB_EXTS
 
         @lazy
         def media(self) -> Media:
@@ -479,7 +460,7 @@ class Film(FilmPath):
             Returns:
                 File: A new copy of this file with updated path.
             """
-            self.did_move = Move.safe(self.src, self.dst)
+            self.did_move = IO.move(self.src, self.dst)
             if self.did_move:
                 self.setpath(Path(self.dst))
                 return self
@@ -509,8 +490,28 @@ class Film(FilmPath):
                     pass
             return Resolution.UNKNOWN
 
-        @lazy
+        @property
         def should_ignore(self) -> bool:
             # If the file doesns't have an ignore reason, we
             # can assume it is wanted.
             return self.ignore_reason
+
+        @lazy
+        def src(self) -> FilmPath:
+            return self._src
+
+        @lazy
+        def title(self) -> str:
+            return self.film.title
+
+        @property
+        def title_the(self) -> str:
+            return self.film.title_the
+
+        @property
+        def tmdb(self) -> TMDb.Result:
+            return self.film.tmdb
+
+        @lazy
+        def year(self) -> int:
+            return self.film.year

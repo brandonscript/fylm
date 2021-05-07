@@ -265,6 +265,7 @@ class TMDb:
             Args:
                 films ([Film]): *args list of films to search.
             """
+            # TODO: Create generic parallel caller/initializer
             def __init__(self, *films):
                 loop = asyncio.get_event_loop()
                 tasks = asyncio.gather(*[

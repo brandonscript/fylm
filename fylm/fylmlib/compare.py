@@ -24,8 +24,8 @@ during runtime.
 """
 
 import re
-import warnings
-warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
+# import warnings
+# warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
 from rapidfuzz import fuzz
 
@@ -172,21 +172,36 @@ class Compare:
         Returns:
             ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
         """
-
-        resolution_hierarchy = ["2160p", "1080p", "720p", "576p", "480p"]
-
-        # Get the index where the resolutions for both files occur in the heirarchy.
-        # If the resolution isn't in the list, assume it's the lowest possible resolution.
-        l = resolution_hierarchy.index(file.resolution) if file.resolution in resolution_hierarchy else 10
-        r = resolution_hierarchy.index(other.resolution) if other.resolution in resolution_hierarchy else 10
-
-        # Compare the indexes. A higher number means lower quality.
-        if l == r:
+        
+        if file.resolution == other.resolution:
             return ComparisonResult.EQUAL
         else:
-            return ComparisonResult.HIGHER if l < r else ComparisonResult.LOWER        
+            return (ComparisonResult.HIGHER 
+                    # A lower number == higher resolution
+                    if file.resolution.value < other.resolution.value 
+                    else ComparisonResult.LOWER)    
 
     @staticmethod
+    def media(file, other) -> ComparisonResult:
+        """Compare two file medias to determine if one is better than the other.
+
+        Args:
+            file: (Film.File) the first file to compare.
+            other: (Film.File) the second file to compare.
+        Returns:
+            ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
+        """
+        
+        if file.media == other.media:
+            return ComparisonResult.EQUAL
+        else:
+            return (ComparisonResult.HIGHER 
+                    # A lower number == higher media
+                    if file.media.value < other.media.value 
+                    else ComparisonResult.LOWER)    
+
+    @staticmethod
+    
     def quality(file, other) -> (ComparisonResult, ComparisonReason):
         """Compare two file qualities to determine if one is better than the other.
         This method compares resolution, media, edition, proper, and HDR, but does 
@@ -195,62 +210,50 @@ class Compare:
         Args:
             file: (Film.File) the first file to compare.
             other: (Film.File) the second file to compare.
-        Returns: Tuple(ComparisonResult, ComparisonReason)
+        Returns: 
+            Tuple(ComparisonResult, ComparisonReason)
         """
         
-        result = ComparisonResult
-        reason = ComparisonReason
+        Result = ComparisonResult
+        Reason = ComparisonReason
         
-        res = Compare.resolution(file, other)
+        rez = Compare.resolution(file, other)
+        media = Compare.media(file, other)
         size = Compare.size(file, other)
         
         if Compare.title_similarity(file.title, other.title) < 0.9:
             Console.error(
                 f"Cannot compare quality of different titles '{file.title}' and '{other.title}'")
-            return (result.NOT_COMPARABLE, result.NOT_COMPARABLE)
+            return (Result.NOT_COMPARABLE, Reason.NOT_COMPARABLE)
         
-        # If editions don't match and not ignoring editions:
-        if file.edition != other.edition and not config.duplicates.ignore_edition:
-            return (result.NOT_COMPARABLE, reason.DIFFERENT_EDITIONS)
-        
-        # If everything we're comparing is equal, check for size.
-        if (res == result.EQUAL
-            and file.media == other.media
-            and file.is_hdr == other.is_hdr
-            and file.is_proper == other.is_proper):
-                
-                # Size
-                if size == ComparisonResult.HIGHER:
-                    return (result.EQUAL, ComparisonReason.BIGGER)
-                elif size == ComparisonResult.LOWER:
-                    return (result.EQUAL, ComparisonReason.SMALLER)
-                return (result.EQUAL, reason.IDENTICAL)
-
         # Resolution
-        if res == ComparisonResult.HIGHER:
-            return (res, ComparisonReason.HIGHER_RESOLUTION)
-        elif res == ComparisonResult.LOWER:
-            return (res, ComparisonReason.LOWER_RESOLUTION)
+        if rez != Result.EQUAL:
+            return (rez, Reason.RESOLUTION)
 
-        # Media; lower number = higher quality
-        if file.media.value < other.media.value:
-            return (result.HIGHER, reason.HIGHER_QUALITY)
-        elif file.media.value > other.media.value:
-            return (result.LOWER, reason.LOWER_QUALITY)
+        if media != Result.EQUAL:
+            return (media, Reason.QUALITY)
+            
+        # Edition
+        if file.edition != other.edition and not config.duplicates.ignore_edition:
+            return (Result.DIFFERENT, Reason.EDITION)
             
         # HDR
         if file.is_hdr != other.is_hdr:
-            return (result.NOT_COMPARABLE, 
-                    reason.HDR if file.is_hdr else reason.NOT_HDR)
+            return (Result.DIFFERENT, Reason.HDR)
 
         # Proper
         if file.is_proper != other.is_proper:
-            return (result.HIGHER if file.is_proper else result.LOWER,
-                    reason.PROPER if file.is_proper else reason.NOT_PROPER)
+            return (Result.DIFFERENT, Reason.PROPER)
+            
+        # Size
+        if size == ComparisonResult.EQUAL:
+            return (Result.EQUAL, ComparisonReason.IDENTICAL)
+        else:
+            return (size, Reason.SIZE)
 
         # At this point, we must assume that the files aren't comparable, but 
         # this is a last resort fallback and should never be reached.
-        return (result.NOT_COMPARABLE, result.NOT_COMPARABLE)
+        return (Result.NOT_COMPARABLE, Result.NOT_COMPARABLE)
 
     @staticmethod
     def size(path, other) -> ComparisonResult:

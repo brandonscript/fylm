@@ -28,7 +28,6 @@ import sys
 import logging
 import datetime
 
-from fylmlib.pyfancy import *
 from fylmlib import config
 
 # Set date output format
@@ -64,11 +63,12 @@ class Log:
         if not config.test:
             logging.disable(logging.NOTSET)
 
-    @staticmethod
-    def indent(s):
-        """Convenience method to write info to log with an indent and prefix.
-        """
-        Log.info(f'\t{s}')
+    # FIXME: Deprecated
+    # @staticmethod
+    # def indent(s):
+    #     """Convenience method to write info to log with an indent and prefix.
+    #     """
+    #     Log.info(f'\t{s}')
 
     @staticmethod
     def info(s):

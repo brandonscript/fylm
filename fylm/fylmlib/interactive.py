@@ -28,14 +28,18 @@ Credit: https://github.com/jreyesr/better-input
 import readline
 import os
 
+from colors import color
+
 from fylmlib.enums import *
-from enum import Enum
+from fylmlib.tools import *
 import fylmlib.config as config
 from fylmlib import Parser
 from fylmlib import Console
+from fylmlib import Delete
 from fylmlib import Duplicates
 from fylmlib import Format as ƒ
 from fylmlib import Film
+ansi = Console.ansi
 
 InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 
@@ -87,91 +91,95 @@ class Interactive:
         if len(film.duplicates) == 0:
             return True
 
-        Console().print_interactive_duplicates(film)
-
-        choices = []
-
-        # Get exact duplicates
-        exact_duplicates = duplicates.find_exact(film)
-
-        # Find all lower quality duplicates that are marked as upgradable (i.e., in the upgrade table)
-        # TODO: This is probably very circular and could be improved a lot.
-        upgradable_files = [l for l in duplicates.find_lower_quality(film) if l.duplicate_action == Should.UPGRADE]
-
-        duplicates_to_delete = []
+        Reason = ComparisonReason
+        Result = ComparisonResult
         
-        if len(exact_duplicates) > 0:
-            # If there are any exact duplicates, choose the one at the destination that would be overwritten if possible
-            exact = next((d for d in exact_duplicates if d.destination_path == film.destination_path), exact_duplicates[0])
-            duplicates_to_delete.append(exact)
-            # If the duplicate is smaller than the current primary file, consider it an upgrade, otherwise a replace.
-            (s, a) = ('Upgrade', '') if exact.size < film.primary_file.size else ('Replace', ' anyway')
-            choices.append(f"{s} existing film '{exact.new_filename_and_ext}'{a} ({ƒ.pretty_size(exact.size)})")
-        else:
-            # If there are no upgradable files, but still duplicates detected, 
-            # the only choice should be keep (not upgrade or replace)
-            if len(upgradable_files) == 0 and len(film.duplicate_files) > 0:
-                choices.append(f"Keep this file (and existing {ƒ.pluralize('film', len(film.duplicate_files))})")
-            else:    
-                choices.append(f"Upgrade {len(upgradable_files)} existing lower quality {ƒ.pluralize('film', len(upgradable_files))}")
-                duplicates_to_delete = upgradable_files
+        existing_to_delete = []
+        # In case there are multiple video files in the original film, 
+        # we need to process each separately.
+        for v in film.video_files:
 
-        choices.extend([f"Delete this file (keep existing {ƒ.pluralize('film', len(film.duplicate_files))})",
-                        ('S', '[ Skip ]')])
+            mp = film.duplicates.map(v)
+            
+            c = Console().blue(INDENT_ARROW, f"Found {ƒ.num_to_words(len(mp))} ")
+            c.add(f"{ƒ.pluralize('duplicate', len(mp))} for '{v.name}'")
+            c.dim(f" ({v.size.pretty()})").print()
+            Console.print_duplicates(mp)
 
-        choice = cls._choice_input(
-            prompt='', 
-            choices=choices,
-            default=None,
-            mock_input=_first(config.mock_input))
+            choices = []
 
-        config.mock_input = _shift(config.mock_input)
+            exact = first(mp, where=lambda d: v.dst == d.duplicate.src, default=None)
+            keep_existing = [d for d in mp if d.action == Should.KEEP_EXISTING]
+            keep_both = [d for d in mp if d.action == Should.KEEP_BOTH]
+            upgradable = [d for d in mp if d.action == Should.UPGRADE]
 
-        # Keep (move/copy) this file
-        if choice == 0:
-            film.ignore_reason = None # Reset ignore reason just in case this has changed
-            # If there were duplicates, and this film is upgrading/replacing, remove them
-            if len(duplicates_to_delete) > 0:
-                for d in duplicates_to_delete:
-                    # Mark the duplicate for upgrading
-                    d.duplicate_action = Should.UPGRADE
-                duplicates.rename_unwanted(film, duplicates_to_delete)
-            return True
-        
-        # Delete this file (last choice is always skip, second last is delete)
-        elif choice == len(choices) - 2:
+            if exact:
+                # TODO: support better inline styles. Should choices just take a Console?
+                if exact.result == Result.HIGHER:
+                    only = color('only', style='underline')
+                    choices.append(f"Upgrade existing (smaller) copy {only}")
+                else:
+                    choices.append("Replace existing copy anyway (not an upgrade)")            
+            if len(upgradable) > 0 and len(keep_existing) == 0:
+                qty = len(upgradable)
+                qty_str = f'{ƒ.num_to_words(qty)} ' if qty > 0 else ''
+                choices.append(
+                    ('A', f"Upgrade {'all ' if qty > 0 else ''}{qty_str}lower quality {ƒ.pluralize('version', qty)}"))
+                
+            if len(keep_both) > 0:
+                choices.append(f"Keep this file (and existing {ƒ.pluralize('version', len(film.duplicates.files))})")
+                
+            choices.extend([f"Delete this file (keep existing {ƒ.pluralize('version', len(film.duplicates.files))})",
+                            ('S', '[ Skip ]')])
 
-            # Ask user to confirm destructive action
-            Console().print_ask(
-                f"Are you sure you want to delete '{film.source_path}?'")
-            confirm_delete = cls._choice_input(
-                prompt='',
-                choices=['Yes – delete it', 'No – keep it'],
+            (choice, letter) = cls._choice_input(
+                prompt='', 
+                choices=choices,
                 default=None,
                 mock_input=_first(config.mock_input))
 
             config.mock_input = _shift(config.mock_input)
+            
+            if letter == 'A':
+                existing_to_delete.extend(upgradable)
+            elif choice == 0:
+                existing_to_delete.append(exact)
 
-            if confirm_delete == 0:
-                cls.delete_and_keep_existing(film)
+            # Keep (move/copy) this file, and prep anything marked for upgrade
+            if choice == 0 or (choice == 1 and letter == 'A'):
+                film.ignore_reason = None # Reset ignore reason just in case this has changed
+                # If there were duplicates, and this film is upgrading/replacing, remove them
+                if len(existing_to_delete) > 0:
+                    for mp in existing_to_delete:
+                        # Mark the existing duplicate for deletion
+                        mp.action = Should.DELETE_EXISTING
+                        mp.reason = ComparisonReason.MANUALLY_SET
+                    Duplicates.rename_unwanted(list(set(existing_to_delete)))
+                return True
+            
+            # Delete this file (last choice is always skip, second last is delete)
+            elif choice == len(choices) - 2:
 
-            return False
-        
-        # Skipping (or default)
-        else:
-            return False
+                # Ask user to confirm destructive action
+                Console.print_ask(
+                    f"Are you sure you want to delete '{film.src}'?")
+                confirm_delete = cls._choice_input(
+                    prompt='',
+                    choices=['Yes – delete it', 'No – keep it'],
+                    default=None,
+                    mock_input=_first(config.mock_input))
 
-    @classmethod
-    def delete_and_keep_existing(cls, film):
-        """Keep the current duplicate instead of the current film
+                config.mock_input = _shift(config.mock_input)
 
-        Args:
-            film: (Film) Current film being processed, to be deleted
-        """
-        if film.is_folder:
-            ops.dirops.delete_dir_and_contents(film.source_path, max_size=-1)
-        else:
-            ops.fileops.delete(film.source_path)
+                if confirm_delete == 0:
+                    if Delete.path(film.src, force=True):
+                        Console().red(INDENT_WIDE, f'Deleted {FAIL}').print()
+
+                return False
+            
+            # Skipping (or default)
+            else:
+                return False
 
     @classmethod
     def verify_film(cls, film):
@@ -191,8 +199,8 @@ class Interactive:
             cls.handle_unknown_film(film)
         
         else:
-            Console().print_ask('Is this correct? [Y]')
-            choice = cls._choice_input(
+            Console.print_ask('Is this correct? [Y]')
+            (choice, letter) = cls._choice_input(
             prompt='', 
             choices=[
                 ('Y', 'Yes'), 
@@ -212,7 +220,7 @@ class Interactive:
                 return cls.search_by_id(film)
             elif choice == 3:
                 film.ignore_reason = IgnoreReason.SKIP
-                Console().print_interactive_skipped()
+                Console.print_interactive_skipped()
                 return False
             else:
                 # User is happy with the result, verify
@@ -228,11 +236,11 @@ class Interactive:
         Returns:
             True if the film should be processed, else False
         """      
-        Console().print_ask(f"{film.ignore_reason.display_name.capitalize()} [N]")
+        Console.print_ask(f"{film.ignore_reason.display_name.capitalize()} [N]")
 
         # Continuously loop this if an invalid choice is entered.
         while True:
-            choice = cls._choice_input(
+            (choice, letter) = cls._choice_input(
                 prompt='', 
                 choices=[
                     ('N', 'Search by name'),
@@ -272,15 +280,15 @@ class Interactive:
                 # Attempt to convert the search query to an int
                 film.tmdb.id = int(search)
             except ValueError:
-                Console().print_interactive_error("A TMDb ID must be a number")
+                Console.print_interactive_error("A TMDb ID must be a number")
             
             # Search for the new film by ID.
             film.search_tmdb_sync()
             if film.tmdb.is_verified is True:
-                Console().print_interactive_uncertain(film)
+                Console.print_interactive_uncertain(film)
                 return cls.verify_film(film)
             else:
-                Console().print_interactive_error(f"No results found for '{film.tmdb.id}'")
+                Console.print_interactive_error(f"No results found for '{film.tmdb.id}'")
             
 
     _last_search = None
@@ -330,13 +338,13 @@ class Interactive:
         while len(film.tmdb_matches) == 0:
             return cls.handle_unknown_film(film)
 
-        Console().indent().bold().white('Search results:').print()
+        Console().add(INDENT_WIDE).bold().white('Search results:').print()
 
         # Generate a list of choices based on search results and save the input
         # to `choice`.
         choices = [(i + 1, f"{m.new_title} ({m.new_year}) [{m.id}]") for i, m in 
                    enumerate(film.tmdb_matches)]
-        choice = cls._choice_input(
+        (choice, letter) = cls._choice_input(
             prompt="", 
             choices=choices + [
                 ('N', '[ New search ]'),
@@ -363,7 +371,7 @@ class Interactive:
         elif choice == len(film.tmdb_matches) + 2:
             film.id = None
             film.ignore_reason = IgnoreReason.SKIP
-            Console().print_interactive_skipped()
+            Console.print_interactive_skipped()
             return False
 
         # If we haven't returned yet, update the film with the selected match 
@@ -372,10 +380,11 @@ class Interactive:
         film.tmdb_matches[choice].update(film)
         film.tmdb.ia_accepted = True
 
-        Console().print_interactive_success(film)
+        Console.print_interactive_success(film)
         return True
 
     @classmethod
+    # TODO: Refactor into an Input class
     def _simple_input(cls, prompt, prefill='', mock_input=None):
         """Simple prompt for input
 
@@ -398,7 +407,14 @@ class Interactive:
             readline.set_startup_hook()
 
     @classmethod
-    def _condition_input(cls, prompt, default, prefill='', return_type=str, condition=None, error_message=None, mock_input=None):
+    def _condition_input(cls, 
+                         prompt, 
+                         default, 
+                         prefill='', 
+                         return_type=str, 
+                         condition=None, 
+                         error_message=None, 
+                         mock_input=None):
         """Conditional prompt for input using lambda to verify condition.
 
         Ask the user for input, checking if it meets a condition function.
@@ -442,7 +458,7 @@ class Interactive:
                       prefill='', 
                       enumeration=InteractiveKeyMode.CHAR, 
                       error_message=None, 
-                      mock_input=None):
+                      mock_input=None) -> (int, str):
         """Choice-based prompt for input.
 
         Ask the user for input from a set of choices.
@@ -454,7 +470,8 @@ class Interactive:
             error_message: (str) An optional error message to be shown when an input is not a valid choice
             mock_input: (char) A mock input response for tests
         Returns:
-            The index of the selected choice
+            Tuple representing (the index of the selected choice, 
+                                the first letter (uppercase) of the choice)
         """
         if enumeration == InteractiveKeyMode.NUMBER:
             chars = [str(x + 1) for x in range(len(choices))]
@@ -466,10 +483,10 @@ class Interactive:
             chars = [str(x[0]).title() for x in choices]
             choices = [x[1] for x in choices]
         else:
-            raise ValueError("'enumeration' is not .NUMBER or .CHAR")
+            raise ValueError("'enumeration' is not a valid InteractiveKeyMode value.")
 
         for idx, choice in zip(chars, choices):
-            Console().print_choice(idx, choice)
+            Console.print_choice(idx, choice)
 
         answer = cls._condition_input(
             prompt, 
@@ -478,8 +495,9 @@ class Interactive:
             prefill=prefill, 
             error_message=error_message, 
             mock_input=mock_input)
-        return chars.index(answer.upper())
+        return (chars.index(answer.upper()), answer.upper())
 
+# FIXME: Move to tools
 def _shift(l):
     try:
         l.pop(0)

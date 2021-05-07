@@ -38,7 +38,7 @@ import fylmlib.counter as counter
 from fylmlib.enums import *
 from fylmlib import Console
 from fylmlib import Find
-from fylmlib import Move
+from fylmlib import IO
 from fylmlib import Parallel
 from fylmlib import Format as ƒ
 from fylmlib import Notify
@@ -112,8 +112,6 @@ class App:
             
             if not film.exists():
                 film.ignore_reason = IgnoreReason.DOES_NOT_EXIST
-                
-            film.duplicates = Duplicates(film)
             
             Console.print_film_header(film) # TODO: Combine these into a single header
             if config.interactive:
@@ -241,7 +239,7 @@ class App:
             dst_path = queued_ops[0].dst
 
             if film.source_path == dst_path:
-                console().indent().dark_gray('Already renamed').print()
+                console().dark_gray(INDENT_WIDE, 'Already renamed').print()
 
             for move in queued_ops:
 
@@ -387,7 +385,7 @@ class App:
         # is the same as the destination.
 
         if config.remove_source and film.original_path != film.destination_path:
-            console().dark_gray().indent().add('Removing parent folder').print()
+            console().dark_gray().add(INDENT_WIDE).add('Removing parent folder').print()
             debug(f'Deleting {film.original_path}')
 
             # Delete the source dir and its contents
@@ -408,7 +406,7 @@ class _QueuedMoveOperation():
         """
 
         if not os.path.exists(self.file.source_path):
-            console().yellow().indent(f'\'{os.path.basename(self.file.source_path)}\' no longer exists or cannot be accessed').print()
+            console().yellow(INDENT_WIDE, f'\'{os.path.basename(self.file.source_path)}\' no longer exists or cannot be accessed').print()
             return False
 
         # If an identically named duplicate exists, check the upgrade table to see if it is OK for upgrade

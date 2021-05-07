@@ -24,8 +24,9 @@ This module handles all the enumerable constants for Fylm.
 
 from enum import Enum
 
-Should = Enum('Should', 'UPGRADE KEEP IGNORE KEEP_BOTH DELETE')
-ComparisonResult = Enum('ComparisonResult', 'HIGHER EQUAL LOWER NOT_COMPARABLE')
+Should = Enum('Should', 
+              'UPGRADE IGNORE KEEP_EXISTING KEEP_BOTH DELETE DELETE_EXISTING')
+ComparisonResult = Enum('ComparisonResult', 'HIGHER EQUAL LOWER DIFFERENT NOT_COMPARABLE')
 RenameMask = Enum('RenameMask', 'FILE DIR')
 Units = Enum('Units', 'B KiB MiB GiB KB MB GB')
 
@@ -98,25 +99,16 @@ class IgnoreReason(Enum):
         else: return None
 
 class ComparisonReason(Enum):
-    HIGHER_QUALITY = 1
-    HIGHER_RESOLUTION = 2
-    LOWER_QUALITY = 3
-    LOWER_RESOLUTION = 4
-    DIFFERENT_QUALITIES = 5
-    DIFFERENT_RESOLUTIONS = 6
-    SAME_QUALITY = 7
-    SAME_RESOLUTION = 8
-    HDR = 9
-    NOT_HDR = 10
-    PROPER = 11
-    NOT_PROPER = 12
-    DIFFERENT_EDITIONS = 13
-    BIGGER = 14
-    SAME_SIZE = 15
-    SMALLER = 16
-    NOT_COMPARABLE = 17
-    IDENTICAL = 18
-    UPGRADING_DISABLED = 19
+    QUALITY = 1
+    RESOLUTION = 2
+    HDR = 3
+    PROPER = 4
+    EDITION = 5
+    SIZE = 6
+    NOT_COMPARABLE = 7
+    IDENTICAL = 8
+    UPGRADING_DISABLED = 9
+    MANUALLY_SET = 10
     @property
     def display_name(self) -> str:
         # Should {upgrade, keep, ignore} because: 

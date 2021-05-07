@@ -26,11 +26,11 @@ CLI argumants.
 """
 
 import argparse
-import yaml
 import os
 import sys
 import codecs
 from datetime import timedelta
+import yaml
 from yaml import Loader, SafeLoader
 from pathlib import Path
 
@@ -39,6 +39,7 @@ import requests_cache
 
 from fylmlib.enums import Resolution
 
+# TODO: Deprecate?
 def construct_yaml_str(self, node):
     """Hijack the yaml module loader to return unicode.
 
@@ -78,6 +79,7 @@ class Config(object):
 
         # Generate a working dir path to config. (This is required for running tests from a
         # different working dir).
+        # FIXME:
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.yaml')
 
         # Load the config file and map it to a 'Dict', a dot-notated dictionary.

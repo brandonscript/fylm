@@ -24,11 +24,13 @@ string cleaning, improving comparison results, and outputting
 human-readable information to the console/log.
 """
 
+import inflect
 import re
 from copy import copy
 from typing import Union
 import locale
 locale.setlocale(locale.LC_ALL, '')
+infl = inflect.engine()
 
 from fylmlib.tools import *
 from fylmlib.enums import *
@@ -216,43 +218,33 @@ class Format:
         return f'{bytes:,.{prec}f} {u[0]}'
 
     @staticmethod
-    # FIXME: Redo this
-    def pretty_size_diff(left: str, right: str):
+    def pretty_size_diff(left: int, right: int):
         """Pretty format filesize comparison.
 
-        Compares two files/folders and prints the destination's difference in size in a
-        human-readable manner, e.g. if src is 500 MB and dst is 300 MB, it will print
-        '200 MB smaller'.
-
         Args:
-            left (str, utf-8): path to source file/folder
-            right (str, utf-8): path to destination file/folder
+            left (int): Size in bytes of first path
+            right (int): Size in bytes of second path
         Returns:
             A human-readable formatted comparison string.
         """
-
-        # Import size here to avoid circular import conflicts.
-        from fylmlib.operations import size
-
-        # Get the size of both source and destionation, then subtract the size of the
-        # destination from the size of the source.
-        size_diff = size(right) - size(left)
-
-        # If the difference is negative, the destination is smaller than the source.
-        if size_diff < 0:
-            return f'{pretty_size(abs(size_diff))} smaller'
-
-        # If the difference is positive, the destination is larger than the source.
-        elif size_diff > 0:
-            return f'{pretty_size(abs(size_diff))} bigger'
-
-        # Otherwise they must be the same size.
-        else:
-            return 'identical size'
+        
+        diff = right - left
+        if diff < 0: return f'{Format.pretty_size(abs(diff))} smaller'
+        elif diff > 0: return f'{Format.pretty_size(abs(diff))} bigger'
+        else: return 'Identical'
         
     @staticmethod
     def num(d):
+        """Converts an input number to a string."""
         return f'{d:n}'
+    
+    @staticmethod
+    def num_to_words(d: int):
+        """Converts an input number to words."""
+        try:
+            return infl.number_to_words(d)
+        except:
+            return d
 
     @staticmethod
     def percent(d):

@@ -23,12 +23,18 @@ This module handles all the enumerable constants for Fylm.
 """
 
 SYS_FILES = ['@eaDir', 'Thumbs.db', '.DS_Store']
+VIDEO_EXTS = ['.mkv', '.mp4', '.m4v', '.avi']
+SUB_EXTS = ['.srt', '.sub']
 ARROW = '➜'
+ARROW2 = '»'
+INDENT = '   '
+INDENT_WIDE = '    '
+INDENT_ARROW = f'{INDENT}{ARROW}'
+PROMPT =       f'{INDENT}{ARROW2} '
 WARN = '!'
 CHECK = '✓'
 FAIL = '×'
 UNCERTAIN = '~'
-INDENT = '   '
 FROM = ' '  # '⠖'
 TO = '⠒'  # '⠓'
 CURSOR_UP_ONE = '\x1b[1A'

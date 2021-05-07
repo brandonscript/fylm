@@ -31,7 +31,7 @@ import conftest
 from make import Make, GB, MB, KB
 from fylmlib import Film
 from fylmlib import Create
-from fylmlib import Move
+from fylmlib import IO
 from fylmlib import TMDb
 from fylmlib import Find
 from fylmlib.tools import *
@@ -226,7 +226,7 @@ class TestFilm(object):
         assert(src.exists())
         assert(not dst.exists())
         film.search_tmdb_sync()
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(not src.exists())
         assert(dst.exists())
 
@@ -301,11 +301,11 @@ class TestFilmFile(object):
 
         film = Film(SRC / ROGUE)
         Make.mock_file(src)
-        FIXME: "Move is now a declarative function"
+        FIXME: "IO is now a declarative function"
         assert(not film.main_file.did_move)
         assert(src.exists())
         assert(film.main_file.src == src)
-        film.main_file.did_move = Move.safe(src, dst)
+        film.main_file.did_move = IO.move(src, dst)
         assert(film.main_file.did_move)
     
     def test_dst(self):
@@ -487,7 +487,7 @@ class TestFilmFile(object):
         assert(src.exists())
         assert(not dst.exists())
         assert(film.main_file.src == src)
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(not src.exists())
         assert(dst.exists())
 

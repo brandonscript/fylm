@@ -25,10 +25,14 @@ import fylm
 import fylmlib.config as config
 from fylmlib.film import Film
 import conftest
-from make import Make
+from make import Make, MB
 
 # Overwrite the app's pre-loaded config.
 fylm.config = config
+
+SRC = conftest.src_path
+DST = conftest.dst_paths
+TTOP = '2001 - A Space Odyssey (1968)'
 
 # @pytest.mark.skip()
 class TestApp(object):
@@ -37,6 +41,12 @@ class TestApp(object):
     def test_app(self):
         
         made = Make.all_mock_files()
+        Make.mock_files(*[
+            (DST['1080p'] / TTOP / f'{TTOP} Bluray-1080p.mkv', 4 * MB),
+            DST['1080p'] / TTOP / f'{TTOP} WEBDL-1080p.m4v',
+            DST['720p'] / TTOP / f'{TTOP} Bluray-720p.mkv'
+            # ,(DST['2160p'] / TTOP / f'{TTOP} WEBDL-2160p HDR.mp4', 30 * MB)
+        ])
         
         config.interactive = True
         

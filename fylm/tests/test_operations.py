@@ -1353,7 +1353,7 @@ class FileExistsHandler(FileSystemEventHandler):
         self.exists = True
         return
         
-class TestMove(object):
+class TestIO(object):
     
     @pytest.mark.xfail(raises=OSError)
     def test_safe_not_exists(self):
@@ -1362,7 +1362,7 @@ class TestMove(object):
         dst = FilmPath(SRC / ALITA_DST)
 
         assert(not src.exists())
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(not src.exists())
         assert(not dst.exists())
     
@@ -1375,7 +1375,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(dst.exists())
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(src.exists())
         assert(dst.exists())
     
@@ -1391,7 +1391,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(not dst.exists())
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(src.exists())
         assert(not dst.exists())
     
@@ -1406,7 +1406,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(dst.exists())
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(src.exists())
         assert(dst.exists())
     
@@ -1421,7 +1421,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(dst.exists())
-        Move.safe(src, dst, overwrite=True)
+        IO.move(src, dst, overwrite=True)
         assert(not src.exists())
         assert(dst.exists())
     
@@ -1437,7 +1437,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(dst.exists())
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(not src.exists())
         assert(dst.exists())
     
@@ -1458,7 +1458,7 @@ class TestMove(object):
         assert(src.exists())
         assert(not dst.exists())
         
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(event_handler.exists)
         
         assert(not src.exists())
@@ -1484,7 +1484,7 @@ class TestMove(object):
         assert(src.exists())
         assert(dst.exists())
 
-        Move.safe(src, dst, overwrite=True)
+        IO.move(src, dst, overwrite=True)
         assert(event_handler.exists)
 
         assert(not src.exists())
@@ -1506,7 +1506,7 @@ class TestMove(object):
         assert(src.exists())
         assert(not dst.exists())
         with contextlib.redirect_stdout(None):
-            Move.safe(src, dst)
+            IO.move(src, dst)
         assert(not src.exists())
         assert(dst.exists())
     
@@ -1521,7 +1521,7 @@ class TestMove(object):
         
         assert(src.exists())
         assert(not dst.exists())
-        Move.safe(src, dst)
+        IO.move(src, dst)
         assert(not src.exists())
         assert(dst.exists())
         
@@ -1533,7 +1533,7 @@ class TestMove(object):
         Make.mock_file(src)
 
         assert(src.exists())
-        Move.rename(src, dst.name)
+        IO.rename(src, dst.name)
         assert(not src.exists())
         assert((SRC / ALITA / dst).exists())
     
@@ -1546,7 +1546,7 @@ class TestMove(object):
         Make.mock_file(src)
 
         assert(src.exists())
-        Move.rename(src, dst)
+        IO.rename(src, dst)
         assert(not src.exists())
         assert(not dst.exists())
         assert(dst_proper.exists())
@@ -1558,7 +1558,7 @@ class TestMove(object):
         dst = FilmPath(SRC / ALITA_DST)
 
         assert(not src.exists())
-        Move.rename(src, dst.name)
+        IO.rename(src, dst.name)
         assert(not src.exists())
         assert(not dst.exists())
     
@@ -1571,7 +1571,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(dst.exists())
-        Move.rename(src, dst.name)
+        IO.rename(src, dst.name)
         assert(src.exists())
         assert(dst.exists())
     
@@ -1584,7 +1584,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(dst.exists())
-        Move.rename(src, dst.name)
+        IO.rename(src, dst.name)
         assert(src.exists())
         assert(dst.exists())
     
@@ -1600,7 +1600,7 @@ class TestMove(object):
 
         assert(src.exists())
         assert(not dst.exists())
-        Move.rename(src, dst.name)
+        IO.rename(src, dst.name)
         assert(src.exists())
         assert(not dst.exists())
 
