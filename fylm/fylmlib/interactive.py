@@ -111,7 +111,7 @@ class Interactive:
             existing_to_delete = []
 
             exact = first(mp, where=lambda d: v.dst == d.duplicate.src, default=None)
-            same_quality = list(filter(lambda d: v.dst.name == d.duplicate.src.name, mp))
+            same_quality = list(filter(lambda d: d.result == Result.EQUAL, mp))
             keep_existing = [d for d in mp if d.action == Should.KEEP_EXISTING]
             keep_both = [d for d in mp if d.action == Should.KEEP_BOTH]
             upgradable = [d for d in mp if d.action == Should.UPGRADE]
@@ -124,13 +124,10 @@ class Interactive:
                 else:
                     choices.append("Replace existing copy anyway (not an upgrade)")
             if not exact and len(same_quality) > 0:
-                c = Console().yellow(INDENT_WIDE, ('These files are' if len(same_quality) > 1 else 'This file is'))
-                c.add(' not in the expected destination folder:')
-                for q in same_quality:
-                    c.add('\n').add(INDENT_WIDE, '-', q.duplicate.src)
+                c = Console().yellow(INDENT_WIDE, '‹!› ')
+                c.add('Existing', 'files are' if len(same_quality) > 1 else 'file is')
+                c.add(' not in the expected destination folder')
                 c.print()
-                choices.append(
-                    f"Keep this file (ignore existing {ƒ.pluralize('version', len(film.duplicates.files))})")
             if len(upgradable) > 0 and len(keep_existing) == 0:
                 qty = len(upgradable)
                 qty_str = f'{ƒ.num_to_words(qty)} ' if qty > 0 else ''
@@ -139,6 +136,8 @@ class Interactive:
                 
             if len(keep_both) > 0:
                 choices.append(f"Keep this file (and existing {ƒ.pluralize('version', len(film.duplicates.files))})")
+            elif len(keep_existing) > 0:
+                choices.append(f"Keep this file anyway")
                 
             choices.extend([f"Delete this file (keep existing {ƒ.pluralize('version', len(film.duplicates.files))})",
                             ('S', '[ Skip ]')])
