@@ -84,6 +84,7 @@ class Interactive:
         Returns:
             bool: Returns True if this file should be moved, otherwise False
         """
+                
         if config.interactive is False:
             raise Exception('Interactive mode is not enabled')
         
@@ -93,6 +94,8 @@ class Interactive:
         # Return immediately if the film is not a duplicate
         if len(film.duplicates) == 0:
             return True
+        
+        move = []
 
         Reason = ComparisonReason
         Result = ComparisonResult
@@ -151,7 +154,7 @@ class Interactive:
             config.mock_input = _shift(config.mock_input)
             
             if choice == len(choices) - 1:
-                return False  # skip
+                continue
             
             if letter == 'A':
                 existing_to_delete.extend(upgradable)
@@ -168,17 +171,16 @@ class Interactive:
                         mp.action = Should.DELETE_EXISTING
                         mp.reason = ComparisonReason.MANUALLY_SET
                     Duplicates.rename_unwanted(list(set(existing_to_delete)))
-                return True
             
             # Delete this file (last choice is always skip, second last is delete)
             elif choice == len(choices) - 2:
 
                 # Ask user to confirm destructive action
                 Console.print_ask(
-                    f"Are you sure you want to delete '{film.src}'?")
+                    f"Are you sure you want to delete '{v.src}'?")
                 confirm_delete = cls._choice_input(
                     prompt='',
-                    choices=['Yes – delete it', 'No – keep it'],
+                    choices=['Yes (delete it)', 'No (keep it)'],
                     default=None,
                     mock_input=_first(config.mock_input))
 
@@ -187,8 +189,15 @@ class Interactive:
                 if confirm_delete == 0:
                     if Delete.path(film.src, force=True):
                         Console().red(INDENT_WIDE, f'Deleted {FAIL}').print()
-
-                return False
+                        continue
+        
+            move.append(v)
+            
+        if len(move) == 0:
+            film.ignore_reason = IgnoreReason.SKIP
+            return False
+        else:
+            return True
             
     @classmethod
     def verify_film(cls, film):

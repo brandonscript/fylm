@@ -477,7 +477,7 @@ class FilmPath(Path):
     def filmroot(self) -> 'Path':
         
         # The first in the list of self + self.parents where is_filmroot is True
-        fr = first(iterunshift(self, to=self.parents),
+        fr = first(prepend(self, to=self.parents),
                           where=lambda x: x.is_filmroot, 
                           default=None)
         return Path(fr) if fr else None
@@ -512,7 +512,7 @@ class FilmPath(Path):
 
         # If it contains more than one video file with different years, or
         # dirs with multiple years, it must be a branch
-        y = get_years(iterunshift(self, self.dirs, to=self.video_files))
+        y = get_years(prepend(self, self.dirs, to=self.video_files))
         if len(y) > 1 and not all_match(y):
             return True
          
@@ -532,6 +532,9 @@ class FilmPath(Path):
             if self.parent == Path('.'):
                 self.filmroot = Path(self)
                 return True
+            
+        # From all objects in x, create a list of years if not None
+        def get_years(x): return [y for y in [o._year for o in x] if y is not None]
         
         # If it's not a terminus, it cannot be a filmroot.
         # Terminus criteria:
@@ -540,41 +543,30 @@ class FilmPath(Path):
         #   - A dir with no subdirs, or only empty ones
         if not self.is_terminus:
             return False
-
-        # If it's a video file and its parent doesn't have a year
-        if self.is_video_file and not self.parent._year:
+        
+        if self.is_dir():
             
-            # If its parent is a branch, it's a filmroot.
-            if self.parent.is_branch or self.parent.is_origin:
-                self.filmroot = Path(self)
-                # Make sure its parent isn't also a filmroot, otherwise
-                # we'll get double entries.
-                self.parent.is_filmroot = False
+            if self.is_branch or self.is_origin:
+                return False 
+            
+            if self._year:
                 return True
-            else:
-                self.filmroot = Path(self.parent)
-                self.parent.is_filmroot = True
+            
+            if iterlen(self.video_files) > 0 and all_match(
+                    get_years(prepend(self, to=self.video_files))):
+                return True
+            
+        elif self.is_video_file:
+            
+            if self.parent.is_branch or self.parent.is_origin:
+                return True
+            
+            if self.parent._year:
                 return False
-        
-        # Lambda: from all objects in x, create a list of years if not None
-        def get_years(x): return [y for y in [o._year for o in x] if y is not None]
-
-        # Lambda: compare a list and see if they all match
-        def all_match(x): return all(y == x[0] for y in x if y)
-
-        # If it’s a video file, and its parent + parent’s video files years all match
-        if self.is_video_file and all_match(get_years(
-                iterunshift(self.parent, to=self.parent.video_files))):
-            self.parent.is_filmroot = True
-            self.filmroot = Path(self.parent)
-            return False
-        
-        # If’s a dir with > 0 video files and self + video files years match
-        if self.is_dir() and iterlen(self.video_files) > 0 and all_match(
-                get_years(iterunshift(self, to=self.video_files))):
-            for c in self.descendents: c.filmroot = Path(self)
-            for c in self.descendents: c.is_filmroot = False
-            return True
+            
+            if all_match(get_years(
+                    prepend(self.parent, to=self.parent.video_files))):
+                return False   
         
         # If none of the above criteria were met, it's not likely a filmroot.
         return False
@@ -953,7 +945,7 @@ class Info:
         
         # Coerce to a standard Path object
         p = Path(path)
-        return p.suffix and p.suffix.lower() in config.video_exts
+        return p.suffix.lower() in config.video_exts
     
     @staticmethod
     def has_valid_ext(path: Union[str, Path, 'FilmPath']) -> bool:

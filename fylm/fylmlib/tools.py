@@ -30,6 +30,19 @@ p = inflect.engine()
 import fylmlib.patterns as patterns
 from fylmlib.constants import *
 
+# Compare a list and see if they all match
+
+def all_match(l: list) -> bool: 
+    """Compare a list and see if they all match
+
+    Args:
+        l (list): List to check
+
+    Returns:
+        bool: True if all items in the list match
+    """
+    return all(o == l[0] for o in l if o)
+
 def num(x):
     """Coerces any numeric type to the lowest fidelity 
     possible (int or float). 
@@ -80,9 +93,9 @@ def last(iterable: Iterable, where=None, default=None):
     except (StopIteration, ValueError):
         return default
     
-def iterunshift(*prepend, to: Iterable):
+def prepend(*prepend, to: Iterable):
     """Uses itertools.chain to prepend an object or list 
-    to the beginining of an iterator.
+    to the beginining of an iterator. Same as "unshift".
     
     Args:
         prepend (object or list): An object or list to prepend.
