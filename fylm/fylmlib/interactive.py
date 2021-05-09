@@ -122,7 +122,7 @@ class Interactive:
             if exact:
                 # TODO: support better inline styles. Should choices just take a Console?
                 if exact.result == Result.HIGHER:
-                    only = color('only', style='underline')
+                    only = color('only', style='underline') if len(same_quality) > 1 else ''
                     choices.append(f"Upgrade existing (smaller) copy {only}")
                 else:
                     choices.append("Replace existing copy anyway (not an upgrade)")
@@ -133,13 +133,17 @@ class Interactive:
                 c.print()
             if len(upgradable) > 0 and len(keep_existing) == 0:
                 qty = len(upgradable)
-                qty_str = f'{ƒ.num_to_words(qty)} ' if qty > 0 else ''
-                choices.append(
-                    ('A', f"Upgrade {'all ' if qty > 1 else ''}{qty_str}lower quality {ƒ.pluralize('version', qty)}"))
+                if qty > 2:
+                    choices.append(
+                        ('A', f"Upgrade all {ƒ.num_to_words(qty)} "\
+                              f"lower quality {ƒ.pluralize('version', qty)}"))
+                elif qty == 1 and not exact:
+                    choices.append(('U',
+                                    "Upgrade existing lower quality version"))
                 
             if len(keep_both) > 0:
                 choices.append(f"Keep this file (and existing {ƒ.pluralize('version', len(film.duplicates.files))})")
-            elif len(keep_existing) > 0:
+            elif len(keep_existing) > 0 and not exact:
                 choices.append(f"Keep this file anyway")
                 
             choices.extend([f"Delete this file (keep existing {ƒ.pluralize('version', len(film.duplicates.files))})",
@@ -329,6 +333,8 @@ class Interactive:
                                   mock_input=_first(config.mock_input))
         config.mock_input = _shift(config.mock_input)
         cls._last_search = query
+        if query == '':
+            return cls.handle_unknown_film(film)
         p = Parser(query)
         film.title = p.title
         film.year = p.year

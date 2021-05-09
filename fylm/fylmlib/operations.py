@@ -94,8 +94,12 @@ class Delete:
             force (bool): Force deletion by setting max_size to -1
             
         Bool:
+            Return True if the delete operation was successful.
 
         """
+        
+        if not path.is_dir():
+            return 0
         
         path = Path(path)
         # Check to make sure path isn't a source dir
@@ -135,7 +139,7 @@ class Delete:
         return False
             
     @staticmethod
-    def files(paths: [Union[str, Path, 'FilmPath']], count: int = 0) -> int:
+    def files(*paths: Union[str, Path, 'FilmPath'], count: int = 0) -> int:
         """Delete all files in the specified paths list or generator
 
         Count helps keep track of the number of files that were deleted, for reporting
@@ -154,7 +158,7 @@ class Delete:
         
         for f in paths:
             if not config.test:
-                deleted_files += Delete.path(f)
+                deleted_files += Delete.file(f)
             else:
                 deleted_files += 1
                 
@@ -721,7 +725,7 @@ class Find:
         origin = FilmPath(path)
         if not origin.is_dir():
             raise NotADirectoryError(
-                f"Cannot use Find.deep on '{self}', it is not a dir.")
+                f"Cannot use Find.deep on '{path}', it is not a dir.")
         else:
             for root,dirs,files in os.walk(path):
                 

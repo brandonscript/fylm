@@ -198,8 +198,10 @@ class Console(object):
         
         # Interactive mode
         if config.interactive:
-            Console().gray(f'\n{INDENT}{film.main_file.name}').white(S.size(film)).print()
-            Console().dark_gray(f'{INDENT}{film.src.parent}').print(end="")
+            header = film.name if film._year else film.main_file.name
+            parent = film.src.parent if film._year else film.src
+            Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print()
+            Console().dark_gray(f'{INDENT}{parent}').print(end="")
             if film.should_ignore and not film.ignore_reason in [
                     IgnoreReason.UNKNOWN_YEAR,
                     IgnoreReason.TOO_SMALL,

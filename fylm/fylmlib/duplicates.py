@@ -35,7 +35,8 @@ from fylmlib.tools import *
 import fylmlib.config as config
 from fylmlib import Console, Compare, Find
 from fylmlib import FilmPath, TMDb, Parallel
-from fylmlib import IO
+from fylmlib import IO, Delete
+from fylmlib import Format as ƒ
 
 class Duplicates:
     """Searches for copies of the specified film that exist in any dst dir.
@@ -44,7 +45,7 @@ class Duplicates:
         film (Film): A film to check for duplicates.
     """
     
-    ALL = []
+    TO_DELETE = []
     
     def __init__(self, src: 'Film'):
         
@@ -107,72 +108,7 @@ class Duplicates:
         # Reverse the order in interactive mode and return
         # return mp if not config.interactive else mp[::-1]
         return sorted(mp)
-
-    # @classmethod #DEPRECATED:
-    # def find_old(cls, film: 'Film') -> ['Film.File']:
-    #     """From a list of existing films, return those that contain
-    #     one or more duplicate files.
-
-    #     Compare the film objects to an array of exsiting films in
-    #     order to determine if any duplicates exist at the destination.
-    #     Criteria for a duplicate: title and year must match.
-
-    #     Returns:
-    #         An array of duplicate films objects for the specified file.
-    #     Args:
-    #         film (Film): Film to check for duplicates.
-    #     """
-
-    #     # If check for duplicates is disabled, return an empty array (because we don't care if they exist).
-    #     # DANGER ZONE:
-    #     # With check_for_duplicates disabled and force_overwrite enabled, any files
-    #     # with the same name at the destination will be silently overwritten.
-    #     if config.duplicates.enabled is False or config.rename_only is True:
-    #         Console.debug('Duplicate checking is disabled, skipping.')
-    #         return []
-
-    #     existing_films = dirops.get_existing_films(config.destination_dirs)
-
-    #     Console.debug(f'Checking list of duplicates for "{film.new_basename}"')
-    #     # Filter the existing_films cache array to titles beginning with the first letter of the
-    #     # current film, then filter to check for duplicates. Then we filter out empty folder,
-    #     # folders with no valid media folders, and keep only non-empty folders and files.
-
-    #     duplicates = list(filter(lambda x:
-    #             # First letter of the the potential duplicate's title must be the same.
-    #             # Checking this first allows us to have a much smaller list to compare against.
-    #             film.title[0] == x.title[0]
-
-    #             # Check that the film is a legitimate duplicate
-    #             and compare.is_duplicate(film, x)
-
-    #             and ((
-    #                 # If the potential duplicate is a folder, check that it contains at least
-    #                 # one valid file.
-    #                 x.is_folder and len(x.video_files) > 0)
-
-    #                 # Or if it is a file, it is definitely a duplicate.
-    #                 or x.is_file),
-
-    #         # Perform the filter against the existing films cache.
-    #        existing_films))
-
-    #     duplicate_videos = list(itertools.chain(*[d.video_files for d in duplicates]))
-    #     Console.debug(f'Total duplicate copies of this film found: {len(duplicate_videos)}')
-
-    #     for v in film.video_files:
-    #         for d in duplicate_videos:
-    #             # Mark each duplicate in the record
-    #             if cls.decide(v, d) == Should.IGNORE:
-    #                 film.ignore_reason = "Not an upgrade for existing version"
-
-    #     # Sort so that ignores are first, so console can skip printing the rest
-    #     sort_order = [Should.IGNORE, Should.UPGRADE, Should.KEEP_BOTH]
-    #     duplicate_videos = [d for x in sort_order for d in duplicate_videos if d.duplicate_action == x]
-
-    #     # Reverse the order in interactive mode and return
-    #     return duplicate_videos if not config.interactive else duplicate_videos[::-1]
-
+    
     @property
     def exact(self):
         """A subset of duplicates that are exact (except size) matches.
@@ -245,9 +181,8 @@ class Duplicates:
                 
         return (rslt, should, reason)
     
-
-    @staticmethod
-    def rename_unwanted(unwanted: ['Duplicates.Map']):
+    @classmethod
+    def rename_unwanted(cls, unwanted: ['Duplicates.Map']):
         """Rename duplicates pending upgrade to {name}.dup.
         
         Args:
@@ -256,16 +191,16 @@ class Duplicates:
 
         # Loop through each duplicate that should be replaced.
         for mp in unwanted:
-            print(mp)
-            dst = Path(f'{mp.duplicate}.dup')
+            dst = FilmPath(f'{mp.duplicate}.dup')
             if dst.exists():
                 # Skip if it's already been renamed (edge case for when
                 # there are multiple identical copies of the same film being moved)
                 continue
             IO.rename(mp.duplicate, dst)
+            cls.TO_DELETE.append(dst)
 
     @classmethod
-    def delete_upgraded(cls, film: 'Film'):
+    def delete_upgraded(cls) -> int:
         """Delete upgraded duplicates on the destination dirs.
 
         If duplicates are found and the inbound film should replace them,
@@ -274,18 +209,24 @@ class Duplicates:
         
         Args:
             film (Film): Film object to determine which duplicates to delete.
+            
+        Returns:
+            The number of duplicate files deleted.
         """
-
-        # Loop through each duplicate that should be replaced and delete it.
-        for d in [u for u in film.duplicate_files if Should.UPGRADE == u.duplicate]:
-            fileops.delete(f'{d.source_path}.dup')
-
-        # Delete empty duplicate container folders
-        cls.delete_leftover_folders(film)
-
-        # Remove deleted duplicates from the film object
-        film._duplicate_files = list(filter(lambda d: os.path.exists(d.source_path) or os.path.exists(f'{d.source_path}.dup'), film._duplicate_files))
-
+        
+        if len(cls.TO_DELETE) == 0:
+            return 0
+        
+        d = Delete.files(*cls.TO_DELETE)
+        for f in cls.TO_DELETE:
+            if f.parent.is_empty:
+                Delete.dir(f.parent)
+        Console().blue(INDENT_WIDE, 
+                       f'Removed {d} duplicate', 
+                       ƒ.pluralize('file', d)).print()
+        cls.TO_DELETE = []
+        return d
+                
     @classmethod
     def delete_leftover_folders(cls, film: 'Film'):
         """Delete empty duplicate folders on the destination dirs.
