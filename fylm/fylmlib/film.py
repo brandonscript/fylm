@@ -466,7 +466,7 @@ class Film(FilmPath):
             self.did_move = IO.move(self.src, self.dst)
             if self.did_move:
                 self.setpath(Path(self.dst))
-                return self
+            return self
 
         @lazy
         def new_name(self) -> Path:

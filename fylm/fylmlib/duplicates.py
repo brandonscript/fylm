@@ -198,6 +198,66 @@ class Duplicates:
                 continue
             IO.rename(mp.duplicate, dst)
             cls.TO_DELETE.append(dst)
+            
+    @classmethod
+    def handle(cls, film) -> bool:
+        """Determines how to handle duplicates of the inbound film, either
+        replacing, keeping both, or skipping.
+        
+        Args:
+            film: (Film) Current film to process
+            
+        Returns:
+            bool: Returns True if this film should be moved, otherwise False
+        """
+
+        if config.interactive is True:
+            raise Exception('Interactive mode is enabled')
+
+        if film.should_ignore:
+            return False
+
+        # Return immediately if the film is not a duplicate
+        if len(film.duplicates) == 0:
+            return True
+        
+        Reason = ComparisonReason
+        Result = ComparisonResult
+
+        move = []
+        existing_to_delete = []
+        
+        # In case there are multiple video files in the original film,
+        # we need to process each separately.
+        for v in film.video_files:
+
+            mp = film.duplicates.map(v)
+            Console.print_duplicates(v, mp)
+            
+            exact = first(mp, where=lambda d: v.dst == d.duplicate.src, default=None)
+            same_quality = list(filter(lambda d: d.result == Result.EQUAL, mp))
+            keep_existing = [d for d in mp if d.action == Should.KEEP_EXISTING]
+            keep_both = [d for d in mp if d.action == Should.KEEP_BOTH]
+            upgradable = [d for d in mp if d.action == Should.UPGRADE]
+            
+            if len(keep_existing) > 0 or (len(keep_both) == 0 
+                                          and len(upgradable) == 0):
+                continue
+            
+            if exact and exact.action == Should.UPGRADE:
+                existing_to_delete.append(exact)
+                
+            if len(upgradable) > 0 and len(keep_existing) == 0:
+                existing_to_delete.extend(upgradable)
+            
+            Duplicates.rename_unwanted(list(set(existing_to_delete)))
+            move.append(v)
+
+        if len(move) == 0:
+            film.ignore_reason = IgnoreReason.SKIP
+            return False
+        else:
+            return True
 
     @classmethod
     def delete_upgraded(cls) -> int:
@@ -221,7 +281,7 @@ class Duplicates:
         for f in cls.TO_DELETE:
             if f.parent.is_empty:
                 Delete.dir(f.parent)
-        Console().blue(INDENT_WIDE, 
+        Console().dim().blue(INDENT_WIDE, 
                        f'Removed {d} duplicate', 
                        ƒ.pluralize('file', d)).print()
         cls.TO_DELETE = []

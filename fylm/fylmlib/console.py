@@ -96,7 +96,7 @@ class Console(object):
         fmt = color(p,
                   fg=self._color
                   if type(self._color) == int
-                  else getattr(self.ansi, self._color),
+                  else getattr(self.ansi, self._color or 'white'),
                   style=style)
         self.parts.append(fmt)
         self.parts_plaintext.append(p)
@@ -279,9 +279,15 @@ class Console(object):
                     Console.print_duplicates(film)
 
     @staticmethod
-    def print_duplicates(duplicates: '[Duplicates.Map]'):
+    def print_duplicates(new: 'Film.File', duplicates: '[Duplicates.Map]'):
         # If any duplicates determine that the current file should be ignored,
         # we only show the skip recommendation.
+
+        c = Console().blue(
+            INDENT_ARROW, f"Found {ƒ.num_to_words(len(duplicates))} ")
+        c.add(f"{ƒ.pluralize('duplicate', len(duplicates))} for '{new.name}'")
+        c.dim(f" ({new.size.pretty()})").print()
+        
         keeps = list(filter(lambda mp: mp.action == Should.KEEP_EXISTING, duplicates))
         duplicates = keeps[:1] if keeps else duplicates
         
@@ -315,7 +321,10 @@ class Console(object):
                 
             # They're different, but we can't determine if one is better than the other
             elif mp.result == ComparisonResult.DIFFERENT:
-                c.add(f'Different {mp.reason.display_name.lower()}')
+                reason = f'Different {mp.reason.display_name.lower()}'
+                if mp.reason == ComparisonReason.HDR:
+                    reason = 'HDR' if mp.duplicate.is_hdr else ''
+                c.add(reason)
                 
             # For human readable output, we need to reverse the descriptor
             # because if "new" is better than "duplicate", we describe the inverse

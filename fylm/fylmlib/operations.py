@@ -1132,8 +1132,8 @@ class IO:
             # overwrite, so we can skip this.
             if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                Console().red(INDENT_WIDE, 
-                    f"Unable to move, '{dst.name}' already exists in '{dst.parent}'.").print()
+                Console().red(INDENT_WIDE, f"Unable to move, a file with the same name", 
+                              "already exists\n", f"{INDENT_WIDE}in '{dst.parent}'.").print()
                 return False
 
             # File overwriting is enabled and not marked to upgrade, so warn but continue

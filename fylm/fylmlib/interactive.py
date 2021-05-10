@@ -104,11 +104,7 @@ class Interactive:
         for v in film.video_files:
 
             mp = film.duplicates.map(v)
-            
-            c = Console().blue(INDENT_ARROW, f"Found {ƒ.num_to_words(len(mp))} ")
-            c.add(f"{ƒ.pluralize('duplicate', len(mp))} for '{v.name}'")
-            c.dim(f" ({v.size.pretty()})").print()
-            Console.print_duplicates(mp)
+            Console.print_duplicates(v, mp)
 
             choices = []
             existing_to_delete = []
