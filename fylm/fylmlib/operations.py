@@ -133,7 +133,7 @@ class Delete:
                     console.error(
                         f"Failed to remove '{path}', it is in use.")
         else:
-            Console().red(INDENT_WIDE, 
+            Console().red(INDENT, 
                 f"Will not delete '{path}' ({'not empty' if files_count > 0 else Size.pretty(max_size)})"
             )
         return False
@@ -181,14 +181,14 @@ class Delete:
         try:
             p = Path(path)
             if not p.exists():
-                Console().error(INDENT_WIDE, f"Could not delete '{p}'; it does not exist.")
+                Console().error(INDENT, f"Could not delete '{p}'; it does not exist.")
             else:
                 if not config.test:
                     p.unlink()
                 # If successful, return 1 for a successful op.
                 return 1
         except Exception as e:
-            Console().error(INDENT_WIDE, f"Unable to remove '{path}': {e}")
+            Console().error(INDENT, f"Unable to remove '{path}': {e}")
         
         # Default return 0
         return 0
@@ -216,7 +216,7 @@ class Delete:
             elif p.is_dir():
                 return bool(Delete.dir(path, force=force))
         except Exception as e:
-            Console().error(INDENT_WIDE, f"Unable to remove '{path}': {e}")        
+            Console().error(INDENT, f"Unable to remove '{path}': {e}")        
                          
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate 
@@ -1069,6 +1069,20 @@ class Info:
         return p1.stat().st_dev == p2.stat().st_dev
     
     @staticmethod
+    def will_copy(path: Union[str, Path, 'FilmPath']) -> bool:
+        """Returns True if the path will require a copy operation
+        when moving.
+
+        Args:
+            path (str, Path): Path to check
+
+        Returns:
+            bool: True if the path will require copying.
+        """
+        return (config.always_copy
+                or not Info.is_same_partition(path.src.parent, path.dst))
+    
+    @staticmethod
     def exists_case_sensitive(path: Union[str, Path, 'FilmPath']) -> bool:
         """Check if file exists, case sensitive.
 
@@ -1136,7 +1150,7 @@ class IO:
                 return False
 
             # File overwriting is enabled and not marked to upgrade, so warn but continue
-            Console().yellow(INDENT_WIDE, 
+            Console().yellow(INDENT, 
                 f"Replacing existing file '{dst.parent}'").print()
 
         # Only perform destructive changes if running in live mode, so we can short-circuit
@@ -1179,7 +1193,7 @@ class IO:
                 
             # Make sure the new file exists on the filesystem.
             if not dst_tmp.exists():
-                console().red(INDENT_WIDE, 
+                console().red(INDENT, 
                     f"Failed to move '{src}'.")
                 return False
 
@@ -1208,14 +1222,14 @@ class IO:
                     
             # If not, then we print an error and return False.
             else:
-                console().red(INDENT_WIDE, 
+                console().red(INDENT, 
                     f"Size mismatch when moving '{src}', off by {Size.pretty(diff)}.")
                 return False           
 
         except (IOError, OSError) as e:
 
             # Catch exception and soft warn in the console (don't raise Exception).
-            Console().red(INDENT_WIDE, f"Failed to move '{src}'.")
+            Console().red(INDENT, f"Failed to move '{src}'.")
             Console.debug(e)
             print(e)
 
@@ -1356,7 +1370,7 @@ class IO:
         
         # Check if a file already exists and abort.
         if dst.exists():
-            Console().red(INDENT_WIDE, 
+            Console().red(INDENT, 
                 f"Unable to rename, '{dst.name}' already exists in '{dst.parent}'.").print()
             return
 

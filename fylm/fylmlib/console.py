@@ -60,8 +60,8 @@ class Console(object):
     """
     def __init__(self, *s, join=' '):
 
-        self._color = 'white'
-        self._style = []
+        self.color = 'white'
+        self.style = []
         self.parts = []
         self.parts_plaintext = []
             
@@ -77,7 +77,7 @@ class Console(object):
     def _colorizer(self, c: str):
         def add(*s, join=' '):
             if c is not None:
-                self._color = c
+                self.color = c
             self.add(*s, join=join)
             return self
         self.__setattr__(c, add)
@@ -92,43 +92,43 @@ class Console(object):
 
     def add(self, *s, join=' '):
         p = join.join([f"{x}" for x in s])
-        style = '+'.join(list(set(self._style))) if self._style else None
+        style = '+'.join(list(set(self.style))) if self.style else None
         fmt = color(p,
-                  fg=self._color
-                  if type(self._color) == int
-                  else getattr(self.ansi, self._color or 'white'),
+                  fg=self.color
+                  if type(self.color) == int
+                  else getattr(self.ansi, self.color or 'white'),
                   style=style)
         self.parts.append(fmt)
         self.parts_plaintext.append(p)
         return self
     
     def ansi(self, code: int = 0):
-        self._color = int(code)
+        self.color = int(code)
         return self
 
     def bold(self, *s, join=' '):
-        self._style.append('bold')
+        self.style.append('bold')
         self.add(*s)
         return self
     
     def underline(self, *s, join=' '):
-        self._style.append('underline')
+        self.style.append('underline')
         self.add(*s)
         return self
 
     def dim(self, *s, join=' '):
-        self._style.append('faint')
+        self.style.append('faint')
         self.add(*s)
         return self
     
     def norm(self, *s, join=' '):
-        self._style = []
+        self.style = []
         self.add(*s)
         return self
 
     def reset(self, *s, join=' '):
-        self._color = None
-        self._style = []
+        self.color = None
+        self.style = []
         self.add(*s)
         return self
 
@@ -197,10 +197,7 @@ class Console(object):
         c = Console('\n')
         
         header = film.name if film._year else film.main_file.name
-        parent = film.src.parent if film._year else film.src
-        
-        Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print()
-        Console().dark_gray(f'{INDENT}{parent}').print(end="")
+        Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print(end="")
                         
         # Interactive mode
         if config.interactive:
@@ -225,6 +222,11 @@ class Console(object):
             c.gray(S.tmdb_id(film))
             c.dark_gray(S.percent(film))
         c.print()
+        
+    @staticmethod
+    def print_film_src(film):
+        parent = film.src.parent if film._year else film.src
+        Console().dark_gray(f'{INDENT}{parent}').print()
     
     @staticmethod
     def print_interactive_success(film: 'Film'):
@@ -288,8 +290,7 @@ class Console(object):
         # If any duplicates determine that the current file should be ignored,
         # we only show the skip recommendation.
 
-        c = Console().blue(
-            INDENT_ARROW, f"Found {ƒ.num_to_words(len(duplicates))} ")
+        c = Console().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))} ")
         c.add(f"{ƒ.pluralize('duplicate', len(duplicates))} for '{new.name}'")
         c.dim(f" ({new.size.pretty()})").print()
         
@@ -300,24 +301,27 @@ class Console(object):
             
         for mp in duplicates:
             
-            c = Console(INDENT_WIDE, '')
+            c = Console(INDENT)
+            ar = f" {ARROW} " if not config.interactive else ''
             if config.interactive:
                 c.red() if mp.action == Should.KEEP_EXISTING else c.yellow()
-                c.add("Suggest ")
+                c.add(ar).add("Suggest ")
             if mp.action == Should.UPGRADE:
                 c.blue() if not config.interactive else c.yellow()
-                c.add(fixcase("upgrading "))
+                c.add(ar).add(fixcase("upgrading "))
             elif mp.action == Should.KEEP_BOTH:
                 c.purple() if not config.interactive else c.yellow()
-                c.add(fixcase("keeping both this and "))
+                c.add(ar).add(fixcase("keeping both this and "))
             elif mp.action == Should.KEEP_EXISTING:
                 if (config.duplicates.force_overwrite is True 
                     and config.interactive is False):
-                    c.yellow(f"(Force) replacing ")
+                    c.yellow(ar).add(f"(Force) replacing ")
                 else:
-                    c.red(fixcase(f"skipping, not an upgrade for existing file of the same quality\n{INDENT_WIDE} "))
+                    c.red(ar).add(fixcase(
+                        f"skipping, not an upgrade for existing file of "\
+                        f"the same quality\n{INDENT}"))
             else:
-                c.gray()
+                c.gray(ar)
 
             c.add(f"'{mp.duplicate.name}' ({mp.duplicate.size.pretty()})")
             c.dark_gray(' ')
@@ -353,14 +357,14 @@ class Console(object):
         Args:
             s: (str, utf-8) String to print/log.
         """
-        Console().yellow(INDENT_WIDE, s).print()
+        Console().yellow(INDENT, s, join='').print()
         
     @staticmethod
     def print_io_reject(verb, dst):
         if config.rename_only:
             verb = 'rename'
-        Console().red(INDENT_WIDE, f"Unable to {verb}, a file with the same name ",
-                      f"already exists in\n{INDENT_WIDE}'{dst.parent}'.", join='').print()
+        Console().red(INDENT, f"Unable to {verb}, a file with the same name ",
+                      f"already exists in\n{INDENT}'{dst.parent}'.", join='').print()
 
 
     @staticmethod
@@ -376,7 +380,7 @@ class Console(object):
     def print_interactive_skipped():
         """Print an interactive skip message.
         """
-        Console().dark_gray(INDENT_WIDE, 'Skipped').print()
+        Console().dark_gray(INDENT, 'Skipped').print()
 
     @staticmethod
     def print_choice(idx, choice):
@@ -504,7 +508,7 @@ class Console(object):
         @staticmethod
         def verb(film: 'Film') -> (str, str):
             from fylmlib import Info
-            if config.always_copy or not Info.is_same_partition(film.src.parent, film.dst):
+            if Info.will_copy(film):
                 return ('copy', 'copied', 'copying')
             elif config.rename_only:
                 return ('rename', 'renamed', 'renaming')

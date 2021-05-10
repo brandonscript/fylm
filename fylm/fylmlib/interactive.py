@@ -123,7 +123,7 @@ class Interactive:
                 else:
                     choices.append("Replace existing copy anyway (not an upgrade)")
             if not exact and len(same_quality) > 0:
-                c = Console().yellow(INDENT_WIDE, '‹!› ')
+                c = Console().yellow(INDENT, '‹!› ')
                 c.add('Existing', 'files are' if len(same_quality) > 1 else 'file is')
                 c.add(' not in the expected destination folder')
                 c.print()
@@ -158,11 +158,11 @@ class Interactive:
             
             if letter == 'A':
                 existing_to_delete.extend(upgradable)
-            elif choice == 0 and exact:
+            elif letter == 'U' and exact:
                 existing_to_delete.append(exact)
 
             # Keep (move/copy) this file, and prep anything marked for upgrade
-            if choice == 0 or (choice == 1 and letter == 'A'):
+            if letter == 'U' or letter == 'A':
                 film.ignore_reason = None # Reset ignore reason just in case this has changed
                 # If there were duplicates, and this film is upgrading/replacing, remove them
                 if len(existing_to_delete) > 0:
@@ -173,11 +173,12 @@ class Interactive:
                     Duplicates.rename_unwanted(list(set(existing_to_delete)))
             
             # Delete this file (last choice is always skip, second last is delete)
-            elif choice == len(choices) - 2:
+            elif letter == 'D':
 
                 # Ask user to confirm destructive action
+                n = f"\n{INDENT}" if len(str(v.src)) else ''
                 Console.print_ask(
-                    f"Are you sure you want to delete '{v.src}'?")
+                    f"Are you sure you want to delete {n}'{v.src}'?")
                 confirm_delete = cls._choice_input(
                     prompt='',
                     choices=['Yes (delete it)', 'No (keep it)'],
@@ -188,7 +189,7 @@ class Interactive:
 
                 if confirm_delete == 0:
                     if Delete.path(film.src, force=True):
-                        Console().red(INDENT_WIDE, f'Deleted {FAIL}').print()
+                        Console().red(INDENT, f'Deleted {FAIL}').print()
                         continue
         
             move.append(v)
@@ -356,7 +357,7 @@ class Interactive:
         while len(film.tmdb_matches) == 0:
             return cls.handle_unknown_film(film)
 
-        Console().add(INDENT_WIDE).bold().white('Search results:').print()
+        Console().bold().white(f'{PROMPT}Search results:').print()
 
         # Generate a list of choices based on search results and save the input
         # to `choice`.
