@@ -118,12 +118,10 @@ class Film(FilmPath):
 
     @property
     def dst(self) -> Path:
-        # If 'rename_only' is enabled, we need to override the configured
-        # destination dir with the source dir.
-        if config.rename_only is True:
-            return self.src.parent / self.new_name
-        else:
-            return config.destination_dir(self.main_file.resolution) / self.new_name
+        root = (config.destination_dir(self.main_file.resolution)
+                if not config.rename_only
+                else self.src.parent)
+        return (root / self.new_name)
     
     @property
     def duplicates(self) -> ['Film']:
@@ -183,7 +181,17 @@ class Film(FilmPath):
         success = all([f.did_move for f in self.files])
         if success:
             self.setpath(Path(self.dst))
-            return self
+        return self
+        
+    def rename(self) -> 'Film':
+        """Renames all the film's wanted files.
+
+        Returns:
+            Film: A new copy of this film with updated path.
+        """
+        # Rename all wanted files and update files
+        assert(self.dst == self.src.parent / self.new_name)
+        return self.move()
 
     async def search_tmdb(self):
         """Performs a TMDb search on the existing film.
@@ -386,17 +394,13 @@ class Film(FilmPath):
 
         @property
         def dst(self) -> Path:
-            # If 'rename_only' is enabled, we need to override the configured
-            # destination dir with the source dir.
-            if config.rename_only is True:
-                return self.src.parent / self.new_name
-            elif config.use_folders:
-                return (config.destination_dir(self.resolution) /
-                        self.film.new_name /
-                        self.new_name)
+            root = (config.destination_dir(self.resolution) 
+                    if not config.rename_only 
+                    else self.film.src.parent)
+            if config.use_folders:
+                return (root / self.film.new_name / self.new_name)
             else:
-                return (config.destination_dir(self.resolution) /
-                        self.new_name)     
+                return (root / self.new_name)     
                 
         @property
         def duplicates(self) -> ['Film']:
@@ -476,6 +480,16 @@ class Film(FilmPath):
         @lazy
         def part(self) -> str:
             return Parser(self.name).part
+        
+        def rename(self) -> 'Film.File':
+            """Renames the file.
+
+            Returns:
+                File: A new copy of this file with updated path.
+            """
+            # Rename all wanted files and update files
+            assert(self.dst == self.src.parent / self.new_name)
+            return self.move()
                 
         @lazy
         def resolution(self) -> Resolution:

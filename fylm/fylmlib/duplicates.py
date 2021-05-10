@@ -212,13 +212,16 @@ class Duplicates:
         """
 
         if config.interactive is True:
-            raise Exception('Interactive mode is enabled')
+            return
 
         if film.should_ignore:
             return False
 
-        # Return immediately if the film is not a duplicate
-        if len(film.duplicates) == 0:
+        # Return immediately if the film is not a duplicate, 
+        # or if duplicates off, or rename on.
+        if (len(film.duplicates) == 0 
+            or config.rename_only 
+            or not config.duplicates.enabled):
             return True
         
         Reason = ComparisonReason
@@ -281,8 +284,7 @@ class Duplicates:
         for f in cls.TO_DELETE:
             if f.parent.is_empty:
                 Delete.dir(f.parent)
-        Console().dim().blue(INDENT_WIDE, 
-                       f'Removed {d} duplicate', 
+        Console().dim().blue(f'{INDENT}Removed {d} duplicate', 
                        ƒ.pluralize('file', d)).print()
         cls.TO_DELETE = []
         return d

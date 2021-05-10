@@ -1132,8 +1132,7 @@ class IO:
             # overwrite, so we can skip this.
             if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                Console().red(INDENT_WIDE, f"Unable to move, a file with the same name", 
-                              "already exists\n", f"{INDENT_WIDE}in '{dst.parent}'.").print()
+                Console.print_io_reject('move', dst)
                 return False
 
             # File overwriting is enabled and not marked to upgrade, so warn but continue
@@ -1257,8 +1256,7 @@ class IO:
             dst =  dst / src.name
             
         if dst.exists():
-            console().red(INDENT_WIDE, 
-                f"Unable to copy, a file named '{dst.name}' already exists in '{dst.parent}'.").print()
+            Console.print_io_reject('copy', dst)
             return
             
         # Silently abort if the src and dst are the same.

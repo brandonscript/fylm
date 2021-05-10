@@ -59,7 +59,7 @@ class Interactive:
         """
 
         if config.interactive is False:
-            raise Exception('Interactive mode is not enabled')
+            return True
 
         # If it's ignored for an irredeemable reason, return False
         if film.should_ignore and not film.ignore_reason in [
@@ -86,7 +86,7 @@ class Interactive:
         """
                 
         if config.interactive is False:
-            raise Exception('Interactive mode is not enabled')
+            return False
         
         if film.should_ignore:
             return False

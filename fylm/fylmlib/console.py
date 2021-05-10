@@ -196,12 +196,14 @@ class Console(object):
     def print_film_header(film: 'Film'):
         c = Console('\n')
         
+        header = film.name if film._year else film.main_file.name
+        parent = film.src.parent if film._year else film.src
+        
+        Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print()
+        Console().dark_gray(f'{INDENT}{parent}').print(end="")
+                        
         # Interactive mode
         if config.interactive:
-            header = film.name if film._year else film.main_file.name
-            parent = film.src.parent if film._year else film.src
-            Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print()
-            Console().dark_gray(f'{INDENT}{parent}').print(end="")
             if film.should_ignore and not film.ignore_reason in [
                     IgnoreReason.UNKNOWN_YEAR,
                     IgnoreReason.TOO_SMALL,
@@ -214,12 +216,10 @@ class Console(object):
             
         # Automatic mode
         else: 
-            
             if film.should_ignore:
                 c.red(f' {FAIL} {S.name(film)}')
             else:
                 c.green(f' {CHECK} {S.name(film)}')
-            c.reset().white(S.size(film))
         
         if film.tmdb.id:
             c.gray(S.tmdb_id(film))
@@ -255,6 +255,11 @@ class Console(object):
             else:
                 Console().red().dim(
                     f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
+
+    @staticmethod
+    def print_rename_only(film: 'Film'):
+        Console().red().dim(
+            f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
     @staticmethod
     def print_duplicates_old(film: 'Film'):
@@ -349,6 +354,14 @@ class Console(object):
             s: (str, utf-8) String to print/log.
         """
         Console().yellow(INDENT_WIDE, s).print()
+        
+    @staticmethod
+    def print_io_reject(verb, dst):
+        if config.rename_only:
+            verb = 'rename'
+        Console().red(INDENT_WIDE, f"Unable to {verb}, a file with the same name ",
+                      f"already exists in\n{INDENT_WIDE}'{dst.parent}'.", join='').print()
+
 
     @staticmethod
     def print_interactive_error(s):
@@ -396,7 +409,8 @@ class Console(object):
             f" '{os.path.basename(dst)}' to {os.path.dirname(dst)}"
         ).print()
 
-    def print_copy_progress_bar(self, copied, total):
+    @staticmethod
+    def print_copy_progress_bar(copied, total):
         """Print progress bar to terminal.
         """
         if not config.plaintext:
@@ -486,6 +500,16 @@ class Console(object):
         @staticmethod
         def name(film: 'Film'): return (Path(film.main_file.new_name).stem 
                         if not film.should_ignore else film.name)
+        
+        @staticmethod
+        def verb(film: 'Film') -> (str, str):
+            from fylmlib import Info
+            if config.always_copy or not Info.is_same_partition(film.src.parent, film.dst):
+                return ('copy', 'copied', 'copying')
+            elif config.rename_only:
+                return ('rename', 'renamed', 'renaming')
+            else:
+                return ('move', 'moved', 'moving')
 
     class _AnsiColors:
 
