@@ -380,7 +380,7 @@ class Console(object):
     def print_interactive_skipped():
         """Print an interactive skip message.
         """
-        Console().dark_gray(INDENT, 'Skipped').print()
+        Console().dark_gray(f'{INDENT}Skipped').print()
 
     @staticmethod
     def print_choice(idx, choice):
@@ -418,7 +418,7 @@ class Console(object):
         """Print progress bar to terminal.
         """
         if not config.plaintext:
-            print('      ' + Progress.bar(100 * copied / total), end='\r')
+            print(INDENT + Progress.bar(100 * copied / total), end='\r')
             # Catch stdout if None
             if sys.stdout:
                 sys.stdout.flush()

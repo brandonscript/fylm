@@ -115,6 +115,9 @@ class Film(FilmPath):
     @property
     def bad_files(self) -> Iterable['Film.File']:
         return filter(lambda f: f.should_ignore, self.files)
+    
+    def copy(self) -> 'Film':
+        return self.move()
 
     @property
     def dst(self) -> Path:
@@ -391,6 +394,9 @@ class Film(FilmPath):
                       film=kwargs['film'])
             new.__dict__ = {**new.__dict__, **kwargs}
             return new
+
+        def copy(self) -> 'Film.File':
+            return self.move()
 
         @property
         def dst(self) -> Path:

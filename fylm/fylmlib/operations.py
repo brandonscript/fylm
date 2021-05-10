@@ -1254,6 +1254,16 @@ class IO:
             follow_symlinks (bool): Follows symbolic links to files and re-creates them.
 
         """
+        
+        def _copyfileobj(fsrc: str, fdst: str, callback, total, length=16*1024):
+            copied = 0
+            while True:
+                buf = fsrc.read(length)
+                if not buf:
+                    break
+                fdst.write(buf)
+                copied += len(buf)
+                callback(copied, total=total)
 
         # Hide the cursor
         Cursor.hide()
@@ -1302,41 +1312,17 @@ class IO:
             size = os.stat(src).st_size
             with open(src, 'rb') as fsrc:
                 with open(dst, 'wb') as fdst:
-                    IO._copyfileobj(fsrc, fdst, callback=Console(
+                    _copyfileobj(fsrc, fdst, callback=Console(
                     ).print_copy_progress_bar, total=size)
+                    
+        Console().print() # newline
+        Console.clearline()
 
         # Perform a low-level copy.
         shutil.copymode(src, dst)
         
         # Show the cursor.
         Cursor.show()
-
-        # Clear the progress bar from the console.
-        Console.clearline()
-        
-    @staticmethod
-    def _copyfileobj(fsrc: str, fdst: str, callback, total, length=16*1024):
-        """Internal method for low-level copying.
-
-        Executes low-level file system copy and calls back progress
-        to progress bar function.
-
-        Args:
-            fsrc: (str, utf-8) path to source file.
-            fdst: (str, utf-8) path to destination file.
-            callback: (function) callback function to be called when progress is changed.
-            total: (int) total expected size of file in B.
-            length: (int) total length of buffer.
-
-        """
-        copied = 0
-        while True:
-            buf = fsrc.read(length)
-            if not buf:
-                break
-            fdst.write(buf)
-            copied += len(buf)
-            callback(copied, total=total)
         
     @staticmethod
     def rename(src: Union[str, Path, 'FilmPath'],

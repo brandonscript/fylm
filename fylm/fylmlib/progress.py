@@ -39,16 +39,16 @@ class Progress:
             A compiled progress bar for outputting to console.
         """
         
-        from fylmlib.console import ansi
+        from fylmlib import Console
 
         if config.plaintext:
             FULL_BLOCK = "X"
             INCOMPLETE_BLOCK_GRAD = ["-", "-", "="]
         else:
-            FULL_BLOCK = color('█', fg=ansi.pink)
-            INCOMPLETE_BLOCK_GRAD = [color('░', fg=ansi.dark_gray), 
-                                     color('▒', fg=ansi.dark_gray), 
-                                     color('▓', fg=ansi.dark_gray)]
+            FULL_BLOCK = color('█', fg=Console.ansi.pink)
+            INCOMPLETE_BLOCK_GRAD = [color('░', fg=Console.ansi.dark_gray), 
+                                     color('▒', fg=Console.ansi.dark_gray), 
+                                     color('▓', fg=Console.ansi.dark_gray)]
 
         assert(isinstance(percentage, float) or isinstance(percentage, int))
         assert(0. <= percentage <= 100.)
