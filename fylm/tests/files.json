@@ -418,8 +418,8 @@
         },
         {
             "make": [ "The Girl Who Kicked the Hornets Nest 2009 Part 2 EXTENDED 1080p BluRay x264-PHOBOS/main.mkv" ],
-            "expect": [ "The Girl Who Kicked the Hornet's Nest (2009)/The Girl Who Kicked the Hornet's Nest, Part 2 (2009) [Extended] Bluray-1080p.mkv" ],
-            "expect_no_lookup": [ "The Girl Who Kicked the Hornets Nest (2009)/The Girl Who Kicked the Hornets Nest, Part 2 (2009) [Extended] Bluray-1080p.mkv" ],
+            "expect": [ "The Girl Who Kicked the Hornet's Nest (2009)/The Girl Who Kicked the Hornet's Nest (2009), Part 2 [Extended] Bluray-1080p.mkv" ],
+            "expect_no_lookup": [ "The Girl Who Kicked The Hornets Nest (2009)/The Girl Who Kicked The Hornets Nest (2009), Part 2 [Extended] Bluray-1080p.mkv" ],
             "tmdb_id": 33613
         },
         {
