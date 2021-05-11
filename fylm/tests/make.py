@@ -76,6 +76,26 @@ class MakeFilmsResult:
     def all_files(self) -> ['MockFilm']:
         return sorted([x for m in self.all for x in m.make if x],
                        key=lambda x: Path(x).name.lower())
+        
+    def get(self, lst='good', key='expect', folders=True) -> ([], []):
+        expected = []
+        existing = []
+        
+        for tf in getattr(self, lst):
+            ex = getattr(tf, key)
+            valid_paths = [p for p in ex if p is not None]
+            for path in valid_paths:
+                desired_path = conftest.desired_path(path, tf, folders=folders)
+                if desired_path:
+                    expected.append(desired_path)
+
+        for t in conftest.dst_paths.values():
+            for r, _, files in os.walk(t):
+                for f in list(filter(lambda x: not x.startswith('.'), files)):
+                    existing.append(os.path.join(r, f))
+
+        # Need to remove identical duplicates, as only one will exist on the filesystem
+        return (list(set(existing)), list(set(expected)))
 
 class Make:
 

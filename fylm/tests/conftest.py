@@ -33,7 +33,7 @@ from addict import Dict
 
 import fylmlib.config as config
 
-from fylmlib import Find
+from fylmlib import Find, Parser
 from make import Make, MakeFilmsResult
 
 if os.getenv('_PYTEST_RAISE', "0") != "0":
@@ -144,11 +144,13 @@ def get_moved_films():
         [ops.dirops.get_valid_files(dr) for _, dr in list(set(dst_paths.items()))]
     ))))
 
-def desired_path(path, test_film, folder=True):
+def desired_path(path, test_film, folders=True):
     assert(test_film.make is not None and path is not None)
     from fylmlib.film import Film
     film = Film(test_film.make[0])
-    return os.path.join(Film.Utils.destination_root_dir(film.main_file), path if folder else os.path.basename(path))
+    if not folders:
+        path = Path(path).name
+    return Path(config.destination_dirs[Parser(film.src).resolution.key] / path)
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):

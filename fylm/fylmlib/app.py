@@ -30,6 +30,8 @@ from typing import List
 import asyncio
 import time
 from timeit import default_timer as timer
+from queue import Queue
+from threading import Thread
 
 from halo import Halo
 
@@ -37,7 +39,7 @@ import fylmlib.config as config
 import fylmlib.counter as counter
 from fylmlib.enums import *
 from fylmlib import Console
-from fylmlib import Find
+from fylmlib import Find, Delete
 from fylmlib import IO
 from fylmlib import Parallel
 from fylmlib import Format as ƒ
@@ -51,7 +53,8 @@ from fylmlib import Info
 from fylmlib.tools import *
 from fylmlib.constants import *
 
-MOVE_QUEUE = []
+QUEUE = []
+MOVED = []
 
 class App:
     """Main class for scanning for and processing films.
@@ -63,26 +66,22 @@ class App:
     def run():
         """Main entry point for Fylm."""
         
+        counter.COUNT = 0
+        
+        # Print the welcome message to the console.
+        Console().print_welcome()
+        
         filmroots = filter(lambda f: f.is_filmroot, map(Film, Find.new()))
         filmroots = Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size'])
         
-        NEW = sorted(filmroots, key=lambda f: f.name.lower())
         # NEW = list(Find.sync_parallel(iter(NEW), attrs=['filmrel', 'year', 'size']))
-        
+        NEW = list(filmroots)
         if len(NEW) == 0:
             return  # TODO:
 
-        potential = f"Found {len(NEW)} possible new {ƒ.pluralize('film', len(NEW))}"
-        c = Console().pink(potential).print()
-        if config.duplicates.enabled:
-            Console().pink(f"Loading existing films...").print()
-            Duplicates.ALL = Find.existing()
-            Console.up().clearline()
-            c = Console().pink(f'{potential}')
-            c.add(f' and')
-            c.add(f"{' no' if len(Duplicates.ALL) == 0 else len(Duplicates.ALL)}")
-            c.add(f" existing {ƒ.pluralize('film', len(Duplicates.ALL))}")
-            c.print()
+        Console().pink(
+            f"Found {len(NEW)} possible new {ƒ.pluralize('film', len(NEW))}"
+        ).print()
         
         if config.tmdb.enabled:
             
@@ -104,73 +103,81 @@ class App:
             Console.wait(1.5)
             Console.clearline()
             
-        QUEUE = []
-        
-        NEW = [f for f in NEW if not f.should_hide]
+        NEW = sorted([f for f in NEW if not f.should_hide],
+                     key=lambda f: f.title.lower())
         
         for film in NEW:
             
             if not film.exists():
                 film.ignore_reason = IgnoreReason.DOES_NOT_EXIST
             
-            Console.print_film_header(film) # TODO: Combine these into a single header
-            if config.interactive:
-                # TODO: interactive prompt
-                # If the film is rejected via the interactive flow, skip.
-                # Do an interactive lookup
-                Interactive.lookup(film)
-                Interactive.handle_duplicates(film)
-                # if 
-                # If interactive mode is enabled, a False return here
-                # indicates we no longer want to keep this file, so
-                # return.
-                # TODO: duplicates.rename_unwanted(film)
+            Console.print_film_header(film)
+            Console.print_film_src(film)
+            
+            Interactive.lookup(film)
+            Interactive.handle_duplicates(film)
             
             if film.should_ignore is True:
-                Console().print_skip(film)
+                Console.print_skip(film)
+                continue
+
+            Duplicates.handle(film)
+            
+            if not film.should_ignore:
+                QUEUE.append(film)
+                
+            if not Info.will_copy(film) or config.rename_only:
+                # Process the queue immediately
+                App.process_queue()
+                
+        # Process remaining queue items (or all, if copying)
+        App.process_queue()
+        return MOVED
+                
+        
+    @staticmethod
+    def process_queue():
+        """Process the move queue"""
+        
+        if len(QUEUE) > 1:
+            Console().pink(f"\nPreparing to move",
+                           len(QUEUE),
+                           f"{ƒ.pluralize('film', len(QUEUE))}...").print()
+        
+        while len(QUEUE) > 0:
+            film = QUEUE.pop(0)
+            verb, verbed, verbing = Console.strings.verb(film)
+            
+            if Info.will_copy(film):
+                Console.print_film_header(film)
+                
+            if not film.exists():
+                Console().yellow(
+                    f"{INDENT}'No longer exists or cannot be accessed.").print()
                 continue
             
-            if not config.interactive:
-                Console.print_src_dst(film)    
-                Console.print_duplicates(film)
+            c = Console(INDENT)
             
-            if config.rename_only:
-                # TODO: print_rename()
-                pass
-            elif (config.always_copy or 
-                    not Info.is_same_partition(film.src.parent, film.dst)):
-                # TODO: print_copy()
-                # add to move queue
-                pass
-            else:
-                # Update the counter with a successful move
-                film.move()
-                if all([f.did_move for f in film.files]):
-                    counter.COUNT += 1
+            if film.src == film.dst:
+                c.add(f'Already {verbed}').print()
+                continue
                 
-                # Add this film to the moved duplicates
-                Duplicates.ALL.append(film)
-                                
-        if len(QUEUE) > 0:
-            Console().pink(
-                f"\nPreparing to copy {len(QUEUE)} {ƒ.pluralize('film', len(QUEUE))}...").print()
-                # TODO: process queue
-
-        # # Route to the correct handler if the film shouldn't be skipped
-        # [cls.route(film) for film in films if not film.should_skip]
-                        
-        # # If we are running in interactive mode, we need to handle the moves
-        # # after all the lookups are completed in case we have long-running copy
-        # # operations.
-        # if config.interactive is True:
-
-        #     # If we're moving more than one film, print the move header.
-        #     queue_count = len(_move_queue)
-        #     c = console().pink(f"\n{'Copying' if config.safe_copy else 'Moving'}")
-        #     c.pink(f" {queue_count} {formatter.pluralize('file', queue_count)}...").print()
-
-        #     # Process the entire queue
-        #     cls.process_move_queue()
+            film.rename() if config.rename_only else film.move()
+                            
+            did_move = [f.did_move for f in film.files]
+                
+            if all(did_move):
+                c.dark_gray(f'{verbed.capitalize()}',
+                      f'{ARROW} {film.dst}').print()
+                counter.add(len(did_move))
+                
+                Duplicates.delete_upgraded()
+                if (config.remove_source 
+                    and film.is_dir() 
+                    and film.src != film.dst):
+                    Console.debug(f"Deleting parent folder '{film.src}'")
+                    Delete.dir(film.src, force=True)
+                MOVED.append(film)
 
     @classmethod
     def route(cls, film: 'Film'):
@@ -239,7 +246,7 @@ class App:
             dst_path = queued_ops[0].dst
 
             if film.source_path == dst_path:
-                console().dark_gray(INDENT_WIDE, 'Already renamed').print()
+                console().dark_gray(INDENT, 'Already renamed').print()
 
             for move in queued_ops:
 
@@ -385,7 +392,7 @@ class App:
         # is the same as the destination.
 
         if config.remove_source and film.original_path != film.destination_path:
-            console().dark_gray().add(INDENT_WIDE).add('Removing parent folder').print()
+            console().dark_gray().add(INDENT).add('Removing parent folder').print()
             debug(f'Deleting {film.original_path}')
 
             # Delete the source dir and its contents

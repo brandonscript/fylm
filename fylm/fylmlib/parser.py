@@ -136,13 +136,11 @@ class Parser:
         # Correct the case of the title
         title = Format.title_case(title)
 
-        """
         # Always uppercase strings that are meant to be in all caps
         for u in config.always_upper:
-            rx = re.compile(r'\b' + u + r'\b', re.I)
+            rx = re.compile(r'\b(' + u + r')\b', re.I)
             if re.search(rx, title):
-                title = re.sub(rx, u, title)
-        """
+                title = re.sub(rx, lambda m: m.group(1).upper(), title)
         end = timer()
         if round(end - start) > 1:
             Console.slow(

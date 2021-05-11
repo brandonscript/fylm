@@ -113,6 +113,16 @@ class Format:
             # each mapped to its associated film property. These need to
             # be ordered such that the most restrictive comes before the
             # most flexible match.
+            
+            part = ''
+            if rename_mask == RenameMask.FILE and self.file.part:
+                ry = r'(year.*?})'
+                if re.search(ry, template):
+                    template = re.sub(ry, r'\1{part}', template)
+                else:
+                    template = template + '{part}'
+                part = f", Part {self.file.part}"
+            
             quality = '-'.join(filter(
                 None, [
                     self.file.media.display_name if self.file.media else None, 
@@ -124,6 +134,7 @@ class Format:
                 ["title", self.file.film.title],
                 ["edition", self.file.edition],
                 ["year", self.file.film.year],
+                ["part", part or ''],
                 ["quality-full",
                     f'{quality}{" Proper" if self.file.is_proper else ""}'],
                 ["quality", f'{quality}'],
@@ -166,10 +177,6 @@ class Format:
             # we end up with the app trying to create folders for any title that contains
             # a /. Looking at you, Face/Off.
             template = template.replace(r'/', '-')
-            
-            # Append Part to the file, if applicable
-            if rename_mask == RenameMask.FILE and self.file.part:
-                template = f"{template}, Part {self.file.part}"
 
             # Strip extra whitespace from titles (e.g. `Dude   Where's My  Car` will become
             # `Dude Where's My Car`).

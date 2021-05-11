@@ -166,7 +166,8 @@ class Film(FilmPath):
 
     @lazy
     def main_file(self) -> 'Film.File':
-        if self.is_file():
+        if self.is_file() or (not self.is_absolute() 
+                              and self.suffix in config.video_exts):
             return Film.File(self, film=self)
         elif self.is_dir():
             return first(self.video_files, None)
@@ -485,7 +486,7 @@ class Film(FilmPath):
         
         @lazy
         def part(self) -> str:
-            return Parser(self.name).part
+            return Parser(self.filmrel).part
         
         def rename(self) -> 'Film.File':
             """Renames the file.

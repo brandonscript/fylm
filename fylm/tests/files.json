@@ -103,6 +103,7 @@
         {
             "make": [ "CRUSH.THE.SKULL.2010.1080p.BluRay.x264.DTS-FGT/cts-fgt.mkv" ],
             "expect": [ "Crush the Skull (2010)/Crush the Skull (2010) Bluray-1080p.mkv" ],
+            "expect_no_lookup": [ "Crush The Skull (2010)/Crush The Skull (2010) Bluray-1080p.mkv" ],
             "tmdb_id": 431234
         },
         {
@@ -270,8 +271,8 @@
             "tmdb_id": 433
         },
         {
-            "make": [ "The Last Starfighter 25th Anniversary Ed 1984 1080p BluRay x264 DTS-HD/main.mkv" ],
-            "expect": [ "The Last Starfighter (1984)/The Last Starfighter (1984) [25th Anniversary Edition] Bluray-1080p.mkv" ],
+            "make": [ "The Last Starfighter 10th Anniversary Ed 1984 1080p BluRay x264 DTS-HD/main.mkv" ],
+            "expect": [ "The Last Starfighter (1984)/The Last Starfighter (1984) [10th Anniversary Edition] Bluray-1080p.mkv" ],
             "tmdb_id": 11884
         },
         {
@@ -280,7 +281,7 @@
             "tmdb_id": 11884
         },
         {
-            "make": [ "#4K/The.Last.Starfighter.25th.A.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm/The.Last.Starfighter.25th.Ann.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm.mp4" ],
+            "make": [ "#4K/The.Last.Starfighter.25th.A.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm/The.Last.Starfighter.25th.A.Ed.1984.BluRay.2160p.10bit.HDR.x265-Fre3dm.mp4" ],
             "expect": [ "The Last Starfighter (1984)/The Last Starfighter (1984) [25th Anniversary Edition] Bluray-2160p HDR.mp4" ],
             "tmdb_id": 11884
         },

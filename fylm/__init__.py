@@ -46,10 +46,7 @@ def main():
 
     try:
         # Initialize the success counter.
-        counter.COUNT = 0
-
-        # Print the welcome message to the console.
-        Console().print_welcome()
+        
 
         # Attempt to create the destination dirs if they does not exist.
         # for _, dr in config.destination_dirs.items():
