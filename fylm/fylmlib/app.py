@@ -33,8 +33,6 @@ from timeit import default_timer as timer
 from queue import Queue
 from threading import Thread
 
-from halo import Halo
-
 import fylmlib.config as config
 import fylmlib.counter as counter
 from fylmlib.enums import *
@@ -71,13 +69,10 @@ class App:
         # Print the welcome message to the console.
         Console().print_welcome()
         
-        filmroots = filter(lambda f: f.is_filmroot, map(Film, Find.new()))
-        filmroots = Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size'])
-        
-        # NEW = list(Find.sync_parallel(iter(NEW), attrs=['filmrel', 'year', 'size']))
-        NEW = list(filmroots)
+        filmroots = list(filter(lambda f: f.is_filmroot, map(Film, Find.new())))
+        NEW = list(Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size']))
         if len(NEW) == 0:
-            return  # TODO:
+            return App.end()
 
         Console().pink(
             f"Found {len(NEW)} possible new {ƒ.pluralize('film', len(NEW))}"
@@ -87,15 +82,12 @@ class App:
             
             # Search TMDb
             start = timer() # TODO: This is yuck; separate out.
-            spinner = Halo(text='Searching TMDb...',
-                         spinner='dots',
-                         color='yellow',
-                         text_color='yellow')
-            if not config.debug: spinner.start()
+            spinner = Console.spinner('Searching TMDb...')
+            spinner.start()
             
             TMDb.Search.parallel(*NEW)
-            
             spinner.stop()
+            
             Console().green(f'{CHECK} Done searching TMDb '
                             ).dark_gray(f'({round(timer() - start)} seconds)'
                             ).print()
@@ -138,13 +130,7 @@ class App:
                  if iterlen(f.wanted_files) == 0]
         cleaned = Delete.paths(*to_clean)
         
-        # When all films have been processed, notify Plex (if enabled).
-        Notify.plex()
-
-        # Print the summary.
-        Console().print_exit(counter.COUNT)
-
-        return MOVED
+        return App.end()
                 
         
     @staticmethod
@@ -190,6 +176,16 @@ class App:
                     Console.debug(f"Deleting parent folder '{film.src}'")
                     Delete.dir(film.src, force=True)
                 MOVED.append(film)
+                
+    @staticmethod
+    def end():
+        # When all films have been processed, notify Plex (if enabled).
+        Notify.plex()
+
+        # Print the summary.
+        Console().print_exit(counter.COUNT)
+
+        return MOVED
 
     @classmethod
     def route(cls, film: 'Film'):

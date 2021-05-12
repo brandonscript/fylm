@@ -199,6 +199,24 @@ class Compare:
                     # A lower number == higher media
                     if file.media.value < other.media.value 
                     else ComparisonResult.LOWER)    
+            
+    @staticmethod
+    def proper(file, other) -> ComparisonResult:
+        """Compare two files to determine if one is proper vs. the other.
+
+        Args:
+            file: (Film.File) the first file to compare.
+            other: (Film.File) the second file to compare.
+        Returns:
+            ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
+        """
+        
+        if file.is_proper == other.is_proper:
+            return ComparisonResult.EQUAL
+        else:
+            return (ComparisonResult.HIGHER 
+                    if file.is_proper and not other.is_proper
+                    else ComparisonResult.LOWER)    
 
     @staticmethod
     
@@ -220,6 +238,7 @@ class Compare:
         rez = Compare.resolution(file, other)
         media = Compare.media(file, other)
         size = Compare.size(file, other)
+        proper = Compare.proper(file, other)
         
         if Compare.title_similarity(file.title, other.title) < 0.9:
             Console.error(
@@ -242,8 +261,8 @@ class Compare:
             return (Result.DIFFERENT, Reason.HDR)
 
         # Proper
-        if file.is_proper != other.is_proper:
-            return (Result.DIFFERENT, Reason.PROPER)
+        if proper != Result.EQUAL:
+            return (proper, Reason.PROPER)
             
         # Size
         if size == ComparisonResult.EQUAL:

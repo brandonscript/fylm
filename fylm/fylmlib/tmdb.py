@@ -57,8 +57,6 @@ from fylmlib.constants import *
 if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key
     
-MAX_WORKERS = 50
-
 # TODO: A shit ton of refactoring on TMDb
 class TMDb:
 
@@ -269,14 +267,14 @@ class TMDb:
             def __init__(self, *films):
                 loop = asyncio.get_event_loop()
                 tasks = asyncio.gather(*[
-                    asyncio.ensure_future(self._worker(i, film))
+                    asyncio.ensure_future(self._worker(i, film, min(len(films), 50)))
                     for (i, film) in enumerate(films)
                 ])
                 loop.run_until_complete(tasks)
 
-            async def _worker(self, i, film):
+            async def _worker(self, i, film, max_workers):
                 # semaphore limits num of simultaneous calls
-                async with asyncio.Semaphore(MAX_WORKERS):
+                async with asyncio.Semaphore(max_workers):
                     # Console().yellow(f"{ARROW} Worker {i} started '{film.title}'").print()
                     await film.search_tmdb()
                     # Console().yellow(f"{ARROW} Worker {i} done '{film.title}' - {round(timer() - start)} second(s)").print()

@@ -37,6 +37,7 @@ from datetime import datetime
 
 from colors import color
 import yaml
+from halo import Halo
 
 import fylmlib.config as config
 from fylmlib.enums import *
@@ -290,6 +291,9 @@ class Console(object):
     def print_duplicates(new: 'Film.File', duplicates: '[Duplicates.Map]'):
         # If any duplicates determine that the current file should be ignored,
         # we only show the skip recommendation.
+        
+        if not duplicates:
+            return
 
         c = Console().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))} ")
         c.add(f"{ƒ.pluralize('duplicate', len(duplicates))} for '{new.name}'")
@@ -490,6 +494,21 @@ class Console(object):
         cls().bold().error(s).print()
         if x:
             raise type(x)(s)
+        
+    @staticmethod
+    def spinner(s: str = '') -> Halo:
+        halo = Halo()
+        if (not config.no_console 
+            and not config.plaintext 
+            and not config.debug):
+            halo = Halo(text=s,
+                spinner='dots',
+                color='yellow',
+                text_color='yellow')
+        else:
+            halo.start = lambda: Console(s).print()
+            halo.stop = lambda: None
+        return halo
 
     class strings:
         

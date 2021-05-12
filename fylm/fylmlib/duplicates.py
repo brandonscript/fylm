@@ -98,16 +98,24 @@ class Duplicates:
             [Map]: A list actions and reasons for each duplicate file.
         """
 
-        loop = asyncio.get_event_loop()
+
+        try:
+            loop = asyncio.get_running_loop()
+        except:
+            loop = asyncio.get_event_loop()
         tasks = asyncio.gather(*[
-            asyncio.ensure_future(Duplicates.Map(src, d))
+            asyncio.ensure_future(self.decide(src, d))
             for d in self.files
         ])
-        mp = loop.run_until_complete(tasks)
+        while len(loop._ready) > 0:
+            try:
+                mp = loop.run_until_complete(tasks)
 
-        # Reverse the order in interactive mode and return
-        # return mp if not config.interactive else mp[::-1]
-        return sorted(mp)
+                # Reverse the order in interactive mode and return
+                # return mp if not config.interactive else mp[::-1]
+                return sorted(mp)
+            except:
+                continue
     
     @property
     def exact(self):
@@ -126,60 +134,6 @@ class Duplicates:
             list: [Film.File] of upgradeable duplicate files.
         """
         return [d for d in self.files if d.duplicate_action == Should.UPGRADE]
-
-    @classmethod
-    def decide(cls, new: 'Film.File', duplicate: 'Film.File') -> (ComparisonResult, 
-                                                                  Should, 
-                                                                  ComparisonReason):
-        """Determines what action should be taken aginst a new or duplicate file.
-        
-        Args:
-            new (Film.File): The new Film (file) object.
-            duplicate (Film.File): Duplicate file in a dst dir.
-       
-        Returns:
-            tuple(ComparisonResult, Should, ComparisonReason)
-        """
-
-        Result = ComparisonResult
-        Reason = ComparisonReason
-
-        # If duplicate replacing is disabled, don't replace.
-        if config.duplicates.automatic_upgrading is False:
-            return (None, 
-                    Should.KEEP_EXISTING, 
-                    Reason.UPGRADING_DISABLED)
-                
-        def rez_can_upgrade(l, r): 
-            t = config.duplicates.upgrade_table[r.resolution.key]
-            return t and l.resolution.key in t
-        
-        # Read as 'new' is {rslt} {reason} than 'duplicate', e.g.
-        # 'new' is HIGHER RESOLUTION than 'duplicate'.
-        (rslt, reason) = Compare.quality(new, duplicate)
-        should = Should.KEEP_EXISTING # Default, it is the least destructive choice
-        
-        if reason == Reason.IDENTICAL:
-            should = Should.KEEP_EXISTING
-
-        elif rslt in [Result.NOT_COMPARABLE, Result.DIFFERENT]:
-            should = Should.KEEP_BOTH
-            
-        elif reason == Reason.RESOLUTION:
-            if rslt == Result.HIGHER and rez_can_upgrade(new, duplicate):
-                should = Should.UPGRADE
-            elif rslt == Result.LOWER and rez_can_upgrade(duplicate, new):
-                should = Should.KEEP_EXISTING
-            else:
-                rslt = Result.DIFFERENT
-                should = Should.KEEP_BOTH
-
-        elif rslt == Result.HIGHER:
-            should = Should.UPGRADE
-        elif rslt == Result.LOWER:
-            should = Should.KEEP_EXISTING
-                
-        return (rslt, should, reason)
     
     @classmethod
     def rename_unwanted(cls, unwanted: ['Duplicates.Map']):
@@ -282,7 +236,7 @@ class Duplicates:
         
         d = Delete.files(*cls.TO_DELETE)
         for f in cls.TO_DELETE:
-            if f.parent.is_empty:
+            if f.parent.exists() and f.parent.is_empty:
                 Delete.dir(f.parent)
         Console().dim().blue(f'{INDENT}Removed {d} duplicate', 
                        ƒ.pluralize('file', d)).print()
@@ -306,8 +260,62 @@ class Duplicates:
             if dup_film.is_folder and len(dirops.find_deep(dup_film.source_path)) == 0:
                 # Delete the parent film dir and any hidden contents if it is less than 1 KB.
                 dirops.delete_dir_and_contents(dup_film.source_path, max_size=1000)
+                
+    @classmethod
+    async def decide(cls, new: 'Film.File', duplicate: 'Film.File') -> 'Duplicates.Map':
+        """Determines what action should be taken aginst a new or duplicate file.
+        
+        Args:
+            new (Film.File): The new Film (file) object.
+            duplicate (Film.File): Duplicate file in a dst dir.
+       
+        Returns:
+            Duplicates.Map
+        """
 
-    @asyncinit
+        Result = ComparisonResult
+        Reason = ComparisonReason
+
+        # If duplicate replacing is disabled, don't replace.
+        if config.duplicates.automatic_upgrading is False:
+            return cls.Map(new, 
+                           duplicate, 
+                           None,
+                           Should.KEEP_EXISTING,
+                           Reason.UPGRADING_DISABLED)
+
+        async def rez_can_upgrade(l, r):
+            key = r.resolution.key if r.resolution.value <= 3 else 'SD'
+            t = config.duplicates.upgrade_table[key]
+            return t and l.resolution.key in t
+
+        # Read as 'new' is {rslt} {reason} than 'duplicate', e.g.
+        # 'new' is HIGHER RESOLUTION than 'duplicate'.
+        (rslt, reason) = Compare.quality(new, duplicate)
+        should = Should.KEEP_EXISTING  # Default, it is the least destructive choice
+
+        if reason == Reason.IDENTICAL:
+            should = Should.KEEP_EXISTING
+
+        elif rslt in [Result.NOT_COMPARABLE, Result.DIFFERENT]:
+            should = Should.KEEP_BOTH
+
+        elif reason == Reason.RESOLUTION:
+            if rslt == Result.HIGHER and await rez_can_upgrade(new, duplicate):
+                should = Should.UPGRADE
+            elif rslt == Result.LOWER and await rez_can_upgrade(duplicate, new):
+                should = Should.KEEP_EXISTING
+            else:
+                rslt = Result.DIFFERENT
+                should = Should.KEEP_BOTH
+
+        elif rslt == Result.HIGHER:
+            should = Should.UPGRADE
+        elif rslt == Result.LOWER:
+            should = Should.KEEP_EXISTING
+
+        return cls.Map(new, duplicate, rslt, should, reason)
+
     class Map:
         """A class to compare and retain a list of duplicate files in the dst dirs
         describing the action and rationale the current new film should take.
@@ -321,16 +329,21 @@ class Duplicates:
             reason (ComparisonReason): Reason why the action was chosen.
         """
         
-        async def __init__(self, new: 'Film.File', duplicate: 'Film.File'):
+        def __init__(self, 
+                     new: 'Film.File', 
+                     duplicate: 'Film.File', 
+                     result: ComparisonResult, 
+                     action: Should,
+                     reason: ComparisonReason):
             self.new = new
             self.duplicate = duplicate
-            (self.result, self.action, self.reason) = Duplicates.decide(new, duplicate)
+            (self.result, self.action, self.reason) = (result, action, reason)
             
         def __repr__(self):
             return f"DuplicateMap('{self.new.dst.name}' || '{self.duplicate.name}') " \
-                   f"{self.result.name} " \
-                   f"{self.reason.name} " \
-                   f"{self.action.name} " \
+                   f"new is {self.result.name} " \
+                   f"{self.reason.name}, " \
+                   f"should {self.action.name} " \
                    f"{self.duplicate.size.pretty()}"
                    
         def __lt__(self, other):
@@ -349,12 +362,3 @@ class Duplicates:
                  and other.reason == ComparisonReason.SIZE
                  and self.duplicate.size.value > other.duplicate.size.value))
     
-    class MapSync(Map):
-        """Sync initalizer for Map"""
-        
-        def __init__(self, new: 'Film.File', duplicate: 'Film.File'):
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                nest_asyncio.apply(loop)
-            mp = loop.run_until_complete(super().__init__(new, duplicate))
-            self.__dict__ = mp.__dict__

@@ -158,7 +158,7 @@ class Make:
         
         for f in paths:
             (path, size) = f if type(f) is tuple else (f, 0)
-            assert(path.is_absolute())
+            assert path.is_absolute(), f"Path '{path}' must be absolute."
             Make.mock_file(path, size * MB)
 
     @staticmethod

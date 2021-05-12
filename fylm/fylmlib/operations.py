@@ -543,7 +543,9 @@ class FilmPath(Path):
 
     @lazy
     def is_empty(self) -> bool:
-        if not self.is_dir():
+        if not self.exists():
+            return True
+        if self.is_file():
             raise NotADirectoryError(f"'is_empty' failed, '{self}' is not a dir.")
         return not first(self.iterdir(), where=lambda x: not is_sys_file(x))
 
@@ -942,7 +944,7 @@ class Find:
     # FIXME: Move to Parallel
     @staticmethod
     def sync_parallel(paths: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
-        with mp.Pool() as pool:
+        with mp.Pool(min(50, len(list(paths)) or 1)) as pool:
             yield from pool.starmap(FilmPath.sync, zip(paths, repeat(attrs)))
             
 class Info:
