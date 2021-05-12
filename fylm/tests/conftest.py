@@ -78,7 +78,7 @@ def setup():
     Make.empty_dirs()
 
     # Console output
-    config.no_console = not config.debug
+    config.no_console = config.debug
     
     # Set quiet to suppress external notifications
     config.quiet = True
