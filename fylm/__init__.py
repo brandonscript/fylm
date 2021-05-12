@@ -45,30 +45,7 @@ def main():
     """Main program."""
 
     try:
-        # Initialize the success counter.
-        
-
-        # Attempt to create the destination dirs if they does not exist.
-        # for _, dr in config.destination_dirs.items():
-        #     ops.dirops.create_deep(dr)
-
-        # # Verify that destination paths exist.
-        # ops.dirops.verify_root_paths_exist(list(config.destination_dirs.values()))
-
-        # # Load duplicates before film processing begins.
-        # ops.dirops.get_existing_films(config.destination_dirs)
-
-        # # Verify that source path(s) exist.
-        # ops.dirops.verify_root_paths_exist(config.source_dirs)
-
-        # Retrieve a list of films from the current source dir(s) and process each film.
         App.run()
-
-        # When all films have been processed, notify Plex (if enabled).
-        Notify.plex()
-
-        # Print the summary.
-        Console().print_exit(counter.COUNT)
     
     except (KeyboardInterrupt, SystemExit):
         loop = asyncio.get_event_loop()

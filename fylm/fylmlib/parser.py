@@ -47,8 +47,8 @@ class Parser:
     Instantiate Parser with your path, then call properties on it.
     
     Attributes:
-    
-        path ()
+        path (Path): Path representation of the path to parse
+        s (str): String representation of the longest path segment in path.parts
     Args:
         path (str, Path, or FilmPath): Relative or absolute path to a film file
     
@@ -59,8 +59,10 @@ class Parser:
             self.path = path.main_file.filmrel if path.main_file.exists() else path
         except:
             self.path = path
+            
+        p = Path(self.path).parts
         # If the title has multiple path parts, keep the longest one
-        self.s = max(Path(self.path).parts, key=len)
+        self.s = max(p, key=len) if len(p) > 0 else str(self.path)
     
     @lazy
     def title(self) -> str:

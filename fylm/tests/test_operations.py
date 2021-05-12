@@ -108,12 +108,12 @@ class TestDelete(object):
         d = first(SRC.iterdir(), where=lambda x: x.is_dir())
 
         assert(d.is_dir())
-        assert(Size.calc(d) > 1000)
+        assert(Size(d).value > 1000)
 
         # Make sure the dir is small enough to be deleted
         for x in d.iterdir():
             x.unlink()
-        assert(Size.calc(d) < config.min_filesize.default)
+        assert(Size(d).value < config.min_filesize.default)
         
         Delete.dir(d)
         assert(not d.is_dir())
@@ -127,13 +127,13 @@ class TestDelete(object):
         d = first(SRC.iterdir(), where=lambda x: x.is_dir())
 
         assert(d.is_dir())
-        assert(Size.calc(d) > 1000)
+        assert(Size(d).value > 1000)
 
         for x in d.iterdir():
             x.unlink()
             
         # Make sure the dir is small enough to be deleted
-        assert(Size.calc(d) < config.min_filesize.default)
+        assert(Size(d).value < config.min_filesize.default)
         Delete.dir(d)
         assert(d.is_dir())
         
@@ -146,14 +146,14 @@ class TestDelete(object):
         conftest.remake_files()
         
         d = first(SRC.iterdir(), where=lambda x: x.is_dir())
-        orig_size = Size.calc(d)
+        orig_size = Size(d).value
         
         assert(d.is_dir())
-        assert(Size.calc(d) > 1000)
+        assert(Size(d).value > 1000)
         Delete.dir(d)
         # Test should not raise an error, but should silently not delete
         assert(d.is_dir())
-        assert(Size.calc(d) == orig_size)
+        assert(Size(d).value == orig_size)
         
     def test_delete_min_filesize(self):
 
@@ -204,10 +204,10 @@ class TestDelete(object):
         conftest.remake_files()
 
         d = first(SRC.iterdir(), where=lambda x: x.is_dir())
-        orig_size = Size.calc(d)
+        orig_size = Size(d).value
 
         assert(d.is_dir())
-        assert(Size.calc(d) > 1000)
+        assert(Size(d).value > 1000)
         Delete.dir(d, force=True)
         # Test should not raise an error, but should silently delete
         assert(not d.is_dir())
@@ -218,7 +218,7 @@ class TestDelete(object):
         conftest.remake_files()
 
         assert(SRC.is_dir())
-        assert(Size.calc(SRC) > 1000)
+        assert(Size(SRC).value > 1000)
         Delete.dir(SRC)
         assert(SRC.is_dir())
         
@@ -410,11 +410,10 @@ class TestFilmPath(object):
         assert(FilmPath(SRC).dirs)
         assert(len(FilmPath(SRC).dirs) == len(dirs))
 
-    @pytest.mark.xfail(raises=NotADirectoryError)
     def test_dirs_if_file(self):
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         Make.mock_file(alita)
-        assert(alita.dirs)
+        assert(not alita.dirs)
             
     def test_files(self):
         Make.all_mock_files()
@@ -425,14 +424,15 @@ class TestFilmPath(object):
         assert(FilmPath(SRC).files)
         assert(len(FilmPath(SRC).files) == len(files))
 
-    @pytest.mark.xfail(raises=NotADirectoryError)
     def test_files_if_file(self):
         
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         Make.mock_file(alita)
-        assert(alita.dirs)
+        assert(not alita.files)
     
     def test_filmrel(self):
+        
+        assert(FilmPath(STARLORD).filmrel == Path(STARLORD))
         
         amc = FilmPath(SRC / AMC)
         alita = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
@@ -669,6 +669,7 @@ class TestFilmPath(object):
         assert(FilmPath((Path(ALITA) / f'{ALITA}.mkv')).is_video_file)
 
     def test_has_ignored_string(self):
+        config.ignore_strings.extend(['sample', '@eaDir', '_UNPACK_'])
         assert(not FilmPath('dir/A.File.1080p.bluray.x264-scene.mkv').has_ignored_string)
         assert(FilmPath('sample').has_ignored_string)
         assert(FilmPath('A.File.1080p.bluray.x264-scene.sample.mkv').has_ignored_string)
@@ -720,11 +721,11 @@ class TestFilmPath(object):
                         zelda,
                         zorg)
         
-        assert(not FilmPath(SRC).maybe_film)
-        assert(not FilmPath(SRC / '#4K').maybe_film)
-        assert(not FilmPath(SRC / DEEP).maybe_film)
-        assert(alita.maybe_film)
-        assert(alita.parent.maybe_film)
+        # assert(not FilmPath(SRC).maybe_film)
+        # assert(not FilmPath(SRC / '#4K').maybe_film)
+        # assert(not FilmPath(SRC / DEEP).maybe_film)
+        # assert(alita.maybe_film)
+        # assert(alita.parent.maybe_film)
         assert(FilmPath(SRC / ALITA).maybe_film)
         assert(atmitw.maybe_film)
         assert(atmitw.parent.maybe_film)
@@ -791,13 +792,13 @@ class TestFilmPath(object):
 
         # Assert file size matches definition
         for f in files:
-            assert(abs(FilmPath(f[0]).size - f[1]) == 0)
+            assert(abs(FilmPath(f[0]).size.value - f[1]) == 0)
 
         # Assert dir is at least the size of the file, probably larger
         # because the folder itself takes up some space. Diff of 1 byte.
 
         # Test multiple files in dir to diff of 3 bytes
-        assert(abs(FilmPath(SRC / 'Test').size - sum(s for (_, s) in files) == 0))
+        assert(abs(FilmPath(SRC / 'Test').size.value - sum(s for (_, s) in files) == 0))
         
     def test_size_cache(self):
         
@@ -850,15 +851,15 @@ class TestFilmPath(object):
 
     def test_year(self):
         
-        assert(FilmPath(ALITA).xyear == 2019)
-        assert(FilmPath(ATMITW).xyear == 2017)
-        assert(not FilmPath(DEEP).xyear)
-        assert(FilmPath(STARLORD).parent.xyear == 2022)
-        assert(FilmPath(STARLORD).filmrel.xyear == 2022)
-        assert(FilmPath(TTOP).xyear == 1968)
-        assert(not FilmPath('2001.A.Space.Odyssey.1080p.x264.mkv').xyear)
-        assert(FilmPath(ZELDA).xyear == 1991)
-        assert(FilmPath(ZORG).xyear == 1989)
+        assert(FilmPath(ALITA)._year == 2019)
+        assert(FilmPath(ATMITW)._year == 2017)
+        assert(not FilmPath(DEEP)._year)
+        assert(FilmPath(STARLORD).parent._year == 2022)
+        assert(FilmPath(STARLORD).filmrel._year == 2022)
+        assert(FilmPath(TTOP)._year == 1968)
+        assert(not FilmPath('2001.A.Space.Odyssey.1080p.x264.mkv')._year)
+        assert(FilmPath(ZELDA)._year == 1991)
+        assert(FilmPath(ZORG)._year == 1989)
 
     # Methods
 
@@ -949,9 +950,9 @@ class TestFind(object):
 
         Make.mock_dst_files(files)
 
-        assert(Find._EXISTING is None)
+        assert(Find.EXISTING is None)
         assert(iterlen(Find.existing()) == 4)
-        assert(Find._EXISTING and len(Find._EXISTING) == 4)
+        assert(Find.EXISTING and len(Find.EXISTING) == 4)
         
         # Test caching
         conftest.cleanup_dst()
@@ -963,7 +964,7 @@ class TestFind(object):
 
         start = timer()
 
-        assert(Find._NEW is None)
+        assert(Find.NEW is None)
 
         new = [x for x in Find.new(SRC) if x.is_file()]
 
@@ -975,8 +976,8 @@ class TestFind(object):
         # valid_films = list(filter(lambda film: not film.should_ignore, new))
 
         # Assert that we're getting the expected number of films.
-        assert(len(Find._NEW) > 1)
-        assert(len([x for x in Find._NEW if x.is_file()]) == len(made))
+        assert(len(Find.NEW) > 1)
+        assert(len([x for x in Find.NEW if x.is_file()]) == len(made))
 
         # Assert that we're getting the expected number of valid films.
         # assert(len(valid_films) == len(conftest.made.good))
@@ -999,7 +1000,7 @@ class TestFind(object):
                 Path(name) / Path(name).with_suffix('.mkv'), 
                 src_path=SRC)
 
-        assert(Find._NEW is None)
+        assert(Find.NEW is None)
         
         new = [x for x in Find.new(SRC, SRC2, sort_key=lambda x: x.name.lower()) if x.is_file()]
 
@@ -1010,8 +1011,8 @@ class TestFind(object):
         # valid_films = list(filter(lambda film: not film.should_ignore, new))
 
         # Assert that we're getting the expected number of films.
-        assert(len(Find._NEW) > 1)
-        assert(len([x for x in Find._NEW if x.is_file()]) == len(made) + 2)
+        assert(len(Find.NEW) > 1)
+        assert(len([x for x in Find.NEW if x.is_file()]) == len(made) + 2)
 
         # Assert that we're getting the expected number of valid films.
         # assert(len(valid_films) == len(conftest.made.good))
@@ -1064,88 +1065,6 @@ class TestFind(object):
             assert('filmroot' in f.__dict__)
             assert('is_filmroot' in f.__dict__)
             assert('maybe_film' in f.__dict__)
-
-    @pytest.mark.skip()
-    def test_get_valid_files(self):
-
-        conftest._setup()
-
-        config.min_filesize = 50 # min filesize in MB
-        assert(config.min_filesize == 50)
-
-        name = Path(ROGUE)
-        files = [
-            name / name.with_suffix('.mkv'), # good
-            name / name.with_suffix('.sample.mkv'),
-            name / 'GROUP.mkv',
-            name / 'RO-ad-scene-WATCHME.mkv',
-            name / 'subs-english.srt', # good
-            name / name.with_suffix('.nfo'),
-            name / name.with_suffix('.sfv'),
-            name / 'Cover.jpg'
-        ]
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-        
-        for f in files:
-            Make.mock_src_files(f)
-        
-        # Assert that there is only one test film identified at the source
-        assert(len(Find.existing([SRC])) == 1)
-
-        valid_files = Find.get_valid_files(SRC / name)
-
-        # Assert that of the 8 files presented, only two are valid
-        #   Main video file and .srt
-        assert(len(valid_files) == 2)
-
-        assert(os.path.join(SRC, files[0]) in valid_files) # Main video file
-        assert(os.path.join(SRC, files[4]) in valid_files) # .srt
-
-    def test_get_invaild_files(self):
-
-        conftest._setup()
-
-        config.min_filesize = 50 # min filesize in MB
-        assert(config.min_filesize == 50)
-
-        files = [
-            f'{ROGUE}/{ROGUE}.mkv',
-            f'{ROGUE}/{ROGUE}.sample.mkv',
-            f'{ROGUE}/GROUP.mkv',
-            f'{ROGUE}/subs-english.srt',
-            f'{ROGUE}/{ROGUE}.nfo',
-            f'{ROGUE}/{ROGUE}.sfv',
-            f'{ROGUE}/Cover.jpg'
-        ]
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        Make.mock_file(os.path.join(SRC, files[0]), 2354 * MB)
-        Make.mock_file(os.path.join(SRC, files[1]),  134 * MB)
-        Make.mock_file(os.path.join(SRC, files[2]),   23 * MB)
-        Make.mock_file(os.path.join(SRC, files[3]),  219 * KB)
-        Make.mock_file(os.path.join(SRC, files[4]),   14 * KB)
-        Make.mock_file(os.path.join(SRC, files[5]),    5 * KB)
-        Make.mock_file(os.path.join(SRC, files[6]),    6 * MB)
-        Make.mock_file(os.path.join(SRC, files[7]),    7 * MB)
-        
-        # Assert that there is only one test film identified at the source
-        assert(len(ops.dirops.find_new(SRC)) == 1)
-
-        invalid_files = ops.dirops.get_invalid_files(
-            os.path.join(SRC, ROGUE)
-        )
-
-        # Assert that of the 8 files presented, 6 are invalid
-        assert(len(invalid_files) == 6)
-
-        assert(os.path.join(SRC, files[0]) not in invalid_files) # Main video file
-        assert(os.path.join(SRC, files[4]) not in invalid_files) # .srt
-
-
     @pytest.mark.skip()
     def test_delete_unwanted_files(self):
 

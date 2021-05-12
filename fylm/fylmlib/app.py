@@ -132,6 +132,18 @@ class App:
                 
         # Process remaining queue items (or all, if copying)
         App.process_queue()
+        
+        # Cleanup
+        to_clean = [f for f in map(lambda f: Film(f.src), MOVED)
+                 if iterlen(f.wanted_files) == 0]
+        cleaned = Delete.paths(*to_clean)
+        
+        # When all films have been processed, notify Plex (if enabled).
+        Notify.plex()
+
+        # Print the summary.
+        Console().print_exit(counter.COUNT)
+
         return MOVED
                 
         

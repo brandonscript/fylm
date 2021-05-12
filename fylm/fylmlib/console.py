@@ -186,6 +186,7 @@ class Console(object):
         else:
             c.pink(f"\n{s}")
         c.print(override_no_console=True)
+        Console().pink("Thanks for using Fylm. Be kind, and please rewind.").print()
 
     def print_exit_early(self):
         """Print the early exit message.

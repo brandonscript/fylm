@@ -134,8 +134,8 @@ def cleanup_dst():
 def cleanup_all():
     cleanup_src()
     cleanup_dst()
-    Find._NEW = None
-    Find._EXISTING = None
+    Find.NEW = None
+    Find.EXISTING = None
 
 def get_moved_films():
     global dst_paths

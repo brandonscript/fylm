@@ -216,7 +216,22 @@ class Delete:
             elif p.is_dir():
                 return bool(Delete.dir(path, force=force))
         except Exception as e:
-            Console().error(INDENT, f"Unable to remove '{path}': {e}")        
+            Console().error(INDENT, f"Unable to remove '{path}': {e}")
+        return False
+            
+    @staticmethod
+    def paths(*paths: Union[str, Path, 'FilmPath'], force=False) -> int:     
+        """Passthrough to Delete.path to delete multiple paths.
+
+        Args:
+            paths (str, Path, or FilmPath): Paths to delete
+            force (bool): Forces the paths to be deleted even if they are above
+                          size safety threshold.
+
+        Returns:
+            int: Number of paths deleted
+        """ 
+        return sum(int(Delete.path(p, force=force)) for p in paths)
                          
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate 
@@ -457,6 +472,10 @@ class FilmPath(Path):
         # walk the parents to find the first path without year, then 
         # return the relative path between it and self.
         if self.is_video_file or (self._year or self.parent._year):
+            
+            if not self.is_absolute():
+                return self
+            
             fr = first(self.parents,
                        where=lambda x: x.parent.is_branch,
                        default=None)
@@ -550,7 +569,10 @@ class FilmPath(Path):
         
         if self.is_dir():
             
-            if self.is_branch or self.is_origin:
+            if self.is_empty:
+                return False
+            
+            if self.is_branch or (self.is_origin and not self == self.origin):
                 return False 
             
             if self._year:
@@ -609,7 +631,10 @@ class FilmPath(Path):
                                   or self._year 
                                   or self.parent._year):
             return True
-            
+        
+        # It's an empty dir
+        if self.is_dir() and self.is_empty:
+            return False            
         
         # It's a video file and its parent is a branch
         if self.is_video_file and self.parent.is_branch:

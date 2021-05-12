@@ -268,6 +268,7 @@ class TestFilm(object):
         Make.mock_files(rogue / f'{ROGUE}.mkv',
                         rogue / f'{ROGUE}.sample.mkv',
                         rogue / f'{ROGUE}.nfo',
+                        rogue / f'Cover.jpg',
                         rogue / f'{ROGUE}.en.srt')
 
         assert(iterlen(rogue.wanted_files) == 2)
