@@ -24,23 +24,27 @@ from multiprocessing import Process, Pipe
 import pytest
 
 import fylmlib.config as config
-import fylmlib.operations as ops
-from fylmlib.processor import _QueuedMoveOperation as move
-from fylmlib.film import Film
+from fylmlib import Film, IO
 import conftest
-import make
+from make import Make
 
-def async_safe_copy(conn, *args):
-    copy = ops.fileops.safe_move(*args)
-    conn.send(copy)
-    conn.close()
+# def async_safe_copy(conn, *args):
+#     copy = ops.fileops.safe_move(*args)
+#     conn.send(copy)
+#     conn.close()
 
-def do_every(src):
-    conftest.cleanup_all()
-    conftest.make_empty_dirs()
-    make.make_mock_file(src, 7354 * make.mb)
-    config.safe_copy = False
-    config.test = False
+SRC = conftest.src_path
+DST = conftest.dst_paths
+NEW_GIRL = 'The.Girl.Who.Kicked.The.Hornets.Nest.2009.Part.2.1080p.BluRay.x264-group'
+MOVED_GIRL = 'The Girl Who Kicked the Hornets Nest (2009)'
+NEW_ROGUE = 'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON'
+NEW_ROGUE_PROPER = 'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.DTS.x264-DON'
+NEW_ROGUE_4KHDR = 'Rogue.One.A.Star.Wars.Story.2016.HDR.10-bit.2160p.BluRay.DTS.x265-AMiABLE'
+NEW_ROGUE_4KHDR_BADBRACKET = 'Rogue.One.A.Star.Wars.Story.2016.(2160p BluRay x265 HEVC 10bit HDR AAC 7.1 Tigole)'
+MOVED_ROGUE = 'Rogue One A Star Wars Story (2016)'
+NEW_TTSF = 'the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy'
+NEW_TTSF_PROPER = 'the.last.starfighter.25th.anniversary.ed.1984.PROPER.1080p.bluray.x264.dts-hd 5.1-lazy'
+MOVED_TTSF = 'The Last Starfighter (1984)'
 
 # @pytest.mark.skip()
 class TestFormatter(object):
@@ -82,233 +86,205 @@ class TestFormatter(object):
 
     def test_title_year(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON/Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON.mkv')
+        src = SRC / f'{NEW_ROGUE}/{NEW_ROGUE}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016).mkv')
+        expect = DST['1080p'] / f'{MOVED_ROGUE}/{MOVED_ROGUE}.mkv'
 
         config.rename_pattern.file = r'{title} {(year)}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_the_year(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy/the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy.mkv')
+        src = SRC / f'{NEW_TTSF}/{NEW_TTSF}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'Last Starfighter, The (1984)/Last Starfighter, The (1984).mkv')
+        expect = DST['1080p'] / f'Last Starfighter, The (1984)/Last Starfighter, The (1984).mkv'
 
         config.rename_pattern.file = r'{title-the} {(year)}'
         config.rename_pattern.folder = r'{title-the} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_year_hyphen_edition(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy/the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy.mkv')
+        src = SRC / f'{NEW_TTSF}/{NEW_TTSF}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'The Last Starfighter (1984)/The Last Starfighter (1984) - 25th Anniversary Edition.mkv')
+        expect = DST['1080p'] / f'{MOVED_TTSF}/{MOVED_TTSF} - 25th Anniversary Edition.mkv'
 
         config.rename_pattern.file = r'{title} {(year)}{ - edition}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_year_sqbk_edition(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy/the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-hd 5.1-lazy.mkv')
+        src = SRC / f'{NEW_TTSF}/{NEW_TTSF}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'The Last Starfighter (1984)/The Last Starfighter (1984) [25th Anniversary Edition].mkv')
+        expect = DST['1080p'] / f'{MOVED_TTSF}/{MOVED_TTSF} [25th Anniversary Edition].mkv'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     
 
     def test_title_year_sqbk_edition_quality_full(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'the.last.starfighter.25th.anniversary.ed.1984.PROPER.1080p.bluray.x264.dts-hd 5.1-lazy/the.last.starfighter.25th.anniversary.ed.1984.PROPER.1080p.bluray.x264.dts-hd 5.1-lazy.mkv')
+        src = SRC / f'{NEW_TTSF_PROPER}/{NEW_TTSF_PROPER}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'The Last Starfighter (1984)/The Last Starfighter (1984) [25th Anniversary Edition] Bluray-1080p Proper.mkv')
+        expect = DST['1080p'] / f'{MOVED_TTSF}/{MOVED_TTSF} [25th Anniversary Edition] Bluray-1080p Proper.mkv'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_year_noedition_quality(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON/Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON.mkv')
+        src = SRC / f'{NEW_ROGUE}/{NEW_ROGUE}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p.mkv')
+        expect = DST['1080p'] / f'{MOVED_ROGUE}/{MOVED_ROGUE} Bluray-1080p.mkv'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_year_noedition_quality_full(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON/Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON.mkv')
+        src = SRC / f'{NEW_ROGUE}/{NEW_ROGUE}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
+        expect = DST['1080p'] / f'{MOVED_ROGUE}/{MOVED_ROGUE} Bluray-1080p Proper.mkv'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_folder_title_year_quality_full_proper(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON/Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON.mkv')
+        src = SRC / f'{NEW_ROGUE}/{NEW_ROGUE}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016) Bluray-1080p Proper/Rogue One A Star Wars Story (2016) Bluray-1080p Proper.mkv')
+        expect = DST['1080p'] / f'{MOVED_ROGUE} Bluray-1080p Proper/{MOVED_ROGUE} Bluray-1080p Proper.mkv'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)} {[edition]} {quality-full}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_hdr(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-            'Rogue.One.A.Star.Wars.Story.2016.HDR.10-bit.2160p.BluRay.DTS.x265-AMiABLE/Rogue.One.A.Star.Wars.Story.2016.2160p.Bluray.HDR.10bit.x265.DTS-HD.7.1-AMiABLE.mp4')
+        src = SRC / f'{NEW_ROGUE_4KHDR}/{NEW_ROGUE_4KHDR}.mp4'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['2160p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-2160p HDR.mp4')
+        expect = DST['2160p'] / f'{MOVED_ROGUE}/{MOVED_ROGUE} Bluray-2160p HDR.mp4'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full} {hdr}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_bad_bracket(self):
 
-        src = os.path.join(
-            conftest.films_src_path,
-            'Rogue.One.A.Star.Wars.Story.2016.(2160p BluRay x265 HEVC 10bit HDR AAC 7.1 Tigole)/Rogue.One.A.Star.Wars.Story.2016.(2160p BluRay x265 HEVC 10bit HDR AAC 7.1 Tigole).mp4')
+        src = SRC / f'{NEW_ROGUE_4KHDR_BADBRACKET}/{NEW_ROGUE_4KHDR_BADBRACKET}.mp4'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-            conftest.films_dst_paths['2160p'],
-            'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) Bluray-2160p HDR.mp4')
+        expect = DST['2160p'] / f'{MOVED_ROGUE}/{MOVED_ROGUE} Bluray-2160p HDR.mp4'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full} {hdr}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
 
     def test_title_year_unknown_media(self):
 
-        src = os.path.join(
-        conftest.films_src_path,
-        'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.DTS.x264-DON/Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.DTS.x264-DON.mkv')
+        src = SRC / f'{NEW_ROGUE_PROPER}/{NEW_ROGUE_PROPER}.mkv'
 
-        do_every(src)
+        Make.mock_file(src)
 
-        expect = os.path.join(
-        conftest.films_dst_paths['1080p'], 
-        'Rogue One A Star Wars Story (2016)/Rogue One A Star Wars Story (2016) 1080p Proper.mkv')
+        expect = DST['1080p'] / f'{MOVED_ROGUE}/{MOVED_ROGUE} 1080p Proper.mkv'
 
         config.rename_pattern.file = r'{title} {(year)} {[edition]} {quality-full}'
         config.rename_pattern.folder = r'{title} {(year)}'
 
         film = Film(src)
-        result = move(film.all_valid_files[0]).do()
+        film.main_file.move()
         
-        assert(result is True)
-        assert(os.path.exists(expect))
+        assert(film.main_file.did_move)
+        assert expect.exists()
+
+    def test_part(self):
+        src = SRC / f'{NEW_GIRL}/{NEW_GIRL}.mkv'
+
+        Make.mock_file(src)
+
+        expect = DST['1080p'] / f'{MOVED_GIRL}/{MOVED_GIRL}, Part 2 Bluray-1080p.mkv'
+
+        config.rename_pattern.file = r'{title} {(year)} {quality-full}'
+        config.rename_pattern.folder = r'{title} {(year)}'
+
+        film = Film(src)
+        film.main_file.move()
+
+        assert(film.main_file.did_move)
+        assert expect.exists()

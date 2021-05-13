@@ -106,6 +106,7 @@ class Film(FilmPath):
         self._src = Path(self)
         self.tmdb: TMDb.Result = TMDb.Result()
         self.tmdb_matches: [TMDb.Result] = []
+        self.did_move: bool = False
 
     def __repr__(self):
         return f"Film('{self}')\n" + str(tuple([str(x) for x in [
@@ -189,6 +190,7 @@ class Film(FilmPath):
         self.files = [f.move() for f in self.wanted_files]
         success = all([f.did_move for f in self.files])
         if success:
+            self.did_move = True
             self.setpath(Path(dst))
         return self
         
