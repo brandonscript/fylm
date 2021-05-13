@@ -162,9 +162,9 @@ class TestDuplicates(object):
         assert(not moved(MOVED_ROGUE).exists())
         
         # Assert that duplicate backup files are removed
-        assert(not Path(f"{moved(MOVED_ROGUE, '1080p')}.dup").exists())
-        assert(not Path(f"{moved(MOVED_ROGUE, '720p')}.dup").exists())
-        assert(not Path(f'{moved(MOVED_ROGUE)}.dup').exists())
+        assert(not Path(f"{moved(MOVED_ROGUE, '1080p')}.dup~").exists())
+        assert(not Path(f"{moved(MOVED_ROGUE, '720p')}.dup~").exists())
+        assert(not Path(f'{moved(MOVED_ROGUE)}.dup~').exists())
         
         # Assert that empty duplicate parent dirs are removed
         assert(not moved(MOVED_ROGUE, '1080p').parent.exists())

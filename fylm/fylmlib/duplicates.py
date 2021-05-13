@@ -137,7 +137,7 @@ class Duplicates:
     
     @classmethod
     def rename_unwanted(cls, unwanted: ['Duplicates.Map']):
-        """Rename duplicates pending upgrade to {name}.dup.
+        """Rename duplicates pending upgrade to {name}.dup~.
         
         Args:
             unwanted [Duplicates.Map]: List of unwanted mappings to rename.
@@ -145,7 +145,7 @@ class Duplicates:
 
         # Loop through each duplicate that should be replaced.
         for mp in unwanted:
-            dst = FilmPath(f'{mp.duplicate}.dup')
+            dst = FilmPath(f'{mp.duplicate}.dup~')
             if dst.exists():
                 # Skip if it's already been renamed (edge case for when
                 # there are multiple identical copies of the same film being moved)
