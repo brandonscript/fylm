@@ -1065,6 +1065,7 @@ class TestFind(object):
             assert('filmroot' in f.__dict__)
             assert('is_filmroot' in f.__dict__)
             assert('maybe_film' in f.__dict__)
+            
     @pytest.mark.skip()
     def test_delete_unwanted_files(self):
 
@@ -1206,10 +1207,6 @@ class TestInfo(object):
 
         # Test relpath
         assert(Info.is_video_file(STARLORD))
-
-    @pytest.mark.skip(reason="TODO")
-    def test_is_wanted_file(self):
-        pass
 
     def test_has_ignored_string(self):
         assert(not Info.has_ignored_string(

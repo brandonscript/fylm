@@ -441,5 +441,16 @@ class TestDuplicates(object):
             assert(f.exists())
             assert(isclose(f.size.value, s * GB, abs_tol=10))
             
+    @pytest.mark.skip(reason="Not implemented")
     def test_different_media(self):
+        pass
+
+class TestDuplicatesMap:
+
+    @pytest.mark.skip(reason="Not implemented")
+    def test_decide(self):
+        pass
+
+    @pytest.mark.skip(reason="Not implemented")
+    def test_map_operators(self):
         pass

@@ -103,16 +103,23 @@ class ComparisonReason(Enum):
     RESOLUTION = 2
     HDR = 3
     PROPER = 4
-    EDITION = 5
-    SIZE = 6
-    NOT_COMPARABLE = 7
-    IDENTICAL = 8
-    UPGRADING_DISABLED = 9
-    MANUALLY_SET = 10
+    MEDIA = 5
+    EDITION = 6
+    SIZE = 7
+    NOT_COMPARABLE = 8
+    IDENTICAL = 9
+    UPGRADING_DISABLED = 10
+    MANUALLY_SET = 11
+    NAME_MISMATCH = 12
     @property
     def display_name(self) -> str:
         # Should {upgrade, keep, ignore} because: 
         if self.name:
-            return self.name.replace('_', ' ').capitalize().replace('hdr', 'HDR')
+            if self.name == 'hdr': 
+                return self.name
+            elif self.value == 5:
+                return "quality media"
+            else:
+                return self.name.replace('_', ' ').lower()
         else: 
             return None

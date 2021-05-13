@@ -140,7 +140,7 @@ class Make:
         [Path(dr).mkdir(parents=True, exist_ok=True) for dr in paths]
 
     @staticmethod
-    def mock_file(path, size=0):
+    def mock_file(path, size=0) -> 'Path':
         
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         
@@ -152,31 +152,35 @@ class Make:
         f.write(b'\0')
         f.close()
         
-    @staticmethod
-    def mock_files(*paths: Union[str, list]):
+        return path
         
+    @staticmethod
+    def mock_files(*paths: Union[str, list]) -> ['Path']:
+        
+        ps = []
         for f in paths:
             (path, size) = f if type(f) is tuple else (f, 0)
             assert path.is_absolute(), f"Path '{path}' must be absolute."
-            Make.mock_file(path, size)
+            ps.append(Make.mock_file(path, size))
+        return ps
 
-    @staticmethod
-    def mock_src_files(*files: Union[str, list], src_path: str = None):
-        global MB
+    # @staticmethod
+    # def mock_src_files(*files: Union[str, list], src_path: str = None):
+    #     global MB
         
-        src_path = src_path or conftest.src_path
-        for p in [Path(f) for f in files]:
-            assert(not p.is_absolute())
-            (name, size) = p if type(p) is tuple else (p, 0)
-            Make.mock_file(src_path / name, size * MB)
+    #     src_path = src_path or conftest.src_path
+    #     for p in [Path(f) for f in files]:
+    #         assert(not p.is_absolute())
+    #         (name, size) = p if type(p) is tuple else (p, 0)
+    #         Make.mock_file(src_path / name, size * MB)
     
-    @staticmethod
-    def mock_dst_files(files: dict):
-        global MB
+    # @staticmethod
+    # def mock_dst_files(files: dict):
+    #     global MB
         
-        for k, v in files.items():
-            (name, size) = v if type(v) is tuple else (v, 0)
-            Make.mock_file(conftest.dst_paths[k] / name, size * MB)
+    #     for k, v in files.items():
+    #         (name, size) = v if type(v) is tuple else (v, 0)
+    #         Make.mock_file(conftest.dst_paths[k] / name, size * MB)
 
     @staticmethod
     def all_mock_files() -> MakeFilmsResult:

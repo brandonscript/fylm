@@ -128,10 +128,9 @@ class Compare:
         return (title == existing_title and film.year == existing_film.year)
 
     @staticmethod
-    def is_exact_duplicate(file, other):
-        """Determine if a film is an exact duplicate of another. To qualify as
-        an exact duplicate, it must pass is_duplicate, as well as edition, quality,
-        and media should match.
+    def is_equal_quality(file, other):
+        """Determine if a film is the same quality as another, 
+        without comparing size.
 
         Args:
             file: (Film.File) the first file to compare.
@@ -147,7 +146,7 @@ class Compare:
     @staticmethod
     def is_identical(file, other):
         """Determine if a film is an identical copy of another. To qualify as
-        an identical duplicate, it must pass is_duplicate, is_exact_duplicate, and
+        an identical duplicate, it must pass is_duplicate, is_equal_quality, and
         the file sizes must be equal.
 
         Args:
@@ -157,7 +156,7 @@ class Compare:
             True if the files are identical, else False
         """
 
-        if not is_exact_duplicate(file, other):
+        if not is_equal_quality(file, other):
             return False
 
         return file.size == other.size
@@ -219,7 +218,6 @@ class Compare:
                     else ComparisonResult.LOWER)    
 
     @staticmethod
-    
     def quality(file, other) -> (ComparisonResult, ComparisonReason):
         """Compare two file qualities to determine if one is better than the other.
         This method compares resolution, media, edition, proper, and HDR, but does 
@@ -243,14 +241,14 @@ class Compare:
         if Compare.title_similarity(file.title, other.title) < 0.9:
             Console.error(
                 f"Cannot compare quality of different titles '{file.title}' and '{other.title}'")
-            return (Result.NOT_COMPARABLE, Reason.NOT_COMPARABLE)
+            return (Result.NOT_COMPARABLE, Reason.NAME_MISMATCH)
         
         # Resolution
         if rez != Result.EQUAL:
             return (rez, Reason.RESOLUTION)
 
         if media != Result.EQUAL:
-            return (media, Reason.QUALITY)
+            return (media, Reason.MEDIA)
             
         # Edition
         if file.edition != other.edition and not config.duplicates.ignore_edition:
