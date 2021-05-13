@@ -39,6 +39,7 @@ import nest_asyncio
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
+import fylmlib.constants as constants
 from fylmlib.tools import *
 from fylmlib.enums import *
 from fylmlib import FilmPath
@@ -174,17 +175,21 @@ class Film(FilmPath):
         else:
             return None
         
-    def move(self) -> 'Film':
+    def move(self, dst: Path = None) -> 'Film':
         """Moves all the film's wanted files.
+        
+        Arguments:
+            dst: Destination path to move to, defaults to self.dst
 
         Returns:
             Film: A new copy of this film with updated path.
         """
+        dst = dst or self.dst
         # Move all wanted files and update files
         self.files = [f.move() for f in self.wanted_files]
         success = all([f.did_move for f in self.files])
         if success:
-            self.setpath(Path(self.dst))
+            self.setpath(Path(dst))
         return self
         
     def rename(self) -> 'Film':
@@ -272,11 +277,11 @@ class Film(FilmPath):
 
     @property
     def video_files(self) -> Iterable['Film.File']:
-        return filter(lambda f: Info.is_video_file(f), self.files)
+        return filter(lambda f: f.is_video_file, self.files)
 
     @property
     def wanted_files(self) -> Iterable['Film.File']:
-        return filter(lambda f: not f.should_ignore, self.files)
+        return filter(lambda f: f.is_wanted, self.files)
     
     @lazy
     def year(self) -> int:
@@ -325,6 +330,8 @@ class Film(FilmPath):
             is_proper (bool):               Indicates whether this version is a proper release.
 
             is_subtitle (bool):             Returns True if the file is a subtitle.
+            
+            is_wanted (bool)                Returns True if the file is valid and should be kept.
 
             media (Media):                  Original release media (see enums.Media)
             
@@ -445,6 +452,10 @@ class Film(FilmPath):
             return self.suffix.lower() in constants.SUB_EXTS
 
         @lazy
+        def is_wanted(self):
+            return self.has_valid_ext and not self.should_ignore
+
+        @lazy
         def media(self) -> Media:
             return Parser(self.filmrel).media
 
@@ -468,15 +479,19 @@ class Film(FilmPath):
                 if track.track_type == 'Video':
                     return track
                 
-        def move(self) -> 'Film.File':
+        def move(self, dst: Path = None) -> 'Film.File':
             """Moves the file.
+            
+            Arguments:
+                dst: Destination path to move to, defaults to self.dst
 
             Returns:
                 File: A new copy of this file with updated path.
             """
-            self.did_move = IO.move(self.src, self.dst)
+            dst = dst or self.dst
+            self.did_move = IO.move(self.src, dst)
             if self.did_move:
-                self.setpath(Path(self.dst))
+                self.setpath(Path(dst))
             return self
 
         @lazy

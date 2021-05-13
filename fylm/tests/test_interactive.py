@@ -29,320 +29,209 @@ except ImportError:
 import pytest
 
 import fylmlib.config as config
-import fylmlib.operations as ops
+from fylmlib import Film, Find
+from fylmlib.tools import *
 import fylm
 import conftest
-import make
+from make import Make, MB, GB
 
-# @pytest.mark.skip()
-class TestInteractive(object):
+SRC = conftest.src_path
+DST = conftest.dst_paths
+DIE_HARD = 'Die Hard (1988)'
+DIE_HARD_NEW = 'Die.Hard.1988.BluRay.1080p.x264-CYaNID3'
+BRIDGET = 'Bridget Jones - The Edge of Reason (2004)'
+
+class TestInteractive:
 
     def test_lookup_success(self):
 
-        conftest._setup()
+        config.interactive = True
+        config.mock_input = ['N', f'{BRIDGET}', 1]
 
-        # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
+        f = SRC / f'{BRIDGET} 1080p/{BRIDGET} Bluray-1080p.mkv'
+        xf = DST['1080p'] / f'{BRIDGET}/{BRIDGET} Bluray-1080p.mkv'
 
-        fylm.config.mock_input = ['N', 'Bridget Jones - The Edge of Reason', 1]
+        Make.mock_file(f, 7354 * MB)
 
-        f = os.path.join(conftest.films_src_path, 'Bridget Jones - The Edge of Reason 1080p/Bridget Jones - The Edge of Reason Bluray-1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Bridget Jones - The Edge of Reason (2004)/Bridget Jones - The Edge of Reason (2004) Bluray-1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 7354 * make.mb)
-
-        assert(os.path.exists(f))
+        assert(f.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(not f.exists())
+        assert(xf.exists())
 
     def test_handle_duplicates_upgrade_same_quality_folder(self):
 
-        conftest._setup()
+        config.interactive = True
+        config.use_folders = True
+        config.mock_input = ['Y', 'U']
 
-        # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
+        f = SRC / f'{DIE_HARD_NEW}/{DIE_HARD_NEW}.mkv'
+        xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
-        fylm.config.mock_input = ['Y', 'U']
-
-        f = os.path.join(conftest.films_src_path, 'Die.Hard.1988.BluRay.1080p.x264-CYaNID3/Die.Hard.1988.BluRay.1080p.x264-CYaNID3.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 8233 * make.mb)
-        make.make_mock_file(xf, 7901 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 8233 * MB), 
+                        (xf, 7901 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 8233 * make.mb, abs_tol=10))
+        assert(not f.exists())
+        assert(xf.exists())
+        assert(isclose(Film(xf).size.value, 8233 * MB, abs_tol=10))
 
     def test_handle_duplicates_upgrade_same_quality_file(self):
 
-        conftest._setup()
-
         # Set up config
-        fylm.config.use_folders = False
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.use_folders is False)
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
+        config.interactive = True
+        config.use_folders = False
+        config.mock_input = ['Y', 'U']
 
-        fylm.config.mock_input = ['Y', 'U']
+        f = SRC / f'{DIE_HARD} 1080p BluRay.mkv'
+        xf = DST['1080p'] / f'{DIE_HARD} Bluray-1080p.mkv'
 
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p BluRay.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988) Bluray-1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 9576 * make.mb)
-        make.make_mock_file(xf, 6441 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 9576 * MB),
+                        (xf, 6441 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 9576 * make.mb, abs_tol=10))
+        assert(not f.exists())
+        assert(xf.exists())
+        assert(isclose(Film(xf).size.value, 9576 * MB, abs_tol=10))
 
     def test_handle_duplicates_upgrade_lower_quality(self):
 
-        conftest._setup()
-
         # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.use_folders is True)
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
+        config.interactive = True
+        config.mock_input = ['Y', 'U']
 
-        fylm.config.mock_input = ['Y', 'U']
+        f = SRC / DIE_HARD_NEW / f'{DIE_HARD_NEW}.mkv'
+        xf = DST['720p'] / DIE_HARD / f'{DIE_HARD} WEBDL-720p.mkv'
+        nf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
-        n = 'Die.Hard.1988.BluRay.1080p.x264-CYaNID3.mkv/Die.Hard.1988.BluRay.1080p.x264-CYaNID3.mkv.mkv'
-        f = os.path.join(conftest.films_src_path, n)
-        xf = os.path.join(conftest.films_dst_paths['720p'], 'Die Hard (1988)/Die Hard (1988) WEBDL-720p.mkv')
-        nf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 9114 * make.mb)
-        make.make_mock_file(xf, 4690 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 9114 * MB),
+                        (xf, 4690 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(not os.path.exists(xf))
-        assert(os.path.exists(nf))
-        assert(isclose(ops.size(nf), 9114 * make.mb, abs_tol=10))        
+        assert(not f.exists())
+        assert(not xf.exists())
+        assert(nf.exists())
+        assert(isclose(Film(nf).size.value, 9114 * MB, abs_tol=10))        
 
     def test_handle_duplicates_replace_identical(self):
 
-        conftest._setup()
-
         # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.use_folders is True)
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
+        config.interactive = True
+        config.mock_input = ['Y', 'R']
 
-        fylm.config.mock_input = ['Y', 'R']
+        f = SRC / '{DIE_HARD} 1080p BluRay.mkv'
+        xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p BluRay.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 8133 * make.mb)
-        make.make_mock_file(xf, 8133 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 8133 * MB),
+                        (xf, 8133 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(os.path.exists(xf))
-        assert(isclose(ops.size(xf), 8133 * make.mb, abs_tol=10))
+        assert(not f.exists())
+        assert(xf.exists())
+        assert(isclose(Film(xf).size.value, 8133 * MB, abs_tol=10))
 
     def test_handle_duplicates_skip(self):
 
-        conftest._setup()
+        config.interactive = True
+        config.mock_input = ['Y', 'S']
 
-        # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
+        f = SRC / '{DIE_HARD} 1080p/{DIE_HARD} 1080p.mkv'
+        xf = DST['1080p'] / '{DIE_HARD} 1080p/{DIE_HARD} 1080p.mkv'
 
-        fylm.config.mock_input = ['Y', 'S']
-
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988) 1080p/Die Hard (1988) 1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 8854 * make.mb)
-        make.make_mock_file(xf, 9814 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 8854 * MB), 
+                        (xf, 9814 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
     def test_handle_duplicates_keep_both(self):
 
         conftest._setup()
 
         # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
+        config.interactive = True
         # Allow 1080p and 720p to be kept
-        fylm.config.duplicates.upgrade_table['720p'] = [] 
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
-        assert(len(fylm.config.duplicates.upgrade_table['720p']) == 0)
+        config.duplicates.upgrade_table['720p'] = []
+        config.mock_input = ['Y', 'K']
 
-        fylm.config.mock_input = ['Y', 'K']
+        n = DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
+        f = SRC / n
+        xf = DST['720p'] / DIE_HARD / f'{DIE_HARD} HDTV-720p.mkv'
+        nf = DST['1080p'] / n
 
-        n = 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv'
-        f = os.path.join(conftest.films_src_path, n)
-        xf = os.path.join(conftest.films_dst_paths['720p'], 'Die Hard (1988)/Die Hard (1988) HDTV-720p.mkv')
-        nf = os.path.join(conftest.films_dst_paths['1080p'], n)
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 10223 * make.mb)
-        make.make_mock_file(xf, 4690 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 10223 * MB),
+                        (xf, 4690 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(os.path.exists(xf))
-        assert(os.path.exists(nf))
-        assert(isclose(ops.size(xf), 4690 * make.mb, abs_tol=10))        
-        assert(isclose(ops.size(nf), 10223 * make.mb, abs_tol=10))   
+        assert(not f.exists())
+        assert(xf.exists())
+        assert(nf.exists())
+        assert(isclose(Film(xf).size.value, 4690 * MB, abs_tol=10))        
+        assert(isclose(Film(nf).size.value, 10223 * MB, abs_tol=10))   
 
     def test_handle_duplicates_delete_new(self):
 
-        conftest._setup()
+        config.interactive = True
+        config.mock_input = ['Y', 'D', 'Y']
 
-        # Set up config
-        fylm.config.test = False
-        fylm.config.interactive = True
-        fylm.config.duplicates.enabled = True
-        assert(fylm.config.test is False)
-        assert(fylm.config.interactive is True)
-        assert(fylm.config.duplicates.enabled is True)
+        f = SRC / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
+        xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
-        fylm.config.mock_input = ['Y', 'D', 'Y']
-
-        f = os.path.join(conftest.films_src_path, 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
-        xf = os.path.join(conftest.films_dst_paths['1080p'], 'Die Hard (1988)/Die Hard (1988) Bluray-1080p.mkv')
-
-        conftest.cleanup_all()
-        conftest.make_empty_dirs()
-
-        make.make_mock_file(f, 7854 * make.mb)
-        make.make_mock_file(xf, 9814 * make.mb)
-
-        # Reset existing films
-        ops.dirops._existing_films = None
+        Make.mock_files((f, 7854 * MB),
+                        (xf, 9814 * MB))
 
         # Assert that there is 1 duplicate
-        assert(len(ops.dirops.get_existing_films(config.destination_dirs)) == 1)
+        assert(iterlen(Find.existing()) == 1)
 
-        assert(os.path.exists(f))
-        assert(os.path.exists(xf))
+        assert(f.exists())
+        assert(xf.exists())
 
         fylm.main()
 
-        assert(not os.path.exists(f))
-        assert(os.path.exists(xf))    
-        assert(isclose(ops.size(xf), 9814 * make.mb, abs_tol=10))  
-
-        fylm.config.interactive = False
-        assert(fylm.config.interactive is False)
-
+        assert(not f.exists())
+        assert(xf.exists())    
+        assert(isclose(Film(xf).size.value, 9814 * MB, abs_tol=10))  

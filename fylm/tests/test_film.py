@@ -203,7 +203,7 @@ class TestFilm(object):
         assert(film.tmdb.title_similarity == 0.5)
         assert(film.tmdb.overview)
         assert(film.tmdb.poster_url)
-        assert(len(film._tmdb_matches) > 0)
+        assert(len(film.tmdb_matches) > 0)
 
     def test_should_ignore(self):
 
@@ -302,12 +302,17 @@ class TestFilmFile(object):
 
         film = Film(SRC / ROGUE)
         Make.mock_file(src)
-        FIXME: "IO is now a declarative function"
+
         assert(not film.main_file.did_move)
         assert(src.exists())
+        assert(film.main_file == src)
         assert(film.main_file.src == src)
-        film.main_file.did_move = IO.move(src, dst)
+        film.main_file.move(dst)
+        assert(not src.exists())
+        assert(dst.exists())
         assert(film.main_file.did_move)
+        assert(film.main_file == dst)
+        assert(film.main_file.src == src)
     
     def test_dst(self):
 
@@ -431,6 +436,10 @@ class TestFilmFile(object):
         assert(rogue1080.main_file.media == Media.BLURAY)
         assert(rogue4k.main_file.media == Media.BLURAY)
         assert(ttop.main_file.media == Media.WEBDL)
+        
+    @pytest.mark.skip(reason="Covered by test_did_move")
+    def test_move(self):
+        pass
     
     def test_origin(self):
         

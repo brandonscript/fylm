@@ -28,7 +28,7 @@ import fylmlib.config as config
 import fylmlib.notify as notify
 
 @pytest.mark.skip()
-class TestPlex(object):
+class TestPlex:
 
     def test_plex(self):
 

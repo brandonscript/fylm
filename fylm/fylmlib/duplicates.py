@@ -284,7 +284,7 @@ class Duplicates:
                            Should.KEEP_EXISTING,
                            Reason.UPGRADING_DISABLED)
 
-        async def rez_can_upgrade(l, r):
+        def rez_can_upgrade(l, r):
             key = r.resolution.key if r.resolution.value <= 3 else 'SD'
             t = config.duplicates.upgrade_table[key]
             return t and l.resolution.key in t
@@ -301,9 +301,9 @@ class Duplicates:
             should = Should.KEEP_BOTH
 
         elif reason == Reason.RESOLUTION:
-            if rslt == Result.HIGHER and await rez_can_upgrade(new, duplicate):
+            if rslt == Result.HIGHER and rez_can_upgrade(new, duplicate):
                 should = Should.UPGRADE
-            elif rslt == Result.LOWER and await rez_can_upgrade(duplicate, new):
+            elif rslt == Result.LOWER and rez_can_upgrade(duplicate, new):
                 should = Should.KEEP_EXISTING
             else:
                 rslt = Result.DIFFERENT

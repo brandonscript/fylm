@@ -154,12 +154,11 @@ class Make:
         
     @staticmethod
     def mock_files(*paths: Union[str, list]):
-        global MB
         
         for f in paths:
             (path, size) = f if type(f) is tuple else (f, 0)
             assert path.is_absolute(), f"Path '{path}' must be absolute."
-            Make.mock_file(path, size * MB)
+            Make.mock_file(path, size)
 
     @staticmethod
     def mock_src_files(*files: Union[str, list], src_path: str = None):
