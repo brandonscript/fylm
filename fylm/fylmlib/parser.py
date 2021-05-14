@@ -60,9 +60,9 @@ class Parser:
         except:
             self.path = path
             
-        p = Path(self.path).parts
+        self.parts = Path(self.path).parts
         # If the title has multiple path parts, keep the longest one
-        self.s = max(p, key=len) if len(p) > 0 else str(self.path)
+        self.s = str(self.path)
     
     @lazy
     def title(self) -> str:
@@ -80,10 +80,13 @@ class Parser:
         
         start = timer()
 
-        # Use the FilmPath's filmrel to identify the original title, 
-        # remove the extension.
+        # Use the FilmPath's first path with a year, or its biggest
+        # if there are mutliple paths without years.
         title = self.s
-        
+        if len(self.parts) > 0:
+            t = first(iter(self.parts), where=lambda x: Parser(x).year)
+            title = str(t) if t else max(self.parts, key=len)
+    
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
             if title.lower().startswith(prefix.lower()):
