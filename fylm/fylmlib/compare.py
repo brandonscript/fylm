@@ -24,6 +24,7 @@ during runtime.
 """
 
 import re
+import difflib
 # import warnings
 # warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
@@ -302,3 +303,48 @@ class Compare:
             return ComparisonResult.EQUAL
         
         return ComparisonResult.NOT_COMPARABLE
+    
+    @staticmethod
+    def stringdelta(string, other, case_sensitive=False, join='.') -> (str, str, str):
+        """Compares two strings
+
+        Args:
+            string (str): First string to compare
+            other (str): Second string to compare
+
+        Returns:
+            tuple:
+                str: Strings unique to the first input
+                str: Strings common between the two inputs
+                str: Srings unique to the second input
+        """
+        if not case_sensitive:
+            string = str(string).lower()
+            other = str(other).lower()
+
+        l, c, r = [], [], []
+
+        diff = list(filter(lambda d: not d.startswith('?'),
+                        difflib.Differ().compare(
+                            re.split(r'\W', string),
+                            re.split(r'\W', other))
+                        ))
+
+        def clean(d): return d[2:]
+
+        def add(d, prv, lst, prefix):
+            if not d.startswith(prefix):
+                return
+            if prv is not None and diff[prv].startswith(prefix):
+                lst[len(lst) - 1] += f'{join}{clean(d)}'
+            else:
+                lst.append(clean(d))
+
+        for i, d in enumerate(diff):
+            prv = i - 1 if i > 0 else None
+            nxt = i + 1 if i < len(diff) - 1 else None
+            add(d, prv, c, ' ')
+            add(d, prv, l, '-')
+            add(d, prv, r, '+')
+
+        return l, c, r

@@ -315,3 +315,4 @@ video_exts:
 # Array of additional filetypes to move and rename with films, e.g. srt, nfo    
 extra_exts:
   - .srt
+  - .sub
