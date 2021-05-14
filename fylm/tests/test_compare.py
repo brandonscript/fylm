@@ -16,6 +16,7 @@
 
 # Where a conflict or dispute would arise between these two licenses, HLv2.1
 # shall take precedence.
+import random
 
 from lazy import lazy
 import pytest
@@ -29,34 +30,32 @@ from fylmlib.enums import *
 Rt = ComparisonResult
 Rn = ComparisonReason
 
-SRC = conftest.src_path
+chrs = 'abcdefghijklmnopqrstuvwxyz'
+ran = lambda: ''.join(random.choices(chrs, k=4))
+RND = ran()
 
+SRC = conftest.src_path
 ROGUE = 'Rogue.One.A.Star.Wars.Story.2016'
 
-_4KHDR = Film(SRC / ROGUE / f'{ROGUE}.2160p.BluRay.HDR.10-bit.x265-group.mp4')
-_4KHDR_WEB = Film(SRC / ROGUE / f'{ROGUE}.2160p.WEB-DL.HDR.10-bit.x265-group')
-_4K = Film(SRC / ROGUE / f'{ROGUE}.2160p.BluRay.x264-group.mp4')
-_4K2 = Film(SRC / ROGUE / f'{ROGUE}.2160p.BluRay.x264-other.mp4')
-_4K_WEB = Film(SRC / ROGUE / f'{ROGUE}.2160p.WEB-DL.x264-group')
-_4K_HDTV = Film(SRC / ROGUE / f'{ROGUE}.2160p.HDTV.x264-group')
-_1080p = Film(SRC / ROGUE / f'{ROGUE}.1080p.BluRay.x264-group.mkv')
-_1080p2 = Film(SRC / ROGUE / f'{ROGUE}.1080p.BluRay.x264-other.mkv')
-_1080p_proper = Film(SRC / ROGUE / f'{ROGUE}.1080p.PROPER.BluRay.x264-group.mkv')
-_1080p_edition = Film(SRC / ROGUE / f'{ROGUE}.Directors.Cut.1080p.BluRay.x264-group.mkv')
-_1080p_WEB = Film(SRC / ROGUE / f'{ROGUE}.1080p.WEB-DL.x264-group')
-_1080p_HDTV = Film(SRC / ROGUE / f'{ROGUE}.1080p.HDTV.x264-group')
-_1080p_unknown = Film(SRC / ROGUE / f'{ROGUE}.1080p.x264-group')
-_720p = Film(SRC / ROGUE / f'{ROGUE}.720p.BluRay.x264-group.mkv')
-_720p_WEB = Film(SRC / ROGUE / f'{ROGUE}.720p.WEB-DL.x264-group')
-_720p_HDTV = Film(SRC / ROGUE / f'{ROGUE}.720p.HDTV.x264-group')
-_SD = Film(SRC / ROGUE / f'{ROGUE}.BluRay.xvid-group.avi')
-_SD_WEB = Film(SRC / ROGUE / f'{ROGUE}.WEB-DL.xvid-group')
-_SD_HDTV = Film(SRC / ROGUE / f'{ROGUE}.HDTV.xvid-group')
-
-@pytest.fixture(scope="function", autouse=True)
-def reset_size():
-    for v in [v for v in globals().values() if type(v) is Film]:
-        v._size = None
+_4KHDR = Film(SRC / RND / ROGUE / f'{ROGUE}.2160p.BluRay.HDR.10-bit.x265-group.mp4')
+_4KHDR_WEB = Film(SRC / RND / ROGUE / f'{ROGUE}.2160p.WEB-DL.HDR.10-bit.x265-group.mp4')
+_4K = Film(SRC / RND / ROGUE / f'{ROGUE}.2160p.BluRay.x264-group.mp4')
+_4K2 = Film(SRC / RND / ROGUE / f'{ROGUE}.2160p.BluRay.x264-other.mp4')
+_4K_WEB = Film(SRC / RND / ROGUE / f'{ROGUE}.2160p.WEB-DL.x264-group.mp4')
+_4K_HDTV = Film(SRC / RND / ROGUE / f'{ROGUE}.2160p.HDTV.x264-group.mp4')
+_1080p = Film(SRC / RND / ROGUE / f'{ROGUE}.1080p.BluRay.x264-group.mkv')
+_1080p2 = Film(SRC / RND / ROGUE / f'{ROGUE}.1080p.BluRay.x264-other.mkv')
+_1080p_proper = Film(SRC / RND / ROGUE / f'{ROGUE}.1080p.PROPER.BluRay.x264-group.mkv')
+_1080p_edition = Film(SRC / RND / ROGUE / f'{ROGUE}.Directors.Cut.1080p.BluRay.x264-group.mkv')
+_1080p_WEB = Film(SRC / RND / ROGUE / f'{ROGUE}.1080p.WEB-DL.x264-group.mkv')
+_1080p_HDTV = Film(SRC / RND / ROGUE / f'{ROGUE}.1080p.HDTV.x264-group.mkv')
+_1080p_unknown = Film(SRC / RND / ROGUE / f'{ROGUE}.1080p.x264-group.mkv')
+_720p = Film(SRC / RND / ROGUE / f'{ROGUE}.720p.BluRay.x264-group.mkv')
+_720p_WEB = Film(SRC / RND / ROGUE / f'{ROGUE}.720p.WEB-DL.x264-group.mkv')
+_720p_HDTV = Film(SRC / RND / ROGUE / f'{ROGUE}.720p.HDTV.x264-group.mkv')
+_SD = Film(SRC / RND / ROGUE / f'{ROGUE}.BluRay.xvid-group.avi')
+_SD_WEB = Film(SRC / RND / ROGUE / f'{ROGUE}.WEB-DL.xvid-group.avi')
+_SD_HDTV = Film(SRC / RND / ROGUE / f'{ROGUE}.HDTV.xvid-group.avi')
 
 class TestCompare:
     
@@ -73,6 +72,8 @@ class TestCompare:
     def test_4K_vs_4k(self): 
         left = Make.mock_file(_4K, 10000).main_file
         right = Make.mock_file(_4K2, 5000).main_file
+        left.size.refresh()
+        right.size.refresh()
         assert(Compare.quality(left, right) == (Rt.HIGHER, Rn.SIZE))
     
     def test_4K_vs_1080p(self): 
@@ -98,6 +99,8 @@ class TestCompare:
     def test_1080p_identical(self): 
         left = Make.mock_file(_1080p, 5000).main_file
         right = Make.mock_file(_1080p, 5000).main_file
+        left.size.refresh()
+        right.size.refresh()
         assert(Compare.quality(left, right) == (Rt.EQUAL, Rn.IDENTICAL))
     
     def test_1080p_vs_720p(self): 
@@ -174,6 +177,8 @@ class TestCompare:
         left = Make.mock_file(_1080p, 5000).main_file
         right = Make.mock_file(_1080p_edition, 10000).main_file
         config.duplicates.ignore_edition = True
+        left.size.refresh()
+        right.size.refresh()
         assert(Compare.quality(left, right) == (Rt.LOWER, Rn.SIZE))
     
     def test_proper(self): 
@@ -196,6 +201,8 @@ class TestCompare:
     def test_size(self): 
         left = Make.mock_file(_1080p, 10000).main_file
         right = Make.mock_file(_1080p2, 5000).main_file
+        left.size.refresh()
+        right.size.refresh()
         assert(Compare.quality(left, right) == (Rt.HIGHER, Rn.SIZE))
     
     def test_names_dont_match(self): 
