@@ -230,6 +230,9 @@ class Compare:
             Tuple(ComparisonResult, ComparisonReason)
         """
         
+        assert file is not None, "'file' cannot be None"
+        assert other is not None, "'other' cannot be None"
+        
         Result = ComparisonResult
         Reason = ComparisonReason
         
