@@ -47,7 +47,8 @@ from fylmlib import Interactive
 from fylmlib import Duplicates
 from fylmlib import Subtitle
 from fylmlib import Film
-from fylmlib import Info
+from fylmlib import FilmPath
+Info = FilmPath.Info
 from fylmlib.tools import *
 from fylmlib.constants import *
 

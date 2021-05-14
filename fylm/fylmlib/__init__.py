@@ -32,6 +32,7 @@ from fylmlib.progress import Progress
 from fylmlib.console import Console
 from fylmlib.parser import Parser
 from fylmlib.cursor import Cursor
+from fylmlib.filmpath import FilmPath
 from fylmlib.operations import *
 
 # Higher level functions (init after)

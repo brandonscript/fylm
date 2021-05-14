@@ -26,10 +26,10 @@ import conftest
 from make import Make
 
 # @pytest.mark.skip()
-class TestConfig(object):
+class TestTestMode(object):
     """Tests operation impacting config options"""
 
-    def test_config_test_mode(self):
+    def test_config_test_mode_enabled(self):
         
         # Set test mode to true
         config.test = True
@@ -39,7 +39,7 @@ class TestConfig(object):
         config.tmdb.enabled = False
         assert(config.tmdb.enabled is False)
         
-        Make.all_mock_files()
+        Make.mock_file(SRC / 'ROgue.One.2016.1080p.Bluray.x264-group.mkv')
 
         before_new = Find.new()
         before_exs = Find.existing()

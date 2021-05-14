@@ -527,7 +527,7 @@ class Console(object):
         
         @staticmethod
         def verb(film: 'Film') -> (str, str):
-            from fylmlib import Info
+            from fylmlib.filmpath import Info
             if Info.will_copy(film):
                 return ('copy', 'copied', 'copying')
             elif config.rename_only:

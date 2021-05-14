@@ -24,7 +24,7 @@ import itertools
 import fylm
 import fylmlib.config as config
 from fylmlib.film import Film
-from fylmlib import Info
+from fylmlib.filmpath import Info
 import conftest
 from make import Make, MB
 

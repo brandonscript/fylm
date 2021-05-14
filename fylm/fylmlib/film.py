@@ -17,9 +17,13 @@
 # Where a conflict or dispute would arise between these two licenses, HLv2.1
 # shall take precedence.
 
-"""Film descriptor object.
+"""Film object.
 
-    Film: the main class exported by this module.
+    Film is a wrapper for FilmPath that includes unique 
+    characteristics of a film container.
+    
+    Its subclass, Film.File, includes details specific to
+    individual files.
 """
 
 import os
@@ -47,7 +51,7 @@ from fylmlib import Console
 from fylmlib import Parser
 from fylmlib import Format
 from fylmlib import TMDb
-from fylmlib import Info
+Info = FilmPath.Info
 from fylmlib import IO
 
 class Film(FilmPath):
