@@ -29,7 +29,7 @@ except ImportError:
 import pytest
 
 import fylmlib.config as config
-from fylmlib import Film, Find
+from fylmlib import Film, Find, Interactive
 from fylmlib.tools import *
 import fylm
 import conftest
@@ -46,7 +46,7 @@ class TestInteractive:
     def test_lookup_success(self):
 
         config.interactive = True
-        config.mock_input = ['N', f'{BRIDGET}', 1]
+        Interactive._MOCK_INPUT = ['N', f'{BRIDGET}', 1]
 
         f = SRC / f'{BRIDGET} 1080p/{BRIDGET} Bluray-1080p.mkv'
         xf = DST['1080p'] / f'{BRIDGET}/{BRIDGET} Bluray-1080p.mkv'
@@ -64,7 +64,7 @@ class TestInteractive:
 
         config.interactive = True
         config.use_folders = True
-        config.mock_input = ['Y', 'U']
+        Interactive._MOCK_INPUT = ['Y', 'U']
 
         f = SRC / f'{DIE_HARD_NEW}/{DIE_HARD_NEW}.mkv'
         xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
@@ -89,7 +89,7 @@ class TestInteractive:
         # Set up config
         config.interactive = True
         config.use_folders = False
-        config.mock_input = ['Y', 'U']
+        Interactive._MOCK_INPUT = ['Y', 'U']
 
         f = SRC / f'{DIE_HARD} 1080p BluRay.mkv'
         xf = DST['1080p'] / f'{DIE_HARD} Bluray-1080p.mkv'
@@ -113,7 +113,7 @@ class TestInteractive:
 
         # Set up config
         config.interactive = True
-        config.mock_input = ['Y', 'U']
+        Interactive._MOCK_INPUT = ['Y', 'U']
 
         f = SRC / DIE_HARD_NEW / f'{DIE_HARD_NEW}.mkv'
         xf = DST['720p'] / DIE_HARD / f'{DIE_HARD} WEBDL-720p.mkv'
@@ -139,9 +139,9 @@ class TestInteractive:
 
         # Set up config
         config.interactive = True
-        config.mock_input = ['Y', 'R']
+        Interactive._MOCK_INPUT = ['Y', 'R']
 
-        f = SRC / '{DIE_HARD} 1080p BluRay.mkv'
+        f = SRC / f'{DIE_HARD} 1080p BluRay.mkv'
         xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
         Make.mock_files((f, 8133 * MB),
@@ -162,10 +162,10 @@ class TestInteractive:
     def test_handle_duplicates_skip(self):
 
         config.interactive = True
-        config.mock_input = ['Y', 'S']
+        Interactive._MOCK_INPUT = ['Y', 'S']
 
-        f = SRC / '{DIE_HARD} 1080p/{DIE_HARD} 1080p.mkv'
-        xf = DST['1080p'] / '{DIE_HARD} 1080p/{DIE_HARD} 1080p.mkv'
+        f = SRC / f'{DIE_HARD} 1080p/{DIE_HARD} 1080p.mkv'
+        xf = DST['1080p'] / f'{DIE_HARD} 1080p/{DIE_HARD} 1080p.mkv'
 
         Make.mock_files((f, 8854 * MB), 
                         (xf, 9814 * MB))
@@ -183,18 +183,15 @@ class TestInteractive:
 
     def test_handle_duplicates_keep_both(self):
 
-        conftest._setup()
-
         # Set up config
         config.interactive = True
         # Allow 1080p and 720p to be kept
         config.duplicates.upgrade_table['720p'] = []
-        config.mock_input = ['Y', 'K']
+        Interactive._MOCK_INPUT = ['Y', 'K']
 
-        n = DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
-        f = SRC / n
+        f = SRC / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
         xf = DST['720p'] / DIE_HARD / f'{DIE_HARD} HDTV-720p.mkv'
-        nf = DST['1080p'] / n
+        nf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
         Make.mock_files((f, 10223 * MB),
                         (xf, 4690 * MB))
@@ -216,7 +213,7 @@ class TestInteractive:
     def test_handle_duplicates_delete_new(self):
 
         config.interactive = True
-        config.mock_input = ['Y', 'D', 'Y']
+        Interactive._MOCK_INPUT = ['Y', 'D', 'Y']
 
         f = SRC / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
         xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'

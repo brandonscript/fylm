@@ -44,6 +44,8 @@ ansi = Console.ansi
 InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 
 class Interactive:
+    
+    _MOCK_INPUT = []
 
     @classmethod
     def lookup(cls, film) -> bool:
@@ -149,9 +151,9 @@ class Interactive:
                 prompt='', 
                 choices=choices,
                 default=None,
-                mock_input=_first(config.mock_input))
+                mock_input=_first(cls._MOCK_INPUT))
 
-            config.mock_input = _shift(config.mock_input)
+            cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
             
             if choice == len(choices) - 1:
                 continue
@@ -185,9 +187,9 @@ class Interactive:
                     prompt='',
                     choices=['Yes (delete it)', 'No (keep it)'],
                     default=None,
-                    mock_input=_first(config.mock_input))
+                    mock_input=_first(cls._MOCK_INPUT))
 
-                config.mock_input = _shift(config.mock_input)
+                cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
 
                 if confirm_delete == 0:
                     if Delete.path(film.src, force=True):
@@ -229,9 +231,9 @@ class Interactive:
                 ('I', 'No, lookup by ID'),
                 ('S', '[ Skip ]')],
             default='Y',
-            mock_input=_first(config.mock_input))
+            mock_input=_first(cls._MOCK_INPUT))
 
-            config.mock_input = _shift(config.mock_input)
+            cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
 
             film.tmdb.ia_accepted = (choice == 0)
             if choice == 1:
@@ -266,9 +268,9 @@ class Interactive:
                     ('I', 'Lookup by ID'),
                     ('S', '[ Skip ]')],
                 default='N', 
-                mock_input=_first(config.mock_input))
+                mock_input=_first(cls._MOCK_INPUT))
 
-            config.mock_input = _shift(config.mock_input)
+            cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
 
             if choice == 0:
                 return cls.search_by_name(film)
@@ -293,8 +295,8 @@ class Interactive:
 
             # Delete the existing ID in case it is a mismatch.
             film.tmdb.id = None
-            search = cls._simple_input('TMDb ID: ', mock_input=_first(config.mock_input))
-            config.mock_input = _shift(config.mock_input)
+            search = cls._simple_input('TMDb ID: ', mock_input=_first(cls._MOCK_INPUT))
+            cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
             try:
                 # Attempt to convert the search query to an int
                 film.tmdb.id = int(search)
@@ -329,8 +331,8 @@ class Interactive:
         film.tmdb.id = None
         query = cls._simple_input("Search TMDb: ", 
                                   cls._last_search or film.name, 
-                                  mock_input=_first(config.mock_input))
-        config.mock_input = _shift(config.mock_input)
+                                  mock_input=_first(cls._MOCK_INPUT))
+        cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
         cls._last_search = query
         if query == '':
             return cls.handle_unknown_film(film)
@@ -374,9 +376,9 @@ class Interactive:
             # choices=[f"{m.new_title} ({m.new_year}) [{m.id}]" for m in film.tmdb_matches] + 
             # ['[ New search ]', '[ Search by ID ]', '[ Skip ]'],
             enumeration=InteractiveKeyMode.TUPLE,
-            mock_input=_first(config.mock_input))
+            mock_input=_first(cls._MOCK_INPUT))
 
-        config.mock_input = _shift(config.mock_input)
+        cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
 
         # If 'Edit search' was selected, try again, then forward
         # the return value.
