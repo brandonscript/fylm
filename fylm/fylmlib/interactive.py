@@ -160,6 +160,8 @@ class Interactive:
                 existing_to_delete.extend(upgradable)
             elif letter == 'U' and exact:
                 existing_to_delete.append(exact)
+            elif letter == 'U' and len(upgradable) > 0:
+                existing_to_delete.append(upgradable[0])
 
             # Keep (move/copy) this file, and prep anything marked for upgrade
             if letter == 'U' or letter == 'A':
