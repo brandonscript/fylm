@@ -1468,6 +1468,7 @@ class Size:
     def refresh(self) -> int:
         self._size = None
         self.value
+        return self._size
         
     def pretty(self, units: Units = None, precision: int = None) -> str:
         """Formats a size in bytes as a human-readable string.
