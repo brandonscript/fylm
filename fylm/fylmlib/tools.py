@@ -69,6 +69,7 @@ def first(iterable: Iterable, where=None, default=None):
     Returns:
         First iterable, first iterable that matches condition, or default.
     """
+    if iterable is None: return
     iterable = iter(iterable) if type(iterable) is list else iterable
     return next((x for x in iterable if where(x)) 
                 if where else iterable, default)

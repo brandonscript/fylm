@@ -87,36 +87,6 @@ class Duplicates:
         """
         return [v for f in self.films for v in f.video_files]
     
-    def map(self, src: 'Film.File') -> ['Duplicates.Map']:
-        """Maps the src Film.File against this object's duplicate files
-        and returns a list of results, actions, and reasons as Map objects.
-
-        Args:
-            src (Film.File): Source file to compare against duplicates.
-
-        Returns:
-            [Map]: A list actions and reasons for each duplicate file.
-        """
-
-
-        try:
-            loop = asyncio.get_running_loop()
-        except:
-            loop = asyncio.get_event_loop()
-        tasks = asyncio.gather(*[
-            asyncio.ensure_future(self.decide(src, d))
-            for d in self.files
-        ])
-        while len(loop._ready) > 0:
-            try:
-                mp = loop.run_until_complete(tasks)
-
-                # Reverse the order in interactive mode and return
-                # return mp if not config.interactive else mp[::-1]
-                return sorted(mp)
-            except:
-                continue
-    
     @property
     def exact(self):
         """A subset of duplicates that are exact (except size) matches.
@@ -242,24 +212,24 @@ class Duplicates:
                        ƒ.pluralize('file', d)).print()
         cls.TO_DELETE = []
         return d
-                
-    @classmethod
-    def delete_leftover_folders(cls, film: 'Film'):
-        """Delete empty duplicate folders on the destination dirs.
 
-        If duplicates are found and the inbound film should replace them,
-        we want to delete all the empty folders they leave behind.
-        
+    def map(self, src: 'Film.File') -> ['Duplicates.Map']:
+        """Maps the src Film.File against this object's duplicate files
+        and returns a list of results, actions, and reasons as Map objects.
+
         Args:
-            film (Film): Film object to determine which duplicate deletions
-                        might have left behind empty folders.
-        """
+            src (Film.File): Source file to compare against duplicates.
 
-        # Delete empty duplicate container folders
-        for dup_film in [f.parent_film for f in film.duplicate_files]:
-            if dup_film.is_folder and len(dirops.find_deep(dup_film.source_path)) == 0:
-                # Delete the parent film dir and any hidden contents if it is less than 1 KB.
-                dirops.delete_dir_and_contents(dup_film.source_path, max_size=1000)
+        Returns:
+            [Map]: A list actions and reasons for each duplicate file.
+        """
+        
+        loop = asyncio.get_event_loop()
+        nest_asyncio.apply(loop)
+        tasks = [loop.create_task(Duplicates.decide(src, d))
+                 for d in self.files]
+        mp = loop.run_until_complete(asyncio.gather(*tasks))
+        return sorted(mp)
                 
     @classmethod
     async def decide(cls, new: 'Film.File', duplicate: 'Film.File') -> 'Duplicates.Map':

@@ -45,20 +45,6 @@ class TestApp(object):
         # guaranteed to move
         
         made = Make.all_mock_files()
-        # Make.mock_files(*[
-        #     (DST['1080p'] / TTOP / f'{TTOP} Bluray-1080p.mkv', 4 * MB),
-        #     # DST['1080p'] / TTOP / f'{TTOP} WEBDL-1080p.m4v',
-        #     # DST['720p'] / TTOP / f'{TTOP} Bluray-720p.mkv'
-        #     # ,(DST['2160p'] / TTOP / f'{TTOP} WEBDL-2160p HDR.mp4', 30 * MB)
-        # ])
-        
-        # config.interactive = True
-        # config.always_copy = True
-        # config.rename_only = True
-        
-        # (existing, expected) = get('expect_no_lookup')
-        # for f in [f.expect_no_lookup for f in made.good]:
-        #     print(f)
         
         config.duplicates.enabled = False
 
@@ -74,36 +60,12 @@ class TestApp(object):
             assert(Info.exists_case_sensitive(desired_path))
         assert(len(existing) == len(expected))
 
-    # @pytest.mark.skip(reason="Slow")
-    #FIXME: Add simple test for no-folders
-    # def test_app_no_folders(self):
-        
-    #     made = Make.all_mock_files()
-        
-    #     config.duplicates.enabled = False
-    #     fylm.config.use_folders = False
-        
-    #     # Executes
-    #     fylm.main()
-
-    #     # Make sure we have some test films
-    #     assert(len(made.good) > 0)
-
-    #     # Assert that all of the films were moved successfully into the correct destination folders.
-    #     (existing, expected) = made.get(folders=False)
-    #     for desired_path in expected:
-    #         assert(Info.exists_case_sensitive(desired_path))
-    #     assert(len(existing) == len(expected))
-
-    #     fylm.config.use_folders = True
-    #     assert(fylm.config.use_folders is True)
-
     def test_app_tmdb_disabled(self):
 
         made = Make.all_mock_files()
 
         config.duplicates.enabled = False
-        fylm.config.tmdb.enabled = False
+        config.tmdb.enabled = False
 
         # Execute
         fylm.main()

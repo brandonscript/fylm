@@ -301,7 +301,7 @@ class TestDuplicates(object):
         assert(not proper.exists())
         assert(proper_moved.exists())
         # We need multiple the OS size by MB here because test files are ÷ 1024 on the filesystem
-        assert(    isclose(Film(proper_moved).size.value, sm_size * MB, abs_tol=10))
+        assert(    isclose(Film(proper_moved).size.value, sm_size, abs_tol=10))
 
     def test_replace_smaller_overwrite_on(self):
 
@@ -321,8 +321,7 @@ class TestDuplicates(object):
         # Assert that the new, larger 1080p file overwrites the existing, smaller one
         assert(not new(NEW_ROGUE, '1080p').exists())
         assert(    moved(MOVED_ROGUE, '1080p').exists())
-        assert(isclose(Film(moved(MOVED_ROGUE, '1080p')
-                            ).size.value, big_size * MB, abs_tol=10))
+        assert(isclose(Film(moved(MOVED_ROGUE, '1080p')).size.value, big_size, abs_tol=10))
 
     def test_do_not_replace_larger_overwrite_off(self):
 
@@ -346,8 +345,7 @@ class TestDuplicates(object):
         # and that the original was left intact (not renamed)
         assert(    new(NEW_ROGUE, '1080p').exists())
         assert(    moved(MOVED_ROGUE, '1080p').exists())
-        assert(isclose(Film(moved(MOVED_ROGUE, '1080p')
-                            ).size.value, big_size * MB, abs_tol=10))
+        assert(isclose(Film(moved(MOVED_ROGUE, '1080p')).size.value, big_size, abs_tol=10))
 
     def test_multiple_editions(self):
 
