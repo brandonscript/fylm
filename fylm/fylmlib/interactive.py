@@ -183,7 +183,7 @@ class Interactive:
                 n = f"\n{INDENT}" if len(str(v.src)) else ''
                 Console.print_ask(
                     f"Are you sure you want to delete {n}'{v.src}'?")
-                confirm_delete = cls._choice_input(
+                (confirm_delete, letter) = cls._choice_input(
                     prompt='',
                     choices=['Yes (delete it)', 'No (keep it)'],
                     default=None,
