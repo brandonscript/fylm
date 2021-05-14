@@ -50,6 +50,7 @@ from fylmlib import FilmPath
 from fylmlib import Console
 from fylmlib import Parser
 from fylmlib import Format
+from fylmlib import Subtitle
 from fylmlib import TMDb
 Info = FilmPath.Info
 from fylmlib import IO
@@ -182,7 +183,7 @@ class Film(FilmPath):
     def move(self, dst: Path = None) -> 'Film':
         """Moves all the film's wanted files.
         
-        Arguments:
+        Args:
             dst: Destination path to move to, defaults to self.dst
 
         Returns:
@@ -487,7 +488,7 @@ class Film(FilmPath):
         def move(self, dst: Path = None) -> 'Film.File':
             """Moves the file.
             
-            Arguments:
+            Args:
                 dst: Destination path to move to, defaults to self.dst
 
             Returns:
@@ -502,7 +503,11 @@ class Film(FilmPath):
         @lazy
         def new_name(self) -> Path:
             name = Format.Name(self)
-            return f'{name.filename}{self.suffix}'
+            base = f'{name.filename}{self.suffix}'
+            if self.is_video_file:
+                return base
+            elif self.is_subtitle:
+                return Subtitle(self).path_with_lang(base)
         
         @lazy
         def part(self) -> str:

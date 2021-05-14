@@ -21,7 +21,6 @@
 import fylmlib.config as config
 import fylmlib.counter as counter
 import fylmlib.constants as constants
-import fylmlib.languages as languages
 import fylmlib.patterns as patterns
 import fylmlib.enums as enums
 
@@ -39,8 +38,8 @@ from fylmlib.operations import *
 from fylmlib.compare import Compare
 from fylmlib.tmdb import TMDb
 from fylmlib.duplicates import Duplicates
+from fylmlib.subtitle import Subtitle
 from fylmlib.film import Film
 from fylmlib.interactive import Interactive
 from fylmlib.notify import Notify
-from fylmlib.subtitle import Subtitle
 from fylmlib.app import App

@@ -34,8 +34,14 @@ Sample subtitle filenames:
 
 import re
 import os
+from pathlib import Path
+from typing import Union
 
-from fylmlib import languages
+from fylmlib.languages import Languages
+import fylmlib.constants as constants
+from fylmlib import Console, Format
+
+_LANGUAGES = Languages().load()
 
 class Subtitle:
     """A subtitle object that contains information about its language.
@@ -44,6 +50,10 @@ class Subtitle:
         path: Subtitle path.
     """
     def __init__(self, path):
+        
+        if not Path(path).suffix.lower() in constants.SUB_EXTS:
+            Console.error(f"'{path}' is not a valid subtitle file")
+            return
 
         # Path to original subtitle file.
         self.path = path
@@ -57,27 +67,30 @@ class Subtitle:
         # The language string captured from the original filename, e.g. 'english' or 'en'.
         self.captured = None
         
+        def pattern(s): 
+            return re.compile(r'\b(?P<lang>' + re.escape(s) + r'(?:-\w{2})?)\b', re.I)
+        
         # First we loop through languages to determine if the path contains
         # a descriptive language string, e.g. 'english', 'dutch', or 'fr'
-        for lang in languages.get():
+        for lang in _LANGUAGES:
             
             patterns = []
-                
+            
             # Compile patterns that matches language strings and codes, case insensitive.
+            patterns.append(pattern(lang.code))
             for n in list(filter(None, lang.names)):
-                patterns.append(re.compile(r'\.(?P<lang>' + re.escape(n).lower() + r'(?:-\w+)?\b)', re.I))
-            patterns.append(re.compile(r'\.(?P<lang>' + re.escape(lang.code) + r'(?:-\w+)?\b)', re.I))
+                patterns.append(pattern(n))
+                patterns.append(pattern(n[:3]))
             
             # Iterate the array of patterns that we want to check for.
             for p in patterns:
                 
                 # Search for rx match.
-                match = re.search(p, path)
-                if match is not None and match.group('lang') is not None:
+                match = re.search(p, self.path.name)
+                if match and match.group('lang'):
                 
-                    # If a match exists, convert it to lowercase and save the entire
-                    # captured string.
-                    self.captured = match.group('lang')[:1].upper() + match.group('lang')[1:]
+                    # If a match exists, store it
+                    self.captured = match.group('lang')
 
                     # If we find a match, set the values of the subtitle, and break.
                     self.code = lang.code
@@ -86,18 +99,19 @@ class Subtitle:
                     break
 
             # Break from parent if captured is set.
-            if self.captured is not None:
+            if self.captured:
                 break
 
-    def insert_lang(self, path):
+    def path_with_lang(self, path: Union[str, Path, 'FilmPath']) -> Path:
         """Returns a new path that includes the captured language string.
 
-        Args:
-            path: (str, utf-8) Path to file to append language.
         Returns:
-            A new path with the subtitle language included in the path.
+            Path: A new path with the subtitle language included in the path.
         """
-        filename, ext = os.path.splitext(path)
-
-        # if self.language is None:
-        return f'{filename}.{self.captured}{ext}' if self.captured else None
+        
+        assert self.path, "Subtitle was not initalized before 'new_name' was called."
+        
+        if type(path) is str:
+            path = Path(path)
+        
+        return path.with_suffix('.' + self.captured + path.suffix) if self.captured else path

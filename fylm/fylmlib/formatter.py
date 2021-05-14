@@ -62,6 +62,9 @@ class Format:
             Args:
                 file: A Film.File object to build new names from.
             """
+            
+            assert type(file).__name__ == 'File', f"'{file}' is not a Film.File object."
+            
             self.file = file
                 
             # Map mutable copies of the original renaming patterns to names

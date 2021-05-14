@@ -1,5 +1,9 @@
 [
   {
+    "code": "en",
+    "name": "English"
+  },
+  {
     "code": "ab",
     "name": "Abkhaz"
   },
@@ -158,10 +162,6 @@
   {
     "code": "dz",
     "name": "Dzongkha"
-  },
-  {
-    "code": "en",
-    "name": "English"
   },
   {
     "code": "eo",
