@@ -100,6 +100,7 @@ However, since we're putting a lot of faith in machines and automation, there ar
 
 If you'd like to run this automatically with some specific options, you can create a new file (e.g., `post-script.py`) and do:
 
+    #!/usr/bin/env python
     import subprocess
     subprocess.call(["python3", "/path/to/fylm/fylm", "-s", "/Volumes/Downloads", "--plaintext"])
 

@@ -279,7 +279,7 @@ class Config(object):
             self._defaults.debug = True
         
         # Map paths in source_dirs to Path and remove duplicates.
-        self._defaults.source_dirs = set(map(Path, self._defaults.source_dirs))
+        self._defaults.source_dirs = list(set(map(Path, self._defaults.source_dirs)))
                                           
         # Map paths in destination_dirs to Path.
         for k, v in self._defaults.destination_dirs.items():
