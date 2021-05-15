@@ -106,6 +106,8 @@ def setup():
 
     if os.environ.get('DEBUG') is not None: 
         config.debug = True if os.environ.get('DEBUG').lower() == 'true' else False
+        
+    yield
     
 def remake_files():
     
@@ -154,5 +156,5 @@ def desired_path(path, test_film, folders=True):
 
 # Skip cleanup to manually inspect test results
 def pytest_sessionfinish(session, exitstatus):
-    return
+    # return
     cleanup_all()
