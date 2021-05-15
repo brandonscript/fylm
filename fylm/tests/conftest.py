@@ -21,6 +21,7 @@ import os
 import sys
 import shutil
 import itertools
+import logging
 from pathlib import Path
 from datetime import timedelta
 
@@ -35,6 +36,10 @@ import fylmlib.config as config
 
 from fylmlib import Find, Parser
 from make import Make, MakeFilmsResult
+
+# Silence urllib3
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").propagate = False
 
 if os.getenv('_PYTEST_RAISE', "0") != "0":
 
@@ -106,8 +111,7 @@ def setup():
 
     if os.environ.get('DEBUG') is not None: 
         config.debug = True if os.environ.get('DEBUG').lower() == 'true' else False
-        
-    yield
+    logging.getLogger().setLevel(logging.DEBUG if config.debug else logging.CRITICAL)
     
 def remake_files():
     

@@ -30,6 +30,9 @@ import datetime
 
 from fylmlib import config
 
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").propagate = False
+
 # Set date output format
 NOW = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -54,6 +57,7 @@ class Log:
         """
         if not config.debug:
             logging.disable(sys.maxsize)
+            logging.getLogger().setLevel(logging.WARNING)
 
     @staticmethod
     def enable():
@@ -62,6 +66,7 @@ class Log:
         """
         if not config.test:
             logging.disable(logging.NOTSET)
+            logging.getLogger().setLevel(logging.INFO)
 
     # FIXME: Deprecated
     # @staticmethod
