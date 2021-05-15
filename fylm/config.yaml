@@ -164,7 +164,7 @@ tmdb:
   enabled: true
 
   # TMDb API Key
-  key: c49a08b548641c4954b3b84a5ae018c8
+  key: YOUR_KEY_HERE
 
   # Percentage similarity (from 0.0 - 1.0) that a title retrieved from TMDb should be to the original.
   # Adjust this value as needed to find correct matches, but test first to check for incorrect matches.
