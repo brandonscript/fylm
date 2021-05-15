@@ -41,6 +41,7 @@ SRC = conftest.src_path
 ALITA_SD = 'Alita.Battle.Angel.2019.HDTV.x264-NMaRE'
 BTTF = 'Back.to.the.Future.Part.II.1989.1080p.BluRay.x264.DTS-HD'
 JEDI = 'Last Jedi, The (2017) Bluray-1080p'
+ROGUE_GENERIC = 'Rogue One - A Star Wars Story (2016)'
 ROGUE_SD = 'Rogue.One.2016.HDTV.DVD.x264-group'
 ROGUE_720 = 'Rogue.One.2016.720p.BluRay.DTS.x264-group'
 ROGUE = 'Rogue.One.2016.1080p.BluRay.DTS.x264-group'
@@ -338,10 +339,6 @@ class TestFilmFile(object):
                'Rogue One - A Star Wars Story (2016)' /
                'Rogue One - A Star Wars Story (2016) Bluray-2160p HDR.mp4')
 
-    @pytest.mark.skip(reason="Covered by test_duplicates.py")
-    def test_duplicate_action(self):
-        pass
-
     def test_edition(self):
 
         starfighter = Film(SRC /
@@ -393,10 +390,6 @@ class TestFilmFile(object):
         assert(Film(bad_ext).ignore_reason == IgnoreReason.INVALID_EXT)
         assert(Film(SRC / small).ignore_reason == IgnoreReason.TOO_SMALL)
         assert(Film(sys).ignore_reason == IgnoreReason.SYS)
-
-    @pytest.mark.skip(reason="Covered by test_duplicates.py")
-    def test_is_duplicate(self):
-        pass
 
     def test_is_subtitle(self):
         sub = Path(SRC / ROGUE / f'{ROGUE}.en.srt')
@@ -478,13 +471,29 @@ class TestFilmFile(object):
         rogue720 = Film(SRC / ROGUE_720 / f'{ROGUE_720}.mkv')
         rogue1080 = Film(SRC / ROGUE / f'{ROGUE}.mkv')
         rogue4k = Film(SRC / ROGUE_4K / f'{ROGUE_4K}.mp4')
+        rogue4k2 = Film(SRC / ROGUE_GENERIC / f'{ROGUE_4K}.mp4')
 
-        Make.mock_files(rogue_sd, rogue720, rogue1080, rogue4k)
+        Make.mock_files(rogue_sd, rogue720, rogue1080, rogue4k, rogue4k2)
+        
+        multi = Film(SRC / ROGUE_GENERIC)
 
         assert(rogue_sd.main_file.resolution == Resolution.UNKNOWN)
         assert(rogue720.main_file.resolution == Resolution.HD_720P)
         assert(rogue1080.main_file.resolution == Resolution.HD_1080P)
         assert(rogue4k.main_file.resolution == Resolution.UHD_2160P)
+        assert(rogue4k2.main_file.resolution == Resolution.UHD_2160P)
+        assert(multi.main_file.resolution == Resolution.UHD_2160P)
+        
+        conftest.cleanup_all()
+        
+        f1 = Film(SRC / ROGUE_GENERIC / f'{ROGUE}.mkv')
+        f2 = Film(SRC / ROGUE_GENERIC / f'Rogue.One.2160p.Bluray.HDR.mp4')
+        Make.mock_files(f1, f2)
+        
+        f1.main_file.title
+        f2.main_file.title
+        assert f1.main_file.resolution == Resolution.HD_1080P
+        assert f2.main_file.resolution == Resolution.UHD_2160P
 
     def test_src(self):
 

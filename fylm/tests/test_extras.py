@@ -19,7 +19,7 @@
 
 import conftest
 from pathlib import Path
-from make import Make
+from make import Make, MB
 
 from fylmlib import Film, App, Subtitle
 
@@ -28,6 +28,8 @@ DST = conftest.dst_paths['1080p']
 
 NEW_ROGUE = 'Rogue.One.A.Star.Wars.Story.2016.1080p.BluRay.x264-RiZE'
 MOVED_ROGUE = 'Rogue One - A Star Wars Story (2016) Bluray-1080p'
+MOVED_ROGUE_4K = 'Rogue One - A Star Wars Story (2016) Bluray-2160p HDR'
+MOVED_ROGUE_DIR = 'Rogue One - A Star Wars Story (2016)'
 NEW_VIDEO = SRC / NEW_ROGUE / f'{NEW_ROGUE}.mkv'
 NEW_SUB1 = SRC / NEW_ROGUE / f'{NEW_ROGUE}.en.srt'
 NEW_SUB2 = SRC / NEW_ROGUE / f'{NEW_ROGUE}.en-us.srt'
@@ -88,13 +90,42 @@ class TestSubtitle:
         
         App.run()
         
-        d = 'Rogue One - A Star Wars Story (2016)'
-        assert (DST / d / f'{MOVED_ROGUE}.mkv').exists()
-        assert (DST / d / f'{MOVED_ROGUE}.en.srt').exists()
-        assert (DST / d / f'{MOVED_ROGUE}.fr.srt').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.mkv').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.en.srt').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.fr.srt').exists()
     
     
 class TestExtraWantedFiles:
     
-    def test_extra_video(self):
-        pass
+    def test_extra_video_files(self):
+        
+        Make.mock_files(SRC / MOVED_ROGUE_DIR / f'{NEW_ROGUE}.mkv', 
+                        SRC / MOVED_ROGUE_DIR / f'Commentary.mp4',
+                        SRC / MOVED_ROGUE_DIR / f'pid.avi')
+        
+        App.run()
+        
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.mkv').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE} Commentary.mp4').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE} Pid.avi').exists()
+    
+    def test_multiple_qualities(self):
+        
+        Make.mock_files(SRC / MOVED_ROGUE_DIR / f'{NEW_ROGUE}.mkv',
+                        SRC / MOVED_ROGUE_DIR / f'Rogue.One.2160p.Bluray.HDR.mp4')
+        
+        App.run()
+        
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.mkv').exists()
+        assert (conftest.dst_paths['2160p'] / MOVED_ROGUE_DIR / f'{MOVED_ROGUE_4K}.mp4').exists()
+    
+    def test_multiple_mkv_files(self):
+        Make.mock_files((SRC / NEW_ROGUE / f'{NEW_ROGUE}.mkv', 8000 * MB),
+                        (SRC / NEW_ROGUE / f'{NEW_ROGUE}.commentary.mkv', 200 * MB),
+                        (SRC / NEW_ROGUE / f'{NEW_ROGUE}.Extras.mkv', 500 * MB))
+        
+        App.run()
+        
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.mkv').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE} Commentary.mkv').exists()
+        assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE} Extras.mkv').exists()

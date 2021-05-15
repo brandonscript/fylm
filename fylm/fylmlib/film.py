@@ -47,7 +47,7 @@ import fylmlib.constants as constants
 from fylmlib.tools import *
 from fylmlib.enums import *
 from fylmlib import FilmPath
-from fylmlib import Console
+from fylmlib import Console, Compare
 from fylmlib import Parser
 from fylmlib import Format
 from fylmlib import Subtitle
@@ -368,7 +368,7 @@ class Film(FilmPath):
             super().__init__(path, origin=origin or film.origin)
 
             self._src = Path(self)
-            self.action: Should = None
+            # self.action: Should = None
             self.film: Film = film
             self.did_move: bool = False
         
@@ -414,7 +414,14 @@ class Film(FilmPath):
 
         @property
         def dst(self) -> Path:
-            root = (config.destination_dir(self.resolution) 
+            assert self.film.new_name
+            assert self.new_name
+            res_key = self.resolution
+            if (iterlen(self.film.video_files) > 1 
+                and self != self.film.main_file 
+                and self.resolution == Resolution.UNKNOWN):
+                res_key = self.film.main_file.resolution
+            root = (config.destination_dir(res_key) 
                     if not config.rename_only 
                     else self.film.src.parent)
             if config.use_folders:
@@ -504,10 +511,48 @@ class Film(FilmPath):
         def new_name(self) -> Path:
             name = Format.Name(self)
             base = f'{name.filename}{self.suffix}'
-            if self.is_video_file:
+            
+            def clean(extras): return ' ' + re.sub(r'\W+', ' ', extras).strip().capitalize()
+            def name_with_extras(extras): 
+                return f"{Format.Name(self.film.main_file).filename}{extras}{self.suffix}"
+            
+            main_file_stem = self.film.main_file.src.stem.lower()
+            this_file_stem = self.src.stem.lower()
+            
+            # It's the main file, just use the base name
+            if self == self.film.main_file:
                 return base
+            
+            # It's a subtitle
             elif self.is_subtitle:
                 return Subtitle(self).path_with_lang(base)
+            
+            # There are more than one video file, we need to 
+            # rename them to something unique.
+            elif (iterlen(self.film.video_files) > 1):
+                
+                # The extra file includes the main file's name, append the difference.
+                if main_file_stem in this_file_stem:
+                    extras = clean(this_file_stem.replace(main_file_stem, ''))
+                    return name_with_extras(extras)
+        
+                # This file is a different quality than the main file, and has a year
+                # so it's likely a video file of a different quality.
+                elif (Parser(self.name).year and Compare.quality(
+                    self, self.film.main_file)[0] != ComparisonResult.EQUAL):
+                    return base
+                    
+                # if neither of those work, try and append original file's name,
+                # or the number this file's index in self.film.video_files.
+                else:
+                    
+                    idx = list(self.film.video_files).index(self)
+                    appended = name_with_extras(clean(self.stem))
+                    if not Path(appended).exists():
+                        return appended
+                    else:
+                        extras = f'.{idx}' if idx > 0 else '' # default=index
+                        return name_with_extras(extras)
         
         @lazy
         def part(self) -> str:
@@ -520,7 +565,7 @@ class Film(FilmPath):
                 File: A new copy of this file with updated path.
             """
             # Rename all wanted files and update files
-            assert(self.dst == self.src.parent / self.new_name)
+            assert self.dst == (self.src.parent / self.new_name)
             return self.move()
                 
         @lazy
