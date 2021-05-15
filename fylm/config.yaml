@@ -163,7 +163,8 @@ tmdb:
   # API reference docs: https://www.themoviedb.org/documentation/api
   enabled: true
 
-  # TMDb API Key
+  # TMDb API Key; log in or create an account https://www.themoviedb.org/signup
+  # then go to https://www.themoviedb.org/settings/api to create a key
   key: YOUR_KEY_HERE
 
   # Percentage similarity (from 0.0 - 1.0) that a title retrieved from TMDb should be to the original.
