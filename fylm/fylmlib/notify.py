@@ -79,7 +79,7 @@ class Notify:
                 for section in (plex.library.section(section) for section in config.plex.sections):
                     section.refresh()
 
-            Console().green(' Done ✓\n').print()
+            Console().green('Done ✓').print()
 
             # Re-enable logging when done.
             Log.enable()

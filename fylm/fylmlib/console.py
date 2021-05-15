@@ -324,7 +324,7 @@ class Console(object):
                 else:
                     c.red(ar).add(fixcase(
                         f"skipping, not an upgrade for existing file of "\
-                        f"the same quality\n{INDENT}"))
+                        f"the same quality\n{INDENT*2}"))
             else:
                 c.gray(ar)
 
