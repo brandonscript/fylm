@@ -512,7 +512,3 @@ class TestFilmFile(object):
 
         # Ensure that even though we moved it, src didn't change
         assert film.main_file.src == src
-    
-    @pytest.mark.skip(reason="Covered by test_duplicates.py")
-    def test_upgrade_reason(self):
-        pass

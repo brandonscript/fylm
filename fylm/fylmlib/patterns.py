@@ -60,7 +60,7 @@ HDR = re.compile(r'\b(?P<hdr>hdr)\b', re.I)
 # Compiled pattern that "Part n" where n is a number or roman numeral.
 # Can only occur after a year, to avoid false positives like Back to the Future.
 PART = re.compile(
-    r'(?<=\d{4}).*\bpart\W?(?P<part>(?:\d+|' + _ROMAN_NUMERALS + r'))\b', re.I
+    r'(?<=\d{4})[^\\/]*\bpart\W?(?P<part>(?:\d+|' + _ROMAN_NUMERALS + r'))\b', re.I
 )
 
 # Retrieves tmdb_id in [XXXX] format from a string

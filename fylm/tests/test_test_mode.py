@@ -25,7 +25,8 @@ import fylm
 import conftest
 from make import Make
 
-# @pytest.mark.skip()
+SRC = conftest.src_path
+
 class TestTestMode(object):
     """Tests operation impacting config options"""
 
