@@ -37,7 +37,11 @@ from pathlib import Path
 from typing import Union
 from timeit import default_timer as timer
 
-from pymediainfo import MediaInfo
+# No libmediainfo support on TRAVIS
+USE_MEDIA_INFO = os.environ.get('TRAVIS') is None
+if USE_MEDIA_INFO:
+    from pymediainfo import MediaInfo
+    
 from lazy import lazy
 import nest_asyncio
 
@@ -474,12 +478,13 @@ class Film(FilmPath):
 
         @lazy
         def mediainfo(self) -> Union['Track', None]:
-            if 'mediainfo' in self.__dict__:
-                return self.mediainfo
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                nest_asyncio.apply(loop)
-            return loop.run_until_complete(self.mediainfo_async())
+            if USE_MEDIA_INFO:
+                if 'mediainfo' in self.__dict__:
+                    return self.mediainfo
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    nest_asyncio.apply(loop)
+                return loop.run_until_complete(self.mediainfo_async())
 
         async def mediainfo_async(self) -> Union['Track', None]:
             if not self.is_video_file or not self.exists():

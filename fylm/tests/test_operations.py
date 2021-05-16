@@ -491,7 +491,7 @@ class FileExistsHandler(FileSystemEventHandler):
 class TestIO(object):
     
     @pytest.mark.xfail(raises=OSError)
-    def test_safe_not_exists(self):
+    def test_move_not_exists(self):
         
         src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         dst = FilmPath(SRC / ALITA_DST)
@@ -501,7 +501,7 @@ class TestIO(object):
         assert(not src.exists())
         assert(not dst.exists())
     
-    def test_safe_src_eq_dst(self):
+    def test_move_src_eq_dst(self):
         
         src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         dst = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
@@ -514,7 +514,7 @@ class TestIO(object):
         assert(src.exists())
         assert(dst.exists())
     
-    def test_safe_test_mode(self):
+    def test_move_test_mode(self):
         
         config.test = True
         assert(config.test)
@@ -530,7 +530,7 @@ class TestIO(object):
         assert(src.exists())
         assert(not dst.exists())
     
-    def test_safe_exists_overwrite_arg_off(self):
+    def test_move_exists_overwrite_arg_off(self):
         
         assert(not config.duplicates.force_overwrite)
 
@@ -545,7 +545,7 @@ class TestIO(object):
         assert(src.exists())
         assert(dst.exists())
     
-    def test_safe_exists_overwrite_arg_on(self):
+    def test_move_exists_overwrite_arg_on(self):
         
         assert(not config.duplicates.force_overwrite)
 
@@ -560,7 +560,7 @@ class TestIO(object):
         assert(not src.exists())
         assert(dst.exists())
     
-    def test_safe_exists_overwrite_force_on(self):
+    def test_move_exists_overwrite_force_on(self):
         
         config.duplicates.force_overwrite = True
         assert(config.duplicates.force_overwrite)
@@ -576,7 +576,8 @@ class TestIO(object):
         assert(not src.exists())
         assert(dst.exists())
     
-    def test_safe_check_for_partial(self):
+    @pytest.mark.skip(reason="Travis not supported")
+    def test_move_check_for_partial(self):
         
         src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         dst = FilmPath(SRC / ALITA_DST)
@@ -601,7 +602,8 @@ class TestIO(object):
         
         observer.stop()
     
-    def test_safe_check_for_dup(self):
+    @pytest.mark.skip(reason="Travis not supported")
+    def test_move_check_for_dup(self):
         
         src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
         dst = FilmPath(SRC / ALITA_DST)
@@ -627,7 +629,7 @@ class TestIO(object):
 
         observer.stop()
     
-    def test_safe_copy(self):
+    def test_move_copy(self):
         
         config.always_copy = True
         assert(config.always_copy)
@@ -645,7 +647,7 @@ class TestIO(object):
         assert(not src.exists())
         assert(dst.exists())
     
-    def test_safe_move(self):
+    def test_move(self):
         
         assert(not config.always_copy)
         

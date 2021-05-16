@@ -12,7 +12,7 @@ install:
   - pip install -r requirements-test.txt --force
 
 script:
-  - pytest -xq
+  - pytest -xvs
 
 notifications:
   email:

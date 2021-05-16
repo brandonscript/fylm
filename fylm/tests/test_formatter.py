@@ -24,7 +24,7 @@ from multiprocessing import Process, Pipe
 import pytest
 
 import fylmlib.config as config
-from fylmlib import Film, IO
+from fylmlib import Film, IO, Find
 import conftest
 from make import Make
 
@@ -36,7 +36,7 @@ from make import Make
 SRC = conftest.src_path
 DST = conftest.dst_paths
 NEW_GIRL = 'The.Girl.Who.Kicked.The.Hornets.Nest.2009.Part.2.1080p.BluRay.x264-group'
-MOVED_GIRL = 'The Girl Who Kicked the Hornets Nest (2009)'
+MOVED_GIRL = 'The Girl Who Kicked The Hornets Nest (2009)'
 NEW_ROGUE = 'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.BluRay.DTS.x264-DON'
 NEW_ROGUE_PROPER = 'Rogue.One.A.Star.Wars.Story.2016.PROPER.1080p.DTS.x264-DON'
 NEW_ROGUE_4KHDR = 'Rogue.One.A.Star.Wars.Story.2016.HDR.10-bit.2160p.BluRay.DTS.x265-AMiABLE'
@@ -46,8 +46,7 @@ NEW_TTSF = 'the.last.starfighter.25th.anniversary.ed.1984.1080p.bluray.x264.dts-
 NEW_TTSF_PROPER = 'the.last.starfighter.25th.anniversary.ed.1984.PROPER.1080p.bluray.x264.dts-hd 5.1-lazy'
 MOVED_TTSF = 'The Last Starfighter (1984)'
 
-# @pytest.mark.skip()
-class TestFormatter(object):
+class TestFormat(object):
 
     def test_title_case(self):
 
@@ -288,3 +287,4 @@ class TestFormatter(object):
 
         assert(film.main_file.did_move)
         assert expect.exists()
+
