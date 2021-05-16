@@ -26,7 +26,9 @@ from pathlib import Path
 from datetime import timedelta
 
 # Add the cwd to the path so we can load fylmlib modules and fylm app.
-sys.path.append(str(Path().cwd().joinpath('fylm')))
+sys.path.append(str(Path().cwd().parent / 'fylm'))
+sys.path.append(str(Path().cwd() / 'fylm'))
+sys.path.append(str(Path().cwd() / 'fylm' / 'fylmlib'))
 
 import pytest
 import requests_cache
