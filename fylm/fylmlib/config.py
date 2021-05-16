@@ -271,12 +271,19 @@ class Config(object):
         if self._defaults.no_console is True:
             sys.stdout = None
 
-        # For tests on Travis, set min_filesize to 0
-        if os.environ.get('TRAVIS') is not None:
-            self._defaults.tmdb.key = self._defaults.tmdb.key or os.environ.get('TMDB_KEY')
-            
+        # If using environment variables, overwrite defaults
         if os.environ.get('DEBUG') is not None:
             self._defaults.debug = True
+        if os.environ.get('PLEX_TOKEN') is not None:
+            self._defaults.plex.token = os.environ.get('PLEX_TOKEN')
+        if os.environ.get('PLEX_URL') is not None:
+            self._defaults.plex.baseurl = os.environ.get('PLEX_URL')
+        if os.environ.get('PUSHOVER_APP_TOKEN') is not None:
+            self._defaults.pushover.app_token = os.environ.get('PUSHOVER_APP_TOKEN')
+        if os.environ.get('PUSHOVER_USER_KEY') is not None:
+            self._defaults.pushover.user_key = os.environ.get('PUSHOVER_USER_KEY')
+        if os.environ.get('TMDB_KEY') is not None:
+            self._defaults.tmdb.key = os.environ.get('TMDB_KEY')
         
         # Map paths in source_dirs to Path and remove duplicates.
         self._defaults.source_dirs = list(set(map(Path, self._defaults.source_dirs)))
@@ -299,7 +306,7 @@ class Config(object):
             cache_ttl = self._defaults.cache_ttl or 1
             requests_cache.install_cache(str(Path('.').resolve() / '.cache.fylm'),
                                          expire_after=timedelta(hours=cache_ttl))
-            requests_cache.core.remove_expired_responses()
+            requests_cache.remove_expired_responses()
 
         for k, v in self._defaults.items():
             setattr(self, k, Dict(v) if isinstance(v, dict) else v)
