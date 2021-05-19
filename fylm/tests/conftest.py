@@ -55,7 +55,7 @@ if os.getenv('_PYTEST_RAISE', "0") != "0":
 
 if config.cache:
     requests_cache.install_cache(str(Path('.').resolve(
-    ) / '.cache.fylm.test'), expire_after=timedelta(hours=120))
+    ) / '.cache.fylm.test.sqlite'), expire_after=timedelta(hours=120))
     requests_cache.remove_expired_responses()
 
 files_root = Path(__file__).parent

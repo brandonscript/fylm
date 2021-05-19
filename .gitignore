@@ -1,13 +1,12 @@
 *.log
 *.pyc
 fylm/tests/files
-.pytest_cache
-.cache/*
+.pytest_cache/*
+.cache.*
 *.sqlite
 *.egg
 *.egg-info
 .coverage*
-
 coverage.xml
 *.code-workspace
 env/*
@@ -15,4 +14,3 @@ env/*
 .vscode/settings.json
 .vscode/tasks.json
 .vscode/.ropeproject/*
-.cache.fylm

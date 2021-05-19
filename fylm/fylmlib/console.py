@@ -142,7 +142,7 @@ class Console(object):
             print(self._fmtxt, end=end)
 
     @staticmethod
-    def print_welcome(self):
+    def print_welcome():
         """Print and log the initial welcome header.
         """
 

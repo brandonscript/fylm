@@ -305,7 +305,7 @@ class Config(object):
         # Set up cache.
         if self._defaults.cache is True:
             cache_ttl = self._defaults.cache_ttl or 1
-            requests_cache.install_cache(str(Path('.').resolve() / '.cache.fylm'),
+            requests_cache.install_cache(str(Path('.').resolve() / '.cache.fylm.sqlite'),
                                          expire_after=timedelta(hours=cache_ttl))
             requests_cache.remove_expired_responses()
 
