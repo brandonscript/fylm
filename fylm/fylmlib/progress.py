@@ -38,7 +38,7 @@ class Progress:
         Returns:
             A compiled progress bar for outputting to console.
         """
-        
+
         from fylmlib import Console
 
         if config.plaintext:
@@ -46,8 +46,8 @@ class Progress:
             INCOMPLETE_BLOCK_GRAD = ["-", "-", "="]
         else:
             FULL_BLOCK = color('█', fg=Console.ansi.pink)
-            INCOMPLETE_BLOCK_GRAD = [color('░', fg=Console.ansi.dark_gray), 
-                                     color('▒', fg=Console.ansi.dark_gray), 
+            INCOMPLETE_BLOCK_GRAD = [color('░', fg=Console.ansi.dark_gray),
+                                     color('▒', fg=Console.ansi.dark_gray),
                                      color('▓', fg=Console.ansi.dark_gray)]
 
         assert(isinstance(percentage, float) or isinstance(percentage, int))
@@ -74,9 +74,9 @@ class Progress:
 
         # Calculate remainder due to how granular our blocks are.
         remainder = percentage - full_blocks * perc_per_block
-        
+
         # Epsilon needed for rounding errors (check would be != 0.)
-        # based on reminder modify first empty block shading, depending 
+        # based on reminder modify first empty block shading, depending
         # on remainder.
         if remainder > epsilon:
             grad_index = int((len(INCOMPLETE_BLOCK_GRAD) * remainder)/perc_per_block)

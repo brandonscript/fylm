@@ -25,12 +25,11 @@ output to the log module.
     Console: the main class exported by this module.
 """
 
+# TODO: Replace Console with Tinta
 import os
 import re
 import sys
-import itertools
 import shutil
-import math
 import time
 from pathlib import Path
 from datetime import datetime
@@ -65,13 +64,13 @@ class Console(object):
         self.style = []
         self.parts = []
         self.parts_plaintext = []
-            
+
         # Inject ANSI helper functions
         for c in vars(self.ansi):
             self._colorizer(c)
-            
+
         self.add(*s, join=join)
-            
+
     def __repr__(self):
         return str(self._pltxt)
 
@@ -82,11 +81,11 @@ class Console(object):
             self.add(*s, join=join)
             return self
         self.__setattr__(c, add)
-        
+
     @property
     def _fmtxt(self):
         return ''.join(self.parts)
-        
+
     @property
     def _pltxt(self):
         return ''.join(self.parts_plaintext)
@@ -102,7 +101,7 @@ class Console(object):
         self.parts.append(fmt)
         self.parts_plaintext.append(p)
         return self
-    
+
     def ansi(self, code: int = 0):
         self.color = int(code)
         return self
@@ -111,7 +110,7 @@ class Console(object):
         self.style.append('bold')
         self.add(*s)
         return self
-    
+
     def underline(self, *s, join=' '):
         self.style.append('underline')
         self.add(*s)
@@ -121,7 +120,7 @@ class Console(object):
         self.style.append('faint')
         self.add(*s)
         return self
-    
+
     def norm(self, *s, join=' '):
         self.style = []
         self.add(*s)
@@ -143,20 +142,19 @@ class Console(object):
         else:
             print(self._fmtxt, end=end)
 
-    """Helper methods for Console class.
-    """
+    """Helper methods for Console class."""
 
     def print_welcome(self):
         """Print and log the initial welcome header.
         """
-        
-        tsize = shutil.get_terminal_size((80, 20))
+
+        # tsize = shutil.get_terminal_size((80, 20))
 
         # Start log section header
         date = f' {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} '
         dashes = "-"*40
         Log.info(f'{dashes}{date}{dashes}')
-        
+
         dirs = f'\n{" "*17}'.join((str(d) for d in config.source_dirs))
         c = Console().pink(f"\nFylm is scanning {dirs}")
 
@@ -168,7 +166,7 @@ class Console(object):
             c.yellow('\n★ Force lookup mode (smart folder checking is disabled, assuming all folders are films)')
         if config.duplicates.force_overwrite:
             c.yellow('\n★ Force overwrite mode enabled (all identically named existing files will be silently overwritten, regardless of size)')
-        
+
         c.print(override_no_console=True)
 
     def print_exit(self, count):
@@ -180,7 +178,7 @@ class Console(object):
 
         s = f"Successfully {'renamed' if config.rename_only else 'moved'}" \
                 f" {count} {ƒ.pluralize('film', count)}" if count > 0 else "No films moved"
-        
+
         c = Console()
         if config.test is True:
             c.purple(f'\n(Test) {s}')
@@ -197,10 +195,10 @@ class Console(object):
     @staticmethod
     def print_film_header(film: 'Film'):
         c = Console('\n')
-        
+
         header = film.name if film._year else film.main_file.name
         Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print(end="")
-                        
+
         # Interactive mode
         if config.interactive:
             if film.should_ignore and not film.ignore_reason in [
@@ -212,24 +210,24 @@ class Console(object):
                 c.green(f' {CHECK} {S.name(film)}')
             else:
                 c.light_blue(f' {UNCERTAIN} {S.name(film)}')
-            
+
         # Automatic mode
-        else: 
+        else:
             if film.should_ignore:
                 c.red(f' {FAIL} {S.name(film)}')
             else:
                 c.green(f' {CHECK} {S.name(film)}')
-        
+
         if film.tmdb.id:
             c.gray(S.tmdb_id(film))
             c.dark_gray(S.percent(film))
         c.print()
-        
+
     @staticmethod
     def print_film_src(film):
         parent = film.src.parent if film._year else film.src
         Console().dark_gray(f'{INDENT}{parent}').print()
-    
+
     @staticmethod
     def print_interactive_success(film: 'Film'):
         c = Console().green(f' {ARROW} {S.name(film)}')
@@ -237,20 +235,20 @@ class Console(object):
             c.gray(S.tmdb_id(film))
             c.dark_gray(S.percent(film))
         c.print()
-        
+
     @staticmethod
     def print_interactive_uncertain(film: 'Film'):
         Console().light_blue(f' {UNCERTAIN} {film.title} ({film.year})').print()
-        
+
     @staticmethod
     def print_src_dst(film: 'Film'):
         if config.interactive:
             return
-        
+
         Console().dark_gray(f'{INDENT}{film.src}').print()
         if not film.should_ignore:
             Console().gray(f'{INDENT}{film.dst}').print()
-   
+
     @staticmethod
     def print_skip(film: 'Film'):
         if film.should_ignore:
@@ -266,46 +264,24 @@ class Console(object):
             f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
     @staticmethod
-    def print_duplicates_old(film: 'Film'):
-
-        # Import duplicates' should_replace function here to prevent circular imports.
-        if not config.duplicates.enabled:
-        # FIXME:
-            duplicate_count = len(film.verified_duplicate_files)
-
-            if duplicate_count > 0:
-                
-                c = Console().blue().add(INDENT_WIDE)
-                c.add(f"{duplicate_count} {ƒ.pluralize('duplicate', duplicate_count)} found")
-
-                if config.interactive is True:
-                    c.add(' for ').light_blue(f'{film.all_valid_files[0].new_filename_and_ext}')
-                    c.blue(':').print()
-                else:
-                    c.add(':').print()
-
-                if config.interactive is False:
-                    Console.print_duplicates(film)
-
-    @staticmethod
     def print_duplicates(new: 'Film.File', duplicates: '[Duplicates.Map]'):
         # If any duplicates determine that the current file should be ignored,
         # we only show the skip recommendation.
-        
+
         if not duplicates:
             return
 
         c = Console().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))} ")
         c.add(f"{ƒ.pluralize('duplicate', len(duplicates))} for '{new.name}'")
         c.dim(f" ({new.size.pretty()})").print()
-        
+
         keeps = list(filter(lambda mp: mp.action == Should.KEEP_EXISTING, duplicates))
         duplicates = keeps[:1] if keeps else duplicates
-        
+
         def fixcase(s): return s.capitalize() if not config.interactive else s
-            
+
         for mp in duplicates:
-            
+
             c = Console(INDENT)
             ar = f" {ARROW} " if not config.interactive else ''
             if config.interactive:
@@ -318,7 +294,7 @@ class Console(object):
                 c.purple() if not config.interactive else c.yellow()
                 c.add(ar).add(fixcase("keeping both this and "))
             elif mp.action == Should.KEEP_EXISTING:
-                if (config.duplicates.force_overwrite is True 
+                if (config.duplicates.force_overwrite is True
                     and config.interactive is False):
                     c.yellow(ar).add(f"(Force) replacing ")
                 else:
@@ -332,14 +308,14 @@ class Console(object):
             c.dark_gray(' ')
             if mp.reason == ComparisonReason.IDENTICAL:
                 c.add('Identical')
-                
+
             # They're different, but we can't determine if one is better than the other
             elif mp.result == ComparisonResult.DIFFERENT:
                 reason = f'Different {mp.reason.display_name.lower()}'
                 if mp.reason == ComparisonReason.HDR:
                     reason = 'HDR' if mp.duplicate.is_hdr else ''
                 c.add(reason)
-                
+
             # For human readable output, we need to reverse the descriptor
             # because if "new" is better than "duplicate", we describe the inverse
             # for the duplicate.
@@ -363,7 +339,7 @@ class Console(object):
             s: (str, utf-8) String to print/log.
         """
         Console().yellow(INDENT, s, join='').print()
-        
+
     @staticmethod
     def print_io_reject(verb, dst):
         if config.rename_only:
@@ -413,7 +389,7 @@ class Console(object):
             return
 
         from fylmlib.operations import dirops
-        Console().gray().add(INDENT_WIDE, 
+        Console().gray().add(INDENT_WIDE,
             f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
             f" '{os.path.basename(dst)}' to {os.path.dirname(dst)}"
         ).print()
@@ -447,7 +423,7 @@ class Console(object):
             sys.stdout.write(ERASE_LINE)
             sys.stdout.flush()
         return cls
-            
+
     @classmethod
     def up(cls):
         """Clears the previous printed line."""
@@ -457,19 +433,19 @@ class Console(object):
             sys.stdout.write(CURSOR_UP_ONE)
             sys.stdout.flush()
         return cls
-            
+
     @classmethod
     def wait(cls, s: int=0):
         if not config.no_console and not config.plaintext:
             time.sleep(s)
-        
+
     @classmethod
     def slow(cls, s: str='', seconds=0):
-        
+
         if config.debug is True:
             cls().yellow().bold(f'{ WARN }').reset().yellow(
                 f" {s} - {round(seconds)} seconds").print()
-    
+
     @classmethod
     def debug(cls, s: str='', end=None):
         """Print debugging details, if config.debug is enabled.
@@ -494,12 +470,12 @@ class Console(object):
         cls().bold().error(s).print()
         if x:
             raise type(x)(s)
-        
+
     @staticmethod
     def spinner(s: str = '') -> Halo:
         halo = Halo()
-        if (not config.no_console 
-            and not config.plaintext 
+        if (not config.no_console
+            and not config.plaintext
             and not config.debug):
             halo = Halo(text=s,
                 spinner='dots',
@@ -511,20 +487,20 @@ class Console(object):
         return halo
 
     class strings:
-        
+
         @staticmethod
         def size(film: 'Film'): return f' ({film.size.pretty()})'
-        
+
         @staticmethod
         def tmdb_id(film: 'Film'): return f' [{film.tmdb.id}] '
-        
+
         @staticmethod
         def percent(film: 'Film'): return f'{ƒ.percent(film.tmdb.title_similarity)}% match'
-        
+
         @staticmethod
-        def name(film: 'Film'): return (Path(film.main_file.new_name).stem 
+        def name(film: 'Film'): return (Path(film.main_file.new_name).stem
                         if not film.should_ignore else film.name)
-        
+
         @staticmethod
         def verb(film: 'Film') -> (str, str):
             from fylmlib.filmpath import Info
@@ -539,10 +515,10 @@ class Console(object):
 
         """Color handling for console output.
 
-        ANSI color map for console output. Get a list of colors here = 
+        ANSI color map for console output. Get a list of colors here =
         http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#256-colors
 
-        You can change the colors the terminal outputs by changing the 
+        You can change the colors the terminal outputs by changing the
         ANSI values here.
 
             ansi is the main property exported by this module.
@@ -550,10 +526,10 @@ class Console(object):
 
         def __init__(self):
             with open(Path(__file__).parent.parent / 'colors.yaml', 'r') as f:
-                colormap = yaml.safe_load(f)    
+                colormap = yaml.safe_load(f)
                 for k, v in colormap.items():
                     self.__setattr__(k, v)
-                    
+
         def discover(self):
             """Print all 256 colors in a matrix on your system."""
             print('\n')
@@ -562,8 +538,8 @@ class Console(object):
                     code = str(i * 16 + j)
                     sys.stdout.write(u"\u001b[38;5;" + code + "m " + code.ljust(4))
                 print(u"\u001b[0m")
-            
-            
+
+
 
 Console.ansi = Console._AnsiColors()
 S = Console.strings

@@ -26,7 +26,6 @@ and TMDb lookup.
     parser: the main class exported by this module.
 """
 
-import os
 import re
 
 from lazy import lazy
@@ -42,28 +41,28 @@ from fylmlib import Console
 from timeit import default_timer as timer
 
 class Parser:
-    """A collection of string parsing utilities to apply regular 
-    expressions and extract critical information from a path. 
+    """A collection of string parsing utilities to apply regular
+    expressions and extract critical information from a path.
     Instantiate Parser with your path, then call properties on it.
-    
+
     Attributes:
         path (Path): Path representation of the path to parse
         s (str): String representation of the longest path segment in path.parts
     Args:
         path (str, Path, or FilmPath): Relative or absolute path to a film file
-    
+
     """
     def __init__(self, path: Union[str, 'Path', 'FilmPath']):
-        
+
         try:
             self.path = path.main_file.filmrel if path.main_file.exists() else path
         except:
             self.path = path
-            
+
         self.parts = Path(self.path).parts
         # If the title has multiple path parts, keep the longest one
         self.s = str(self.path)
-    
+
     @lazy
     def title(self) -> str:
         """Get title from full path of file or folder.
@@ -77,7 +76,7 @@ class Parser:
         Returns:
             A clean and well-formed film title.
         """
-        
+
         start = timer()
 
         # Use the FilmPath's first path with a year, or its biggest
@@ -86,16 +85,16 @@ class Parser:
         if len(self.parts) > 0:
             t = first(iter(self.parts), where=lambda x: Parser(x).year)
             title = str(t) if t else max(self.parts, key=len)
-    
+
         # Strip "tag" prefixes from the title.
         for prefix in config.strip_prefixes:
             if title.lower().startswith(prefix.lower()):
                 title = title[len(prefix):]
-        
+
         # Use the 'STRIP_FROM_TITLE' regular expression to replace unwanted
         # characters in a title with a space.
         title = re.sub(patterns.STRIP_FROM_TITLE, ' ', title)
-        
+
         # If the title contains a known edition, strip it from the title. E.g.,
         # if we have Dinosaur.Special.Edition, we already know the edition, and
         # we don't need it to appear, duplicated, in the title. Because
@@ -109,7 +108,7 @@ class Parser:
         # the first part of the string, and so we split on the year value, and keep
         # only the left-hand portion.
         title = title.split(str(self.year))[0]
-        
+
         # Strip all resolution and media tags from the title.
         title = re.sub(patterns.MEDIA, '', title)
         title = re.sub(patterns.RESOLUTION, '', title)
@@ -118,7 +117,7 @@ class Parser:
         # start of the title.
         if re.search(patterns.THE_PREFIX_SUFFIX, title):
             title = f"The {re.sub(patterns.THE_PREFIX_SUFFIX, '', title)}"
-            
+
         # Remove everything after the encoding string, if it exists
         title = re.sub(patterns.ENCODING, '', title)
 
@@ -150,7 +149,7 @@ class Parser:
         if round(end - start) > 1:
             Console.slow(
                 f"Took a long time parsing title from '{self.path.filmrel}'", end - start)
-        
+
         return title
 
     @lazy
@@ -207,7 +206,7 @@ class Parser:
     def resolution(self) -> str:
         """Parse resolution from a path string using a regular expression,
         or optionally from a provided mediainfo object.
-        
+
         Args:
             path (str): Relative path for a file (file.ext or dir/file.ext)
 
@@ -219,14 +218,14 @@ class Parser:
         m = last(re.finditer(patterns.RESOLUTION, self.s), default=None)
         # Get the last element, and retrieve the 'year' capture group by name.
         # If there are no matches, return None.
-        
+
         if not m:
             return Resolution.UNKNOWN
 
         # If a match exists, convert it to lowercase.
         resolution = m.group('resolution')
-    
-        if resolution.lower() == '4k' or resolution.startswith('2160'): 
+
+        if resolution.lower() == '4k' or resolution.startswith('2160'):
             return Resolution.UHD_2160P
         elif resolution.startswith('1080'): return Resolution.HD_1080P
         elif resolution.startswith('720'): return Resolution.HD_720P
@@ -303,7 +302,7 @@ class Parser:
 
         # Search for a matching part condition
         match = re.search(patterns.PART, self.s)
-        
+
         # If a match exists, convert it to uppercase.
         return match.group('part').upper() if match else None
 
@@ -328,13 +327,13 @@ class Parser:
             # Generate a regular expression that searches for the search key, separated
             # by word boundaries.
             rx = re.compile(r'\b' + key + r'\b', re.I)
-            
+
             # Because this map is in a specific order, of we find a suitable match, we
             # want to return it right away.
             result = re.search(rx, self.s)
             if result:
                 # Return a tuple containing the matching compiled expression and its
-                # corrected value after performing a capture group replace, then break 
+                # corrected value after performing a capture group replace, then break
                 # the loop.
                 return (rx, rx.sub(value, result.group()))
 

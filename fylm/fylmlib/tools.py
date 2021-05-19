@@ -23,7 +23,6 @@ from typing import Iterable, Union
 import itertools
 import re
 import math
-from timeit import default_timer as timer
 import inflect
 p = inflect.engine()
 
@@ -32,7 +31,7 @@ from fylmlib.constants import *
 
 # Compare a list and see if they all match
 
-def all_match(l: list) -> bool: 
+def all_match(l: list) -> bool:
     """Compare a list and see if they all match
 
     Args:
@@ -44,12 +43,12 @@ def all_match(l: list) -> bool:
     return all(o == l[0] for o in l if o)
 
 def num(x):
-    """Coerces any numeric type to the lowest fidelity 
-    possible (int or float). 
-       
+    """Coerces any numeric type to the lowest fidelity
+    possible (int or float).
+
     Args:
         x (numberish):    The number to coerce
-        
+
     Returns:
         Number coerced to int or float, or None
     """
@@ -58,50 +57,50 @@ def num(x):
     return int(x) if math.floor(x) == float(x) else float(x)
 
 def first(iterable: Iterable, where=None, default=None):
-    """Returns the first item in the `iterable` that satisfies the `where` 
+    """Returns the first item in the `iterable` that satisfies the `where`
     condition, or the `default` value if provided.
-    
+
     Args:
         iterable (iterable):    An iterable
         where (lambda):         Condition to apply
         default: Default        value to return if no result is found
-        
+
     Returns:
         First iterable, first iterable that matches condition, or default.
     """
     if iterable is None: return
     iterable = iter(iterable) if type(iterable) is list else iterable
-    return next((x for x in iterable if where(x)) 
+    return next((x for x in iterable if where(x))
                 if where else iterable, default)
 
 def last(iterable: Iterable, where=None, default=None):
-    """Returns the last item in the `iterable` that satisfies the `where` 
+    """Returns the last item in the `iterable` that satisfies the `where`
     condition, or the `default` value if provided.
-    
+
     Args:
         iterable (iterable):    An iterable
         where (lambda):         Condition to apply
         default: Default        value to return if no result is found
-        
+
     Returns:
         Last iterable, last iterable that matches condition, or default.
     """
-    
+
     try:
-        *_, last = ((x for x in iterable if where(x)) 
+        *_, last = ((x for x in iterable if where(x))
                     if where else iterable)
         return last
     except (StopIteration, ValueError):
         return default
-    
+
 def prepend(*prepend, to: Iterable):
-    """Uses itertools.chain to prepend an object or list 
+    """Uses itertools.chain to prepend an object or list
     to the beginining of an iterator. Same as "unshift".
-    
+
     Args:
         prepend (object or list): An object or list to prepend.
         to (Iterable): The iterable to prepend to."""
-    
+
     for p in prepend:
         if not type(p) is list:
             p = [p]
@@ -113,7 +112,7 @@ def iterempty(iterable: Iterable) -> bool:
 
     Args:
         iterable (Iterable): Iterable to check
-        
+
     Returns:
         bool: True if the iterable is empty.
     """
@@ -122,10 +121,10 @@ def iterempty(iterable: Iterable) -> bool:
 
 def iterlen(iterable: Iterable) -> int:
     """Counts the number of items in the iterator.
-    
+
     Args:
         iterable (Iterable): Iterable to count.
-        
+
     Returns:
         int: Counts the number of items in the iterator.
     """
@@ -171,6 +170,6 @@ def is_sys_file(path: Union[str, 'Path', 'FilmPath']) -> bool:
         x = path.name
     except:
         x = str(path)
-        
-    return (x.lower().startswith('.') 
+
+    return (x.lower().startswith('.')
             or x.lower() in [sys.lower() for sys in SYS_FILES])

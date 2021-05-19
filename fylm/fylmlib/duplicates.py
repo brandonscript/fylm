@@ -22,12 +22,9 @@
 This module handles all the duplicate checking and handling logic for Fylm.
 """
 
-import os
-import itertools
 import asyncio
 from pathlib import Path
 
-from asyncinit import asyncinit
 import nest_asyncio
 
 from fylmlib.enums import *
@@ -40,20 +37,20 @@ from fylmlib import Format as ƒ
 
 class Duplicates:
     """Searches for copies of the specified film that exist in any dst dir.
-    
+
     Args:
         film (Film): A film to check for duplicates.
     """
-    
+
     TO_DELETE = []
-    
+
     def __init__(self, src: 'Film'):
-        
+
         from fylmlib import Film
-        
+
         self._init = False
         self.src = src
-        
+
         if not config.duplicates.enabled or config.rename_only:
             Console.debug('Duplicate checking is disabled, skipping.')
             self.films = []
@@ -62,23 +59,23 @@ class Duplicates:
             f"Looking for duplicates of '{self.src.title} ({self.src.year})'")
 
         self.films = list(
-            filter(lambda d: iterlen(d.video_files) > 0, 
+            filter(lambda d: iterlen(d.video_files) > 0,
                 map(Film, Find.glob(*set(config.destination_dirs.values()),
                           search=f"{self.src.title} {self.src.year}"))
                 )
             )
-        
-    def __repr__(self):        
+
+    def __repr__(self):
         if len(self) == 0:
             return "Duplicates(None)"
         x = f"Duplicates('{self.src.new_name}')\n"
         segments = 3 if config.use_folders else 2
         x += '\n'.join([f" ﹂File('{Path(*f.parts[-segments:])}')" for f in self.files])
         return x
-    
+
     def __len__(self):
         return len(self.films)
-    
+
     @property
     def files(self) -> ['Film.File']:
         """Retrieves a list of duplicate files in all dst paths.
@@ -86,7 +83,7 @@ class Duplicates:
             List of duplicate Film.File objects.
         """
         return [v for f in self.films for v in f.video_files]
-    
+
     @property
     def exact(self):
         """A subset of duplicates that are exact (except size) matches.
@@ -95,7 +92,7 @@ class Duplicates:
             list: [Film.File] of upgradeable duplicate files.
         """
         return [d for d in self.files if d.duplicate_result == ComparisonResult.EQUAL]
-    
+
     @property
     def upgradable(self):
         """A subset of duplicates that are lower quality than the current file.
@@ -104,11 +101,11 @@ class Duplicates:
             list: [Film.File] of upgradeable duplicate files.
         """
         return [d for d in self.files if d.duplicate_action == Should.UPGRADE]
-    
+
     @classmethod
     def rename_unwanted(cls, unwanted: ['Duplicates.Map']):
         """Rename duplicates pending upgrade to {name}.dup~.
-        
+
         Args:
             unwanted [Duplicates.Map]: List of unwanted mappings to rename.
         """
@@ -122,15 +119,15 @@ class Duplicates:
                 continue
             IO.rename(mp.duplicate, dst)
             cls.TO_DELETE.append(dst)
-            
+
     @classmethod
     def handle(cls, film) -> bool:
         """Determines how to handle duplicates of the inbound film, either
         replacing, keeping both, or skipping.
-        
+
         Args:
             film: (Film) Current film to process
-            
+
         Returns:
             bool: Returns True if this film should be moved, otherwise False
         """
@@ -141,42 +138,41 @@ class Duplicates:
         if film.should_ignore:
             return False
 
-        # Return immediately if the film is not a duplicate, 
+        # Return immediately if the film is not a duplicate,
         # or if duplicates off, or rename on.
-        if (len(film.duplicates) == 0 
-            or config.rename_only 
+        if (len(film.duplicates) == 0
+            or config.rename_only
             or not config.duplicates.enabled):
             return True
-        
-        Reason = ComparisonReason
+
         Result = ComparisonResult
 
         move = []
         existing_to_delete = []
-        
+
         # In case there are multiple video files in the original film,
         # we need to process each separately.
         for v in film.video_files:
 
             mp = film.duplicates.map(v)
             Console.print_duplicates(v, mp)
-            
+
             exact = first(mp, where=lambda d: v.dst == d.duplicate.src, default=None)
-            same_quality = list(filter(lambda d: d.result == Result.EQUAL, mp))
+            # same_quality = list(filter(lambda d: d.result == Result.EQUAL, mp))
             keep_existing = [d for d in mp if d.action == Should.KEEP_EXISTING]
             keep_both = [d for d in mp if d.action == Should.KEEP_BOTH]
             upgradable = [d for d in mp if d.action == Should.UPGRADE]
-            
-            if len(keep_existing) > 0 or (len(keep_both) == 0 
+
+            if len(keep_existing) > 0 or (len(keep_both) == 0
                                           and len(upgradable) == 0):
                 continue
-            
+
             if exact and exact.action == Should.UPGRADE:
                 existing_to_delete.append(exact)
-                
+
             if len(upgradable) > 0 and len(keep_existing) == 0:
                 existing_to_delete.extend(upgradable)
-            
+
             Duplicates.rename_unwanted(list(set(existing_to_delete)))
             move.append(v)
 
@@ -193,22 +189,22 @@ class Duplicates:
         If duplicates are found and the inbound film should replace them,
         we want to delete the copies on the destination dir that we don't
         want, and their parent folder, if it's empty.
-        
+
         Args:
             film (Film): Film object to determine which duplicates to delete.
-            
+
         Returns:
             The number of duplicate files deleted.
         """
-        
+
         if len(cls.TO_DELETE) == 0:
             return 0
-        
+
         d = Delete.files(*cls.TO_DELETE)
         for f in cls.TO_DELETE:
             if f.parent.exists() and f.parent.is_empty:
                 Delete.dir(f.parent)
-        Console().dim().blue(f'{INDENT}Removed {d} duplicate', 
+        Console().dim().blue(f'{INDENT}Removed {d} duplicate',
                        ƒ.pluralize('file', d)).print()
         cls.TO_DELETE = []
         return d
@@ -223,22 +219,22 @@ class Duplicates:
         Returns:
             [Map]: A list actions and reasons for each duplicate file.
         """
-        
+
         loop = asyncio.get_event_loop()
         nest_asyncio.apply(loop)
         tasks = [loop.create_task(Duplicates.decide(src, d))
                  for d in self.files]
         mp = loop.run_until_complete(asyncio.gather(*tasks))
         return sorted(mp)
-                
+
     @classmethod
     async def decide(cls, new: 'Film.File', duplicate: 'Film.File') -> 'Duplicates.Map':
         """Determines what action should be taken aginst a new or duplicate file.
-        
+
         Args:
             new (Film.File): The new Film (file) object.
             duplicate (Film.File): Duplicate file in a dst dir.
-       
+
         Returns:
             Duplicates.Map
         """
@@ -248,8 +244,8 @@ class Duplicates:
 
         # If duplicate replacing is disabled, don't replace.
         if config.duplicates.automatic_upgrading is False:
-            return cls.Map(new, 
-                           duplicate, 
+            return cls.Map(new,
+                           duplicate,
                            None,
                            Should.KEEP_EXISTING,
                            Reason.UPGRADING_DISABLED)
@@ -289,7 +285,7 @@ class Duplicates:
     class Map:
         """A class to compare and retain a list of duplicate files in the dst dirs
         describing the action and rationale the current new film should take.
-        
+
         Attributes:
             new (Film.File): Source file
             duplicate (Film.File): Duplicate file
@@ -298,31 +294,31 @@ class Duplicates:
             action (Should): Action to take on the new or duplicate.
             reason (ComparisonReason): Reason why the action was chosen.
         """
-        
-        def __init__(self, 
-                     new: 'Film.File', 
-                     duplicate: 'Film.File', 
-                     result: ComparisonResult, 
+
+        def __init__(self,
+                     new: 'Film.File',
+                     duplicate: 'Film.File',
+                     result: ComparisonResult,
                      action: Should,
                      reason: ComparisonReason):
             self.new = new
             self.duplicate = duplicate
             (self.result, self.action, self.reason) = (result, action, reason)
-            
+
         def __repr__(self):
             return f"DuplicateMap('{self.new.dst.name}' || '{self.duplicate.name}') " \
                    f"new is {self.result.name} " \
                    f"{self.reason.name}, " \
                    f"should {self.action.name} " \
                    f"{self.duplicate.size.pretty()}"
-                   
+
         def __lt__(self, other):
             return (
                 (self.action == Should.KEEP_EXISTING
                  and other.action != Should.KEEP_EXISTING) or
-                (self.result == ComparisonResult.HIGHER 
+                (self.result == ComparisonResult.HIGHER
                  and other.result != ComparisonResult.HIGHER) or
-                (self.result == ComparisonResult.EQUAL 
+                (self.result == ComparisonResult.EQUAL
                  and other.result == ComparisonResult.LOWER) or
                 (self.action == Should.UPGRADE
                  and other.action == Should.KEEP_BOTH) or
@@ -331,4 +327,4 @@ class Duplicates:
                 (self.reason == ComparisonReason.SIZE
                  and other.reason == ComparisonReason.SIZE
                  and self.duplicate.size.value > other.duplicate.size.value))
-    
+

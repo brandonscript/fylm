@@ -21,10 +21,6 @@ from setuptools import setup
 import os
 import sys
 
-if sys.version_info[0] < 3:
-    import io
-    open = io.open
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the relevant file.
@@ -51,10 +47,10 @@ setup(
 
     # Author details
     author='Brandon Shelley',
-    author_email='brandon@codeblooded.io',
+    author_email='brandon@pacificaviator.co',
 
     # License
-    license='Apache License, Version 2.0',
+    license='GPLv3',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -72,10 +68,12 @@ setup(
         'Topic :: Multimedia :: Video',
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: Apache Software License',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
 
         # Supported Python versions.
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
     ],
 
     # List of runtime dependencies. These will be installed by pip when

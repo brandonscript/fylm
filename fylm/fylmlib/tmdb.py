@@ -24,30 +24,19 @@ This module performs searches and handles results from TMDb.
     search: the main method exported by this module.
 """
 
-import os
 import re
-import copy
-import time
-import warnings
 import asyncio
-import functools
 from typing import Union
 from datetime import datetime
-from timeit import default_timer as timer
 import requests
 
-# FIXME: Delete?
-# warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
-
 import tmdbsimple as tmdb
-from rapidfuzz import fuzz
 from lazy import lazy
 from addict import Dict
 from pathlib import Path
 from itertools import groupby
 
 import fylmlib.config as config
-from fylmlib import Console
 from fylmlib import Log
 from fylmlib import Compare
 from fylmlib import Format
@@ -56,7 +45,7 @@ from fylmlib.constants import *
 
 if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key
-    
+
 # TODO: A shit ton of refactoring on TMDb
 class TMDb:
 
@@ -70,8 +59,8 @@ class TMDb:
             query:              Search string that will be used to search the TMDb API.
 
             query_year:         Year that will be used to search the TMDb API.
-                                
-            src_title:          Original title that was parsed from the file/folder.                                
+
+            src_title:          Original title that was parsed from the file/folder.
 
             src_year:           Original year that was parsed from the film's path.
                                 Used primarily to compare the year we expect the film
@@ -89,7 +78,7 @@ class TMDb:
 
             vote_count:         The TMDb vote count ranking of the search result.
 
-            title_similarity:   Float value between 0 and 1 representing the Levenshtein 
+            title_similarity:   Float value between 0 and 1 representing the Levenshtein
                                 distance similarity between parsed title and proposed title.
 
             year_deviation:     Absolute difference in years between the parsed year and
@@ -97,18 +86,18 @@ class TMDb:
 
             is_potential_match: Performs a checking heuristic to determine if the search
                                 result qualifies as a potential match.
-                                
+
             is_verified (bool): Set to True when the search result is retrieved from TMDb
-                                
+
             ia_accepted (bool): Set to True once a TMDb result is verified in interactive mode.
-            
+
         """
-        
-        def __init__(self, 
-            src_title=None, 
-            src_year=None, 
+
+        def __init__(self,
+            src_title=None,
+            src_year=None,
             raw_result=None):
-            
+
             self.src_title = src_title
             self.src_year = src_year
             self.new_title = None
@@ -122,7 +111,7 @@ class TMDb:
 
             if raw_result is not None:
                 self._merge(raw_result)
-                
+
         def __repr__(self):
             return f"Result" + str(tuple([str(x) for x in [
                 self.new_title or self.src_title,
@@ -131,12 +120,12 @@ class TMDb:
 
         def __eq__(self, other):
             """Use __eq__ method to define duplicate search results"""
-            return (self.new_title == other.new_title 
+            return (self.new_title == other.new_title
                 and self.new_year == other.new_year
                 and self.id == self.id)
 
         def __hash__(self):
-            return hash(('new_title', self.new_title, 
+            return hash(('new_title', self.new_title,
                          'new_year', self.new_year,
                          'id', self.id))
 
@@ -150,7 +139,7 @@ class TMDb:
                 raw: (Result) raw TMDb search result object
             """
             raw = Dict(raw)
-            
+
             self.id = int(raw.id)
             self.overview = raw.overview
             self.poster_url = raw.poster_path
@@ -168,7 +157,7 @@ class TMDb:
 
         @lazy
         def title_similarity(self) -> float:
-            """Performs a Levenshtein distance comparison between src title and 
+            """Performs a Levenshtein distance comparison between src title and
             new title.
 
             Returns:
@@ -201,7 +190,7 @@ class TMDb:
 
             if not self.src_title:
                 return False
-            
+
             # Define a threshold for an 'ideal' title similarity. This value
             # is used to determine an instant match.
             ideal_title_similarity = 0.85
@@ -215,9 +204,9 @@ class TMDb:
                 Format.strip_the(self.new_title), 1)
 
             # Check for an instant match: high title similarity, year match within
-            # max_year_diff (default 1 year off), and is at most the second result. 
-            # This limitation is imposed based on the theory that if by the second 
-            # result is no good result is found, we should check for all potential 
+            # max_year_diff (default 1 year off), and is at most the second result.
+            # This limitation is imposed based on the theory that if by the second
+            # result is no good result is found, we should check for all potential
             # results and find the best.
             if (self.title_similarity >= ideal_title_similarity
                 and self.year_deviation <= config.tmdb.max_year_diff
@@ -225,7 +214,7 @@ class TMDb:
                 # Console.debug(f'Instant match: {self.new_title} ({self.new_year})')
                 return True
             return False
-            
+
         def update(self, film):
             """Updates a given film with the values of this result.
 
@@ -236,9 +225,9 @@ class TMDb:
             film.title = self.new_title
             film.year = self.new_year
             lazy.invalidate(film.main_file, 'new_name')
-            
+
     class Search:
-        
+
         def __init__(self, query: Union[str, int], year: int = None, id: int = None):
             """A search constructor
 
@@ -246,7 +235,7 @@ class TMDb:
                 query (str): Original query string to search
                 year (int, optional): Year to search. Defaults to None.
             """
-            
+
             # On macOS, we need to use a funky hack to replace / in a filename with :,
             # in order to output it correctly.
             # Credit: https://stackoverflow.com/a/34504896/1214800
@@ -259,7 +248,7 @@ class TMDb:
 
         class parallel:
             """Performs asynchronous concurrent lookups from TMDb.
-            
+
             Args:
                 films ([Film]): *args list of films to search.
             """
@@ -275,14 +264,12 @@ class TMDb:
             async def _worker(self, i, film, max_workers):
                 # semaphore limits num of simultaneous calls
                 async with asyncio.Semaphore(max_workers):
-                    # Console().yellow(f"{ARROW} Worker {i} started '{film.title}'").print()
                     await film.search_tmdb()
-                    # Console().yellow(f"{ARROW} Worker {i} done '{film.title}' - {round(timer() - start)} second(s)").print()
                     return film
-                
+
         class Q:
             """Search query dictionary handler
-            
+
             Args:
                 query: str or int
                 id: int
@@ -294,13 +281,13 @@ class TMDb:
                 self.primary_release_year = primary_release_year
                 self.year = year
                 self.id = id
-                
+
             def __repr__(self):
                 return ' '.join(f"Q('{self.query}') "\
                         f"{self.primary_release_year or ''} "\
                         f"{self.year or ''} "\
                         f"{self.id or ''}".split())
-                
+
             def __eq__(self, other):
                 """Use __eq__ method to define duplicate queries"""
                 return (self.query == other.query
@@ -313,7 +300,7 @@ class TMDb:
                              'primary_release_year', self.primary_release_year,
                              'year', self.year,
                              'id', self.id))
-                
+
             def dict(self):
                 return self.__dict__
 
@@ -323,29 +310,29 @@ class TMDb:
             Returns:
                 An ordered list of TMDb.Result objects.
             """
-            
+
             Q = Search.Q
 
             # If querying by ID (an int), search immediately and return the result.
             if self.id or type(self.query) is int:
                 # Console.debug(f'Searching ID={self.id or self.query}')
                 return await self.dispatch_search(Q(id=self.id, query=self.query))
-            
+
             # ID search
             # Example API call:
             #    https://api.themoviedb.org/3/movie/{tmdb_id}?api_key=KEY
-            
+
             # Primary release year search
             # Example API call:
             #    https://api.themoviedb.org/3/search/movie?primary_release_year={year}&query={query}&api_key=KEY
-            
+
             # Basic year search
             # Example API call:
             #    https://api.themoviedb.org/3/search/movie?year={year}&query={query}&api_key=KEY
 
             queries = []
             stripped = re.sub(patterns.STRIP_WHEN_SEARCHING, '', self.query)
-                    
+
             queries = [
                 Q(query=self.query, year=self.year),
                 Q(query=stripped, year=self.year),
@@ -372,22 +359,22 @@ class TMDb:
                     if m.is_instant_match:
                         return [m]
                 self.results.extend(r)
-                
+
             # Sort, group/aggregate by ID, then sort by number of times the result appeared
             # in all searches
             results_sorted = sorted(self.results, key=lambda x: x.id)
             aggregate_results = [(r, len(list(results))) for r, results in groupby(results_sorted)]
             aggregate_results.sort(key=lambda x: x[1], reverse=True)
-            
-            # If no instant match was found, we need to figure out which are the most likely 
-            # matches. Strip duplicate results and remove results that don't match the 
+
+            # If no instant match was found, we need to figure out which are the most likely
+            # matches. Strip duplicate results and remove results that don't match the
             # configured match threshold:
             filtered_results = list(filter(
-                lambda x: 
-                    (x[0].year_deviation == 0 
+                lambda x:
+                    (x[0].year_deviation == 0
                         and (x[0].vote_count + x[0].popularity) >= 100
                         and x[0].title_similarity == config.tmdb.min_title_similarity / 1.4) or
-                    (int(x[0].year_deviation) <= config.tmdb.max_year_diff 
+                    (int(x[0].year_deviation) <= config.tmdb.max_year_diff
                         and x[0].popularity >= config.tmdb.min_popularity
                         and x[0].title_similarity == config.tmdb.min_title_similarity) or
                     (x[0].year_deviation <= 2
@@ -395,15 +382,15 @@ class TMDb:
                     (x[0].year_deviation <= 1
                         and x[0].title_similarity >= 0.8) or
                     (x[0].year_deviation == 0
-                        and x[0].title_similarity >= (config.tmdb.min_title_similarity / 1.5)), 
+                        and x[0].title_similarity >= (config.tmdb.min_title_similarity / 1.5)),
                 aggregate_results # aggregate results is in a tuple: (Result, number_of_times_returned)
             ))
-            
+
             # Sort the results by:
             #   - Sort by highest popularity rank first
             #   - Then prefer a matching title similarity first (a 0.7 is better than a 0.4)
             #   - Then prefer lowest year deviation (0 is better than 1)
-            sorted_results = list(sorted(filtered_results, 
+            sorted_results = list(sorted(filtered_results,
                 key=lambda x: (-(x[0].vote_count + x[0].popularity), -x[0].title_similarity, x[0].year_deviation)
             ))
 
@@ -413,12 +400,12 @@ class TMDb:
             return self.results
 
         async def dispatch_search(self, q: 'Search.Q') -> ['Search.Result']:
-            """TMDb lib search executor. Performs a TMDb search using the 
+            """TMDb lib search executor. Performs a TMDb search using the
             specified query params.
-            
+
             Args:
                 Q (Search.Q): Dictionary of kwargs to pass to TMDb searcher
-                
+
             Returns:
                 A list of raw result dictionary objects mapped from TMDb JSON.
             """

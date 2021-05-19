@@ -45,7 +45,7 @@ class Log:
     def config():
         """Configure the logger. In test mode, it is disabled.
         """
-        
+
         if config.test:
             Log.disable()
         else:

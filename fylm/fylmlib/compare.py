@@ -24,9 +24,6 @@ during runtime.
 """
 
 import re
-import difflib
-# import warnings
-# warnings.filterwarnings("ignore", message="Using slow pure-python SequenceMatcher. Install python-Levenshtein to remove this warning")
 
 from rapidfuzz import fuzz
 
@@ -36,7 +33,7 @@ from fylmlib import Console
 from fylmlib.enums import *
 
 class Compare:
-    
+
     @staticmethod
     def title_similarity(a, b):
         """Compare parsed title to TMDb title.
@@ -54,7 +51,7 @@ class Compare:
         # both the original and TMDb title, and convert both to lowercase so we can get
         # a more accurate string comparison.
         a = ' '.join(re.sub(patterns.STRIP_WHEN_COMPARING, ' ', a).lower().split())
-        b = ' '.join(re.sub(patterns.STRIP_WHEN_COMPARING, ' ', b or '').lower().split())    
+        b = ' '.join(re.sub(patterns.STRIP_WHEN_COMPARING, ' ', b or '').lower().split())
         return fuzz.token_sort_ratio(a, b) / 100
 
     @staticmethod
@@ -104,10 +101,10 @@ class Compare:
             True if the films are a match, else False
         """
 
-        # If both films have already been looked up and have a matching TMDb IDs, 
+        # If both films have already been looked up and have a matching TMDb IDs,
         # we can assume they are a match.
-        if (film.tmdb_id is not None 
-            and existing_film.tmdb_id is not None 
+        if (film.tmdb_id is not None
+            and existing_film.tmdb_id is not None
             and film.tmdb_id == existing_film.tmdb_id):
             return True
 
@@ -118,7 +115,7 @@ class Compare:
         # we can't guarantee it was named with the correct case)
         title = re.sub(invalid_comparison_chars, '', formatter.strip_illegal_chars(film.title).lower())
 
-        # Because existing_title is run through the Film init, which executes 
+        # Because existing_title is run through the Film init, which executes
         # strip_from_title, we need to perform the same step on the original title.
         title = " ".join(re.sub(patterns.strip_from_title, ' ', title).strip().split())
         existing_title = " ".join(re.sub(invalid_comparison_chars, '', formatter.strip_illegal_chars(existing_film.title).lower()).strip().split())
@@ -130,7 +127,7 @@ class Compare:
 
     @staticmethod
     def is_equal_quality(file, other):
-        """Determine if a film is the same quality as another, 
+        """Determine if a film is the same quality as another,
         without comparing size.
 
         Args:
@@ -141,7 +138,7 @@ class Compare:
         """
         if not is_duplicate(file.parent_film, other.parent_film):
             return False
-        
+
         return quality(file, other) == ComparisonResult.EQUAL
 
     @staticmethod
@@ -172,14 +169,14 @@ class Compare:
         Returns:
             ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
         """
-        
+
         if file.resolution == other.resolution:
             return ComparisonResult.EQUAL
         else:
-            return (ComparisonResult.HIGHER 
+            return (ComparisonResult.HIGHER
                     # A lower number == higher resolution
-                    if file.resolution.value < other.resolution.value 
-                    else ComparisonResult.LOWER)    
+                    if file.resolution.value < other.resolution.value
+                    else ComparisonResult.LOWER)
 
     @staticmethod
     def media(file, other) -> ComparisonResult:
@@ -191,15 +188,15 @@ class Compare:
         Returns:
             ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
         """
-        
+
         if file.media == other.media:
             return ComparisonResult.EQUAL
         else:
-            return (ComparisonResult.HIGHER 
+            return (ComparisonResult.HIGHER
                     # A lower number == higher media
-                    if file.media.value < other.media.value 
-                    else ComparisonResult.LOWER)    
-            
+                    if file.media.value < other.media.value
+                    else ComparisonResult.LOWER)
+
     @staticmethod
     def proper(file, other) -> ComparisonResult:
         """Compare two files to determine if one is proper vs. the other.
@@ -210,54 +207,54 @@ class Compare:
         Returns:
             ComparisonResult: EQUAL, HIGHER, LOWER, or NOT_COMPARABLE
         """
-        
+
         if file.is_proper == other.is_proper:
             return ComparisonResult.EQUAL
         else:
-            return (ComparisonResult.HIGHER 
+            return (ComparisonResult.HIGHER
                     if file.is_proper and not other.is_proper
-                    else ComparisonResult.LOWER)    
+                    else ComparisonResult.LOWER)
 
     @staticmethod
     def quality(file, other) -> (ComparisonResult, ComparisonReason):
         """Compare two file qualities to determine if one is better than the other.
-        This method compares resolution, media, edition, proper, and HDR, but does 
+        This method compares resolution, media, edition, proper, and HDR, but does
         NOT compare file size.
 
         Args:
             file: (Film.File) the first file to compare.
             other: (Film.File) the second file to compare.
-        Returns: 
+        Returns:
             Tuple(ComparisonResult, ComparisonReason)
         """
-        
+
         assert file is not None, "'file' cannot be None"
         assert other is not None, "'other' cannot be None"
-        
+
         Result = ComparisonResult
         Reason = ComparisonReason
-        
+
         rez = Compare.resolution(file, other)
         media = Compare.media(file, other)
         size = Compare.size(file, other)
         proper = Compare.proper(file, other)
-        
+
         if Compare.title_similarity(file.title, other.title) < 0.9:
             Console.error(
                 f"Cannot compare quality of different titles '{file.title}' and '{other.title}'")
             return (Result.NOT_COMPARABLE, Reason.NAME_MISMATCH)
-        
+
         # Resolution
         if rez != Result.EQUAL:
             return (rez, Reason.RESOLUTION)
 
         if media != Result.EQUAL:
             return (media, Reason.MEDIA)
-            
+
         # Edition
         if file.edition != other.edition and not config.duplicates.ignore_edition:
             return (Result.DIFFERENT, Reason.EDITION)
-            
+
         # HDR
         if file.is_hdr != other.is_hdr:
             return (Result.DIFFERENT, Reason.HDR)
@@ -265,14 +262,14 @@ class Compare:
         # Proper
         if proper != Result.EQUAL:
             return (proper, Reason.PROPER)
-            
+
         # Size
         if size == ComparisonResult.EQUAL:
             return (Result.EQUAL, ComparisonReason.IDENTICAL)
         else:
             return (size, Reason.SIZE)
 
-        # At this point, we must assume that the files aren't comparable, but 
+        # At this point, we must assume that the files aren't comparable, but
         # this is a last resort fallback and should never be reached.
         return (Result.NOT_COMPARABLE, Result.NOT_COMPARABLE)
 
@@ -290,16 +287,16 @@ class Compare:
         if not path.exists():
             Console().error(f"Could not compare size, '{path}' does not exist.")
             return ComparisonResult.NOT_COMPARABLE
-        
+
         if not other.exists():
             Console().error(f"Could not compare size, '{other}' does not exist.")
             return ComparisonResult.NOT_COMPARABLE
-        
+
         if path.size.value > (other.size.value or 0):
             return ComparisonResult.HIGHER
         elif path.size.value < (other.size.value or 0):
             return ComparisonResult.LOWER
         elif path.size.value == (other.size.value or 0):
             return ComparisonResult.EQUAL
-        
+
         return ComparisonResult.NOT_COMPARABLE

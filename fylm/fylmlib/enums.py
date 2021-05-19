@@ -24,7 +24,7 @@ This module handles all the enumerable constants for Fylm.
 
 from enum import Enum
 
-Should = Enum('Should', 
+Should = Enum('Should',
               'UPGRADE IGNORE KEEP_EXISTING KEEP_BOTH DELETE DELETE_EXISTING')
 ComparisonResult = Enum('ComparisonResult', 'HIGHER EQUAL LOWER DIFFERENT NOT_COMPARABLE')
 RenameMask = Enum('RenameMask', 'FILE DIR')
@@ -46,7 +46,7 @@ class Resolution(Enum):
         elif self == self.SD_480P: return "480p"
         elif self == self.UNKNOWN: return None
         else: return self.name
-    
+
     @property
     def key(self):
         if self.value < 4:
@@ -113,13 +113,13 @@ class ComparisonReason(Enum):
     NAME_MISMATCH = 12
     @property
     def display_name(self) -> str:
-        # Should {upgrade, keep, ignore} because: 
+        # Should {upgrade, keep, ignore} because:
         if self.name:
-            if self.name == 'hdr': 
+            if self.name == 'hdr':
                 return self.name
             elif self.value == 5:
                 return "quality media"
             else:
                 return self.name.replace('_', ' ').lower()
-        else: 
+        else:
             return None

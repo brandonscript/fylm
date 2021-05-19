@@ -33,13 +33,12 @@ Sample subtitle filenames:
 """
 
 import re
-import os
 from pathlib import Path
 from typing import Union
 
 from fylmlib.languages import Languages
 import fylmlib.constants as constants
-from fylmlib import Console, Format
+from fylmlib import Console
 
 _LANGUAGES = Languages().load()
 
@@ -50,7 +49,7 @@ class Subtitle:
         path: Subtitle path.
     """
     def __init__(self, path):
-        
+
         if not Path(path).suffix.lower() in constants.SUB_EXTS:
             Console.error(f"'{path}' is not a valid subtitle file")
             return
@@ -66,36 +65,36 @@ class Subtitle:
 
         # The language string captured from the original filename, e.g. 'english' or 'en'.
         self.captured = None
-        
-        def pattern(s): 
+
+        def pattern(s):
             return re.compile(r'\b(?P<lang>' + re.escape(s) + r'(?:-\w{2})?)\b', re.I)
-        
+
         # First we loop through languages to determine if the path contains
         # a descriptive language string, e.g. 'english', 'dutch', or 'fr'
         for lang in _LANGUAGES:
-            
+
             patterns = []
-            
+
             # Compile patterns that matches language strings and codes, case insensitive.
             patterns.append(pattern(lang.code))
             for n in list(filter(None, lang.names)):
                 patterns.append(pattern(n))
                 patterns.append(pattern(n[:3]))
-            
+
             # Iterate the array of patterns that we want to check for.
             for p in patterns:
-                
+
                 # Search for rx match.
                 match = re.search(p, self.path.name)
                 if match and match.group('lang'):
-                
+
                     # If a match exists, store it
                     self.captured = match.group('lang')
 
                     # If we find a match, set the values of the subtitle, and break.
                     self.code = lang.code
                     self.language = lang.primary_name
-                
+
                     break
 
             # Break from parent if captured is set.
@@ -108,10 +107,10 @@ class Subtitle:
         Returns:
             Path: A new path with the subtitle language included in the path.
         """
-        
+
         assert self.path, "Subtitle was not initalized before 'new_name' was called."
-        
+
         if type(path) is str:
             path = Path(path)
-        
+
         return path.with_suffix('.' + self.captured + path.suffix) if self.captured else path

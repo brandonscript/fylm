@@ -38,13 +38,12 @@ from fylmlib import Console
 from fylmlib import Delete
 from fylmlib import Duplicates
 from fylmlib import Format as ƒ
-from fylmlib import Film
 ansi = Console.ansi
 
 InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 
 class Interactive:
-    
+
     _MOCK_INPUT = None
 
     @classmethod
@@ -53,7 +52,7 @@ class Interactive:
 
         Determines whether the user should be prompted to verify a
         matching film, or look up an unknown one.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
@@ -80,28 +79,27 @@ class Interactive:
 
         Determines how to handle duplicates of the inbound film, either
         replacing, keeping both, or skipping.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
             bool: Returns True if this file should be moved, otherwise False
         """
-                
+
         if config.interactive is False:
             return False
-        
+
         if film.should_ignore:
             return False
 
         # Return immediately if the film is not a duplicate
         if len(film.duplicates) == 0:
             return True
-        
+
         move = []
 
-        Reason = ComparisonReason
         Result = ComparisonResult
-        # In case there are multiple video files in the original film, 
+        # In case there are multiple video files in the original film,
         # we need to process each separately.
         for v in film.video_files:
 
@@ -138,26 +136,26 @@ class Interactive:
                 elif qty == 1 and not exact:
                     choices.append(('U',
                                     "Upgrade existing lower quality version"))
-                
+
             if len(keep_both) > 0:
                 choices.append(f"Keep this file (and existing {ƒ.pluralize('version', len(film.duplicates.files))})")
             elif len(keep_existing) > 0 and not exact:
                 choices.append(f"Keep this file anyway")
-                
+
             choices.extend([f"Delete this file (keep existing {ƒ.pluralize('version', len(film.duplicates.files))})",
                             ('S', '[ Skip ]')])
 
             (choice, letter) = cls._choice_input(
-                prompt='', 
+                prompt='',
                 choices=choices,
                 default=None,
                 mock_input=_first(cls._MOCK_INPUT))
 
             cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
-            
+
             if choice == len(choices) - 1:
                 continue
-            
+
             if letter == 'A':
                 existing_to_delete.extend(upgradable)
             elif letter == 'U' and exact:
@@ -175,7 +173,7 @@ class Interactive:
                         mp.action = Should.DELETE_EXISTING
                         mp.reason = ComparisonReason.MANUALLY_SET
                     Duplicates.rename_unwanted(list(set(existing_to_delete)))
-            
+
             # Delete this file (last choice is always skip, second last is delete)
             elif letter == 'D':
 
@@ -195,38 +193,38 @@ class Interactive:
                     if Delete.path(film.src, force=True):
                         Console().red(INDENT, f'Deleted {FAIL}').print()
                         continue
-        
+
             move.append(v)
-            
+
         if len(move) == 0:
             film.ignore_reason = IgnoreReason.SKIP
             return False
         else:
             return True
-            
+
     @classmethod
     def verify_film(cls, film):
         """Prompt the user to verify whether the best match is correct.
 
-        Ask the user to verify that the currently detected TMDb match 
+        Ask the user to verify that the currently detected TMDb match
         is correct, and offer choices that let the user search or look
         up a different title.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
             True if the film passes verification, else False
         """
-        
+
         if len(film.tmdb_matches) == 0:
             cls.handle_unknown_film(film)
-        
+
         else:
             Console.print_ask('Is this correct? [Y]')
             (choice, letter) = cls._choice_input(
-            prompt='', 
+            prompt='',
             choices=[
-                ('Y', 'Yes'), 
+                ('Y', 'Yes'),
                 ('N', 'No, search by name'),
                 ('I', 'No, lookup by ID'),
                 ('S', '[ Skip ]')],
@@ -249,25 +247,25 @@ class Interactive:
 
     @classmethod
     def handle_unknown_film(cls, film):
-        """Ask the user whether an unknown film should be manually 
+        """Ask the user whether an unknown film should be manually
         searched for or skipped.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
             True if the film should be processed, else False
-        """      
+        """
         Console.print_ask(f"{film.ignore_reason.display_name.capitalize()} [N]")
 
         # Continuously loop this if an invalid choice is entered.
         while True:
             (choice, letter) = cls._choice_input(
-                prompt='', 
+                prompt='',
                 choices=[
                     ('N', 'Search by name'),
                     ('I', 'Lookup by ID'),
                     ('S', '[ Skip ]')],
-                default='N', 
+                default='N',
                 mock_input=_first(cls._MOCK_INPUT))
 
             cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
@@ -278,14 +276,14 @@ class Interactive:
                 return cls.search_by_id(film)
             elif choice == 2:
                 film.ignore_reason = IgnoreReason.SKIP
-                return False           
+                return False
 
     @classmethod
     def search_by_id(cls, film):
         """Perform an interactive lookup of a film by ID.
 
         Ask the user for a TMDb ID, then perform a search for that ID.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
@@ -302,7 +300,7 @@ class Interactive:
                 film.tmdb.id = int(search)
             except ValueError:
                 Console.print_interactive_error("A TMDb ID must be a number")
-            
+
             # Search for the new film by ID.
             film.search_tmdb_sync()
             if film.tmdb.is_verified is True:
@@ -310,7 +308,7 @@ class Interactive:
                 return cls.verify_film(film)
             else:
                 Console.print_interactive_error(f"No results found for '{film.tmdb.id}'")
-            
+
 
     _last_search = None
 
@@ -318,9 +316,9 @@ class Interactive:
     def search_by_name(cls, film):
         """Perform an interactive name search.
 
-        Ask the user for a search query, then perform a search for title, and, 
+        Ask the user for a search query, then perform a search for title, and,
         if detected, year.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
@@ -329,8 +327,8 @@ class Interactive:
 
         # Delete the existing ID in case it is a mismatch.
         film.tmdb.id = None
-        query = cls._simple_input("Search TMDb: ", 
-                                  cls._last_search or film.name, 
+        query = cls._simple_input("Search TMDb: ",
+                                  cls._last_search or film.name,
                                   mock_input=_first(cls._MOCK_INPUT))
         cls._MOCK_INPUT = _shift(cls._MOCK_INPUT)
         cls._last_search = query
@@ -349,7 +347,7 @@ class Interactive:
 
         Ask the user for input, then map the selected film to the
         current film object.
-        
+
         Args:
             film: (Film) Current film to process
         Returns:
@@ -365,15 +363,15 @@ class Interactive:
 
         # Generate a list of choices based on search results and save the input
         # to `choice`.
-        choices = [(i + 1, f"{m.new_title} ({m.new_year}) [{m.id}]") for i, m in 
+        choices = [(i + 1, f"{m.new_title} ({m.new_year}) [{m.id}]") for i, m in
                    enumerate(film.tmdb_matches)]
         (choice, letter) = cls._choice_input(
-            prompt="", 
+            prompt="",
             choices=choices + [
                 ('N', '[ New search ]'),
                 ('I', '[ Lookup by ID ]'),
                 ('S', '[ Skip ]')],
-            # choices=[f"{m.new_title} ({m.new_year}) [{m.id}]" for m in film.tmdb_matches] + 
+            # choices=[f"{m.new_title} ({m.new_year}) [{m.id}]" for m in film.tmdb_matches] +
             # ['[ New search ]', '[ Search by ID ]', '[ Skip ]'],
             enumeration=InteractiveKeyMode.TUPLE,
             mock_input=_first(cls._MOCK_INPUT))
@@ -397,9 +395,9 @@ class Interactive:
             Console.print_interactive_skipped()
             return False
 
-        # If we haven't returned yet, update the film with the selected match 
+        # If we haven't returned yet, update the film with the selected match
         # and mark it as verified.
-        
+
         film.tmdb_matches[choice].update(film)
         film.tmdb.ia_accepted = True
 
@@ -412,7 +410,7 @@ class Interactive:
         """Simple prompt for input
 
         Ask the user for input. Extremely thin wrapper around the common input() function
-        
+
         Args:
             prompt: (str) Text printed to standard output before reading input
             prefill: (str) Prefilled text
@@ -430,13 +428,13 @@ class Interactive:
             readline.set_startup_hook()
 
     @classmethod
-    def _condition_input(cls, 
-                         prompt, 
-                         default, 
-                         prefill='', 
-                         return_type=str, 
-                         condition=None, 
-                         error_message=None, 
+    def _condition_input(cls,
+                         prompt,
+                         default,
+                         prefill='',
+                         return_type=str,
+                         condition=None,
+                         error_message=None,
                          mock_input=None):
         """Conditional prompt for input using lambda to verify condition.
 
@@ -462,7 +460,7 @@ class Interactive:
 
             if answer == '' and default is not None:
                 answer = default
-            
+
             if condition is not None:
                 if condition(answer):
                     return answer
@@ -474,13 +472,13 @@ class Interactive:
                 print(error_message)
 
     @classmethod
-    def _choice_input(cls, 
-                      prompt, 
-                      choices, 
-                      default=None, 
-                      prefill='', 
-                      enumeration=InteractiveKeyMode.CHAR, 
-                      error_message=None, 
+    def _choice_input(cls,
+                      prompt,
+                      choices,
+                      default=None,
+                      prefill='',
+                      enumeration=InteractiveKeyMode.CHAR,
+                      error_message=None,
                       mock_input=None) -> (int, str):
         """Choice-based prompt for input.
 
@@ -493,7 +491,7 @@ class Interactive:
             error_message: (str) An optional error message to be shown when an input is not a valid choice
             mock_input: (char) A mock input response for tests
         Returns:
-            Tuple representing (the index of the selected choice, 
+            Tuple representing (the index of the selected choice,
                                 the first letter (uppercase) of the choice)
         """
         if enumeration == InteractiveKeyMode.NUMBER:
@@ -512,11 +510,11 @@ class Interactive:
             Console.print_choice(idx, choice)
 
         answer = cls._condition_input(
-            prompt, 
-            condition=lambda x: x.upper() in chars, 
-            default=default, 
-            prefill=prefill, 
-            error_message=error_message, 
+            prompt,
+            condition=lambda x: x.upper() in chars,
+            default=default,
+            prefill=prefill,
+            error_message=error_message,
             mock_input=mock_input)
         return (chars.index(answer.upper()), answer.upper())
 

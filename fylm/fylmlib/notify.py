@@ -19,7 +19,8 @@
 
 """Notification handler for Fylm.
 
-This module is used to send notifications to various external integrations.
+This module handles all external services notifications.
+Currently only Plex is supported, but Pushover is coming soon.
 """
 
 try:
@@ -31,31 +32,25 @@ import shutil
 
 from plexapi.server import PlexServer
 from fylmlib.pushover import init, Client
-from colors import color
 import requests
 
 import fylmlib.config as config
 from fylmlib import Log
 from fylmlib import Console
 
-"""Notification handler for Fylm.
-
-This module handles all external services notifications.
-Currently only Plex is supported, but Pushover is coming soon.
-"""
-
 class Notify:
 
+    @staticmethod
     def plex():
         """Plex notification handler.
 
         Notify Plex that it should check for updates.
         """
 
-        # Check if Plex notifications are enabled, and that we're not running in 
+        # Check if Plex notifications are enabled, and that we're not running in
         # quiet or rename modes.
-        if (config.plex.enabled is True 
-            and config.quiet is False 
+        if (config.plex.enabled is True
+            and config.quiet is False
             and config.rename_only is False
             and config.test is False):
 
@@ -84,16 +79,17 @@ class Notify:
             # Re-enable logging when done.
             Log.enable()
 
+    @staticmethod
     def pushover(film):
         """Pushover notification handler.
 
         Notify Pushover that an action has been performed.
         """
 
-        # Check if Pushover notifications are enabled, and that we're not running in 
+        # Check if Pushover notifications are enabled, and that we're not running in
         # quiet or rename modes.
-        if (config.pushover.enabled is True 
-            and config.quiet is False 
+        if (config.pushover.enabled is True
+            and config.quiet is False
             and config.rename_only is False
             and config.test is False):
 
@@ -102,7 +98,7 @@ class Notify:
             if not os.path.exists(images_path):
                 os.makedirs(images_path)
 
-# FIXME: use Path
+            # FIXME: use Path
             if film.poster_url:
                 url = urljoin('https://image.tmdb.org/t/p/w185', film.poster_path)
                 img = os.path.join(images_path, film.poster_path)
@@ -122,7 +118,7 @@ class Notify:
             message = ('. '.join(film.overview.split('.  ')[:2]) + '.'[:200] + '...') if len(film.overview) > 200 else film.overview
 
             pushover.send_message(
-                message=f"{film.title} ({film.year})\n{message}", 
+                message=f"{film.title} ({film.year})\n{message}",
                 attachment=attachment,
                 title='Fylm Added')
 

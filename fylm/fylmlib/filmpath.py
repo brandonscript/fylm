@@ -19,7 +19,7 @@
 
 """FilmPath object.
 
-    A stateful subclass of Path which includes 
+    A stateful subclass of Path which includes
     specific use cases for film file and folder objects.
 """
 
@@ -35,92 +35,92 @@ from fylmlib.enums import *
 from fylmlib import Parser, Console
 
 class FilmPath(Path):
-    """A collection of paths used to construct filenames, parseable strings, and locate 
-    files. It tries to follow the os.walk() model as best as possible. FilmPath can 
-    represent both a file and a dir, depending on whether it was initialized with a 
+    """A collection of paths used to construct filenames, parseable strings, and locate
+    files. It tries to follow the os.walk() model as best as possible. FilmPath can
+    represent both a file and a dir, depending on whether it was initialized with a
     file or dir path.
-    
+
     Init args:
-    
+
         origin
         dirs
         files
-    
+
     Overrides:
 
         joinpath()
         parent
         parents
         relative_to()
-    
+
     Attributes:
-                                    
+
         branch (Path):              The nearest parent that contains one more films, e.g.
-                                    
+
                                      - /volumes/downloads
                                      - /volumes/downloads/#done
-        
+
         descendents ([FilmPath]):   Iterable of all files or dirs contained within the specified dir.
                                     Default (even for files) is an empty list.
-        
+
         dirs ([FilmPath]):          List of subdirectories in this path object.
-                                     
-        files ([FilmPath]):         List of all files in the dir, or a list of one, if path is a 
+
+        files ([FilmPath]):         List of all files in the dir, or a list of one, if path is a
                                     file. Does not return deeply nested files.
-           
+
         filmrel (FilmPath):         Relative path between branch and self, e.g.
 
                                      - Avatar.2009.BluRay.1080p/Avatar.2009.BluRay.1080p.x264-Scene.mkv
                                      - Avatar.2009.BluRay.1080p.x264-Scene/av.bluray.1080p.mkv
                                      - Avatar.2009.BluRay.1080p.x264-Scene.mkv
-                                     
+
         filmroot (FilmPath):        The root path of a file or dir.
-                                    
-        is_container (bool):        Returns True if the path contains multiple films and should 
+
+        is_container (bool):        Returns True if the path contains multiple films and should
                                     be investigated recursively.
-                                    
+
         is_empty (bool):            True if the path does not contain any files or dirs. Exludes system files
-                                    like 'thumbs.db' and '.DS_Store'.  
-        
+                                    like 'thumbs.db' and '.DS_Store'.
+
         is_origin (bool):           Returns True if the path matches the origin.
-                                    
+
         is_branch (bool):           Returns True if the path is likely to contain more than one film.
-        
+
         is_filmroot (bool):         Returns True if the path is the filmroot.
-        
-        is_terminus (bool):         True if the path is the last in a tree, i.e. is a file, or is a 
-                                    directory but contains no dirs or files, or if we can safely determine 
-                                    that all its files or subdirs belong to a single title.    
-        
+
+        is_terminus (bool):         True if the path is the last in a tree, i.e. is a file, or is a
+                                    directory but contains no dirs or files, or if we can safely determine
+                                    that all its files or subdirs belong to a single title.
+
         is_video_file (bool):       True if the path is a file with a suffix matching video_exts.
-              
+
         has_ignored_string (bool):  Returns True if this Path contains any ignored strings.
-        
+
         has_valid_ext (bool):       Returns True if this Path is a file, and has a valid video ext
-                                    (either in config.video_exts or config.extra_exts).                       
-        
-        maybe_film (bool):          Returns True if the path is a valid candidate for a possible 
+                                    (either in config.video_exts or config.extra_exts).
+
+        maybe_film (bool):          Returns True if the path is a valid candidate for a possible
                                     Film object. A candidate must either be a file immediately after
                                     a root path, or a dir containing at least one video file, and
                                     not nested dirs containing additional video files.
-        
-        origin (Path):              Origin path originally passed to find_deep, likely 
+
+        origin (Path):              Origin path originally passed to find_deep, likely
                                     provided by config or -s, e.g.
-                                    
+
                                      - /volumes/downloads
-                                     
+
         size (Size):                Size object containing size of the file or dir.
-                                            
+
         siblings ([FilmPath]):      Iterable of all files or dirs that are adjacent to the current path.
-                                            
+
         video_files ([FilmPath]):   Iterable subset of files that are valid video files.
-        
+
         _year (int or None):        Year detected in in the name segment.
-        
+
     Methods:
-    
+
         sync(fp: FilmPath, attrs):  Calls and sets lazy attributes to the passed FilmPath object.
-                                    
+
     """
 
     _flavour = type(Path())._flavour
@@ -131,9 +131,9 @@ class FilmPath(Path):
         Args:
             origin (Path):      Origin top level path, inherited from args[0] if possible,
                                 or self.
-                                        
+
             dirs (list):        Dirs provided by os.walk(), defauls to []
-                                         
+
             files (list):       Files provided by os.walk(), defaults to []
         """
         super().__init__()
@@ -541,7 +541,7 @@ class FilmPath(Path):
 
             Args:
                 path (FilmPath): Path to file.
-                
+
             Returns:
                 True, if the path is an acceptable size, else False.
             """
@@ -661,7 +661,7 @@ class FilmPath(Path):
             Args:
                 path1 (str or Pathlike): First path to check
                 path2 (str or Pathlike): Second path to check
-                
+
             Returns:
             # TODO: Separate the business logic (force_move) from this function
                 True, if path1 and path2 are on the same parition, otherwise False
@@ -669,9 +669,6 @@ class FilmPath(Path):
 
             p1 = Path(path1)
             p2 = Path(path2)
-
-            def err(
-                x): return f"Tried to get the mount point for a path that does not exist '{x}'."
 
             while not p1.exists():
                 p1 = p1.parent
@@ -701,7 +698,7 @@ class FilmPath(Path):
 
             Args:
                 path (str, Path, or FilmPath): List of paths to check
-                
+
             Returns:
                 True if the path exists, else False.
             """

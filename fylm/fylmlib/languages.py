@@ -19,14 +19,13 @@
 
 """Loads languages from a json file into a consumable format.
 
-This module is used to load languages from a ISO-639-1 language.json 
+This module is used to load languages from a ISO-639-1 language.json
 map file.
 
     languages: the main variable exported by this module.
 
 """
 
-import os
 import json
 from pathlib import Path
 
@@ -37,7 +36,7 @@ class Languages:
     """
     def __init__(self):
         pass
-    
+
     class Language:
         """A language objects to handle raw language descriptors.
 
@@ -51,13 +50,13 @@ class Languages:
             self.code = code
             self.names = [n.strip() for n in names.split(',')]
             self.primary_name = self.names[0]
-            
+
         def __repr__(self):
             return f'{self.primary_name} ({self.code})'
 
     @lazy
     def languages(self) -> ['Language']:
-        
+
         # Load json from languages.json
         # TODO: Pathify
         data = json.load(open(Path(__file__).parent / 'languages.json'))

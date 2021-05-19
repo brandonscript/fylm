@@ -35,8 +35,8 @@ ARTICLES = ['&', 'a', 'an', 'and', 'as', 'at', 'by',
 # Compiled pattern that matches a 4-digit year between 1921 and 2159.
 # We ignore 2160 because it would conflict with 2160p, and we also
 # ensure that it isn't at the beginning of the string and that it's
-# preceded by a word boundary. (Looking at you, 2001 and BT2020). We 
-# also ignore 1920 because of 1920x1080 resolution. It also cannot be 
+# preceded by a word boundary. (Looking at you, 2001 and BT2020). We
+# also ignore 1920 because of 1920x1080 resolution. It also cannot be
 # at the start of the input string or after a /.
 YEAR = re.compile(r'(?<![\/])(?!^)\b(?P<year>192[1-9]|19[3-9]\d|20[0-9]\d|21[0-5]\d)\b')
 

@@ -36,12 +36,11 @@ from fylmlib.tools import *
 from fylmlib.enums import *
 import fylmlib.config as config
 import fylmlib.patterns as patterns
-from timeit import default_timer as timer
 
 MAX_WORKERS = 50
-    
+
 class Format:
-    
+
     # FIXME: Format should take a string or int and init
 
     class Name:
@@ -62,17 +61,17 @@ class Format:
             Args:
                 file: A Film.File object to build new names from.
             """
-            
+
             assert type(file).__name__ == 'File', f"'{file}' is not a Film.File object."
-            
+
             self.file = file
-                
+
             # Map mutable copies of the original renaming patterns to names
             self.filename = self._map_template(
                 copy(config.rename_pattern.file), RenameMask.FILE)
             self.dirname = self._map_template(
                 copy(config.rename_pattern.folder), RenameMask.DIR)
-            
+
         @property
         def filmrel(self) -> 'Path':
             """Generates a Path object from the given string.
@@ -84,28 +83,28 @@ class Format:
                 raise AttributeError(
                     f"Could not build path for '{self.path.name}', 'name' is missing.\n"
                     f"Initalize Name and call build() before accessing 'filmrel'.")
-                
+
             if not self.dirname:
                 raise AttributeError(
                     f"Could not build path for '{self.path.name}', 'parent' is missing.\n"
                     f"Initalize Name and call build() before accessing 'filmrel'.")
-                
+
             # Handle macOS (darwin) converting / to : on the filesystem reads/writes.
             # Credit: https://stackoverflow.com/a/34504896/1214800
             if sys.platform == 'darwin' and re.search(r'/', self.filename):
-                self.filename - self.filename.replace(r'/', '-')
-            
+                self.filename = self.filename.replace(r'/', '-')
+
             if config.use_folders:
                 return Path(self.dirname) / self.filename
             else:
                 return Path(self.filename)
-            
+
         def _map_template(self, template: str, rename_mask: RenameMask) -> str:
             """Maps a pattern to a string given the template mask provided.
-            
+
             Args:
                 template (str): The template.
-                rename_mask (RenameMask): RenameMask.FILE or .DIR, depending on 
+                rename_mask (RenameMask): RenameMask.FILE or .DIR, depending on
                                           which is being generated.
 
             Returns:
@@ -116,7 +115,7 @@ class Format:
             # each mapped to its associated film property. These need to
             # be ordered such that the most restrictive comes before the
             # most flexible match.
-            
+
             part = ''
             if rename_mask == RenameMask.FILE and self.file.part:
                 ry = r'(year.*?})'
@@ -125,13 +124,13 @@ class Format:
                 else:
                     template = template + '{part}'
                 part = f", Part {self.file.part}"
-            
+
             quality = '-'.join(filter(
                 None, [
-                    self.file.media.display_name if self.file.media else None, 
+                    self.file.media.display_name if self.file.media else None,
                     self.file.resolution.display_name if self.file.resolution else None
                 ]))
-            
+
             pattern_map = [
                 ["title-the", self.file.film.title_the],
                 ["title", self.file.film.title],
@@ -186,8 +185,8 @@ class Format:
 
             return Format.strip_extra_whitespace(template)
 
-    def pretty_size(bytes: Union[int, float], 
-                    units: Units = None, 
+    def pretty_size(bytes: Union[int, float],
+                    units: Units = None,
                     precision: int = None) -> str:
         """Returns a human readable string representation of bytes.
 
@@ -199,19 +198,19 @@ class Format:
         Returns:
             str: A human readable string representation of bytes, e.g. 4.12 GiB or 210.2 MB.
         """
-        
+
         if units and 'i' in units.name or not units and config.size_units_ibi:
             sizes = ['B', 'KiB', 'MiB', 'GiB']
             cutoff = 1024
         else:
             sizes = ['B', 'KB', 'MB', 'GB']
             cutoff = 1000
-            
+
         units = units if type(units) is list else [units.name] if units else sizes
-                
-        p = lambda x, u: x if x is not None else (2 if 'G' in u else 
+
+        p = lambda x, u: x if x is not None else (2 if 'G' in u else
                                                1 if 'M' in u else 0)
-        
+
         i = 0
         u = units
         prec = 0
@@ -224,7 +223,7 @@ class Format:
             prec = p(precision, current)
             if current == want:
                 break
-            
+
         return f'{bytes:,.{prec}f} {u[0]}'
 
     @staticmethod
@@ -237,17 +236,17 @@ class Format:
         Returns:
             A human-readable formatted comparison string.
         """
-        
+
         diff = right - left
         if diff < 0: return f'{Format.pretty_size(abs(diff))} smaller'
         elif diff > 0: return f'{Format.pretty_size(abs(diff))} bigger'
         else: return 'Identical'
-        
+
     @staticmethod
     def num(d):
         """Converts an input number to a string."""
         return f'{d:n}'
-    
+
     @staticmethod
     def num_to_words(d: int):
         """Converts an input number to words."""
@@ -379,13 +378,13 @@ class Format:
                 #    the previous wasn't alphabetical, numerical, or a roman numeral
                 #    (however, the roman numeral can't be the first word in the title)
                 #    it's not 'a' or 'the'
-                #       (We should check that it's not preceded by verb, but nltk 
+                #       (We should check that it's not preceded by verb, but nltk
                 #       synsets is way too slow.)
                 # then we should capitalize the article.
                 # (e.g., Mack The Knife vs. The Chronicles of Narnia The Lion the Witch, and the Wardrobe)
-                if (not current.lower() == 'and' 
-                    and not prev.lower() in patterns.ARTICLES 
-                    and not prev.endswith(',') 
+                if (not current.lower() == 'and'
+                    and not prev.lower() in patterns.ARTICLES
+                    and not prev.endswith(',')
                     and (
                         not prev.rstrip(',').isalpha()
                         or is_number(prev)

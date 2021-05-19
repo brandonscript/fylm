@@ -73,7 +73,7 @@ class Config(object):
         """Load config.yaml and map CLI arguments, if applicable.
         """
 
-        if self.__initialized: 
+        if self.__initialized:
             return
         self.__initialized = True
 
@@ -267,12 +267,12 @@ class Config(object):
         # Re-map arg values onto known options already loaded from config.yaml.
         self._defaults.update(Dict(vars(args)))
 
-        # Supress console if no_console is true.  
+        # Supress console if no_console is true.
         if self._defaults.no_console is True:
             sys.stdout = None
 
         # If using environment variables, overwrite defaults
-        if (os.environ.get('DEBUG') is not None 
+        if (os.environ.get('DEBUG') is not None
             and os.environ.get('DEBUG') != 'false'):
             self._defaults.debug = True
         if os.environ.get('PLEX_TOKEN') is not None:
@@ -285,10 +285,10 @@ class Config(object):
             self._defaults.pushover.user_key = os.environ.get('PUSHOVER_USER_KEY')
         if os.environ.get('TMDB_KEY') is not None:
             self._defaults.tmdb.key = os.environ.get('TMDB_KEY')
-        
+
         # Map paths in source_dirs to Path and remove duplicates.
         self._defaults.source_dirs = list(set(map(Path, self._defaults.source_dirs)))
-                                          
+
         # Map paths in destination_dirs to Path.
         for k, v in self._defaults.destination_dirs.items():
             self._defaults.destination_dirs[k]=Path(v)
@@ -312,7 +312,7 @@ class Config(object):
         for k, v in self._defaults.items():
             setattr(self, k, Dict(v) if isinstance(v, dict) else v)
         del self._defaults
-        
+
     def destination_dir(self, resolution: Resolution = Resolution.UNKNOWN) -> Path:
         """Returns the destination root path based on the file's resolution.
 
@@ -320,11 +320,11 @@ class Config(object):
             resolution (Resolution): Resolution of film or file to check.
 
         Returns:
-            The root Path for the specified resolution, e.g. 
+            The root Path for the specified resolution, e.g.
             /volumes/movies/HD or /volumes/movies/SD
         """
         return self.destination_dirs[resolution.key]
-    
+
     def reload(self):
         """Reload config from config.yaml."""
 

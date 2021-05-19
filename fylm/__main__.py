@@ -19,7 +19,6 @@
 
 """Main entry point."""
 
-import fylmlib
 import __init__ as fylm
 
 fylm.main()

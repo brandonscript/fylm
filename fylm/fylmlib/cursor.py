@@ -60,7 +60,7 @@ class Cursor:
             except Exception:
                 pass
 
-    @classmethod            
+    @classmethod
     def show(cls):
         """Shows the cursor in the console.
         """
