@@ -38,7 +38,7 @@ from fylmlib import Console, Find, Delete, IO
 from fylmlib import Parallel, Notify, TMDb
 from fylmlib import Format as ƒ
 from fylmlib import Interactive, Duplicates
-from fylmlib import Subtitle, Film, Filmpath
+from fylmlib import Subtitle, Film, FilmPath
 Info = FilmPath.Info
 
 QUEUE = []
