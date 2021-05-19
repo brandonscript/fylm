@@ -53,7 +53,7 @@ def main():
             pending = asyncio.Task.all_tasks()
             loop.run_until_complete(asyncio.gather(*pending))
             loop.close()
-        Console().print_exit_early()
+        Console.print_exit_early()
     except (IOError, OSError) as e:
         Console().error(f'{type(e).__name__}: {e}')
         if config.debug or config.errors:

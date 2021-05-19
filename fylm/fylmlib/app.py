@@ -25,7 +25,6 @@ This module scans for and processes films.
 """
 
 from timeit import default_timer as timer
-from threading import Thread
 
 import fylmlib.config as config
 import fylmlib.counter as counter
@@ -37,7 +36,7 @@ from fylmlib import Console, Find, Delete
 from fylmlib import Notify, TMDb
 from fylmlib import Format as ƒ
 from fylmlib import Interactive, Duplicates
-from fylmlib import Subtitle, Film, FilmPath
+from fylmlib import Film, FilmPath
 Info = FilmPath.Info
 
 QUEUE = []
@@ -56,7 +55,7 @@ class App:
         counter.COUNT = 0
 
         # Print the welcome message to the console.
-        Console().print_welcome()
+        Console.print_welcome()
 
         filmroots = list(filter(lambda f: f.is_filmroot, map(Film, Find.new())))
         NEW = list(Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size']))
@@ -172,6 +171,6 @@ class App:
         Notify.plex()
 
         # Print the summary.
-        Console().print_exit(counter.COUNT)
+        Console.print_exit(counter.COUNT)
 
         return MOVED

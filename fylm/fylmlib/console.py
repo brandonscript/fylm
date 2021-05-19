@@ -141,6 +141,7 @@ class Console(object):
         else:
             print(self._fmtxt, end=end)
 
+    @staticmethod
     def print_welcome(self):
         """Print and log the initial welcome header.
         """
@@ -166,7 +167,8 @@ class Console(object):
 
         c.print(override_no_console=True)
 
-    def print_exit(self, count):
+    @staticmethod
+    def print_exit(count):
         """Print and log the closing summary prior to exit.
 
         Args:
@@ -184,7 +186,8 @@ class Console(object):
         c.print(override_no_console=True)
         Console().pink("Thanks for using Fylm. Be kind, and please rewind.").print()
 
-    def print_exit_early(self):
+    @staticmethod
+    def print_exit_early():
         """Print the early exit message.
         """
         Console().pink('\n\nThat\'s it, I quit.').print()
@@ -379,18 +382,6 @@ class Console(object):
             c.dark_gray(tmdb_id)
         c.print()
 
-    def print_move_or_copy(self, src, dst_path, dst):
-
-        # Do not print if source and destination root path are the same.
-        if src == dst_path:
-            return
-
-        from fylmlib.operations import dirops
-        Console().gray().add(INDENT_WIDE,
-            f"{'Copying' if (config.safe_copy or not dirops.is_same_partition(src, dst)) else 'Moving'}" \
-            f" '{os.path.basename(dst)}' to {os.path.dirname(dst)}"
-        ).print()
-
     @staticmethod
     def print_copy_progress_bar(copied, total):
         """Print progress bar to terminal.
@@ -526,16 +517,6 @@ class Console(object):
                 colormap = yaml.safe_load(f)
                 for k, v in colormap.items():
                     self.__setattr__(k, v)
-
-        def discover(self):
-            """Print all 256 colors in a matrix on your system."""
-            print('\n')
-            for i in range(0, 16):
-                for j in range(0, 16):
-                    code = str(i * 16 + j)
-                    sys.stdout.write(u"\u001b[38;5;" + code + "m " + code.ljust(4))
-                print(u"\u001b[0m")
-
 
 
 Console.ansi = Console._AnsiColors()
