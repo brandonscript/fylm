@@ -272,7 +272,8 @@ class Config(object):
             sys.stdout = None
 
         # If using environment variables, overwrite defaults
-        if os.environ.get('DEBUG') is not None:
+        if (os.environ.get('DEBUG') is not None 
+            and os.environ.get('DEBUG') != 'false'):
             self._defaults.debug = True
         if os.environ.get('PLEX_TOKEN') is not None:
             self._defaults.plex.token = os.environ.get('PLEX_TOKEN')

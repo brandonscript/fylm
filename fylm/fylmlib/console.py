@@ -139,7 +139,7 @@ class Console(object):
         if should_log:
             Log.info(self._pltxt)
         if plain or config.plaintext:
-            print(patterns.ANSI_ESCAPE.sub('', self._pltxt), end=end)
+            print(re.sub(patterns.ANSI_ESCAPE, '', self._pltxt), end=end)
         else:
             print(self._fmtxt, end=end)
 

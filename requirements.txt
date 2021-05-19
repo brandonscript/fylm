@@ -1,6 +1,6 @@
 asyncinit>=0.2.4
 future>=0.16.0
-pyyaml>=4.2b4
+pyyaml>=5.4
 ansicolors>=1.1.8
 addict>=2.4.0
 requests-cache>=0.4.13

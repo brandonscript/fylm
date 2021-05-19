@@ -45,7 +45,7 @@ InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 
 class Interactive:
     
-    _MOCK_INPUT = []
+    _MOCK_INPUT = None
 
     @classmethod
     def lookup(cls, film) -> bool:
@@ -467,7 +467,7 @@ class Interactive:
                 if condition(answer):
                     return answer
                 elif mock_input is not None:
-                    raise ValueError(str(mock_input) + ' is not a valid mock value')
+                    raise ValueError(f"'{mock_input}' is not a valid mock value")
             else:
                 return answer
             if error_message is not None:

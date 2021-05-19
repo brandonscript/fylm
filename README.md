@@ -123,8 +123,8 @@ Contributions are welcome! Please send in a PR with a clear explanation of what 
 
 Murcury icon by [Freepik](https://www.flaticon.com/authors/freepik) from [www.flaticon.com](http://www.flaticon.com/).
 
-Special thanks to [Pyfancy()](https://github.com/ilovecode1/Pyfancy-2) and [colors](https://github.com/jonathaneunice/colors/).
+Special thanks to [ansicolors](https://github.com/jonathaneunice/colors/).
 
 ### License
 
-Fylm is licensed under both the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html) license and the [Hippocratic License](https://firstdonoharm.dev/version/2/1/license.html) license. Were a conflict or dispute to occur between these two licenses, the **Hippocratic License** license shall take precedence. Under its princples of Do No Harm, no portion of this software may be used to (or be a part of software that can be used to) cause, infer, encourage, incite, or otherwise lead to physical or verbal harm for any person or people, _especially_ marginalized and underrepresented people.
+Fylm is licensed under both the [MIT License](LICENSE) and the [Hippocratic License](https://firstdonoharm.dev/version/2/1/license.html). Were a conflict or dispute to arise between these two licenses, the **Hippocratic License** license shall take precedence. Under its principles of Do No Harm, no portion of this software may be used to (or be a part of software that can be used to) cause, infer, encourage, incite, or otherwise lead to physical or verbal harm for any person or people, _especially_ marginalized and underrepresented people.
