@@ -69,7 +69,7 @@ def first(iterable: Iterable, where=None, default=None):
         First iterable, first iterable that matches condition, or default.
     """
     if iterable is None: return
-    iterable = iter(iterable) if type(iterable) is list else iterable
+    iterable = iter(iterable) if isinstance(iterable, list) else iterable
     return next((x for x in iterable if where(x))
                 if where else iterable, default)
 
@@ -102,7 +102,7 @@ def prepend(*prepend, to: Iterable):
         to (Iterable): The iterable to prepend to."""
 
     for p in prepend:
-        if not type(p) is list:
+        if not isinstance(p, list):
             p = [p]
         to = itertools.chain(p, to)
     return to

@@ -40,7 +40,7 @@ GB = MB * 1024
 
 class MockFilm:
     def __init__(self, test_film):
-        
+
         self.tmdb_id = test_film["tmdb_id"] if 'tmdb_id' in test_film else None
         self.make = test_film["make"]
         self.expect = []
@@ -64,23 +64,23 @@ class MockFilm:
             return self.expect
         else:
             return []
-            
+
 
 class MakeFilmsResult:
     def __init__(self, good: ['MockFilm'], bad: ['MockFilm']):
         self.all: ['MockFilm'] = good + bad
         self.good: ['MockFilm'] = good
         self.bad: ['MockFilm'] = bad
-        
+
     @property
     def all_files(self) -> ['MockFilm']:
         return sorted([x for m in self.all for x in m.make if x],
                        key=lambda x: Path(x).name.lower())
-        
+
     def get(self, lst='good', key='expect', folders=True) -> ([], []):
         expected = []
         existing = []
-        
+
         for tf in getattr(self, lst):
             ex = getattr(tf, key)
             valid_paths = [p for p in ex if p is not None]
@@ -107,33 +107,33 @@ class Make:
         global GB
 
         path = Path(path)
-        
+
         if path.suffix.lower() in ['.mkv', '.mp4', '.m4v', '.avi']:
 
             # junk file
             if 'sample' in str(path).lower() or 'junk' in str(path).lower():
                 return random.randrange(10 * MB, 50 * MB)
-            
+
             # 720p mkv
             elif re.search(r'\b720p?\b', str(path), re.I):
                 return random.randrange(int(3 * GB), int(7 * GB))
-            
+
             # 1080p mkv
             elif re.search(r'\b1080p?\b', str(path), re.I):
                 return random.randrange(int(7 * GB), int(15 * GB))
-            
+
             # 4K mkv
             elif re.search(r'\b(2160p?|4k)\b', str(path), re.I):
                 return random.randrange(int(18 * GB), int(26 * GB))
-            
+
             # .avi or SD mkv
             else:
                 return random.randrange(int(750 * MB), int(1300 * MB))
-        
+
         # Something else
         else:
             return random.randrange(int(5 * KB), int(150 * KB))
-    
+
     @staticmethod
     def empty_dirs():
         paths = [conftest.src_path, conftest.src_path2] + list(set(conftest.dst_paths.values()))
@@ -141,9 +141,9 @@ class Make:
 
     @staticmethod
     def mock_file(path, size=0) -> 'Path':
-        
+
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Force size to be an integer
         size = int(round(size)) if size and size > 0 else Make.size(path)
 
@@ -151,36 +151,18 @@ class Make:
         f.seek(size-1)
         f.write(b'\0')
         f.close()
-        
+
         return path
-        
+
     @staticmethod
     def mock_files(*paths: Union[str, list]) -> ['Path']:
-        
+
         ps = []
         for f in paths:
-            (path, size) = f if type(f) is tuple else (f, 0)
+            (path, size) = f if isinstance(f, tuple) else (f, 0)
             assert path.is_absolute(), f"Path '{path}' must be absolute."
             ps.append(Make.mock_file(path, size))
         return ps
-
-    # @staticmethod
-    # def mock_src_files(*files: Union[str, list], src_path: str = None):
-    #     global MB
-        
-    #     src_path = src_path or conftest.src_path
-    #     for p in [Path(f) for f in files]:
-    #         assert(not p.is_absolute())
-    #         (name, size) = p if type(p) is tuple else (p, 0)
-    #         Make.mock_file(src_path / name, size * MB)
-    
-    # @staticmethod
-    # def mock_dst_files(files: dict):
-    #     global MB
-        
-    #     for k, v in files.items():
-    #         (name, size) = v if type(v) is tuple else (v, 0)
-    #         Make.mock_file(conftest.dst_paths[k] / name, size * MB)
 
     @staticmethod
     def all_mock_files() -> MakeFilmsResult:
@@ -194,7 +176,7 @@ class Make:
             pass
 
         with io.open(conftest.files_root / 'files.json', mode="r", encoding="utf-8") as json_data:
-            test_films = sorted(json.load(json_data)['test_films'], 
+            test_films = sorted(json.load(json_data)['test_films'],
                                 key=lambda k: re.sub(r'^the\W*', '', k['make'][0].lower(), flags=re.I))
 
             for tf in [MockFilm(f) for f in test_films if 'skip' not in f]:
@@ -206,7 +188,7 @@ class Make:
                     good.append(tf)
                 else:
                     bad.append(tf)
-                                
+
             return MakeFilmsResult(good, bad)
 
 # if __name__ == '__main__':

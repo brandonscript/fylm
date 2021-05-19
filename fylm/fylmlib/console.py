@@ -94,7 +94,7 @@ class Console(object):
         style = '+'.join(list(set(self.style))) if self.style else None
         fmt = color(p,
                   fg=self.color
-                  if type(self.color) == int
+                  if isinstance(self.color, int)
                   else getattr(self.ansi, self.color or 'white'),
                   style=style)
         self.parts.append(fmt)

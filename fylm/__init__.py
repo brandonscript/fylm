@@ -4,7 +4,7 @@
 # Copyright 2021 github.com/brandoncript
 
 # This program is bound to the Hippocratic License 2.1
-# Full text is available here: 
+# Full text is available here:
 # https: // firstdonoharm.dev/version/2/1/license
 
 # Further to adherence to the Hippocratic Licenese, this program is
@@ -46,7 +46,7 @@ def main():
 
     try:
         App.run()
-    
+
     except (KeyboardInterrupt, SystemExit):
         loop = asyncio.get_event_loop()
         with suppress(asyncio.CancelledError):

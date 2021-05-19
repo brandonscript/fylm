@@ -110,7 +110,7 @@ class Subtitle:
 
         assert self.path, "Subtitle was not initalized before 'new_name' was called."
 
-        if type(path) is str:
+        if isinstance(path, str):
             path = Path(path)
 
         return path.with_suffix('.' + self.captured + path.suffix) if self.captured else path

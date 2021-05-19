@@ -38,8 +38,6 @@ import multiprocessing as mp
 from pathlib import Path
 from typing import Union, Iterable
 
-from lazy import lazy
-
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 from fylmlib.tools import *
@@ -414,7 +412,7 @@ class Find:
         Console.debug('Loading new films...')
 
         # Coerce list path objects to Path set
-        if paths and type(paths[0]) == list:
+        if paths and isinstance(paths[0], list):
             paths = tuple(paths[0])
 
         # Coerce str path objects to Path set
@@ -474,8 +472,8 @@ class IO:
             True if the file move was successful, otherwise False.
         """
 
-        src = src if type(src) is FilmPath else Path(src)
-        dst = dst if type(dst) is FilmPath else Path(dst)
+        src = src if isinstance(src, FilmPath) else Path(src)
+        dst = dst if isinstance(dst, FilmPath) else Path(dst)
 
         if not src.exists():
             raise OSError(f"Error moving '{src}', path does not exist.")
@@ -699,7 +697,7 @@ class IO:
         # If we don't do this, the filesystem will try and create a new folder instead
         # of the correct filename.
         # Credit: https://stackoverflow.com/a/34504896/1214800
-        if type(new_name) is str:
+        if isinstance(new_name, str):
             new_name = new_name.replace(r'/', '-')
 
         # Whether or not new name is a path or a file, extract the name
@@ -787,7 +785,7 @@ class Size:
             Size of file or folder, in bytes (B), or 0.
         """
 
-        if not type(self) == Size:
+        if not isinstance(self, Size):
             raise AttributeError("'_calc' was called before Size was initialized.")
 
         # If it's a directory, we need to call the _size_dir func to recursively get

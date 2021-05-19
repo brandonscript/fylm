@@ -206,7 +206,9 @@ class Format:
             sizes = ['B', 'KB', 'MB', 'GB']
             cutoff = 1000
 
-        units = units if type(units) is list else [units.name] if units else sizes
+        units = (units if isinstance(units, list)
+                 else [units.name] if units
+                 else sizes)
 
         p = lambda x, u: x if x is not None else (2 if 'G' in u else
                                                1 if 'M' in u else 0)

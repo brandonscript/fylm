@@ -26,7 +26,6 @@ Credit: https://github.com/jreyesr/better-input
 """
 
 import readline
-import os
 
 from colors import color
 

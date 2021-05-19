@@ -239,7 +239,7 @@ class TMDb:
             # On macOS, we need to use a funky hack to replace / in a filename with :,
             # in order to output it correctly.
             # Credit: https://stackoverflow.com/a/34504896/1214800
-            self.query = query.replace(r':', '-') if type(query) is str else query
+            self.query = query.replace(r':', '-') if isinstance(query, str) else query
             if self.query == '':
                 raise AttributeError('Search query cannot be an empty string.')
             self.year = year
@@ -314,7 +314,7 @@ class TMDb:
             Q = Search.Q
 
             # If querying by ID (an int), search immediately and return the result.
-            if self.id or type(self.query) is int:
+            if self.id or isinstance(self.query, int):
                 # Console.debug(f'Searching ID={self.id or self.query}')
                 return await self.dispatch_search(Q(id=self.id, query=self.query))
 

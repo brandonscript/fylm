@@ -19,6 +19,7 @@
 
 import os
 import sys
+import pickle
 from timeit import default_timer as timer
 import contextlib
 from watchdog.observers import Observer
