@@ -29,7 +29,6 @@ output to the log module.
 import os
 import re
 import sys
-import shutil
 import time
 from pathlib import Path
 from datetime import datetime
@@ -141,8 +140,6 @@ class Console(object):
             print(re.sub(patterns.ANSI_ESCAPE, '', self._pltxt), end=end)
         else:
             print(self._fmtxt, end=end)
-
-    """Helper methods for Console class."""
 
     def print_welcome(self):
         """Print and log the initial welcome header.

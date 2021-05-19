@@ -145,8 +145,6 @@ class Duplicates:
             or not config.duplicates.enabled):
             return True
 
-        Result = ComparisonResult
-
         move = []
         existing_to_delete = []
 

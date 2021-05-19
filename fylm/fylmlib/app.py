@@ -24,7 +24,6 @@ This module scans for and processes films.
     processor: the main class exported by this module.
 """
 
-import os
 from timeit import default_timer as timer
 from threading import Thread
 
@@ -34,8 +33,8 @@ from fylmlib.enums import *
 from fylmlib.tools import *
 from fylmlib.constants import *
 
-from fylmlib import Console, Find, Delete, IO
-from fylmlib import Parallel, Notify, TMDb
+from fylmlib import Console, Find, Delete
+from fylmlib import Notify, TMDb
 from fylmlib import Format as ƒ
 from fylmlib import Interactive, Duplicates
 from fylmlib import Subtitle, Film, FilmPath
@@ -134,7 +133,7 @@ class App:
 
         while len(QUEUE) > 0:
             film = QUEUE.pop(0)
-            _, verbed, verbing = Console.strings.verb(film)
+            _, verbed, _ = Console.strings.verb(film)
 
             if Info.will_copy(film):
                 Console.print_film_header(film)

@@ -18,8 +18,9 @@
 
 from setuptools import setup
 
+# TODO: Replace with Path
+
 import os
-import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
 
