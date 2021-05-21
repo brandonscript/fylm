@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Fylm
-# Copyright 2021 github.com/brandoncript
+# Copyright 2021 github.com/brandonscript
 
 # This program is bound to the Hippocratic License 2.1
 # Full s is available here:
