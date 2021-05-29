@@ -2,6 +2,22 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.0-beta] 2021-05-20
+- Complete overhaul and rewrite with modern Python, based on pathlib and asyncio
+- All lookups are done in parallel, when you launch Fylm, because TMDb no longer rate-limits its API requests
+- Introduce FilmPath, a lowlevel subclass of Path to handle all Film and File operations
+- Fast, recursive searching of all src paths; intelligently identifies where a film root is
+- Duplicates are now handled on the fly, for each film, so new duplicates are caught in the same exec
+- Mapping direcory scans to films runs asyncronously, in parallel
+- Better naming of folders with multiple video files (e.g., 'Extras' is appended)
+- Interactive search now remembers the previous search query
+- Copying now safely moves duplicates to a temporary .dup~ file
+- Expanded scope of tests for increased stability
+- Improved console output
+- Interactive mode now supports upgrading all duplicates
+- Interactive mode now processes duplicates for each file in a src folder
+- Upgrades now compare quality of media as well as file size
+
 ## [0.3.1-beta] 2021-03-27
 - Intelligent suggestions (upgrades & duplicate handling) in interactive mode
 - Quality-based upgrades (e.g., Bluray can upgrade WEBDL)
