@@ -45,10 +45,10 @@ class Progress:
             FULL_BLOCK = "X"
             INCOMPLETE_BLOCK_GRAD = ["-", "-", "="]
         else:
-            FULL_BLOCK = color('█', fg=Tinta.ansi.pink)
-            INCOMPLETE_BLOCK_GRAD = [color('░', fg=Tinta.ansi.dark_gray),
-                                     color('▒', fg=Tinta.ansi.dark_gray),
-                                     color('▓', fg=Tinta.ansi.dark_gray)]
+            FULL_BLOCK = color('█', fg=Tinta.colors.pink)
+            INCOMPLETE_BLOCK_GRAD = [color('░', fg=Tinta.colors.dark_gray),
+                                     color('▒', fg=Tinta.colors.dark_gray),
+                                     color('▓', fg=Tinta.colors.dark_gray)]
 
         assert(isinstance(percentage, float) or isinstance(percentage, int))
         assert(0. <= percentage <= 100.)

@@ -38,7 +38,7 @@ from fylmlib import Delete
 from fylmlib import Duplicates
 from fylmlib import Format as ƒ
 from .console import Tinta
-ansi = Tinta.ansi
+colors = Tinta.colors
 
 InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 

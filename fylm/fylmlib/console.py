@@ -305,7 +305,7 @@ class Console():
         Args:
             p (str): Query to print.
         """
-        return input(color(PROMPT, fg=Tinta.ansi.white) + color(p, fg=Tinta.ansi.yellow))
+        return input(color(PROMPT, fg=Tinta.colors.white) + color(p, fg=Tinta.colors.yellow))
 
     @staticmethod
     def wait(s: int=0):
