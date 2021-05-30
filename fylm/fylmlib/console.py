@@ -25,124 +25,30 @@ output to the log module.
     Console: the main class exported by this module.
 """
 
-# TODO: Replace Console with Tinta
-import os
 import re
 import sys
 import time
 from pathlib import Path
 from datetime import datetime
+from typing import List, Tuple
 
 from colors import color
-import yaml
+from tinta import Tinta
+Tinta.load_colors(Path(__file__).parent.parent / 'colors.ini')
+
 from halo import Halo
 
 import fylmlib.config as config
-from fylmlib.enums import *
-from fylmlib.tools import *
-from fylmlib.constants import *
-from fylmlib import patterns, Log, Format as ƒ, Progress
+from .enums import *
+from .tools import *
+from .constants import *
+from . import patterns, Log, Format as ƒ
+from . import Progress
 
-class Console(object):
-    """Main class for console output methods.
-
-    All public methods should chain together to form a builder pattern, e.g.:
-
-    Console()
-        .white('white')
-        .blue(' blue')
-        .red(' red')
-        .bold().red(' bold red')
-        .dark_gray()
-        .dim(' dim').print()
-
-    """
-    def __init__(self, *s, join=' '):
-
-        self.color = 'white'
-        self.style = []
-        self.parts = []
-        self.parts_plaintext = []
-
-        # Inject ANSI helper functions
-        for c in vars(self.ansi):
-            self._colorizer(c)
-
-        self.add(*s, join=join)
-
-    def __repr__(self):
-        return str(self._pltxt)
-
-    def _colorizer(self, c: str):
-        def add(*s, join=' '):
-            if c is not None:
-                self.color = c
-            self.add(*s, join=join)
-            return self
-        self.__setattr__(c, add)
-
-    @property
-    def _fmtxt(self):
-        return ''.join(self.parts)
-
-    @property
-    def _pltxt(self):
-        return ''.join(self.parts_plaintext)
-
-    def add(self, *s, join=' '):
-        p = join.join([f"{x}" for x in s])
-        style = '+'.join(list(set(self.style))) if self.style else None
-        fmt = color(p,
-                  fg=self.color
-                  if isinstance(self.color, int)
-                  else getattr(self.ansi, self.color or 'white'),
-                  style=style)
-        self.parts.append(fmt)
-        self.parts_plaintext.append(p)
-        return self
-
-    def ansi(self, code: int = 0):
-        self.color = int(code)
-        return self
-
-    def bold(self, *s, join=' '):
-        self.style.append('bold')
-        self.add(*s)
-        return self
-
-    def underline(self, *s, join=' '):
-        self.style.append('underline')
-        self.add(*s)
-        return self
-
-    def dim(self, *s, join=' '):
-        self.style.append('faint')
-        self.add(*s)
-        return self
-
-    def norm(self, *s, join=' '):
-        self.style = []
-        self.add(*s)
-        return self
-
-    def reset(self, *s, join=' '):
-        self.color = None
-        self.style = []
-        self.add(*s)
-        return self
-
-    def print(self, should_log=True, override_no_console=False, end=None, plain=False):
-        if config.no_console and not override_no_console:
-            return
-        if should_log:
-            Log.info(self._pltxt)
-        if plain or config.plaintext:
-            print(re.sub(patterns.ANSI_ESCAPE, '', self._pltxt), end=end)
-        else:
-            print(self._fmtxt, end=end)
+class Console():
 
     @staticmethod
-    def print_welcome():
+    def welcome():
         """Print and log the initial welcome header.
         """
 
@@ -154,7 +60,7 @@ class Console(object):
         Log.info(f'{dashes}{date}{dashes}')
 
         dirs = f'\n{" "*17}'.join((str(d) for d in config.source_dirs))
-        c = Console().pink(f"\nFylm is scanning {dirs}")
+        c = Tinta().pink(f"\nFylm is scanning {dirs}")
 
         if config.test or config.force_lookup or config.duplicates.force_overwrite:
             c.bold().add('\n')
@@ -165,10 +71,10 @@ class Console(object):
         if config.duplicates.force_overwrite:
             c.yellow('\n★ Force overwrite mode enabled (all identically named existing files will be silently overwritten, regardless of size)')
 
-        c.print(override_no_console=True)
+        c.print(force=True)
 
     @staticmethod
-    def print_exit(count):
+    def exit(count):
         """Print and log the closing summary prior to exit.
 
         Args:
@@ -178,26 +84,26 @@ class Console(object):
         s = f"Successfully {'renamed' if config.rename_only else 'moved'}" \
                 f" {count} {ƒ.pluralize('film', count)}" if count > 0 else "No films moved"
 
-        c = Console()
+        c = Tinta()
         if config.test is True:
             c.purple(f'\n(Test) {s}')
         else:
             c.pink(f"\n{s}")
-        c.print(override_no_console=True)
-        Console().pink("Thanks for using Fylm. Be kind, and please rewind.").print()
+        c.print(force=True)
+        Tinta().pink("Thanks for using Fylm. Be kind, and please rewind.").print()
 
     @staticmethod
-    def print_exit_early():
+    def exit_early():
         """Print the early exit message.
         """
-        Console().pink('\n\nThat\'s it, I quit.').print()
+        Tinta().pink('\n\nThat\'s it, I quit.').print()
 
     @staticmethod
-    def print_film_header(film: 'Film'):
-        c = Console('\n')
+    def film_header(film: 'Film'):
+        c = Tinta('\n')
 
         header = film.name if film._year else film.main_file.name
-        Console().gray(f'\n{INDENT}{header}').white(S.size(film)).print(end="")
+        Tinta().gray(f'\n{INDENT}{header}').white(S.size(film)).print(end="")
 
         # Interactive mode
         if config.interactive:
@@ -224,54 +130,54 @@ class Console(object):
         c.print()
 
     @staticmethod
-    def print_film_src(film):
+    def film_src(film):
         parent = film.src.parent if film._year else film.src
-        Console().dark_gray(f'{INDENT}{parent}').print()
+        Tinta().dark_gray(f'{INDENT}{parent}').print()
 
     @staticmethod
-    def print_interactive_success(film: 'Film'):
-        c = Console().green(f' {ARROW} {S.name(film)}')
+    def interactive_success(film: 'Film'):
+        c = Tinta().green(f' {ARROW} {S.name(film)}')
         if film.tmdb.id:
             c.gray(S.tmdb_id(film))
             c.dark_gray(S.percent(film))
         c.print()
 
     @staticmethod
-    def print_interactive_uncertain(film: 'Film'):
-        Console().light_blue(f' {UNCERTAIN} {film.title} ({film.year})').print()
+    def interactive_uncertain(film: 'Film'):
+        Tinta().light_blue(f' {UNCERTAIN} {film.title} ({film.year})').print()
 
     @staticmethod
-    def print_src_dst(film: 'Film'):
+    def src_dst(film: 'Film'):
         if config.interactive:
             return
 
-        Console().dark_gray(f'{INDENT}{film.src}').print()
+        Tinta().dark_gray(f'{INDENT}{film.src}').print()
         if not film.should_ignore:
-            Console().gray(f'{INDENT}{film.dst}').print()
+            Tinta().gray(f'{INDENT}{film.dst}').print()
 
     @staticmethod
-    def print_skip(film: 'Film'):
+    def skip(film: 'Film'):
         if film.should_ignore:
             if config.interactive and film.ignore_reason == IgnoreReason.SKIP:
-                Console.print_interactive_skipped()
+                Console.interactive_skipped()
             else:
-                Console().red().dim(
+                Tinta().red().dim(
                     f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
     @staticmethod
-    def print_rename_only(film: 'Film'):
-        Console().red().dim(
+    def rename_only(film: 'Film'):
+        Tinta().red().dim(
             f'{INDENT}Ignoring because {film.ignore_reason.display_name}').print()
 
     @staticmethod
-    def print_duplicates(new: 'Film.File', duplicates: '[Duplicates.Map]'):
+    def duplicates(new: 'Film.File', duplicates: 'List[Duplicates.Map]'):
         # If any duplicates determine that the current file should be ignored,
         # we only show the skip recommendation.
 
         if not duplicates:
             return
 
-        c = Console().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))} ")
+        c = Tinta().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))} ")
         c.add(f"{ƒ.pluralize('duplicate', len(duplicates))} for '{new.name}'")
         c.dim(f" ({new.size.pretty()})").print()
 
@@ -282,7 +188,7 @@ class Console(object):
 
         for mp in duplicates:
 
-            c = Console(INDENT)
+            c = Tinta(INDENT)
             ar = f" {ARROW} " if not config.interactive else ''
             if config.interactive:
                 c.red() if mp.action == Should.KEEP_EXISTING else c.yellow()
@@ -332,39 +238,39 @@ class Console(object):
                 break
 
     @staticmethod
-    def print_ask(s):
+    def ask(s):
         """Print an interactive question.
 
         Args:
             s: (str, utf-8) String to print/log.
         """
-        Console().yellow(INDENT, s, join='').print()
+        Tinta().yellow(INDENT, s, sep='').print()
 
     @staticmethod
-    def print_io_reject(verb, dst):
+    def io_reject(verb, dst):
         if config.rename_only:
             verb = 'rename'
-        Console().red(INDENT, f"Unable to {verb}, a file with the same name ",
-                      f"already exists in\n{INDENT}'{dst.parent}'.", join='').print()
+        Tinta().red(INDENT, f"Unable to {verb}, a file with the same name ",
+                      f"already exists in\n{INDENT}'{dst.parent}'.", sep='').print()
 
 
     @staticmethod
-    def print_interactive_error(s):
+    def interactive_error(s):
         """Print an interactive error.
 
         Args:
             s: (str, utf-8) String to print/log.
         """
-        Console().red(f'      {s}').print()
+        Tinta().red(f'      {s}').print()
 
     @staticmethod
-    def print_interactive_skipped():
+    def interactive_skipped():
         """Print an interactive skip message.
         """
-        Console().dark_gray(f'{INDENT}Skipped').print()
+        Tinta().dark_gray(f'{INDENT}Skipped').print()
 
     @staticmethod
-    def print_choice(idx, choice):
+    def choice(idx, choice):
         """Print a question choice.
 
         Args:
@@ -372,7 +278,7 @@ class Console(object):
             choice: (str, utf-8) Choice to print/log.
         """
 
-        c = Console().white(INDENT_WIDE, f'{idx})')
+        c = Tinta().white(INDENT_WIDE, f'{idx})')
         if choice.startswith('['):
             c.dark_gray(f' {choice}')
         else:
@@ -383,7 +289,7 @@ class Console(object):
         c.print()
 
     @staticmethod
-    def print_copy_progress_bar(copied, total):
+    def copy_progress_bar(copied, total):
         """Print progress bar to terminal.
         """
         if not config.plaintext:
@@ -392,50 +298,28 @@ class Console(object):
             if sys.stdout:
                 sys.stdout.flush()
 
-    @classmethod
+    @staticmethod
     def get_input(cls, p):
         """Prompt the user for input
 
         Args:
             p (str): Query to print.
         """
-        return input(color(PROMPT, fg=Console.ansi.white) + color(p, fg=Console.ansi.yellow))
+        return input(color(PROMPT, fg=Tinta.ansi.white) + color(p, fg=Tinta.ansi.yellow))
 
-    @classmethod
-    def clearline(cls):
-        """Clears the current printed line."""
-
-        # Clear line, if stdout is not None
-        if sys.stdout:
-            sys.stdout.write(CURSOR_UP_ONE)
-            sys.stdout.write(ERASE_LINE)
-            sys.stdout.flush()
-        return cls
-
-    @classmethod
-    def up(cls):
-        """Clears the previous printed line."""
-
-        # Clear line, if stdout is not None
-        if sys.stdout:
-            sys.stdout.write(CURSOR_UP_ONE)
-            sys.stdout.flush()
-        return cls
-
-    @classmethod
-    def wait(cls, s: int=0):
+    @staticmethod
+    def wait(s: int=0):
         if not config.no_console and not config.plaintext:
             time.sleep(s)
 
-    @classmethod
-    def slow(cls, s: str='', seconds=0):
-
+    @staticmethod
+    def slow(s: str='', seconds=0):
         if config.debug is True:
-            cls().yellow().bold(f'{ WARN }').reset().yellow(
+            Tinta().yellow().bold(f'{ WARN }').reset().yellow(
                 f" {s} - {round(seconds)} seconds").print()
 
-    @classmethod
-    def debug(cls, s: str='', end=None):
+    @staticmethod
+    def debug(s: str='', end=None):
         """Print debugging details, if config.debug is enabled.
 
         Args:
@@ -444,10 +328,10 @@ class Console(object):
         if config.debug is True:
             # TODO: Debug shouldn't also be printing info
             Log.debug(s)
-            cls().add('🐞 ').debug(s).print(end=end)
+            Tinta().add('🐞 ').debug(s).print(end=end)
 
-    @classmethod
-    def error(cls, s: str='', x: Exception=None):
+    @staticmethod
+    def error(s: str='', x: Exception=None):
         """Print error details.
 
         Args:
@@ -455,7 +339,7 @@ class Console(object):
             x (Exception, optional): Exception to raise.
         """
         Log.error(s)
-        cls().bold().error(s).print()
+        Tinta().bold().error(s).print()
         if x:
             raise type(x)(s)
 
@@ -470,7 +354,7 @@ class Console(object):
                 color='yellow',
                 text_color='yellow')
         else:
-            halo.start = lambda: Console(s).print()
+            halo.start = lambda: Tinta(s).print()
             halo.stop = lambda: None
         return halo
 
@@ -490,7 +374,7 @@ class Console(object):
                         if not film.should_ignore else film.name)
 
         @staticmethod
-        def verb(film: 'Film') -> (str, str):
+        def verb(film: 'Film') -> Tuple[str, str]:
             from fylmlib.filmpath import Info
             if Info.will_copy(film):
                 return ('copy', 'copied', 'copying')
@@ -499,25 +383,4 @@ class Console(object):
             else:
                 return ('move', 'moved', 'moving')
 
-    class _AnsiColors:
-
-        """Color handling for console output.
-
-        ANSI color map for console output. Get a list of colors here =
-        http://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html#256-colors
-
-        You can change the colors the terminal outputs by changing the
-        ANSI values here.
-
-            ansi is the main property exported by this module.
-        """
-
-        def __init__(self):
-            with open(Path(__file__).parent.parent / 'colors.yaml', 'r') as f:
-                colormap = yaml.safe_load(f)
-                for k, v in colormap.items():
-                    self.__setattr__(k, v)
-
-
-Console.ansi = Console._AnsiColors()
 S = Console.strings

@@ -28,9 +28,10 @@ import re
 from rapidfuzz import fuzz
 
 import fylmlib.config as config
-from fylmlib import patterns
-from fylmlib import Console
-from fylmlib.enums import *
+from . import patterns
+from . import Console
+from .enums import *
+from .constants import *
 
 class Compare:
 
@@ -241,7 +242,7 @@ class Compare:
 
         if Compare.title_similarity(file.title, other.title) < 0.9:
             Console.error(
-                f"Cannot compare quality of different titles '{file.title}' and '{other.title}'")
+                f"{INDENT}Cannot compare quality of different titles '{file.title}' and '{other.title}'")
             return (Result.NOT_COMPARABLE, Reason.NAME_MISMATCH)
 
         # Resolution
@@ -285,11 +286,11 @@ class Compare:
             ComparisonResult
         """
         if not path.exists():
-            Console().error(f"Could not compare size, '{path}' does not exist.")
+            Console.error(f"{INDENT}Could not compare size, '{path}' does not exist.")
             return ComparisonResult.NOT_COMPARABLE
 
         if not other.exists():
-            Console().error(f"Could not compare size, '{other}' does not exist.")
+            Console.error(f"{INDENT}Could not compare size, '{other}' does not exist.")
             return ComparisonResult.NOT_COMPARABLE
 
         if path.size.value > (other.size.value or 0):

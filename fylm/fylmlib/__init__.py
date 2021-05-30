@@ -25,21 +25,21 @@ import fylmlib.patterns as patterns
 import fylmlib.enums as enums
 
 # Low-level library dependencies (init first)
-from fylmlib.log import Log
-from fylmlib.formatter import Format
-from fylmlib.progress import Progress
-from fylmlib.console import Console
-from fylmlib.parser import Parser
-from fylmlib.cursor import Cursor
-from fylmlib.filmpath import FilmPath
-from fylmlib.operations import *
+from .log import Log
+from .formatter import Format
+from .progress import Progress
+from .console import Console
+from .parser import Parser
+from .cursor import Cursor
+from .filmpath import FilmPath
+from .operations import *
 
 # Higher level functions (init after)
-from fylmlib.compare import Compare
-from fylmlib.tmdb import TMDb
-from fylmlib.duplicates import Duplicates
-from fylmlib.subtitle import Subtitle
-from fylmlib.film import Film
-from fylmlib.interactive import Interactive
-from fylmlib.notify import Notify
-from fylmlib.app import App
+from .compare import Compare
+from .tmdb import TMDb
+from .duplicates import Duplicates
+from .subtitle import Subtitle
+from .film import Film
+from .interactive import Interactive
+from .notify import Notify
+from .app import App

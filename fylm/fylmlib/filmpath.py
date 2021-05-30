@@ -649,7 +649,7 @@ class FilmPath(Path):
             """
             failed = [x for x in [Path(p) for p in paths] if not x.exists()]
             for p in failed:
-                Console.error(f"'{p}' does not exist.")
+                Console.error(f"{INDENT}'{p}' does not exist.")
 
             return not failed
 

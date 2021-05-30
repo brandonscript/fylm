@@ -17,16 +17,14 @@
 # Where a conflict or dispute would arise between these two licenses, HLv2.1
 # shall take precedence.
 
-import pytest
-import os
-import itertools
+# import pytest
 
 import fylm
 import fylmlib.config as config
 from fylmlib.film import Film
 from fylmlib.filmpath import Info
 import conftest
-from make import Make, MB
+from make import Make
 
 # Overwrite the app's pre-loaded config.
 fylm.config = config

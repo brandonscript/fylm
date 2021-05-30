@@ -37,7 +37,8 @@ from fylmlib import Console
 from fylmlib import Delete
 from fylmlib import Duplicates
 from fylmlib import Format as ƒ
-ansi = Console.ansi
+from .console import Tinta
+ansi = Tinta.ansi
 
 InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 
@@ -103,7 +104,7 @@ class Interactive:
         for v in film.video_files:
 
             mp = film.duplicates.map(v)
-            Console.print_duplicates(v, mp)
+            Console.duplicates(v, mp)
 
             choices = []
             existing_to_delete = []
@@ -122,7 +123,7 @@ class Interactive:
                 else:
                     choices.append("Replace existing copy anyway (not an upgrade)")
             if not exact and len(same_quality) > 0:
-                c = Console().yellow(INDENT, '‹!› ')
+                c = Tinta().yellow(INDENT, '‹!› ')
                 c.add('Existing', 'files are' if len(same_quality) > 1 else 'file is')
                 c.add(' not in the expected destination folder')
                 c.print()
@@ -178,7 +179,7 @@ class Interactive:
 
                 # Ask user to confirm destructive action
                 n = f"\n{INDENT}" if len(str(v.src)) else ''
-                Console.print_ask(
+                Console.ask(
                     f"Are you sure you want to delete {n}'{v.src}'?")
                 (confirm_delete, letter) = cls._choice_input(
                     prompt='',
@@ -190,7 +191,7 @@ class Interactive:
 
                 if confirm_delete == 0:
                     if Delete.path(film.src, force=True):
-                        Console().red(INDENT, f'Deleted {FAIL}').print()
+                        Tinta().red(INDENT, f'Deleted {FAIL}')
                         continue
 
             move.append(v)
@@ -219,7 +220,7 @@ class Interactive:
             cls.handle_unknown_film(film)
 
         else:
-            Console.print_ask('Is this correct? [Y]')
+            Console.ask('Is this correct? [Y]')
             (choice, letter) = cls._choice_input(
             prompt='',
             choices=[
@@ -254,7 +255,7 @@ class Interactive:
         Returns:
             True if the film should be processed, else False
         """
-        Console.print_ask(f"{film.ignore_reason.display_name.capitalize()} [N]")
+        Console.ask(f"{film.ignore_reason.display_name.capitalize()} [N]")
 
         # Continuously loop this if an invalid choice is entered.
         while True:
@@ -298,15 +299,15 @@ class Interactive:
                 # Attempt to convert the search query to an int
                 film.tmdb.id = int(search)
             except ValueError:
-                Console.print_interactive_error("A TMDb ID must be a number")
+                Console.interactive_error("A TMDb ID must be a number")
 
             # Search for the new film by ID.
             film.search_tmdb_sync()
             if film.tmdb.is_verified is True:
-                Console.print_interactive_uncertain(film)
+                Console.interactive_uncertain(film)
                 return cls.verify_film(film)
             else:
-                Console.print_interactive_error(f"No results found for '{film.tmdb.id}'")
+                Console.interactive_error(f"No results found for '{film.tmdb.id}'")
 
 
     _last_search = None
@@ -358,7 +359,7 @@ class Interactive:
         while len(film.tmdb_matches) == 0:
             return cls.handle_unknown_film(film)
 
-        Console().bold().white(f'{PROMPT}Search results:').print()
+        Tinta().bold().white(f'{PROMPT}Search results:').print()
 
         # Generate a list of choices based on search results and save the input
         # to `choice`.
@@ -391,7 +392,7 @@ class Interactive:
         elif choice == len(film.tmdb_matches) + 2:
             film.id = None
             film.ignore_reason = IgnoreReason.SKIP
-            Console.print_interactive_skipped()
+            Console.interactive_skipped()
             return False
 
         # If we haven't returned yet, update the film with the selected match
@@ -400,7 +401,7 @@ class Interactive:
         film.tmdb_matches[choice].update(film)
         film.tmdb.ia_accepted = True
 
-        Console.print_interactive_success(film)
+        Console.interactive_success(film)
         return True
 
     @classmethod
@@ -506,7 +507,7 @@ class Interactive:
             raise ValueError("'enumeration' is not a valid InteractiveKeyMode value.")
 
         for idx, choice in zip(chars, choices):
-            Console.print_choice(idx, choice)
+            Console.choice(idx, choice)
 
         answer = cls._condition_input(
             prompt,

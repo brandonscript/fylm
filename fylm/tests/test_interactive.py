@@ -69,7 +69,7 @@ class TestInteractive:
         f = SRC / f'{DIE_HARD_NEW}/{DIE_HARD_NEW}.mkv'
         xf = DST['1080p'] / DIE_HARD / f'{DIE_HARD} Bluray-1080p.mkv'
 
-        Make.mock_files((f, 8233 * MB), 
+        Make.mock_files((f, 8233 * MB),
                         (xf, 7901 * MB))
 
         # Assert that there is 1 duplicate

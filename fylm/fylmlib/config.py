@@ -269,7 +269,7 @@ class Config(object):
 
         # Supress console if no_console is true.
         if self._defaults.no_console is True:
-            sys.stdout = None
+            os.environ.set('TINTA_STEALTH', 'true')
 
         # If using environment variables, overwrite defaults
         if (os.environ.get('DEBUG') is not None
@@ -328,7 +328,7 @@ class Config(object):
     def reload(self):
         """Reload config from config.yaml."""
 
-        __instance = None
+        self.__instance = None
         self.__initialized = False
         self.__init__()
 

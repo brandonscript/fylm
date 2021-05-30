@@ -27,13 +27,14 @@ from pathlib import Path
 
 import nest_asyncio
 
-from fylmlib.enums import *
-from fylmlib.tools import *
+from .enums import *
+from .tools import *
 import fylmlib.config as config
-from fylmlib import Console, Compare, Find
-from fylmlib import FilmPath, Parallel
-from fylmlib import IO, Delete
-from fylmlib import Format as ƒ
+from . import Console, Compare, Find
+from . import FilmPath
+from . import IO, Delete
+from . import Format as ƒ
+from .console import Tinta
 
 class Duplicates:
     """Searches for copies of the specified film that exist in any dst dir.
@@ -153,7 +154,7 @@ class Duplicates:
         for v in film.video_files:
 
             mp = film.duplicates.map(v)
-            Console.print_duplicates(v, mp)
+            Console.duplicates(v, mp)
 
             exact = first(mp, where=lambda d: v.dst == d.duplicate.src, default=None)
             # same_quality = list(filter(lambda d: d.result == Result.EQUAL, mp))
@@ -202,7 +203,7 @@ class Duplicates:
         for f in cls.TO_DELETE:
             if f.parent.exists() and f.parent.is_empty:
                 Delete.dir(f.parent)
-        Console().dim().blue(f'{INDENT}Removed {d} duplicate',
+        Tinta().dim().blue(f'{INDENT}Removed {d} duplicate',
                        ƒ.pluralize('file', d)).print()
         cls.TO_DELETE = []
         return d

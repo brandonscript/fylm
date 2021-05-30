@@ -51,7 +51,7 @@ class Subtitle:
     def __init__(self, path):
 
         if not Path(path).suffix.lower() in constants.SUB_EXTS:
-            Console.error(f"'{path}' is not a valid subtitle file")
+            Console.error(f"{INDENT}'{path}' is not a valid subtitle file")
             return
 
         # Path to original subtitle file.

@@ -28,15 +28,16 @@ from timeit import default_timer as timer
 
 import fylmlib.config as config
 import fylmlib.counter as counter
-from fylmlib.enums import *
-from fylmlib.tools import *
-from fylmlib.constants import *
+from .enums import *
+from .tools import *
+from .constants import *
 
-from fylmlib import Console, Find, Delete
-from fylmlib import Notify, TMDb
-from fylmlib import Format as ƒ
-from fylmlib import Interactive, Duplicates
-from fylmlib import Film, FilmPath
+from . import Console, Find, Delete
+from . import Notify, TMDb
+from . import Format as ƒ
+from . import Interactive, Duplicates
+from . import Film, FilmPath
+from .console import Tinta
 Info = FilmPath.Info
 
 QUEUE = []
@@ -55,14 +56,14 @@ class App:
         counter.COUNT = 0
 
         # Print the welcome message to the console.
-        Console.print_welcome()
+        Console.welcome()
 
         filmroots = list(filter(lambda f: f.is_filmroot, map(Film, Find.new())))
         NEW = list(Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size']))
         if len(NEW) == 0:
             return App.end()
 
-        Console().pink(
+        Tinta().pink(
             f"Found {len(NEW)} possible new {ƒ.pluralize('film', len(NEW))}"
         ).print()
 
@@ -76,12 +77,12 @@ class App:
             TMDb.Search.parallel(*NEW)
             spinner.stop()
 
-            Console().green(f'{CHECK} Done searching TMDb '
+            Tinta().green(f'{CHECK} Done searching TMDb '
                             ).dark_gray(f'({round(timer() - start)} seconds)'
                             ).print()
 
             Console.wait(1.5)
-            Console.clearline()
+            Tinta.clearline()
 
         NEW = sorted([f for f in NEW if not f.should_hide],
                      key=lambda f: f.title.lower())
@@ -91,14 +92,14 @@ class App:
             if not film.exists():
                 film.ignore_reason = IgnoreReason.DOES_NOT_EXIST
 
-            Console.print_film_header(film)
-            Console.print_film_src(film)
+            Console.film_header(film)
+            Console.film_src(film)
 
             Interactive.lookup(film)
             Interactive.handle_duplicates(film)
 
             if film.should_ignore is True:
-                Console.print_skip(film)
+                Console.skip(film)
                 continue
 
             Duplicates.handle(film)
@@ -135,14 +136,14 @@ class App:
             _, verbed, _ = Console.strings.verb(film)
 
             if Info.will_copy(film):
-                Console.print_film_header(film)
+                Console.film_header(film)
 
             if not film.exists():
-                Console().yellow(
+                Tinta().yellow(
                     f"{INDENT}'No longer exists or cannot be accessed.").print()
                 continue
 
-            c = Console(INDENT)
+            c = Tinta(INDENT)
 
             if film.src == film.dst:
                 c.add(f'Already {verbed}').print()
@@ -171,6 +172,6 @@ class App:
         Notify.plex()
 
         # Print the summary.
-        Console.print_exit(counter.COUNT)
+        Console.exit(counter.COUNT)
 
         return MOVED

@@ -26,8 +26,6 @@ Because it runs solely in the command line (and autonomously), you can
 easily wire it up as a post script for services like SABnzbd.
 """
 
-import os
-import sys
 import asyncio
 from contextlib import suppress
 
@@ -35,8 +33,6 @@ import fylmlib.config as config
 import fylmlib.counter as counter
 from fylmlib import Console
 from fylmlib import App
-# from fylmlib import
-from fylmlib import Notify
 from fylmlib import Cursor
 
 __version__ = '0.4.0-beta'
@@ -53,9 +49,9 @@ def main():
             pending = asyncio.Task.all_tasks()
             loop.run_until_complete(asyncio.gather(*pending))
             loop.close()
-        Console.print_exit_early()
+        Console.exit_early()
     except (IOError, OSError) as e:
-        Console().error(f'{type(e).__name__}: {e}')
+        Console.error(f'{type(e).__name__}: {e}')
         if config.debug or config.errors:
             import traceback
             traceback.print_exc()

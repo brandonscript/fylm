@@ -40,12 +40,13 @@ from typing import Union, Iterable
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
-from fylmlib.tools import *
-from fylmlib.enums import *
-from fylmlib import FilmPath
-from fylmlib import Console
-from fylmlib import Cursor
-from fylmlib import Format
+from .tools import *
+from .enums import *
+from .console import Tinta
+from . import FilmPath
+from . import Console
+from . import Cursor
+from . import Format
 
 class Create:
     """Utilities for making files/dirs on the filesystem."""
@@ -126,11 +127,11 @@ class Delete:
             # Catch resource busy error
             except OSError as e:
                 if e.args[0] == 16:
-                    console.error(
-                        f"Failed to remove '{path}', it is in use.")
+                    Console.error(
+                        f"{INDENT}Failed to remove '{path}', it is in use.")
         else:
-            Console().red(INDENT,
-                f"Will not delete '{path}' ({'not empty' if files_count > 0 else Size.pretty(max_size)})"
+            Console.error(
+                f"{INDENT}Will not delete '{path}' ({'not empty' if files_count > 0 else Size.pretty(max_size)})"
             )
         return False
 
@@ -177,14 +178,14 @@ class Delete:
         try:
             p = Path(path)
             if not p.exists():
-                Console().error(INDENT, f"Could not delete '{p}'; it does not exist.")
+                Console.error(f"{INDENT}Could not delete '{p}'; it does not exist.")
             else:
                 if not config.test:
                     p.unlink()
                 # If successful, return 1 for a successful op.
                 return 1
         except Exception as e:
-            Console().error(INDENT, f"Unable to remove '{path}': {e}")
+            Console.error(f"{INDENT}Unable to remove '{path}': {e}")
 
         # Default return 0
         return 0
@@ -212,7 +213,7 @@ class Delete:
             elif p.is_dir():
                 return bool(Delete.dir(path, force=force))
         except Exception as e:
-            Console().error(INDENT, f"Unable to remove '{path}': {e}")
+            Console.error(f"{INDENT}Unable to remove '{path}': {e}")
         return False
 
     @staticmethod
@@ -318,7 +319,7 @@ class Find:
         origin = FilmPath(path)
         if not origin.is_dir():
             raise NotADirectoryError(
-                f"Cannot use Find.shallow on '{self}', it is not a dir.")
+                f"Cannot use Find.shallow, '{path}' is not a dir.")
         else:
             found = origin.iterdir()
             if sort_key:
@@ -427,24 +428,6 @@ class Find:
 
         return cls.NEW
 
-    # @staticmethod
-    # # FIXME: Probably not going to keep this
-    # def invalid_files_deep(path: Union[str, Path, 'FilmPath']) -> Iterable['FilmPath']:
-    #     """Scan deeply to find invalid files inside the specified dir.
-    #     Note that system files are ignored here, and will not be returned
-    #     even if they exist.
-
-    #     Args:
-    #         path (str, Path, or FilmPath) path to create.
-
-    #     Returns:
-    #         A generator of invalid files.
-    #     """
-
-    #     # Call dir.find_deep to search for files within the specified dir.
-    #     # Filter the results using a lambda function.
-    #     yield from filter(lambda x: x.is_file() and not x.is_valid, Find.deep(path))
-
     # FIXME: Move to Parallel
     @staticmethod
     def sync_parallel(paths: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
@@ -500,12 +483,12 @@ class IO:
             # overwrite, so we can skip this.
             if config.duplicates.force_overwrite is False and config.interactive is False:
                 # If we're not overwriting, return false
-                Console.print_io_reject('move', dst)
+                Console.io_reject('move', dst)
                 return False
 
             # File overwriting is enabled and not marked to upgrade, so warn but continue
-            Console().yellow(INDENT,
-                f"Replacing existing file '{dst.parent}'").print()
+            Tinta().yellow(
+                f"{INDENT}Replacing existing file '{dst.parent}'").print()
 
         # Only perform destructive changes if running in live mode, so we can short-circuit
         # the rest by returning True here and presuming it was successful.
@@ -576,14 +559,14 @@ class IO:
 
             # If not, then we print an error and return False.
             else:
-                console().red(INDENT,
-                    f"Size mismatch when moving '{src}', off by {Size.pretty(diff)}.")
+                Console.error(
+                    f"{INDENT}Size mismatch when moving '{src}', off by {Size.pretty(size_diff)}.")
                 return False
 
         except (IOError, OSError) as e:
 
             # Catch exception and soft warn in the console (don't raise Exception).
-            Console().red(INDENT, f"Failed to move '{src}'.")
+            Console.error(f"{INDENT}Failed to move '{src}'.")
             Console.debug(e)
             print(e)
 
@@ -634,7 +617,7 @@ class IO:
             dst =  dst / src.name
 
         if dst.exists():
-            Console.print_io_reject('copy', dst)
+            Console.io_reject('copy', dst)
             return
 
         # Silently abort if the src and dst are the same.
@@ -667,10 +650,10 @@ class IO:
             with open(src, 'rb') as fsrc:
                 with open(dst, 'wb') as fdst:
                     _copyfileobj(fsrc, fdst, callback=Console(
-                    ).print_copy_progress_bar, total=size)
+                    ).copy_progress_bar, total=size)
 
-        Console().print() # newline
-        Console.clearline()
+        Tinta().print() # newline
+        Tinta.clearline()
 
         # Perform a low-level copy.
         shutil.copymode(src, dst)
@@ -710,7 +693,7 @@ class IO:
 
         # Check if a file already exists and abort.
         if dst.exists():
-            Console().red(INDENT,
+            Tinta().red(INDENT,
                 f"Unable to rename, '{dst.name}' already exists in '{dst.parent}'.").print()
             return
 
@@ -772,7 +755,7 @@ class Size:
         if self._size is None:
             if not self.path.exists():
                 Console.error(
-                    f"Cannot calculate size, '{self.path}' does not exist.")
+                    f"{INDENT}Cannot calculate size, '{self.path}' does not exist.")
                 self._size = 0
             else:
                 self._size = self._calc()
