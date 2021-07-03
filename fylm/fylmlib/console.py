@@ -25,6 +25,13 @@ output to the log module.
     Console: the main class exported by this module.
 """
 
+from . import Progress
+from . import patterns, Log, Format as ƒ
+from .constants import *
+from .tools import *
+from .enums import *
+import fylmlib.config as config
+from halo import Halo
 import re
 import sys
 import time
@@ -36,14 +43,6 @@ from colors import color
 from tinta import Tinta
 Tinta.load_colors(Path(__file__).parent.parent / 'colors.ini')
 
-from halo import Halo
-
-import fylmlib.config as config
-from .enums import *
-from .tools import *
-from .constants import *
-from . import patterns, Log, Format as ƒ
-from . import Progress
 
 class Console():
 
@@ -67,9 +66,11 @@ class Console():
         if config.test:
             c.purple('\n★ Test mode (no changes will be made)')
         if config.force_lookup:
-            c.yellow('\n★ Force lookup mode (smart folder checking is disabled, assuming all folders are films)')
+            c.yellow(
+                '\n★ Force lookup mode (smart folder checking is disabled, assuming all folders are films)')
         if config.duplicates.force_overwrite:
-            c.yellow('\n★ Force overwrite mode enabled (all identically named existing files will be silently overwritten, regardless of size)')
+            c.yellow(
+                '\n★ Force overwrite mode enabled (all identically named existing files will be silently overwritten, regardless of size)')
 
         c.print(force=True)
 
@@ -82,7 +83,7 @@ class Console():
         """
 
         s = f"Successfully {'renamed' if config.rename_only else 'moved'}" \
-                f" {count} {ƒ.pluralize('film', count)}" if count > 0 else "No films moved"
+            f" {count} {ƒ.pluralize('film', count)}" if count > 0 else "No films moved"
 
         c = Tinta()
         if config.test is True:
@@ -111,18 +112,18 @@ class Console():
                     IgnoreReason.UNKNOWN_YEAR,
                     IgnoreReason.TOO_SMALL,
                     IgnoreReason.NO_TMDB_RESULTS]:
-                c.red(f' {FAIL} {S.name(film)}')
+                c.red(f'{FAIL} {S.name(film)}')
             elif film.tmdb.id and film.tmdb.is_instant_match:
-                c.green(f' {CHECK} {S.name(film)}')
+                c.green(f'{CHECK} {S.name(film)}')
             else:
-                c.light_blue(f' {UNCERTAIN} {S.name(film)}')
+                c.light_blue(f'{UNCERTAIN} {S.name(film)}')
 
         # Automatic mode
         else:
             if film.should_ignore:
-                c.red(f' {FAIL} {S.name(film)}')
+                c.red(f'{FAIL} {S.name(film)}')
             else:
-                c.green(f' {CHECK} {S.name(film)}')
+                c.green(f'{CHECK} {S.name(film)}')
 
         if film.tmdb.id:
             c.gray(S.tmdb_id(film))
@@ -177,41 +178,43 @@ class Console():
         if not duplicates:
             return
 
-        c = Tinta().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))} ")
+        c = Tinta().blue(f"{INDENT}Found {ƒ.num_to_words(len(duplicates))}")
         c.add(f"{ƒ.pluralize('duplicate', len(duplicates))} for '{new.name}'")
-        c.dim(f" ({new.size.pretty()})").print()
+        c.dim(f"({new.size.pretty()})").print()
 
-        keeps = list(filter(lambda mp: mp.action == Should.KEEP_EXISTING, duplicates))
+        keeps = list(filter(lambda mp: mp.action ==
+                     Should.KEEP_EXISTING, duplicates))
         duplicates = keeps[:1] if keeps else duplicates
 
         def fixcase(s): return s.capitalize() if not config.interactive else s
 
         for mp in duplicates:
 
-            c = Tinta(INDENT)
-            ar = f" {ARROW} " if not config.interactive else ''
+            c = Tinta('  ', sep='')
+            ar = f"{ARROW}" if not config.interactive else ''
             if config.interactive:
                 c.red() if mp.action == Should.KEEP_EXISTING else c.yellow()
-                c.add(ar).add("Suggest ")
+                c.add(f"{ar}Suggest", sep='')
             if mp.action == Should.UPGRADE:
                 c.blue() if not config.interactive else c.yellow()
-                c.add(ar).add(fixcase("upgrading "))
+                c.add(f'{ar}{fixcase("upgrading")}')
             elif mp.action == Should.KEEP_BOTH:
                 c.purple() if not config.interactive else c.yellow()
-                c.add(ar).add(fixcase("keeping both this and "))
+                c.add(f'{ar}{fixcase("keeping both this and")}')
             elif mp.action == Should.KEEP_EXISTING:
                 if (config.duplicates.force_overwrite is True
-                    and config.interactive is False):
-                    c.yellow(ar).add(f"(Force) replacing ")
+                        and config.interactive is False):
+                    c.yellow(f"{ar}(Force) replacing")
                 else:
-                    c.red(ar).add(fixcase(
-                        f"skipping, not an upgrade for existing file of "\
-                        f"the same quality\n{INDENT*2}"))
+                    c.red(ar, fixcase(
+                        f"skipping, not an upgrade for existing file of "
+                        f"the same quality\n{INDENT*2}"), sep='')
             else:
                 c.gray(ar)
 
-            c.add(f"'{mp.duplicate.name}' ({mp.duplicate.size.pretty()})")
-            c.dark_gray(' ')
+            c.add(f"'{mp.duplicate.name}'")
+            c.dim(f"({mp.duplicate.size.pretty()})")
+            c.normal().dark_gray()
             if mp.reason == ComparisonReason.IDENTICAL:
                 c.add('Identical')
 
@@ -222,14 +225,21 @@ class Console():
                     reason = 'HDR' if mp.duplicate.is_hdr else ''
                 c.add(reason)
 
+            # One is a proper
+            elif mp.reason == ComparisonReason.PROPER:
+                reason = 'Proper' if mp.duplicate.is_proper else 'Not proper'
+                c.add(reason)
+
             # For human readable output, we need to reverse the descriptor
             # because if "new" is better than "duplicate", we describe the inverse
             # for the duplicate.
             elif mp.reason == ComparisonReason.SIZE:
-                c.add(ƒ.pretty_size_diff(mp.new.size.value, mp.duplicate.size.value))
+                c.add(ƒ.pretty_size_diff(
+                    mp.new.size.value, mp.duplicate.size.value))
             else:
-                c.add(f'{"Higher" if mp.result == ComparisonResult.LOWER else "Lower"}')
-                c.add(f' {mp.reason.display_name.lower()}')
+                c.add(
+                    f'{"Higher" if mp.result == ComparisonResult.LOWER else "Lower"}')
+                c.add(f'{mp.reason.display_name.lower()}')
             c.print()
 
             # If in non-interactive mode, if a duplicate of equal or greater quality is detected,
@@ -251,8 +261,7 @@ class Console():
         if config.rename_only:
             verb = 'rename'
         Tinta().red(INDENT, f"Unable to {verb}, a file with the same name ",
-                      f"already exists in\n{INDENT}'{dst.parent}'.", sep='').print()
-
+                    f"already exists in\n{INDENT}'{dst.parent}'.", sep='').print()
 
     @staticmethod
     def interactive_error(s):
@@ -280,11 +289,11 @@ class Console():
 
         c = Tinta().white(INDENT_WIDE, f'{idx})')
         if choice.startswith('['):
-            c.dark_gray(f' {choice}')
+            c.dark_gray(f'{choice}')
         else:
             match = re.search(patterns.TMDB_ID, choice)
             tmdb_id = match.group('tmdb_id') if match else ''
-            c.light_gray(f" {re.sub(patterns.TMDB_ID, '', choice)}")
+            c.light_gray(f"{re.sub(patterns.TMDB_ID, '', choice)}")
             c.dark_gray(tmdb_id)
         c.print()
 
@@ -308,18 +317,18 @@ class Console():
         return input(color(PROMPT, fg=Tinta.colors.white) + color(p, fg=Tinta.colors.yellow))
 
     @staticmethod
-    def wait(s: int=0):
+    def wait(s: int = 0):
         if not config.no_console and not config.plaintext:
             time.sleep(s)
 
     @staticmethod
-    def slow(s: str='', seconds=0):
+    def slow(s: str = '', seconds=0):
         if config.debug is True:
             Tinta().yellow().bold(f'{ WARN }').reset().yellow(
                 f" {s} - {round(seconds)} seconds").print()
 
     @staticmethod
-    def debug(s: str='', end=None):
+    def debug(s: str = '', end=None):
         """Print debugging details, if config.debug is enabled.
 
         Args:
@@ -331,7 +340,7 @@ class Console():
             Tinta().add('🐞 ').debug(s).print(end=end)
 
     @staticmethod
-    def error(s: str='', x: Exception=None):
+    def error(s: str = '', x: Exception = None):
         """Print error details.
 
         Args:
@@ -348,11 +357,11 @@ class Console():
         halo = Halo()
         if (not config.no_console
             and not config.plaintext
-            and not config.debug):
+                and not config.debug):
             halo = Halo(text=s,
-                spinner='dots',
-                color='yellow',
-                text_color='yellow')
+                        spinner='dots',
+                        color='yellow',
+                        text_color='yellow')
         else:
             halo.start = lambda: Tinta(s).print()
             halo.stop = lambda: None
@@ -361,17 +370,18 @@ class Console():
     class strings:
 
         @staticmethod
-        def size(film: 'Film'): return f' ({film.size.pretty()})'
+        def size(film: 'Film'): return f'({film.size.pretty()})'
 
         @staticmethod
-        def tmdb_id(film: 'Film'): return f' [{film.tmdb.id}] '
+        def tmdb_id(film: 'Film'): return f'[{film.tmdb.id}]'
 
         @staticmethod
-        def percent(film: 'Film'): return f'{ƒ.percent(film.tmdb.title_similarity)}% match'
+        def percent(
+            film: 'Film'): return f'{ƒ.percent(film.tmdb.title_similarity)}% match'
 
         @staticmethod
         def name(film: 'Film'): return (Path(film.main_file.new_name).stem
-                        if not film.should_ignore else film.name)
+                                        if not film.should_ignore else film.name)
 
         @staticmethod
         def verb(film: 'Film') -> Tuple[str, str]:
@@ -382,5 +392,6 @@ class Console():
                 return ('rename', 'renamed', 'renaming')
             else:
                 return ('move', 'moved', 'moving')
+
 
 S = Console.strings
