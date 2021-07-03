@@ -36,9 +36,9 @@ import re
 from pathlib import Path
 from typing import Union
 
-from fylmlib.languages import Languages
 import fylmlib.constants as constants
-from fylmlib import Console
+from .languages import Languages
+from . import Console
 
 _LANGUAGES = Languages().load()
 
