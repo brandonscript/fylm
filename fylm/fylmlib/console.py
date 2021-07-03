@@ -299,7 +299,7 @@ class Console():
                 sys.stdout.flush()
 
     @staticmethod
-    def get_input(cls, p):
+    def get_input(p):
         """Prompt the user for input
 
         Args:
