@@ -26,6 +26,7 @@ Currently only Plex is supported, but Pushover is coming soon.
 from urllib.parse import urljoin
 import os
 import shutil
+from pathlib import Path
 
 from plexapi.server import PlexServer
 from .pushover import init, Client
@@ -35,6 +36,7 @@ import fylmlib.config as config
 from . import Log
 from . import Console
 from .console import Tinta
+
 
 class Notify:
 
@@ -50,17 +52,19 @@ class Notify:
         if (config.plex.enabled is True
             and config.quiet is False
             and config.rename_only is False
-            and config.test is False):
+                and config.test is False):
 
             # Disable the log so that HTTP ops aren't printed to the log.
             Log.disable()
             try:
                 # Create a connection to the Plex server
-                plex = PlexServer(baseurl=config.plex.baseurl, token=config.plex.token, timeout=10)
+                plex = PlexServer(baseurl=config.plex.baseurl,
+                                  token=config.plex.token, timeout=10)
             except Exception as e:
                 # If the connection fails, log the error and print a response to the console.
                 Log.enable()
-                Tinta().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
+                Tinta().red(
+                    f'Could not connect to Plex server on {config.plex.baseurl}').print()
                 Console.error(e)
                 return
 
@@ -89,21 +93,22 @@ class Notify:
         if (config.pushover.enabled is True
             and config.quiet is False
             and config.rename_only is False
-            and config.test is False):
+                and config.test is False):
 
             attachment = None
-            images_path = os.path.join(os.getcwd(), 'fylm/__images__')
-            if not os.path.exists(images_path):
-                os.makedirs(images_path)
+            images_path = Path.cwd() / 'fylm/__images__'
+            if not images_path.exists():
+                images_path.mkdir(exist_ok=True, parents=True)
 
-            # FIXME: use Path
-            if film.poster_url:
-                url = urljoin('https://image.tmdb.org/t/p/w185', film.poster_path)
-                img = os.path.join(images_path, film.poster_path)
+            img_path = ''
+            if film.tmdb.poster_url:
+                img = film.tmdb.poster_url.strip('/')
+                url = urljoin('https://image.tmdb.org/t/p/w185/', img)
+                img_path = images_path / img
                 response = requests.get(url, stream=True)
-                with open(img, 'wb') as f:
+                with open(img_path, 'wb') as f:
                     shutil.copyfileobj(response.raw, f)
-                attachment = ("image.jpg", open(img, "rb"), "image/jpeg")
+                attachment = ("image.jpg", open(img_path, "rb"), "image/jpeg")
 
             # Application API token/key, which can be found by selecting your app
             # from https://pushover.net/apps and copying the key.
@@ -113,11 +118,15 @@ class Notify:
             # be found at https://pushover.net
             pushover = Client(config.pushover.user_key)
 
-            message = ('. '.join(film.overview.split('.  ')[:2]) + '.'[:200] + '...') if len(film.overview) > 200 else film.overview
+            message = ('. '.join(film.tmdb.overview.split('.  ')[
+                       :2]) + '.'[:200] + '...') if len(film.tmdb.overview) > 200 else film.tmdb.overview
 
             pushover.send_message(
                 message=f"{film.title} ({film.year})\n{message}",
                 attachment=attachment,
                 title='Fylm Added')
 
-            os.remove(img)
+            try:
+                img_path.unlink()
+            except:
+                pass
