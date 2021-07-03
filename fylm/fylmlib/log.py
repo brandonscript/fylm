@@ -28,7 +28,7 @@ import sys
 import logging
 import datetime
 
-from fylmlib import config
+import fylmlib.config as config
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").propagate = False

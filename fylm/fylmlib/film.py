@@ -30,7 +30,8 @@ import os
 import re
 import asyncio
 from pathlib import Path
-from typing import Union
+from typing import Union, List
+
 from timeit import default_timer as timer
 
 # No libmediainfo support on TRAVIS
@@ -44,16 +45,16 @@ import nest_asyncio
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 import fylmlib.constants as constants
-from fylmlib.tools import *
-from fylmlib.enums import *
-from fylmlib import FilmPath
-from fylmlib import Console, Compare
-from fylmlib import Parser
-from fylmlib import Format
-from fylmlib import Subtitle
-from fylmlib import TMDb
+from .tools import *
+from .enums import *
+from . import FilmPath
+from . import Console, Compare
+from . import Parser
+from . import Format
+from . import Subtitle
+from . import TMDb
+from . import IO
 Info = FilmPath.Info
-from fylmlib import IO
 
 class Film(FilmPath):
     """A Film object contains basic details about the a film, references to the individual
@@ -110,7 +111,7 @@ class Film(FilmPath):
 
         self._src = Path(self)
         self.tmdb: TMDb.Result = TMDb.Result()
-        self.tmdb_matches: [TMDb.Result] = []
+        self.tmdb_matches: List[TMDb.Result] = []
         self.did_move: bool = False
 
     def __repr__(self):
@@ -481,12 +482,15 @@ class Film(FilmPath):
             if not self.is_video_file or not self.exists():
                 return None
 
-            media_info = MediaInfo.parse(str(self), library_file=str(
-                Path(__file__).resolve().parent / 'libmediainfo.0.dylib'))
+            try:
+                media_info = MediaInfo.parse(str(self), library_file=str(
+                    Path(__file__).resolve().parent / 'libmediainfo.0.dylib'))
 
-            for track in media_info.tracks:
-                if track.track_type == 'Video':
-                    return track
+                for track in media_info.tracks:
+                    if track.track_type == 'Video':
+                        return track
+            except:
+                return None
 
         def move(self, dst: Path = None) -> 'Film.File':
             """Moves the file.

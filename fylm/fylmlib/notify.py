@@ -23,20 +23,18 @@ This module handles all external services notifications.
 Currently only Plex is supported, but Pushover is coming soon.
 """
 
-try:
-    from urllib.parse import urljoin
-except ImportError:
-    from urlparse import urljoin
+from urllib.parse import urljoin
 import os
 import shutil
 
 from plexapi.server import PlexServer
-from fylmlib.pushover import init, Client
+from .pushover import init, Client
 import requests
 
 import fylmlib.config as config
-from fylmlib import Log
-from fylmlib import Console
+from . import Log
+from . import Console
+from .console import Tinta
 
 class Notify:
 
@@ -62,11 +60,11 @@ class Notify:
             except Exception as e:
                 # If the connection fails, log the error and print a response to the console.
                 Log.enable()
-                Console().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
-                console.error(e)
+                Tinta().red(f'Could not connect to Plex server on {config.plex.baseurl}').print()
+                Console.error(e)
                 return
 
-            Console().white('\nUpdating plex...').print()
+            Tinta().white('\nUpdating plex...').print()
 
             # If the connection was successful, tell Plex to update specified sections if running
             # in live mode. No need to notify in test mode since there won't be any changes.
@@ -74,7 +72,7 @@ class Notify:
                 for section in (plex.library.section(section) for section in config.plex.sections):
                     section.refresh()
 
-            Console().green('Done ✓').print()
+            Tinta().green('Done ✓').print()
 
             # Re-enable logging when done.
             Log.enable()

@@ -27,7 +27,7 @@ import inflect
 p = inflect.engine()
 
 import fylmlib.patterns as patterns
-from fylmlib.constants import *
+from .constants import *
 
 # Compare a list and see if they all match
 
@@ -116,7 +116,7 @@ def iterempty(iterable: Iterable) -> bool:
     Returns:
         bool: True if the iterable is empty.
     """
-    return any(True for _ in iterator)
+    return any(True for _ in iterable)
 
 
 def iterlen(iterable: Iterable) -> int:

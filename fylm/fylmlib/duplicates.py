@@ -34,6 +34,9 @@ from . import Console, Compare, Find
 from . import FilmPath
 from . import IO, Delete
 from . import Format as ƒ
+from typing import TYPE_CHECKING, List
+if TYPE_CHECKING:
+    from . import Film
 from .console import Tinta
 
 class Duplicates:
@@ -78,7 +81,7 @@ class Duplicates:
         return len(self.films)
 
     @property
-    def files(self) -> ['Film.File']:
+    def files(self) -> List['Film.File']:
         """Retrieves a list of duplicate files in all dst paths.
         Returns:
             List of duplicate Film.File objects.
@@ -104,7 +107,7 @@ class Duplicates:
         return [d for d in self.files if d.duplicate_action == Should.UPGRADE]
 
     @classmethod
-    def rename_unwanted(cls, unwanted: ['Duplicates.Map']):
+    def rename_unwanted(cls, unwanted: List['Duplicates.Map']):
         """Rename duplicates pending upgrade to {name}.dup~.
 
         Args:
@@ -208,7 +211,7 @@ class Duplicates:
         cls.TO_DELETE = []
         return d
 
-    def map(self, src: 'Film.File') -> ['Duplicates.Map']:
+    def map(self, src: 'Film.File') -> List['Duplicates.Map']:
         """Maps the src Film.File against this object's duplicate files
         and returns a list of results, actions, and reasons as Map objects.
 

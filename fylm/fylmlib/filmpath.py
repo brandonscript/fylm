@@ -30,9 +30,9 @@ from typing import Union, Iterable
 from lazy import lazy
 
 import fylmlib.config as config
-from fylmlib.tools import *
-from fylmlib.enums import *
-from fylmlib import Parser, Console
+from .tools import *
+from .enums import *
+from . import Parser, Console
 
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate

@@ -37,11 +37,11 @@ from pathlib import Path
 from itertools import groupby
 
 import fylmlib.config as config
-from fylmlib import Log
-from fylmlib import Compare
-from fylmlib import Format
-from fylmlib import patterns
-from fylmlib.constants import *
+from . import Log
+from . import Compare
+from . import Format
+from . import patterns
+from .constants import *
 
 if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key

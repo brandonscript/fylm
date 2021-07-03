@@ -29,16 +29,15 @@ import readline
 
 from colors import color
 
-from fylmlib.enums import *
-from fylmlib.tools import *
+from .enums import *
+from .tools import *
 import fylmlib.config as config
-from fylmlib import Parser
-from fylmlib import Console
-from fylmlib import Delete
-from fylmlib import Duplicates
-from fylmlib import Format as ƒ
+from . import Parser
+from . import Console
+from . import Delete
+from . import Duplicates
+from . import Format as ƒ
 from .console import Tinta
-colors = Tinta.colors
 
 InteractiveKeyMode = Enum('InteractiveKeyMode', 'CHAR NUMBER TUPLE')
 

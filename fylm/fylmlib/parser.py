@@ -34,10 +34,10 @@ from pathlib import Path
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
-from fylmlib.tools import *
-from fylmlib.enums import *
-from fylmlib import Format
-from fylmlib import Console
+from .tools import *
+from .enums import *
+from . import Format
+from . import Console
 from timeit import default_timer as timer
 
 class Parser:

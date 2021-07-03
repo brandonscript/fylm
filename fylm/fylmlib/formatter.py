@@ -32,8 +32,8 @@ import locale
 locale.setlocale(locale.LC_ALL, '')
 infl = inflect.engine()
 
-from fylmlib.tools import *
-from fylmlib.enums import *
+from .tools import *
+from .enums import *
 import fylmlib.config as config
 import fylmlib.patterns as patterns
 
