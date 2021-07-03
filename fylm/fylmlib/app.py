@@ -128,7 +128,7 @@ class App:
     def process_queue():
         """Process the move queue"""
 
-        if len(QUEUE) > 1:
+        if len(QUEUE) > 0:
             Tinta().pink(f"\nPreparing to move",
                          len(QUEUE),
                          f"{ƒ.pluralize('film', len(QUEUE))}...").print()
