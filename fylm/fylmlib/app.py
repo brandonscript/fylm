@@ -43,6 +43,7 @@ Info = FilmPath.Info
 QUEUE = []
 MOVED = []
 
+
 class App:
     """Main class for scanning for and processing films.
 
@@ -58,8 +59,10 @@ class App:
         # Print the welcome message to the console.
         Console.welcome()
 
-        filmroots = list(filter(lambda f: f.is_filmroot, map(Film, Find.new())))
-        NEW = list(Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size']))
+        filmroots = list(
+            filter(lambda f: f.is_filmroot, map(Film, Find.new())))
+        NEW = list(Find.sync_parallel(
+            filmroots, attrs=['filmrel', 'year', 'size']))
         if len(NEW) == 0:
             return App.end()
 
@@ -77,9 +80,9 @@ class App:
             TMDb.Search.parallel(*NEW)
             spinner.stop()
 
-            Tinta().green(f'{CHECK} Done searching TMDb '
-                            ).dark_gray(f'({round(timer() - start)} seconds)'
-                            ).print()
+            Tinta().green(f'{CHECK} Done searching TMDb'
+                          ).dark_gray(f'({round(timer() - start)} seconds)'
+                                      ).print()
 
             Console.wait(1.5)
             Tinta.clearline()
@@ -116,20 +119,19 @@ class App:
 
         # Cleanup
         to_clean = [f for f in map(lambda f: Film(f.src), MOVED)
-                 if iterlen(f.wanted_files) == 0]
+                    if iterlen(f.wanted_files) == 0]
         cleaned = Delete.paths(*to_clean)
 
         return App.end()
-
 
     @staticmethod
     def process_queue():
         """Process the move queue"""
 
         if len(QUEUE) > 1:
-            Console().pink(f"\nPreparing to move",
-                           len(QUEUE),
-                           f"{ƒ.pluralize('film', len(QUEUE))}...").print()
+            Tinta().pink(f"\nPreparing to move",
+                         len(QUEUE),
+                         f"{ƒ.pluralize('film', len(QUEUE))}...").print()
 
         while len(QUEUE) > 0:
             film = QUEUE.pop(0)
@@ -143,10 +145,8 @@ class App:
                     f"{INDENT}'No longer exists or cannot be accessed.").print()
                 continue
 
-            c = Tinta(INDENT)
-
             if film.src == film.dst:
-                c.add(f'Already {verbed}').print()
+                Tinta(f'{INDENT}Already {verbed}').print()
                 continue
 
             film.rename() if config.rename_only else film.move()
@@ -154,14 +154,14 @@ class App:
             did_move = [f.did_move for f in film.files]
 
             if all(did_move):
-                c.dark_gray(f'{verbed.capitalize()}',
-                      f'{ARROW} {film.dst}').print()
+                Tinta().dark_gray(f'{INDENT}{verbed.capitalize()}',
+                                  f'{ARROW} {film.dst}').print()
                 counter.add(len(did_move))
 
                 Duplicates.delete_upgraded()
                 if (config.remove_source
                     and film.is_dir()
-                    and film.src != film.dst):
+                        and film.src != film.dst):
                     Console.debug(f"Deleting parent folder '{film.src}'")
                     Delete.dir(film.src, force=True)
                 MOVED.append(film)

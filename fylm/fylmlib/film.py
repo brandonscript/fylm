@@ -169,7 +169,7 @@ class Film(FilmPath):
 
     @lazy
     def main_file(self) -> 'Film.File':
-        if self.is_file() or self.suffix.lower() in config.video_exts:
+        if self.is_file() or (not self.exists() and self.suffix.lower() in config.video_exts):
             return Film.File(self, film=self)
         elif self.is_dir():
             return first(self.video_files, None)
