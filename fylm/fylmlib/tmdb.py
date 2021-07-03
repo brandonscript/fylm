@@ -47,6 +47,8 @@ if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key
 
 # TODO: A shit ton of refactoring on TMDb
+
+
 class TMDb:
 
     class Result:
@@ -94,9 +96,9 @@ class TMDb:
         """
 
         def __init__(self,
-            src_title=None,
-            src_year=None,
-            raw_result=None):
+                     src_title=None,
+                     src_year=None,
+                     raw_result=None):
 
             self.src_title = src_title
             self.src_year = src_year
@@ -121,8 +123,8 @@ class TMDb:
         def __eq__(self, other):
             """Use __eq__ method to define duplicate search results"""
             return (self.new_title == other.new_title
-                and self.new_year == other.new_year
-                and self.id == self.id)
+                    and self.new_year == other.new_year
+                    and self.id == self.id)
 
         def __hash__(self):
             return hash(('new_title', self.new_title,
@@ -210,7 +212,7 @@ class TMDb:
             # results and find the best.
             if (self.title_similarity >= ideal_title_similarity
                 and self.year_deviation <= config.tmdb.max_year_diff
-                and initial_chars_match):
+                    and initial_chars_match):
                 # Console.debug(f'Instant match: {self.new_title} ({self.new_year})')
                 return True
             return False
@@ -224,7 +226,8 @@ class TMDb:
             film.tmdb = self
             film.title = self.new_title
             film.year = self.new_year
-            lazy.invalidate(film.main_file, 'new_name')
+            for f in film.files:
+                lazy.invalidate(f, 'new_name')
 
     class Search:
 
@@ -239,7 +242,8 @@ class TMDb:
             # On macOS, we need to use a funky hack to replace / in a filename with :,
             # in order to output it correctly.
             # Credit: https://stackoverflow.com/a/34504896/1214800
-            self.query = query.replace(r':', '-') if isinstance(query, str) else query
+            self.query = query.replace(
+                r':', '-') if isinstance(query, str) else query
             if self.query == '':
                 raise AttributeError('Search query cannot be an empty string.')
             self.year = year
@@ -253,10 +257,12 @@ class TMDb:
                 films ([Film]): *args list of films to search.
             """
             # TODO: Create generic parallel caller/initializer
+
             def __init__(self, *films):
                 loop = asyncio.get_event_loop()
                 tasks = asyncio.gather(*[
-                    asyncio.ensure_future(self._worker(i, film, min(len(films), 50)))
+                    asyncio.ensure_future(self._worker(
+                        i, film, min(len(films), 50)))
                     for (i, film) in enumerate(films)
                 ])
                 loop.run_until_complete(tasks)
@@ -276,6 +282,7 @@ class TMDb:
                 year
                 primary_release_year
             """
+
             def __init__(self, query=None, primary_release_year=None, year=None, id=None):
                 self.query = query
                 self.primary_release_year = primary_release_year
@@ -283,10 +290,10 @@ class TMDb:
                 self.id = id
 
             def __repr__(self):
-                return ' '.join(f"Q('{self.query}') "\
-                        f"{self.primary_release_year or ''} "\
-                        f"{self.year or ''} "\
-                        f"{self.id or ''}".split())
+                return ' '.join(f"Q('{self.query}') "
+                                f"{self.primary_release_year or ''} "
+                                f"{self.year or ''} "
+                                f"{self.id or ''}".split())
 
             def __eq__(self, other):
                 """Use __eq__ method to define duplicate queries"""
@@ -343,7 +350,8 @@ class TMDb:
             # Try separating path parts
             parts = Path(self.query).parts
             if len(parts) > 1:
-                [queries.append(Q(query=p, primary_release_year=self.year)) for p in parts]
+                [queries.append(Q(query=p, primary_release_year=self.year))
+                 for p in parts]
                 [queries.append(Q(query=p)) for p in parts]
 
             # Recursively remove the last word in the query
@@ -363,7 +371,8 @@ class TMDb:
             # Sort, group/aggregate by ID, then sort by number of times the result appeared
             # in all searches
             results_sorted = sorted(self.results, key=lambda x: x.id)
-            aggregate_results = [(r, len(list(results))) for r, results in groupby(results_sorted)]
+            aggregate_results = [(r, len(list(results)))
+                                 for r, results in groupby(results_sorted)]
             aggregate_results.sort(key=lambda x: x[1], reverse=True)
 
             # If no instant match was found, we need to figure out which are the most likely
@@ -383,7 +392,8 @@ class TMDb:
                         and x[0].title_similarity >= 0.8) or
                     (x[0].year_deviation == 0
                         and x[0].title_similarity >= (config.tmdb.min_title_similarity / 1.5)),
-                aggregate_results # aggregate results is in a tuple: (Result, number_of_times_returned)
+                # aggregate results is in a tuple: (Result, number_of_times_returned)
+                aggregate_results
             ))
 
             # Sort the results by:
@@ -391,8 +401,9 @@ class TMDb:
             #   - Then prefer a matching title similarity first (a 0.7 is better than a 0.4)
             #   - Then prefer lowest year deviation (0 is better than 1)
             sorted_results = list(sorted(filtered_results,
-                key=lambda x: (-(x[0].vote_count + x[0].popularity), -x[0].title_similarity, x[0].year_deviation)
-            ))
+                                         key=lambda x: (-(x[0].vote_count + x[0].popularity), -
+                                                        x[0].title_similarity, x[0].year_deviation)
+                                         ))
 
             # Return results (0 index) from the sorted and filtered tuple list
             self.results = [x[0] for x in sorted_results]
@@ -431,6 +442,7 @@ class TMDb:
             return [Result(src_title=self.query,
                            src_year=self.year,
                            raw_result=r) for r in res]
+
 
 Result = TMDb.Result
 Search = TMDb.Search
