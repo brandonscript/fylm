@@ -34,6 +34,7 @@ import fylmlib.config as config
 from halo import Halo
 import re
 import sys
+import os
 import time
 from pathlib import Path
 from datetime import datetime
@@ -42,7 +43,8 @@ from typing import List, Tuple
 from colors import color
 from tinta import Tinta
 Tinta.load_colors(Path(__file__).parent.parent / 'colors.ini')
-
+if config.plaintext:
+    os.environ['TINTA_PLAINTEXT'] = '1'
 
 class Console():
 
@@ -91,7 +93,8 @@ class Console():
         else:
             c.pink(f"\n{s}")
         c.print(force=True)
-        Tinta().pink("Thanks for using Fylm. Be kind, and please rewind.").print()
+        if not config.plaintext:
+            Tinta().pink("Thanks for using Fylm. Be kind, and please rewind.").print()
 
     @staticmethod
     def exit_early():
