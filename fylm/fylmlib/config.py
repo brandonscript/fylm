@@ -89,8 +89,8 @@ class Config(object):
         # different working dir).
         # FIXME: Use Path.cwd() instead?
         # Load the config file and map it to a 'Dict', a dot-notated dictionary.
-        config_path = os.path.join(os.path.dirname(
-            os.path.dirname(__file__)), 'config.yaml')
+        config_path = [os.path.join(os.path.dirname(
+            os.path.dirname(__file__)), 'config.yaml')]
         parser.add_argument(
             '--config',
             action='store',
@@ -282,15 +282,13 @@ class Config(object):
         args, _ = parser.parse_known_args()
 
         # Set the config values from the parsed args.
+        config_path = args.config_path[0]
         assert Path(config_path).exists(), f'Config file does not exist: {config_path}'
 
         # Load the config file and map it to a 'Dict', a dot-notated dictionary.
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
             self._defaults.update(Dict(yaml.safe_load(
                 yaml_config_file.read()), sequence_type=list))
-
-        # Do the same for the log file, but use the default if the specified path fails.
-        self._defaults.log_path = args.log_path[0] or self._defaults.log_path
 
         # Re-map any deeply nested arguments
         args.tmdb = Dict({'min_popularity': args.tmdb__min_popularity})
