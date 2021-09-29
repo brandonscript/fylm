@@ -14,3 +14,4 @@ env/*
 .vscode/settings.json
 .vscode/tasks.json
 .vscode/.ropeproject/*
+.vscode/launch.json
