@@ -98,8 +98,9 @@ class App:
             Console.film_header(film)
             Console.film_src(film)
 
-            Interactive.lookup(film)
-            Interactive.handle_duplicates(film)
+            if config.interactive:
+                Interactive.lookup(film)
+                Interactive.handle_duplicates(film)
 
             if film.should_ignore is True:
                 Console.skip(film)
