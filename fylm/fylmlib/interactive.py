@@ -26,6 +26,7 @@ Credit: https://github.com/jreyesr/better-input
 """
 
 import readline
+from typing import Tuple
 
 from colors import color
 
@@ -478,7 +479,7 @@ class Interactive:
                       prefill='',
                       enumeration=InteractiveKeyMode.CHAR,
                       error_message=None,
-                      mock_input=None) -> (int, str):
+                      mock_input=None) -> Tuple[int, str]:
         """Choice-based prompt for input.
 
         Ask the user for input from a set of choices.

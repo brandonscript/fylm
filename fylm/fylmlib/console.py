@@ -317,6 +317,8 @@ class Console():
         Args:
             p (str): Query to print.
         """
+        if not config.interactive:
+            return
         return input(color(PROMPT, fg=Tinta.colors.white) + color(p, fg=Tinta.colors.yellow))
 
     @staticmethod
