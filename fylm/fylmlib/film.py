@@ -135,7 +135,7 @@ class Film(FilmPath):
         return (root / self.new_name)
 
     @property
-    def duplicates(self) -> ['Film']:
+    def duplicates(self) -> List['Film']:
         from fylmlib import Duplicates
         return Duplicates(self)
 
@@ -145,7 +145,7 @@ class Film(FilmPath):
         return name.dirname if config.use_folders else name.filename
 
     @lazy # @Override(files)
-    def files(self) -> ['Film.File']:
+    def files(self) -> List['Film.File']:
         if super().files:
             return sorted([Film.File(f, film=self) for f in super().files],
                              key=lambda f: f.size.value, reverse=True)
@@ -426,7 +426,7 @@ class Film(FilmPath):
                 return (root / self.new_name)
 
         @property
-        def duplicates(self) -> ['Film']:
+        def duplicates(self) -> List['Film']:
             return self.film.duplicates.files
 
         @lazy

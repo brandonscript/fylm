@@ -28,6 +28,7 @@ easily wire it up as a post script for services like SABnzbd.
 
 import asyncio
 from contextlib import suppress
+from multiprocessing import Pool
 
 import fylmlib.config as config
 import fylmlib.counter as counter
@@ -35,7 +36,9 @@ from fylmlib import Console
 from fylmlib import App
 from fylmlib import Cursor
 
-__version__ = '0.4.0-beta'
+__version__ = '0.4.1-beta'
+
+pool: Pool = None
 
 def main():
     """Main program."""
@@ -58,6 +61,3 @@ def main():
     finally:
         # Don't leave the cursor hidden
         Cursor.show()
-
-if __name__ == "__main__":
-    main()

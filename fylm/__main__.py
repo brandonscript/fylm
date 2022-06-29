@@ -19,7 +19,11 @@
 
 """Main entry point."""
 
+from multiprocessing import Pool
 import __init__ as fylm
 
-fylm.main()
+if __name__ == "__main__":
+    fylm.pool = Pool()
+    fylm.main()
+    fylm.pool.close()
 

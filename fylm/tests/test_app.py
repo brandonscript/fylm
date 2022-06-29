@@ -19,6 +19,9 @@
 
 # import pytest
 
+from multiprocessing import Pool
+import multiprocessing
+from pathlib import Path
 import fylm
 import fylmlib.config as config
 from fylmlib.film import Film
@@ -46,8 +49,11 @@ class TestApp(object):
         
         config.duplicates.enabled = False
 
+        
         # Execute
+        fylm.pool = Pool(multiprocessing.cpu_count())
         fylm.App.run()
+        fylm.pool.close()
 
         # Make sure we have some test films
         assert(len(made.good) > 0)
@@ -56,6 +62,9 @@ class TestApp(object):
         (existing, expected) = made.get()
         for desired_path in expected:
             assert(Info.exists_case_sensitive(desired_path))
+        if (len(existing) != len(expected)):
+            print([Path(ex) for ex in existing])
+            print(expected)
         assert(len(existing) == len(expected))
 
     def test_app_tmdb_disabled(self):
@@ -66,7 +75,9 @@ class TestApp(object):
         config.tmdb.enabled = False
 
         # Execute
-        fylm.main()
+        fylm.pool = Pool(multiprocessing.cpu_count())
+        fylm.App.run()
+        fylm.pool.close()
 
         # Make sure we have some test films
         assert(len(made.good) > 0)

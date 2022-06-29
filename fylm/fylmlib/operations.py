@@ -34,9 +34,9 @@ import re
 import itertools
 import time
 import asyncio
-import multiprocessing as mp
+import multiprocessing
 from pathlib import Path
-from typing import Union, Iterable
+from typing import List, Union, Iterable
 
 import fylmlib.config as config
 import fylmlib.patterns as patterns
@@ -330,7 +330,7 @@ class Find:
                 yield FilmPath(p, origin=origin)
 
     @staticmethod
-    def glob(*paths, search: str) -> ['FilmPath']:
+    def glob(*paths, search: str) -> List['FilmPath']:
         """Takes an input string and searches the filesystem
         for a likely match.
 
@@ -341,9 +341,23 @@ class Find:
             [FilmPath]: List of matching FilmPaths
         """
         Console.debug(f"Searching for glob string '{search}'...")
+        Console.debug(f"Searching in paths: {paths}")
+
+        # filter out paths that are None
+        paths = filter(lambda p: p is not None, paths)
 
         paths = list(map(Path, set(paths)))
         globstr = re.sub(patterns.ALL_NONWORD_CHARS, '*', search) + '*'
+
+        # Ensure paths exist
+        for p in paths:
+            if not p.exists():
+                try:
+                    import ops
+                    ops.dirops.create_deep(create_path)
+                except Exception as e:
+                    raise FileNotFoundError(
+                        f"Path '{p}' does not exist. Tried to create it, but could not.")
 
         found_iter = itertools.chain.from_iterable(
             Path(p).glob(globstr) for p in paths)
@@ -354,7 +368,7 @@ class Find:
     @classmethod
     def existing(cls,
                  *paths,
-                 sort_key=None) -> ['FilmPath']:
+                 sort_key=None) -> List['FilmPath']:
         """Get a list of existing films from destination dirs.
 
         Scan one level deep of the target paths to get a list of existing films.
@@ -377,9 +391,17 @@ class Find:
 
         Console.debug('Searching for existing films...')
 
+        paths = filter(lambda p: p is not None, paths)
+
         # Coerce str path objects to Path set
         paths = list(map(Path, set(paths) if paths else set(
             config.destination_dirs.values())))
+
+        # Ensure paths exist
+        for p in paths:
+            if not p.exists():
+                raise FileNotFoundError(
+                    f"Path '{p}' does not exist. Check config.destination_dirs.")
 
         # Shallow scan the target dirs
         found_iter = itertools.chain.from_iterable(
@@ -393,7 +415,7 @@ class Find:
     @classmethod
     def new(cls,
             *paths,
-            sort_key=lambda p: p.name.lower()) -> ['FilmPath']:
+            sort_key=lambda p: p.name.lower()) -> List['FilmPath']:
         """Get a list of potential new films from source dirs.
 
         Args:
@@ -418,21 +440,29 @@ class Find:
 
         # Coerce str path objects to Path set
         paths = set(list(map(Path, paths if paths else config.source_dirs)))
+        
+        # Ensure paths exist
+        for p in paths:
+            if not p.exists():
+                raise FileNotFoundError(
+                    f"Path '{p}' does not exist. Check config.source_dirs or your -s flag.")
 
         # Shallow scan the target dirs, then sync the maybe_film attr.
         found_iter = itertools.chain.from_iterable(
             Find.deep_sorted(p, sort_key=sort_key) for p in paths)
-
+        
         # Set the class var
         cls.NEW = list(found_iter)
 
         return cls.NEW
 
     # FIXME: Move to Parallel
+    # FIXME: Doesn't work in debug, breaks all the things
     @staticmethod
-    def sync_parallel(paths: Iterable['FilmPath'], attrs: [] = None) -> ['FilmPath']:
-        with mp.Pool(min(50, len(list(paths)) or 1)) as pool:
-            yield from pool.starmap(FilmPath.sync, zip(paths, itertools.repeat(attrs)))
+    def sync_parallel(pool: multiprocessing.Pool, paths: Iterable['FilmPath'], attrs: List[str] = None) -> List['FilmPath']:
+        pool.worker_count = min(
+            multiprocessing.cpu_count(), len(list(paths)) or 1)
+        yield from pool.starmap(FilmPath.sync, zip(paths, itertools.repeat(attrs)))
 
 class IO:
     """Move, rename, and copy filesystem utils"""

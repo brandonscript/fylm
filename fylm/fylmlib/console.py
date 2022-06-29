@@ -197,7 +197,7 @@ class Console():
             ar = f"{ARROW}" if not config.interactive else ''
             if config.interactive:
                 c.red() if mp.action == Should.KEEP_EXISTING else c.yellow()
-                c.add(f"{ar}Suggest", sep='')
+                c.add(f"{ar}Suggest", sep=' ')
             if mp.action == Should.UPGRADE:
                 c.blue() if not config.interactive else c.yellow()
                 c.add(f'{ar}{fixcase("upgrading")}')

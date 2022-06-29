@@ -43,7 +43,6 @@ Info = FilmPath.Info
 QUEUE = []
 MOVED = []
 
-
 class App:
     """Main class for scanning for and processing films.
 
@@ -61,8 +60,8 @@ class App:
 
         filmroots = list(
             filter(lambda f: f.is_filmroot, map(Film, Find.new())))
-        NEW = list(Find.sync_parallel(
-            filmroots, attrs=['filmrel', 'year', 'size']))
+        import fylm 
+        NEW = list(Find.sync_parallel(fylm.pool, filmroots, attrs=['filmrel', 'year', 'size']))
         if len(NEW) == 0:
             return App.end()
 

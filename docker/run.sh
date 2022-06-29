@@ -1,9 +1,9 @@
 sudo docker run \
 --name 'fylm' \
--v /Volumes/Films:/Volumes/Films \
--v /Volumes/Downloads:/Volumes/Downloads \
--v /path/to/docker/fylm:/config \
+-v /volume1/Films:/volume1/Films \
+-v /volume1/Downloads:/volume1/Downloads \
+-v /volume1/docker/fylm:/config \
 --rm \
 brandonscript/fylm:latest \
 "--config" "/config/config.yaml"
-"-s" "/Volumes/Downloads" "--plaintext" "--other-args-here"
+"-s" "/volume1/Downloads/#done/#usenet" "--plaintext"

@@ -17,6 +17,7 @@
 # Where a conflict or dispute would arise between these two licenses, HLv2.1
 # shall take precedence.
 
+from multiprocessing import Pool
 import os
 import sys
 from timeit import default_timer as timer
@@ -398,8 +399,10 @@ class TestFind(object):
             assert(not 'filmroot' in f.__dict__)
             assert(not 'is_filmroot' in f.__dict__)
             assert(not 'maybe_film' in f.__dict__)
+
+        pool = Pool(processes=4)
             
-        synced = Find.sync_parallel(iter(found), attrs=['filmrel', 
+        synced = Find.sync_parallel(pool, iter(found), attrs=['filmrel', 
                                                      'filmroot', 
                                                      'is_filmroot', 
                                                      'maybe_film'])

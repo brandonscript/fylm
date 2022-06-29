@@ -26,7 +26,7 @@ This module performs searches and handles results from TMDb.
 
 import re
 import asyncio
-from typing import Union
+from typing import List, Union
 from datetime import datetime
 import requests
 
@@ -45,9 +45,6 @@ from .constants import *
 
 if config.tmdb.enabled:
     tmdb.API_KEY = config.tmdb.key
-
-# TODO: A shit ton of refactoring on TMDb
-
 
 class TMDb:
 
@@ -311,7 +308,7 @@ class TMDb:
             def dict(self):
                 return self.__dict__
 
-        async def do(self) -> ['TMDb.Result']:
+        async def do(self) -> List['TMDb.Result']:
             """Executes a series of searches until a suitable match is found.
 
             Returns:
@@ -410,7 +407,7 @@ class TMDb:
             # Console.debug(f"Slow '{self.query}' ({round(timer() - start)} second(s))")
             return self.results
 
-        async def dispatch_search(self, q: 'Search.Q') -> ['Search.Result']:
+        async def dispatch_search(self, q: 'Search.Q') -> List['Search.Result']:
             """TMDb lib search executor. Performs a TMDb search using the
             specified query params.
 

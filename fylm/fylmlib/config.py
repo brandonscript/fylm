@@ -27,9 +27,12 @@ CLI argumants.
 
 import argparse
 import os
+from pprint import pprint
 import sys
 import codecs
 from datetime import timedelta
+from typing import List, Tuple
+from mergedeep import merge
 import yaml
 from yaml import Loader, SafeLoader
 from pathlib import Path
@@ -57,7 +60,121 @@ def construct_yaml_str(self, node):
 Loader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
-class Config(object):
+class ConfigModel(object):
+    """A model for the config.yaml file.
+
+    This class is a subclass of addict.Dict, and is used to load the config.yaml
+    file. It is also used to create the config.yaml file.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the config model.
+
+        Args:
+            *args:
+            **kwargs:
+        """
+
+        super().__init__(*args, **kwargs)
+
+        self.source_dirs: List = []
+        self.destination_dirs: Dict = Dict({
+            '720p': None,
+            '1080p': None,
+            '2160p': None,
+            'SD': None,
+            'default': None
+        })
+        self.rename_pattern = Dict({
+            'file': None,
+            'folder': None
+        })
+        self.use_folders: bool = True
+        self.remove_unwanted_files: bool = True
+        self.remove_source: bool = True
+        self.min_filesize: Dict = Dict({
+            '720p': 50,
+            '1080p': 100,
+            '2160p': 200,
+            'SD': 20,
+            'default': 20
+        })
+        self.size_units_ibi: bool = True
+        self.log_path: str = './'
+        self.hide_bad: bool = True
+        self.interactive: bool = False
+        self.test: bool = False
+        self.debug: bool = False
+        self.errors: bool = True
+        self.no_console: bool = False
+        self.plaintext: bool = False
+        self.rename_only: bool = False
+        self.strict: bool = True
+        self.cache: bool = True
+        self.cache_ttl: int = 168 # hours
+        self.limit: int = 0
+        self.force_lookup: bool = False
+
+        class DuplicatesConfig:
+            def __init__(self):
+                self.enabled: bool = True
+                self.force_overwrite: bool = False
+                self.automatic_upgrading: bool = True
+                self.upgrade_table: Dict = Dict({
+                    '2160p': [],
+                    '1080p': [],
+                    '720p': ['1080p'],
+                    'SD': ['720p', '1080p']
+                })
+                self.ignore_edition: bool = False
+        self.duplicates = DuplicatesConfig()
+        self.always_copy: bool = False
+        self.quiet: bool = False
+
+        class TmdbConfig:
+            def __init__(self):
+                self.enabled: bool = True
+                self.key: str = ''
+                self.min_title_similarity: float = 0.4
+                self.max_year_diff: int = 1
+                self.min_popularity: float = 0.8
+                self.popular_threshold: int = 10
+        self.tmdb = TmdbConfig()
+
+        class PlexConfig:
+            def __init__(self):
+                self.enabled: bool = True
+                self.baseurl: str = 'http://localhost:32400'
+                self.token: str = ''
+                self.sections: List[str] = ['Movies']
+        self.plex = PlexConfig()
+
+        class PushoverConfig:
+            def __init__(self):
+                self.enabled: bool = True
+                self.app_token: str = ''
+                self.user_key: str = ''
+        self.pushover = PushoverConfig()
+
+        self.edition_map: List[Tuple[str, str]] = []
+        self.strip_prefixes: List[str] = []
+        self.ignore_strings: List[str] = []
+        self.keep_period: List[str] = []
+        self.always_upper: List[str] = []
+        self.video_exts: List[str] = ['.mkv', '.m4v', '.mp4', '.avi']
+        self.extra_exts: List[str] = ['.srt', '.sub']
+
+    def update(self, dict: Dict):
+        """Update the config model with a new dictionary.
+
+        Args:
+            dict: A dictionary to update the config model with.
+        """
+
+        self.__dict__ = merge(self.__dict__, dict)
+            
+
+class Config(ConfigModel):
     """Main class for handling app options.
     """
 
@@ -81,7 +198,7 @@ class Config(object):
         parser = argparse.ArgumentParser(description = 'A delightful filing and renaming app for film lovers.')
 
         # Init an empty defaults dict
-        self._defaults = Dict({})
+        self._defaults = ConfigModel()
 
         # --config
         # This option will override the path to the built-in config file.
@@ -91,6 +208,7 @@ class Config(object):
         # Load the config file and map it to a 'Dict', a dot-notated dictionary.
         config_path = [os.path.join(os.path.dirname(
             os.path.dirname(__file__)), 'config.yaml')]
+            
         parser.add_argument(
             '--config',
             action='store',
@@ -229,7 +347,7 @@ class Config(object):
             '--no-duplicates',
             action="store_false",
             default=self._defaults.duplicates.enabled,
-            dest="duplicates_enabled",
+            dest="duplicates__enabled",
             help='Disable duplicate checking')
 
         # -o, --overwrite
@@ -240,7 +358,7 @@ class Config(object):
             '--overwrite',
             action="store_true",
             default=self._defaults.duplicates.force_overwrite,
-            dest="force_overwrite",
+            dest="duplicates__force_overwrite",
             help=('Forcibly overwrite any file (or matching files inside a film folder) with the same name, \regardless of size difference)'))
 
         # --source
@@ -252,7 +370,6 @@ class Config(object):
             nargs='*',
             default=self._defaults.source_dirs,
             dest="source_dirs",
-            type=str,
             help='Override the configured source dir(s) (comma separate multiple folders)')
 
         # -l, --limit
@@ -284,17 +401,20 @@ class Config(object):
         # Set the config values from the parsed args.
         config_path = args.config_path[0]
         assert Path(config_path).exists(), f'Config file does not exist: {config_path}'
+        del args.config_path
 
         # Load the config file and map it to a 'Dict', a dot-notated dictionary.
         with codecs.open(config_path, encoding='utf-8') as yaml_config_file:
             self._defaults.update(Dict(yaml.safe_load(
                 yaml_config_file.read()), sequence_type=list))
 
-        # Re-map any deeply nested arguments
-        args.tmdb = Dict({'min_popularity': args.tmdb__min_popularity})
-
-        # Re-map arg values onto known options already loaded from config.yaml.
-        self._defaults.update(Dict(vars(args)))
+        # Re-map any deeply nested explicit arguments to the config.
+        self._defaults.tmdb.min_popularity = args.tmdb__min_popularity
+        del args.tmdb__min_popularity
+        self._defaults.duplicates.enabled = args.duplicates__enabled
+        del args.duplicates__enabled
+        self._defaults.duplicates.force_overwrite = args.duplicates__force_overwrite
+        del args.duplicates__force_overwrite
 
         # Supress console if no_console is true.
         if self._defaults.no_console is True:
@@ -315,21 +435,26 @@ class Config(object):
         if os.environ.get('TMDB_KEY') is not None:
             self._defaults.tmdb.key = os.environ.get('TMDB_KEY')
 
+        # Overwrite config with any explicitly set paths.
+        if args.source_dirs:
+            self._defaults.source_dirs = args.source_dirs
+            del args.source_dirs
+        
         # Map paths in source_dirs to Path and remove duplicates.
-        self._defaults.source_dirs = list(set(map(Path, self._defaults.source_dirs)))
+        self._defaults.source_dirs = list(
+            set(map(Path, self._defaults.source_dirs)))
 
         # Map paths in destination_dirs to Path.
         for k, v in self._defaults.destination_dirs.items():
-            self._defaults.destination_dirs[k]=Path(v)
+            if v:
+                self._defaults.destination_dirs[k] = Path(v)
+
+        # delete properties from self._defaults.destination_dirs that are None
+        self._defaults.destination_dirs = {
+            k: v for k, v in self._defaults.destination_dirs.items() if v}
 
         # Create placeholder var for mock inputs in interactive mode.
         self._defaults.mock_input = None
-
-        # Set no_duplicates and force_overwrite nested properties in duplicates
-        self._defaults.duplicates.enabled = self._defaults.duplicates_enabled
-        del self._defaults.duplicates_enabled
-        self._defaults.duplicates.force_overwrite = self._defaults.force_overwrite
-        del self._defaults.force_overwrite
 
         # Set up cache.
         if self._defaults.cache is True:
@@ -338,10 +463,18 @@ class Config(object):
                                          expire_after=timedelta(hours=cache_ttl))
             requests_cache.remove_expired_responses()
 
-        for k, v in self._defaults.items():
+        # Map anything that is a dict to a addict.Dict
+        for k, v in self._defaults.__dict__.items():
             setattr(self, k, Dict(v) if isinstance(v, dict) else v)
-        del self._defaults
+        
+        # Set the instance to whatever we loaded
+        self.__instance = self._defaults
 
+        # Finally map any leftover args to the config that might have been
+        for k, v in args.__dict__.items():
+            self.update({k: v})
+        # pprint(self.__dict__)
+        
     def destination_dir(self, resolution: Resolution = Resolution.UNKNOWN) -> Path:
         """Returns the destination root path based on the file's resolution.
 
@@ -352,6 +485,8 @@ class Config(object):
             The root Path for the specified resolution, e.g.
             /volumes/movies/HD or /volumes/movies/SD
         """
+        if resolution == Resolution.UNKNOWN or not resolution.key in self.destination_dirs:
+            return self.destination_dirs['default']
         return self.destination_dirs[resolution.key]
 
     def reload(self):

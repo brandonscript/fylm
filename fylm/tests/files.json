@@ -113,8 +113,7 @@
         },
         {
             "make": [ "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG/Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG.mp4",
-                      "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG/Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG.Sample.mp4",
-                      "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG/junk.mp4" ],
+                      "Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG/Deuce.Bigalow.Male.Gigolo.1999.1080p.WEB-DL.x264.AC3-ETRG.Sample.mp4" ],
             "expect": [ "Deuce Bigalow - Male Gigolo (1999)/Deuce Bigalow - Male Gigolo (1999) WEBDL-1080p.mp4", null, null ],
             "expect_no_lookup": [ "Deuce Bigalow Male Gigolo (1999)/Deuce Bigalow Male Gigolo (1999) WEBDL-1080p.mp4", null, null ],
             "tmdb_id": 10402
@@ -504,7 +503,7 @@
         },
         {
             "make": [ "Once 720p (2006).mkv" ],
-            "expect": [ "Once (2007)/Once (2007) 720p.mkv" ],
+            "expect": [ "Once (2006)/Once (2006) 720p.mkv" ],
             "expect_no_lookup": [ "Once (2006)/Once (2006) 720p.mkv" ],
             "tmdb_id": 5723
         },
