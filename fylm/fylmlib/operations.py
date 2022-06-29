@@ -460,6 +460,12 @@ class Find:
     # FIXME: Doesn't work in debug, breaks all the things
     @staticmethod
     def sync_parallel(pool: multiprocessing.Pool, paths: Iterable['FilmPath'], attrs: List[str] = None) -> List['FilmPath']:
+
+        import fylm
+        if not fylm.pool:
+            fylm.pool = multiprocessing.Pool()
+            pool = fylm.pool
+
         pool.worker_count = min(
             multiprocessing.cpu_count(), len(list(paths)) or 1)
         yield from pool.starmap(FilmPath.sync, zip(paths, itertools.repeat(attrs)))

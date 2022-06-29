@@ -17,10 +17,12 @@
 # Where a conflict or dispute would arise between these two licenses, HLv2.1
 # shall take precedence.
 
+import multiprocessing
 import conftest
 from pathlib import Path
 from make import Make, MB
 
+import fylm
 from fylmlib import Film, App, Subtitle
 
 SRC = conftest.src_path
@@ -88,7 +90,9 @@ class TestSubtitle:
         
         Make.mock_files(NEW_VIDEO, NEW_SUB1, NEW_SUB5)
         
+        fylm.pool = multiprocessing.Pool(multiprocessing.cpu_count())
         App.run()
+        fylm.pool.close()
         
         assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.mkv').exists()
         assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.en.srt').exists()

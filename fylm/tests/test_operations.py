@@ -783,7 +783,7 @@ class TestSize(object):
         Make.mock_file(f, 21 * MB)
         size = Size(f)
         assert(size.value == 21 * MB)
-        Delete.dir(SRC / 'Test.Dir')
+        Delete.dir(SRC / 'Test.Dir', force=True)
         assert(size.value == 21 * MB)
         size.refresh()
         assert(not size.value)
