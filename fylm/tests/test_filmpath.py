@@ -37,12 +37,12 @@ import conftest
 import fylm
 from make import Make, GB, MB, KB
 
-# Travis override for mini file sizes
+# CI override for mini file sizes
 # Multipy any size measurement by T to get an actual size
-T = 1024 if os.environ.get('TRAVIS') else 1
+T = 1024 if os.environ.get('CI') else 1
 
 
-def is_alphabetical_name(l: [Path]):
+def is_alphabetical_name(l: List[Path]):
     return all(l[i].name.lower() <= l[i+1].name.lower()
                for i in range(len(l)-1))
 

@@ -38,9 +38,9 @@ import fylm
 from make import Make, GB, MB, KB
 from pathlib import Path
 
-# Travis override for mini file sizes
+# CI override for mini file sizes
 # Multipy any size measurement by T to get an actual size
-T = 1024 if os.environ.get('TRAVIS') else 1
+T = 1024 if os.environ.get('CI') else 1
     
 def is_alphabetical_name(l: List[Path]):
     return all(l[i].name.lower() <= l[i+1].name.lower()
@@ -634,7 +634,7 @@ class TestIO(object):
         assert(not src.exists())
         assert(dst.exists())
     
-    @pytest.mark.skip(reason="Travis not supported")
+    @pytest.mark.skip(reason="Not supported in CI")
     def test_move_check_for_partial(self):
         
         src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
@@ -660,7 +660,7 @@ class TestIO(object):
         
         observer.stop()
     
-    @pytest.mark.skip(reason="Travis not supported")
+    @pytest.mark.skip(reason="Not supported in CI")
     def test_move_check_for_dup(self):
         
         src = FilmPath(SRC / ALITA / f'{ALITA}.mkv')
@@ -845,7 +845,7 @@ class TestSize(object):
         
     def test_pretty(self):
         
-        # Multiply each of these by 1024 to bypass Travis
+        # Multiply each of these by 1024 to bypass CI env set
         files = [
             (SRC / 'Test.File1.mkv', 1500 * MB * T),
             (SRC / 'Test.File2.mkv', 0.75 * GB * T),

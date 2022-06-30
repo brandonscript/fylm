@@ -169,7 +169,7 @@ class Delete:
                 # If there are no ignored extensions, skip it unless it is smaller than 
                 # max_filesize irrespective of extension.
                 if not ignore_exts or f.suffix in ignore_exts:
-                    if f.size.value > max_filesize and max_filesize is not None:
+                    if max_filesize is not None and f.size.value > max_filesize:
                         continue
                 
             if not config.test:

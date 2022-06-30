@@ -35,8 +35,8 @@ from typing import Union, List
 
 from timeit import default_timer as timer
 
-# No libmediainfo support on TRAVIS
-USE_MEDIA_INFO = os.environ.get('TRAVIS') is None
+# No libmediainfo support on CI
+USE_MEDIA_INFO = os.environ.get('CI') is None
 if USE_MEDIA_INFO:
     from pymediainfo import MediaInfo
 

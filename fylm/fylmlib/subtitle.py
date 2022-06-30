@@ -39,6 +39,9 @@ from typing import Union
 import fylmlib.constants as constants
 from .languages import Languages
 from . import Console
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fylmlib.filmpath import FilmPath
 
 _LANGUAGES = Languages().load()
 
@@ -51,6 +54,7 @@ class Subtitle:
     def __init__(self, path):
 
         if not Path(path).suffix.lower() in constants.SUB_EXTS:
+            from fylm.fylmlib.constants import INDENT
             Console.error(f"{INDENT}'{path}' is not a valid subtitle file")
             return
 

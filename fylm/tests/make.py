@@ -27,14 +27,14 @@ from pathlib import Path
 import conftest
 from typing import List, Tuple, Union
 
-# For tests on Travis, miniaturize filesizes.
+# For tests on CI, miniaturize filesizes.
 # To force this in local tests, do:
-#   export TRAVIS=true
+#   export CI=true
 #   export TMDB_KEY={key}
 # To unset these:
-#   unset TRAVIS
+#   unset CI
 
-KB = 1 if os.environ.get('TRAVIS') is not None else 1024
+KB = 1 if os.environ.get('CI') is not None else 1024
 MB = KB * 1024
 GB = MB * 1024
 
