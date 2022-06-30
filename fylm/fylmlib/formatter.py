@@ -24,6 +24,9 @@ string cleaning, improving comparison results, and outputting
 human-readable information to the console/log.
 """
 
+from pathlib import Path
+import sys
+from typing import TYPE_CHECKING
 import inflect
 import re
 from copy import copy
@@ -36,6 +39,9 @@ from .tools import *
 from .enums import *
 import fylmlib.config as config
 import fylmlib.patterns as patterns
+
+if TYPE_CHECKING:
+    from fylm import Film
 
 MAX_WORKERS = 50
 
@@ -73,7 +79,7 @@ class Format:
                 copy(config.rename_pattern.folder), RenameMask.DIR)
 
         @property
-        def filmrel(self) -> 'Path':
+        def filmrel(self) -> Path:
             """Generates a Path object from the given string.
 
             Returns:

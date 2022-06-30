@@ -129,7 +129,7 @@ class FilmPath(Path):
 
     _flavour = type(Path())._flavour
 
-    def __init__(self, *args, origin: 'Path' = None, dirs: [] = None, files: [] = None):
+    def __init__(self, *args, origin: 'Path' = None, dirs: List = None, files: List = None):
         """Initialize FilmPath object.
 
         Args:

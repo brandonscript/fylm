@@ -24,6 +24,7 @@ during runtime.
 """
 
 import re
+from typing import Tuple
 
 from rapidfuzz import fuzz
 
@@ -102,6 +103,8 @@ class Compare:
             True if the films are a match, else False
         """
 
+        from fylm.fylmlib import formatter
+
         # If both films have already been looked up and have a matching TMDb IDs,
         # we can assume they are a match.
         if (film.tmdb_id is not None
@@ -125,40 +128,6 @@ class Compare:
         # This assumes that you may want to keep two different editions of the same film,
         # but works well with identifying copies with a different resolution or quality.
         return (title == existing_title and film.year == existing_film.year)
-
-    @staticmethod
-    def is_equal_quality(file, other):
-        """Determine if a film is the same quality as another,
-        without comparing size.
-
-        Args:
-            file: (Film.File) the first file to compare.
-            other: (Film.File) the second file to compare.
-        Returns:
-            True if the files are a match, else False
-        """
-        if not is_duplicate(file.parent_film, other.parent_film):
-            return False
-
-        return quality(file, other) == ComparisonResult.EQUAL
-
-    @staticmethod
-    def is_identical(file, other):
-        """Determine if a film is an identical copy of another. To qualify as
-        an identical duplicate, it must pass is_duplicate, is_equal_quality, and
-        the file sizes must be equal.
-
-        Args:
-            file: (Film.File) the first file to compare.
-            other: (Film.File) the second file to compare.
-        Returns:
-            True if the files are identical, else False
-        """
-
-        if not is_equal_quality(file, other):
-            return False
-
-        return file.size == other.size
 
     @staticmethod
     def resolution(file, other) -> ComparisonResult:
@@ -217,7 +186,7 @@ class Compare:
                     else ComparisonResult.LOWER)
 
     @staticmethod
-    def quality(file, other) -> (ComparisonResult, ComparisonReason):
+    def quality(file, other) -> Tuple[ComparisonResult, ComparisonReason]:
         """Compare two file qualities to determine if one is better than the other.
         This method compares resolution, media, edition, proper, and HDR, but does
         NOT compare file size.

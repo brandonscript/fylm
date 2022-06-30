@@ -28,6 +28,7 @@ map file.
 
 import json
 from pathlib import Path
+from typing import List
 
 from lazy import lazy
 
@@ -55,7 +56,7 @@ class Languages:
             return f'{self.primary_name} ({self.code})'
 
     @lazy
-    def languages(self) -> ['Language']:
+    def languages(self) -> List['Language']:
 
         # Load json from languages.json
         # TODO: Pathify
@@ -64,5 +65,5 @@ class Languages:
         # Map raw language objects to Language class objects
         return list(map(lambda l: self.Language(l['code'], l['name']), data))
 
-    def load(self) -> ['Language']:
+    def load(self) -> List['Language']:
         return self.languages

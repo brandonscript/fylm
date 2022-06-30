@@ -19,6 +19,8 @@
 
 """A set of general use helper functions"""
 
+from typing import TYPE_CHECKING
+from pathlib import Path
 from typing import Iterable, Union
 import itertools
 import re
@@ -28,6 +30,9 @@ p = inflect.engine()
 
 import fylmlib.patterns as patterns
 from .constants import *
+
+if TYPE_CHECKING:
+    from fylmlib.filmpath import FilmPath
 
 # Compare a list and see if they all match
 
@@ -156,7 +161,7 @@ def is_roman_numeral(s):
     match = re.search(patterns.ROMAN_NUMERALS, s)
     return True if (match and match.group(1)) else False
 
-def is_sys_file(path: Union[str, 'Path', 'FilmPath']) -> bool:
+def is_sys_file(path: Union[str, Path, 'FilmPath']) -> bool:
     """Checks to see if the path provided is a system file.
 
     Args:
