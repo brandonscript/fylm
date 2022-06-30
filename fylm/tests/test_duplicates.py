@@ -123,6 +123,34 @@ class TestDuplicates(object):
         # Verify that non-duplicates are not deleted
         assert(    moved(MOVED_MI, '1080p').exists())
 
+    def test_dot_dup_tilde_files_are_removed(self):
+        # Do not replace 2160p films with any other quality
+        config.duplicates.upgrade_table['2160p'] = []
+
+        # Replace 1080p films with 4K
+        config.duplicates.upgrade_table['1080p'] = ['2160p']
+
+        # Replace 720p films with 4K or 1080p
+        config.duplicates.upgrade_table['720p'] = ['2160p', '1080p']
+
+        # Replace SD with any higher quality.
+        config.duplicates.upgrade_table['SD'] = ['2160p', '1080p', '720p']
+
+        Make.mock_files(
+            (new(NEW_ROGUE, '4K'), 52234 * MB),
+            (moved(MOVED_ROGUE, '1080p'), 12393 * MB),
+            (moved(MOVED_ROGUE, '720p'), 7213 * MB),
+            (moved(MOVED_ROGUE), 786 * MB)
+        )
+
+        # Execute
+        fylm.main()
+
+        # Assert that files renamed to .dup~ are removed
+        assert(not Path(f"{moved(MOVED_ROGUE, '1080p')}.dup~").exists())
+        assert(not Path(f"{moved(MOVED_ROGUE, '720p')}.dup~").exists())
+        assert(not Path(f'{moved(MOVED_ROGUE)}.dup~').exists())
+
     def test_replace_all_with_2160p(self):
         
         # Do not replace 2160p films with any other quality
@@ -161,17 +189,12 @@ class TestDuplicates(object):
         assert(not moved(MOVED_ROGUE, '720p').exists())
         assert(not moved(MOVED_ROGUE).exists())
         
-        # Assert that duplicate backup files are removed
-        assert(not Path(f"{moved(MOVED_ROGUE, '1080p')}.dup~").exists())
-        assert(not Path(f"{moved(MOVED_ROGUE, '720p')}.dup~").exists())
-        assert(not Path(f'{moved(MOVED_ROGUE)}.dup~').exists())
-        
         # Assert that empty duplicate parent dirs are removed
         assert(not moved(MOVED_ROGUE, '1080p').parent.exists())
         assert(not moved(MOVED_ROGUE, '720p').parent.exists())
         assert(not moved(MOVED_ROGUE).parent.exists())
 
-    def test_keep_all_2160p(self):
+    def test_keep_existing_and_new_2160p(self):
         
         # Do not replace 2160p films with any other quality
         config.duplicates.upgrade_table['2160p'] = [] 
@@ -209,7 +232,7 @@ class TestDuplicates(object):
         assert(    moved(MOVED_ROGUE, '720p').exists())
         assert(    moved(MOVED_ROGUE).exists())
 
-    def test_keep_2160p_and_1080p(self):
+    def test_keep_only_2160p_and_1080p(self):
         
         # Do not replace 2160p films with any other quality
         config.duplicates.upgrade_table['2160p'] = [] 

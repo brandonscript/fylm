@@ -25,7 +25,7 @@
 
 from pathlib import Path
 import sys
-from typing import Union, Iterable
+from typing import List, Union, Iterable
 
 from lazy import lazy
 
@@ -33,6 +33,10 @@ import fylmlib.config as config
 from .tools import *
 from .enums import *
 from . import Parser, Console
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from fylmlib.operations import Size
 
 class FilmPath(Path):
     """A collection of paths used to construct filenames, parseable strings, and locate
@@ -150,8 +154,8 @@ class FilmPath(Path):
             raise AttributeError(
                 f"Could not infer 'origin' when initializing 'FilmPath' for path '{args[0]}'")
 
-        self._dirs: [FilmPath] = list(map(FilmPath, dirs)) if dirs else None
-        self._files: [FilmPath] = list(map(FilmPath, files)) if files else None
+        self._dirs: List[FilmPath] = list(map(FilmPath, dirs)) if dirs else None
+        self._files: List[FilmPath] = list(map(FilmPath, files)) if files else None
         self._size = None
 
     # @overrides(__reduce__)
@@ -203,7 +207,7 @@ class FilmPath(Path):
 
     # @overrrides(parents)
     @property
-    def parents(self) -> ['FilmPath']:
+    def parents(self) -> List['FilmPath']:
         return [FilmPath(p, origin=self.origin) for p in super().parents]
 
     # @overrides(relative_to)
@@ -249,7 +253,7 @@ class FilmPath(Path):
                 yield d
 
     @lazy
-    def dirs(self) -> ['FilmPath']:
+    def dirs(self) -> List['FilmPath']:
         from fylmlib import Find
         if self._dirs:
             return self._dirs
@@ -260,7 +264,7 @@ class FilmPath(Path):
         return self._dirs
 
     @lazy
-    def files(self) -> ['FilmPath']:
+    def files(self) -> List['FilmPath']:
         from fylmlib import Find
         if self._files:
             return self._files
@@ -473,7 +477,7 @@ class FilmPath(Path):
         yield from [x for x in self.parent.iterdir() if x != self and not is_sys_file(x)]
 
     @property
-    def size(self) -> int:
+    def size(self) -> 'Size':
         from fylmlib.operations import Size
         if self._size is None:
             self._size = Size(self)
@@ -637,7 +641,7 @@ class FilmPath(Path):
             return size * 1024 * t
 
         @staticmethod
-        def paths_exist(paths: [Union[str, Path, 'FilmPath']], quiet: bool = False) -> bool:
+        def paths_exist(paths: List[Union[str, Path, 'FilmPath']], quiet: bool = False) -> bool:
             """Verified that a list of paths exist on the filesystem.
 
             Args:

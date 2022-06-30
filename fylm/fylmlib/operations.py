@@ -136,7 +136,11 @@ class Delete:
         return False
 
     @staticmethod
-    def files(*paths: Union[str, Path, 'FilmPath'], count: int = 0) -> int:
+    def files(
+            *paths: Union[str, Path, 'FilmPath'],
+            count: int = 0,
+            ignore_exts: List[str] = None,
+            max_filesize: Union[int, None] = 0) -> int:
         """Delete all files in the specified paths list or generator
 
         Count helps keep track of the number of files that were deleted, for reporting
@@ -145,15 +149,29 @@ class Delete:
         Args:
             path (list or Iterable of str, Path, or FilmPath): Path to search for files to delete.
             count (int, optional): Current number of deleted files, for external tracking.
+            ignore_exts (list, optional): List of file extensions to exclude from deletion.
+            max_filesize (int, optional): Max file size in bytes to allow for deletion. Files larger 
+                         than this will not be deleted. If both ignore_exts and max_filesize are set, 
+                         files with extensions in ignore_exts will still be deleted if they are smaller 
+                         than max_filesize.
 
         Returns:
             int: Number of files that were deleted successfully.
         """
-        # FIXME: Removed 'if config.remove_unwanted_files:' from this method, needs to be elsewhere.
-
+        
         deleted_files = count
 
         for f in paths:
+            if not isinstance(f, FilmPath):
+                f = FilmPath(f)
+            if f.is_file():
+                # If it is an ignored extension, skip it unless it is smaller than max_filesize.
+                # If there are no ignored extensions, skip it unless it is smaller than 
+                # max_filesize irrespective of extension.
+                if not ignore_exts or f.suffix in ignore_exts:
+                    if f.size.value > max_filesize and max_filesize is not None:
+                        continue
+                
             if not config.test:
                 deleted_files += Delete.file(f)
             else:
@@ -343,8 +361,8 @@ class Find:
         Console.debug(f"Searching for glob string '{search}'...")
         Console.debug(f"Searching in paths: {paths}")
 
-        # filter out paths that are None
-        paths = filter(lambda p: p is not None, paths)
+        # Make sure we filter out None paths because Path() will throw
+        paths = list(filter(lambda p: p is not None, paths))
 
         paths = list(map(Path, set(paths)))
         globstr = re.sub(patterns.ALL_NONWORD_CHARS, '*', search) + '*'
@@ -353,8 +371,7 @@ class Find:
         for p in paths:
             if not p.exists():
                 try:
-                    import ops
-                    ops.dirops.create_deep(create_path)
+                    Create.dirs(p)
                 except Exception as e:
                     raise FileNotFoundError(
                         f"Path '{p}' does not exist. Tried to create it, but could not.")
@@ -387,15 +404,10 @@ class Find:
         if cls.EXISTING:
             return cls.EXISTING
 
-        # If paths is none or empty, there's nothing to search for.
 
         Console.debug('Searching for existing films...')
 
-        paths = filter(lambda p: p is not None, paths)
-
-        # Coerce str path objects to Path set
-        paths = list(map(Path, set(paths) if paths else set(
-            config.destination_dirs.values())))
+        paths = cls._map_str_paths_to_path(paths or config.destination_dirs.values())
 
         # Ensure paths exist
         for p in paths:
@@ -439,7 +451,7 @@ class Find:
             paths = tuple(paths[0])
 
         # Coerce str path objects to Path set
-        paths = set(list(map(Path, paths if paths else config.source_dirs)))
+        paths = cls._map_str_paths_to_path(paths or config.source_dirs)
         
         # Ensure paths exist
         for p in paths:
@@ -455,6 +467,23 @@ class Find:
         cls.NEW = list(found_iter)
 
         return cls.NEW
+
+    @staticmethod
+    def _map_str_paths_to_path(paths: List[Union[str, None]]) -> List[Path]:
+        """Coerce a list of str paths to Path objects.
+
+        Args:
+            paths (List[Union[str, None]]): List of str paths.
+
+        Returns:
+            List[Path]: List of Path objects.
+        """
+        # Make sure we filter out None paths because Path() will throw
+        paths = list(filter(lambda p: p is not None, paths))
+
+        # Coerce str path objects to Path set
+        return list(map(Path, set(paths)))
+
 
     # FIXME: Move to Parallel
     # FIXME: Doesn't work in debug, breaks all the things
@@ -566,7 +595,7 @@ class IO:
 
             # Make sure the new file exists on the filesystem.
             if not dst_tmp.exists():
-                console().red(INDENT,
+                Console().red(INDENT,
                     f"Failed to move '{src}'.")
                 return False
 

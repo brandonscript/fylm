@@ -26,6 +26,7 @@
     individual files.
 """
 
+from typing import TYPE_CHECKING
 import os
 import re
 import asyncio
@@ -55,6 +56,9 @@ from . import Subtitle
 from . import TMDb
 from . import IO
 Info = FilmPath.Info
+
+if TYPE_CHECKING:
+    from pymediainfo import Track
 
 class Film(FilmPath):
     """A Film object contains basic details about the a film, references to the individual

@@ -145,13 +145,6 @@ def cleanup_all():
     Find.NEW = None
     Find.EXISTING = None
 
-def get_moved_films():
-    global dst_paths
-
-    return sorted(list(set(itertools.chain.from_iterable(
-        [ops.dirops.get_valid_files(dr) for _, dr in list(set(dst_paths.items()))]
-    ))))
-
 def desired_path(path, test_film, folders=True):
     assert(test_film.make is not None and path is not None)
     from fylmlib.film import Film

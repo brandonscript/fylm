@@ -42,7 +42,7 @@ from pathlib import Path
 # Multipy any size measurement by T to get an actual size
 T = 1024 if os.environ.get('TRAVIS') else 1
     
-def is_alphabetical_name(l: [Path]):
+def is_alphabetical_name(l: List[Path]):
     return all(l[i].name.lower() <= l[i+1].name.lower()
                for i in range(len(l)-1))
 
@@ -145,7 +145,7 @@ class TestDelete(object):
         Create.dirs(SRC)
         assert(SRC.exists())
         
-    def test_fail_delete_non_empty_dir(self):
+    def test_cannot_delete_non_empty_dir(self):
         
         conftest.remake_files()
         
@@ -159,7 +159,7 @@ class TestDelete(object):
         assert(d.is_dir())
         assert(Size(d).value == orig_size)
         
-    def test_delete_min_filesize(self):
+    def test_delete_respects_min_filesize(self):
 
         conftest.cleanup_all()
         
@@ -203,7 +203,7 @@ class TestDelete(object):
         assert(iterlen(Find.deep_files(SRC)) == 4)
         assert(main.exists())
         
-    def test_fail_delete_force(self):
+    def test_delete_dir_with_force(self):
 
         conftest.remake_files()
 
@@ -217,7 +217,7 @@ class TestDelete(object):
         assert(not d.is_dir())
     
     @pytest.mark.xfail(raises=OSError)
-    def test_fail_delete_src_dir(self):
+    def test_delete_src_dir_fails(self):
 
         conftest.remake_files()
 
@@ -225,12 +225,67 @@ class TestDelete(object):
         assert(Size(SRC).value > 1000)
         Delete.dir(SRC)
         assert(SRC.is_dir())
-        
-    def test_delete_files(self):
-        pass
-    
+
     def test_delete_file(self):
-        pass    
+        conftest.cleanup_all()
+
+        file1 = SRC / ALITA_DST
+
+        Make.mock_file(file1)
+
+        assert(file1.exists())
+        assert(Size(file1).value > 0)
+        Delete.file(file1)
+        assert(not file1.exists())
+
+    def test_delete_file_testmode(self):
+        conftest.cleanup_all()
+
+        file1 = SRC / ALITA_DST
+
+        Make.mock_file(file1)
+
+        config.test = True
+        assert(file1.exists())
+        assert(Size(file1).value > 0)
+        Delete.file(file1)
+        assert(file1.exists())
+        config.test = False
+
+    def test_delete_files(self):
+
+        conftest.cleanup_all()
+
+        file1 = SRC / ALITA_DST
+        file2 = SRC / ZORG
+
+        Make.mock_files(file1, file2)
+
+        assert(file1.exists())
+        assert(file2.exists())
+        assert(Size(file1).value > 0)
+        assert(Size(file2).value > 0)
+        Delete.files(*[file1, file2], max_filesize=None)
+        assert(not file1.exists())
+        assert(not file2.exists())
+
+    def test_delete_files_testmode(self):
+        conftest.cleanup_all()
+
+        file1 = SRC / ALITA_DST
+        file2 = SRC / ZORG
+
+        Make.mock_files(file1, file2)
+
+        config.test = True
+        assert(file1.exists())
+        assert(file2.exists())
+        assert(Size(file1).value > 0)
+        assert(Size(file2).value > 0)
+        Delete.files(*[file1, file2], max_filesize=None)
+        assert(file1.exists())
+        assert(file2.exists())
+        config.test = False
 
 class TestFind(object):
     
@@ -413,69 +468,69 @@ class TestFind(object):
             assert('is_filmroot' in f.__dict__)
             assert('maybe_film' in f.__dict__)
             
-    @pytest.mark.skip()
-    def test_delete_unwanted_files(self):
+    def test_delete_only_unwanted_files(self):
 
-        conftest.cleanup_all()
+        def make_test_files():
+            conftest.cleanup_all()
+            create_path = os.path.join(SRC, 'Yates/Gilbert/Holtzmann/Tolan')
+            Create.dirs(create_path)
 
-        create_path = os.path.join(SRC, 'Yates/Gilbert/Holtzmann/Tolan')
+            files_nfo = [
+                'Yates/Abby.nfo',
+                'Yates/Gilbert/Erin.nfo',
+                'Yates/Gilbert/Holtzmann/Jillian.nfo',
+                'Yates/Gilbert/Holtzmann/Tolan/Patty.nfo'
+            ]
 
-        ops.dirops.create_deep(create_path)
+            files_mkv = [
+                'Yates/Abby.mkv',
+                'Yates/Gilbert/Erin.mkv',
+                'Yates/Gilbert/Holtzmann/Jillian.mkv',
+                'Yates/Gilbert/Holtzmann/Tolan/Patty.mkv'
+            ]
 
-        files_nfo = [
-            'Yates/Abby.nfo',
-            'Yates/Gilbert/Erin.nfo',
-            'Yates/Gilbert/Holtzmann/Jillian.nfo',
-            'Yates/Gilbert/Holtzmann/Tolan/Patty.nfo'
-        ]
+            large_anomalies = [
+                'Yates/Gilbert/Holtzmann/Curie.sfv'
+            ]
 
-        files_mkv = [
-            'Yates/Abby.mkv',
-            'Yates/Gilbert/Erin.mkv',
-            'Yates/Gilbert/Holtzmann/Jillian.mkv',
-            'Yates/Gilbert/Holtzmann/Tolan/Patty.mkv'
-        ]
+            bad_files_mkv = [
+                'Yates/Oh.mkv',
+                'Yates/Gilbert/Danny.mkv',
+                'Yates/Gilbert/Holtzmann/Boy.mkv',
+                'Yates/Gilbert/Holtzmann/Tolan/The.mkv'
+            ]
 
-        bad_files_mkv = [
-            'Yates/Oh.mkv',
-            'Yates/Gilbert/Danny.mkv',
-            'Yates/Gilbert/Holtzmann/Boy.mkv',
-            'Yates/Gilbert/Holtzmann/Tolan/The.mkv'
-        ]
+            # Create files. Ensure that for this to pass, the total filesize of the test dir
+            # does not exceed this method's max_size default (50KB).
+            for f in files_nfo:
+                Make.mock_file(os.path.join(SRC, f), 4 * KB)
+            for f in files_mkv:
+                Make.mock_file(os.path.join(SRC, f), 7418 * MB)
+            for f in large_anomalies:
+                Make.mock_file(os.path.join(SRC, f), 6244 * MB)
+            for f in bad_files_mkv:
+                Make.mock_file(os.path.join(SRC, f), 7 * KB)
 
-        config.min_filesize = 5
-        assert(config.min_filesize == 5)
+        make_test_files()
+        files = list(Find.deep_files(SRC))
+        assert(len(files) == 13)
+        Delete.files(*files, ignore_exts=config.video_exts)
+        after = list(Find.deep_files(SRC))
+        assert(len(after) == 8)
 
-        # Create files. Ensure that for this to pass, the total filesize of the test dir
-        # does not exceed this method's max_size default (50KB).
-        for f in files_nfo:
-             Make.mock_file(os.path.join(SRC, f), 4 * KB)
-        for f in files_mkv:
-             Make.mock_file(os.path.join(SRC, f), 7418 * MB)
-        for f in bad_files_mkv:
-             Make.mock_file(os.path.join(SRC, f), 7 * KB)
-
-        before = ops.dirops.find_deep(SRC)
-        assert(len(before) == 12)
-
-        config.test = True
-        assert(config.test is True)
-
-        ops.dirops.delete_unwanted_files(SRC)
-
-        after_contents_t = ops.dirops.find_deep(SRC)
-        assert(len(after_contents_t) == 12)
-
-        config.test = False
-        assert(config.test is False)
-
-        ops.dirops.delete_unwanted_files(SRC)
-
-        after = ops.dirops.find_deep(SRC)
+        make_test_files()
+        files = list(Find.deep_files(SRC))
+        assert(len(files) == 13)
+        Delete.files(*files, ignore_exts=config.video_exts, max_filesize=50 * KB)
+        after = list(Find.deep_files(SRC))
         assert(len(after) == 4)
 
-        config.min_filesize = 0
-        assert(config.min_filesize == 0)
+        make_test_files()
+        files = list(Find.deep_files(SRC))
+        assert(len(files) == 13)
+        Delete.files(*files, max_filesize=50 * KB)
+        after = list(Find.deep_files(SRC))
+        assert(len(after) == 5)
 
 class FileExistsHandler(FileSystemEventHandler):
     

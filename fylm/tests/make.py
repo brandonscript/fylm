@@ -25,7 +25,7 @@ import json
 import random
 from pathlib import Path
 import conftest
-from typing import Union
+from typing import List, Tuple, Union
 
 # For tests on Travis, miniaturize filesizes.
 # To force this in local tests, do:
@@ -67,17 +67,17 @@ class MockFilm:
 
 
 class MakeFilmsResult:
-    def __init__(self, good: ['MockFilm'], bad: ['MockFilm']):
-        self.all: ['MockFilm'] = good + bad
-        self.good: ['MockFilm'] = good
-        self.bad: ['MockFilm'] = bad
+    def __init__(self, good: List['MockFilm'], bad: List['MockFilm']):
+        self.all: List['MockFilm'] = good + bad
+        self.good: List['MockFilm'] = good
+        self.bad: List['MockFilm'] = bad
 
     @property
-    def all_files(self) -> ['MockFilm']:
+    def all_files(self) -> List['MockFilm']:
         return sorted([x for m in self.all for x in m.make if x],
                        key=lambda x: Path(x).name.lower())
 
-    def get(self, lst='good', key='expect', folders=True) -> ([], []):
+    def get(self, lst='good', key='expect', folders=True) -> Tuple[List, List]:
         expected = []
         existing = []
 
@@ -155,7 +155,7 @@ class Make:
         return path
 
     @staticmethod
-    def mock_files(*paths: Union[str, list]) -> ['Path']:
+    def mock_files(*paths: Union[str, list]) -> List['Path']:
 
         ps = []
         for f in paths:
@@ -166,8 +166,8 @@ class Make:
 
     @staticmethod
     def all_mock_files() -> MakeFilmsResult:
-        good: ['MockFilm'] = []
-        bad: ['MockFilm'] = []
+        good: List['MockFilm'] = []
+        bad: List['MockFilm'] = []
 
         # Clean up first
         try:

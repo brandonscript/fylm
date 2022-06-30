@@ -25,6 +25,7 @@ output to the log module.
     Console: the main class exported by this module.
 """
 
+from typing import TYPE_CHECKING
 from . import Progress
 from . import patterns, Log, Format as ƒ
 from .constants import *
@@ -45,6 +46,10 @@ from tinta import Tinta
 Tinta.load_colors(Path(__file__).parent.parent / 'colors.ini')
 if config.plaintext:
     os.environ['TINTA_PLAINTEXT'] = '1'
+
+if TYPE_CHECKING:
+    from fylm import Film
+    from duplicates import Duplicates
 
 class Console():
 

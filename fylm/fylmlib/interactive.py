@@ -172,7 +172,7 @@ class Interactive:
                         # Mark the existing duplicate for deletion
                         mp.action = Should.DELETE_EXISTING
                         mp.reason = ComparisonReason.MANUALLY_SET
-                    Duplicates.rename_unwanted(list(set(existing_to_delete)))
+                    Duplicates.rename_upgradable(list(set(existing_to_delete)))
 
             # Delete this file (last choice is always skip, second last is delete)
             elif letter == 'D':

@@ -24,6 +24,7 @@ This module handles all the duplicate checking and handling logic for Fylm.
 
 import asyncio
 from pathlib import Path
+import sys
 
 import nest_asyncio
 
@@ -107,7 +108,7 @@ class Duplicates:
         return [d for d in self.files if d.duplicate_action == Should.UPGRADE]
 
     @classmethod
-    def rename_unwanted(cls, unwanted: List['Duplicates.Map']):
+    def rename_upgradable(cls, unwanted: List['Duplicates.Map']):
         """Rename duplicates pending upgrade to {name}.dup~.
 
         Args:
@@ -175,7 +176,7 @@ class Duplicates:
             if len(upgradable) > 0 and len(keep_existing) == 0:
                 existing_to_delete.extend(upgradable)
 
-            Duplicates.rename_unwanted(list(set(existing_to_delete)))
+            Duplicates.rename_upgradable(list(set(existing_to_delete)))
             move.append(v)
 
         if len(move) == 0:
@@ -202,7 +203,7 @@ class Duplicates:
         if len(cls.TO_DELETE) == 0:
             return 0
 
-        d = Delete.files(*cls.TO_DELETE)
+        d = Delete.files(*cls.TO_DELETE, max_filesize=None)
         for f in cls.TO_DELETE:
             if f.parent.exists() and f.parent.is_empty:
                 Delete.dir(f.parent)
