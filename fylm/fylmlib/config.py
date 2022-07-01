@@ -416,25 +416,6 @@ class Config(ConfigModel):
         self._defaults.duplicates.force_overwrite = args.duplicates__force_overwrite
         del args.duplicates__force_overwrite
 
-        # Supress console if no_console is true.
-        if self._defaults.no_console is True:
-            os.environ.set('TINTA_STEALTH', 'true')
-
-        # If using environment variables, overwrite defaults
-        if (os.environ.get('DEBUG') is not None
-            and os.environ.get('DEBUG') != 'false'):
-            self._defaults.debug = True
-        if os.environ.get('PLEX_TOKEN') is not None:
-            self._defaults.plex.token = os.environ.get('PLEX_TOKEN')
-        if os.environ.get('PLEX_URL') is not None:
-            self._defaults.plex.baseurl = os.environ.get('PLEX_URL')
-        if os.environ.get('PUSHOVER_APP_TOKEN') is not None:
-            self._defaults.pushover.app_token = os.environ.get('PUSHOVER_APP_TOKEN')
-        if os.environ.get('PUSHOVER_USER_KEY') is not None:
-            self._defaults.pushover.user_key = os.environ.get('PUSHOVER_USER_KEY')
-        if os.environ.get('TMDB_KEY') is not None:
-            self._defaults.tmdb.key = os.environ.get('TMDB_KEY')
-
         # Overwrite config with any explicitly set paths.
         if args.source_dirs:
             self._defaults.source_dirs = args.source_dirs
@@ -462,6 +443,21 @@ class Config(ConfigModel):
             requests_cache.install_cache(str(Path('.').resolve() / '.cache.fylm.sqlite'),
                                          expire_after=timedelta(hours=cache_ttl))
             requests_cache.remove_expired_responses()
+
+        # Supress console if no_console is true.
+        if self._defaults.no_console is True:
+            os.environ.set('TINTA_STEALTH', 'true')
+
+        # If using environment variables, overwrite defaults
+        self._defaults.debug = str(os.environ.get('DEBUG', self._defaults.debug)).lower() != 'false'
+        self._defaults.plex.token = os.environ.get('PLEX_TOKEN', self._defaults.plex.token)
+        self._defaults.plex.baseurl = os.environ.get('PLEX_URL', self._defaults.plex.baseurl)
+        self._defaults.pushover.app_token = os.environ.get('PUSHOVER_APP_TOKEN', self._defaults.pushover.app_token)
+        self._defaults.pushover.user_key = os.environ.get('PUSHOVER_USER_KEY', self._defaults.pushover.user_key)
+        self._defaults.tmdb.key = os.environ.get('TMDB_KEY', self._defaults.tmdb.key)
+        if os.environ.get('CI', None):
+            if not self._defaults.tmdb.key or self._defaults.tmdb.key == 'YOUR_KEY_HERE':
+                raise ValueError('TMDB_KEY environment variable must be set by GitHub actions secret if running in CI')
 
         # Map anything that is a dict to a addict.Dict
         for k, v in self._defaults.__dict__.items():
