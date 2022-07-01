@@ -19,8 +19,6 @@
 
 # import pytest
 
-from multiprocessing import Pool
-import multiprocessing
 from pathlib import Path
 import fylm
 import fylmlib.config as config
@@ -51,10 +49,8 @@ class TestApp(object):
 
         
         # Execute
-        fylm.pool = Pool(multiprocessing.cpu_count())
         fylm.App.run()
-        fylm.pool.close()
-
+        
         # Make sure we have some test films
         assert(len(made.good) > 0)
 
@@ -75,9 +71,7 @@ class TestApp(object):
         config.tmdb.enabled = False
 
         # Execute
-        fylm.pool = Pool(multiprocessing.cpu_count())
         fylm.App.run()
-        fylm.pool.close()
 
         # Make sure we have some test films
         assert(len(made.good) > 0)

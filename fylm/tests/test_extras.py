@@ -90,9 +90,7 @@ class TestSubtitle:
         
         Make.mock_files(NEW_VIDEO, NEW_SUB1, NEW_SUB5)
         
-        fylm.pool = multiprocessing.Pool(multiprocessing.cpu_count())
         App.run()
-        fylm.pool.close()
         
         assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.mkv').exists()
         assert (DST / MOVED_ROGUE_DIR / f'{MOVED_ROGUE}.en.srt').exists()

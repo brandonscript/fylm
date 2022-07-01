@@ -24,6 +24,7 @@ This module scans for and processes films.
     processor: the main class exported by this module.
 """
 
+from multiprocessing import Pool
 from timeit import default_timer as timer
 
 import fylmlib.config as config
@@ -42,6 +43,7 @@ Info = FilmPath.Info
 
 QUEUE = []
 MOVED = []
+POOL: Pool = None
 
 class App:
     """Main class for scanning for and processing films.
@@ -49,6 +51,7 @@ class App:
     All methods are class methods, thus this class should never be instantiated.
     """
 
+    
     @staticmethod
     def run():
         """Main entry point for Fylm."""
@@ -60,8 +63,7 @@ class App:
 
         filmroots = list(
             filter(lambda f: f.is_filmroot, map(Film, Find.new())))
-        import fylm 
-        NEW = list(Find.sync_parallel(fylm.pool, filmroots, attrs=['filmrel', 'year', 'size']))
+        NEW = list(Find.sync_parallel(filmroots, attrs=['filmrel', 'year', 'size']))
         if len(NEW) == 0:
             return App.end()
 

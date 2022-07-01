@@ -23,6 +23,8 @@
     specific use cases for film file and folder objects.
 """
 
+from distutils.log import warn
+import os
 from pathlib import Path
 import sys
 from typing import List, Union, Iterable
@@ -599,7 +601,7 @@ class FilmPath(Path):
             return any(word.lower() in str(path).lower() for word in config.ignore_strings)
 
         @staticmethod
-        def min_filesize(path: 'FilmPath') -> int:
+        def min_filesize(path: Union[Path, 'FilmPath']) -> int:
             """Determine the minimum filesize for the resolution for path.
 
             Args:
@@ -609,6 +611,10 @@ class FilmPath(Path):
                 int: The minimum file size in bytes, or default in bytes
                         if resolution could not be determined.
             """
+
+            if not isinstance(path, FilmPath):
+                path = FilmPath(path)
+                warn(f"min_filesize requires a FilmPath, not {type(path)}")
 
             # If the file is valid but not a video, we can't expect
             # it to be too large (e.g., .srt)
@@ -637,7 +643,7 @@ class FilmPath(Path):
                 size = min[res.display_name]
 
             # If we're running tests, files are in MB instead of GB
-            t = 1 if 'pytest' in sys.argv[0] else 1024
+            t = 1 if os.environ.get('CI') else 1024
             return size * 1024 * t
 
         @staticmethod

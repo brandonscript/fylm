@@ -20,10 +20,12 @@
 """Main entry point."""
 
 from multiprocessing import Pool
+import multiprocessing
 import __init__ as fylm
+from fylmlib import app
 
 if __name__ == "__main__":
-    fylm.pool = Pool()
+    app.POOL = Pool(multiprocessing.cpu_count())
     fylm.main()
-    fylm.pool.close()
+    app.POOL.close()
 

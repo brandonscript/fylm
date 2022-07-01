@@ -485,19 +485,17 @@ class Find:
         return list(map(Path, set(paths)))
 
 
-    # FIXME: Move to Parallel
-    # FIXME: Doesn't work in debug, breaks all the things
     @staticmethod
-    def sync_parallel(pool: multiprocessing.Pool, paths: Iterable['FilmPath'], attrs: List[str] = None) -> List['FilmPath']:
+    def sync_parallel(paths: Iterable['FilmPath'], attrs: List[str] = None) -> List['FilmPath']:
 
-        import fylm
-        if not fylm.pool:
-            fylm.pool = multiprocessing.Pool()
-            pool = fylm.pool
+        from fylmlib import app
 
-        pool.worker_count = min(
+        if not app.POOL:
+            raise shutil.ExecError("Multiprocessing Pool was not initalized before trying to process files.")
+
+        app.POOL.worker_count = min(
             multiprocessing.cpu_count(), len(list(paths)) or 1)
-        yield from pool.starmap(FilmPath.sync, zip(paths, itertools.repeat(attrs)))
+        yield from app.POOL.starmap(FilmPath.sync, zip(paths, itertools.repeat(attrs)))
 
 class IO:
     """Move, rename, and copy filesystem utils"""

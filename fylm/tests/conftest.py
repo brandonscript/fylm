@@ -17,6 +17,7 @@
 # Where a conflict or dispute would arise between these two licenses, HLv2.1
 # shall take precedence.
 
+import multiprocessing
 import os
 import sys
 import shutil
@@ -83,6 +84,10 @@ def setup():
     config.reload()
     cleanup_all()
     Make.empty_dirs()
+
+    from fylmlib import app
+    if not app.POOL:
+        app.POOL = multiprocessing.Pool(multiprocessing.cpu_count())
 
     # Console output
     config.no_console = config.debug

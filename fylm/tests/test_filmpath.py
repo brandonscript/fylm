@@ -20,6 +20,7 @@
 import os
 import sys
 import pickle
+from time import sleep
 from timeit import default_timer as timer
 import contextlib
 from watchdog.observers import Observer
@@ -396,9 +397,8 @@ class TestFilmPath(object):
 
     @pytest.mark.xfail(raises=NotADirectoryError)
     def test_is_empty_file(self):
-
         Make.mock_file(SRC / 'Yates/Abby.mkv')
-        assert(FilmPath(SRC / 'Yates/Abby.mkv').is_empty)
+        FilmPath(SRC / 'Yates.mkv').is_empty
 
     def test_is_origin(self):
 
@@ -742,6 +742,26 @@ class TestInfo(object):
         assert(not FilmPath.Info.exists_case_sensitive(str(name).upper()))
         assert(not FilmPath.Info.exists_case_sensitive(str(funkyname).lower()))
 
+    def test_min_filesize(self):
+
+        files = [
+            Film('Test.File.1080p.mkv'),
+            Film('Test.File.2160p.mp4'),
+            Film('Test.File.1080p.srt'),
+            Film('Test.File.720p.mkv'),
+            Film('Test.File.mkv'),
+            Film('Test.File.nfo'),
+            Film('Test.File.avi')
+        ]
+
+        assert(Film.Info.min_filesize(files[0]) == 100 * MB)
+        assert(Film.Info.min_filesize(files[1]) == 200 * MB)
+        assert(Film.Info.min_filesize(files[2]) == 0 * MB)
+        assert(Film.Info.min_filesize(files[3]) == 50 * MB)
+        assert(Film.Info.min_filesize(files[4]) == 20 * MB)
+        assert(Film.Info.min_filesize(files[5]) == 0 * MB)
+        assert(Film.Info.min_filesize(files[6]) == 20 * MB)
+
     def test_is_acceptable_size(self):
 
         files = [
@@ -762,14 +782,12 @@ class TestInfo(object):
         Make.mock_file(SRC / files[5],  18 * MB)  # Not OK
         Make.mock_file(SRC / files[6],  18 * MB)  # Dir - Not OK
 
-        assert(Film.Info.is_acceptable_size(Film(SRC / files[0]).main_file))
-        assert(not Film.Info.is_acceptable_size(
-            Film(SRC / files[1]).main_file))
-        assert(Film.Info.is_acceptable_size(Film(SRC / files[2]).main_file))
-        assert(Film.Info.is_acceptable_size(Film(SRC / files[3]).main_file))
-        assert(Film.Info.is_acceptable_size(Film(SRC / files[4]).main_file))
-        assert(not Film.Info.is_acceptable_size(
-            Film(SRC / files[5]).main_file))
+        assert(    Film.Info.is_acceptable_size(Film(SRC / files[0]).main_file))
+        assert(not Film.Info.is_acceptable_size(Film(SRC / files[1]).main_file))
+        assert(    Film.Info.is_acceptable_size(Film(SRC / files[2]).main_file))
+        assert(    Film.Info.is_acceptable_size(Film(SRC / files[3]).main_file))
+        assert(    Film.Info.is_acceptable_size(Film(SRC / files[4]).main_file))
+        assert(not Film.Info.is_acceptable_size(Film(SRC / files[5]).main_file))
         assert(not Film.Info.is_acceptable_size(Film(SRC / files[5])))
 
     def test_is_same_partition(self):
@@ -838,26 +856,6 @@ class TestInfo(object):
         assert(FilmPath.Info.has_valid_ext(SRC / files[3]))
         assert(not FilmPath.Info.has_valid_ext(SRC / files[4]))
         assert(not FilmPath.Info.has_valid_ext(SRC / files[5]))
-
-    def test_min_filesize(self):
-
-        files = [
-            Film('Test.File.1080p.mkv'),
-            Film('Test.File.2160p.mp4'),
-            Film('Test.File.1080p.srt'),
-            Film('Test.File.720p.mkv'),
-            Film('Test.File.mkv'),
-            Film('Test.File.nfo'),
-            Film('Test.File.avi')
-        ]
-
-        assert(Film.Info.min_filesize(files[0]) == 100 * MB)
-        assert(Film.Info.min_filesize(files[1]) == 200 * MB)
-        assert(Film.Info.min_filesize(files[2]) == 0 * MB)
-        assert(Film.Info.min_filesize(files[3]) == 50 * MB)
-        assert(Film.Info.min_filesize(files[4]) == 20 * MB)
-        assert(Film.Info.min_filesize(files[5]) == 0 * MB)
-        assert(Film.Info.min_filesize(files[6]) == 20 * MB)
 
     def test_paths_exist(self):
         # 2/2 valid paths
