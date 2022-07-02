@@ -2,6 +2,11 @@
 # All notable changes to this project will be documented in this file.
 # This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.1-beta] 2022-07-01
+- Replace config module with a config class for better quality loading of settings
+- Migrate automated tests from Travis to GitHub actions
+- Some bug fixes and test coverage improvements
+
 ## [0.4.0-beta] 2021-05-20
 - Complete overhaul and rewrite with modern Python, based on pathlib and asyncio
 - All lookups are done in parallel, when you launch Fylm, because TMDb no longer rate-limits its API requests

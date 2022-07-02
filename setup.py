@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Fylm
-# Copyright 2021 github.com/brandonscript
+# Copyright 2022 github.com/brandonscript
 
 # This program is bound to the Hippocratic License 2.1
 # Full text is available here:
@@ -42,7 +42,7 @@ with open('requirements-test.txt') as f:
 setup(
     name='Fylm',
 
-    version='0.4.0-beta',
+    version='0.4.1-beta',
 
     description='A automated command line app for organizing your film media.',
     long_description=long_description,
