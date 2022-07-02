@@ -1,4 +1,4 @@
-![version](https://img.shields.io/badge/version-0.4.1--beta-green.svg) [![Fylm CI](https://github.com/brandonscript/fylm/actions/workflows/python-app.yml/badge.svg)] [![Codacy Badge](https://app.codacy.com/project/badge/Grade/d88f475bb75b424692f0e7201ad3e888)](https://www.codacy.com/gh/brandonscript/fylm/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=brandonscript/fylm&amp;utm_campaign=Badge_Grade)
+![version](https://img.shields.io/badge/version-0.4.1--beta-green.svg) ![Fylm CI](https://github.com/brandonscript/fylm/actions/workflows/python-app.yml/badge.svg) [![Codacy Badge](https://app.codacy.com/project/badge/Grade/d88f475bb75b424692f0e7201ad3e888)](https://www.codacy.com/gh/brandonscript/fylm/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=brandonscript/fylm&amp;utm_campaign=Badge_Grade)
 
 <img src="https://i.imgur.com/X53grFH.png" width="200">
 
